@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowPacksRouteImport } from './routes/workflow-packs'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FeaturesRouteImport } from './routes/features'
@@ -17,12 +18,25 @@ import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppPartnersRouteImport } from './routes/app.partners'
 import { Route as AppInboxRouteImport } from './routes/app.inbox'
+import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCasesRouteImport } from './routes/app.cases'
+import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
+import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
+import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
+import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 
 const WorkflowPacksRoute = WorkflowPacksRouteImport.update({
   id: '/workflow-packs',
   path: '/workflow-packs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -60,15 +74,55 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
+  id: '/workflows',
+  path: '/workflows',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPartnersRoute = AppPartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppInboxRoute = AppInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContactsRoute = AppContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCasesRoute = AppCasesRouteImport.update({
   id: '/cases',
   path: '/cases',
   getParentRoute: () => AppRoute,
+} as any)
+const AppCampaignsRoute = AppCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCasesRoute,
+} as any)
+const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
+  id: '/$caseId',
+  path: '/$caseId',
+  getParentRoute: () => AppCasesRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -78,10 +132,19 @@ export interface FileRoutesByFullPath {
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
-  '/app/cases': typeof AppCasesRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/cases': typeof AppCasesRouteWithChildren
+  '/app/contacts': typeof AppContactsRoute
   '/app/inbox': typeof AppInboxRoute
+  '/app/partners': typeof AppPartnersRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/workflows': typeof AppWorkflowsRoute
   '/app/': typeof AppIndexRoute
+  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/cases/': typeof AppCasesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,10 +152,18 @@ export interface FileRoutesByTo {
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
-  '/app/cases': typeof AppCasesRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/contacts': typeof AppContactsRoute
   '/app/inbox': typeof AppInboxRoute
+  '/app/partners': typeof AppPartnersRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/workflows': typeof AppWorkflowsRoute
   '/app': typeof AppIndexRoute
+  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/cases': typeof AppCasesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,10 +173,19 @@ export interface FileRoutesById {
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
-  '/app/cases': typeof AppCasesRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/cases': typeof AppCasesRouteWithChildren
+  '/app/contacts': typeof AppContactsRoute
   '/app/inbox': typeof AppInboxRoute
+  '/app/partners': typeof AppPartnersRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/workflows': typeof AppWorkflowsRoute
   '/app/': typeof AppIndexRoute
+  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/cases/': typeof AppCasesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,10 +196,19 @@ export interface FileRouteTypes {
     | '/features'
     | '/login'
     | '/pricing'
+    | '/sitemap.xml'
     | '/workflow-packs'
+    | '/app/analytics'
+    | '/app/campaigns'
     | '/app/cases'
+    | '/app/contacts'
     | '/app/inbox'
+    | '/app/partners'
+    | '/app/settings'
+    | '/app/workflows'
     | '/app/'
+    | '/app/cases/$caseId'
+    | '/app/cases/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -127,10 +216,18 @@ export interface FileRouteTypes {
     | '/features'
     | '/login'
     | '/pricing'
+    | '/sitemap.xml'
     | '/workflow-packs'
-    | '/app/cases'
+    | '/app/analytics'
+    | '/app/campaigns'
+    | '/app/contacts'
     | '/app/inbox'
+    | '/app/partners'
+    | '/app/settings'
+    | '/app/workflows'
     | '/app'
+    | '/app/cases/$caseId'
+    | '/app/cases'
   id:
     | '__root__'
     | '/'
@@ -139,10 +236,19 @@ export interface FileRouteTypes {
     | '/features'
     | '/login'
     | '/pricing'
+    | '/sitemap.xml'
     | '/workflow-packs'
+    | '/app/analytics'
+    | '/app/campaigns'
     | '/app/cases'
+    | '/app/contacts'
     | '/app/inbox'
+    | '/app/partners'
+    | '/app/settings'
+    | '/app/workflows'
     | '/app/'
+    | '/app/cases/$caseId'
+    | '/app/cases/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -152,6 +258,7 @@ export interface RootRouteChildren {
   FeaturesRoute: typeof FeaturesRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
 }
 
@@ -162,6 +269,13 @@ declare module '@tanstack/react-router' {
       path: '/workflow-packs'
       fullPath: '/workflow-packs'
       preLoaderRoute: typeof WorkflowPacksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -213,11 +327,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/workflows': {
+      id: '/app/workflows'
+      path: '/workflows'
+      fullPath: '/app/workflows'
+      preLoaderRoute: typeof AppWorkflowsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/partners': {
+      id: '/app/partners'
+      path: '/partners'
+      fullPath: '/app/partners'
+      preLoaderRoute: typeof AppPartnersRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/inbox': {
       id: '/app/inbox'
       path: '/inbox'
       fullPath: '/app/inbox'
       preLoaderRoute: typeof AppInboxRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contacts': {
+      id: '/app/contacts'
+      path: '/contacts'
+      fullPath: '/app/contacts'
+      preLoaderRoute: typeof AppContactsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/cases': {
@@ -227,18 +369,72 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCasesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/campaigns': {
+      id: '/app/campaigns'
+      path: '/campaigns'
+      fullPath: '/app/campaigns'
+      preLoaderRoute: typeof AppCampaignsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/analytics': {
+      id: '/app/analytics'
+      path: '/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/cases/': {
+      id: '/app/cases/'
+      path: '/'
+      fullPath: '/app/cases/'
+      preLoaderRoute: typeof AppCasesIndexRouteImport
+      parentRoute: typeof AppCasesRoute
+    }
+    '/app/cases/$caseId': {
+      id: '/app/cases/$caseId'
+      path: '/$caseId'
+      fullPath: '/app/cases/$caseId'
+      preLoaderRoute: typeof AppCasesCaseIdRouteImport
+      parentRoute: typeof AppCasesRoute
+    }
   }
 }
 
+interface AppCasesRouteChildren {
+  AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
+  AppCasesIndexRoute: typeof AppCasesIndexRoute
+}
+
+const AppCasesRouteChildren: AppCasesRouteChildren = {
+  AppCasesCaseIdRoute: AppCasesCaseIdRoute,
+  AppCasesIndexRoute: AppCasesIndexRoute,
+}
+
+const AppCasesRouteWithChildren = AppCasesRoute._addFileChildren(
+  AppCasesRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppCasesRoute: typeof AppCasesRoute
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppCampaignsRoute: typeof AppCampaignsRoute
+  AppCasesRoute: typeof AppCasesRouteWithChildren
+  AppContactsRoute: typeof AppContactsRoute
   AppInboxRoute: typeof AppInboxRoute
+  AppPartnersRoute: typeof AppPartnersRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppWorkflowsRoute: typeof AppWorkflowsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppCasesRoute: AppCasesRoute,
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppCampaignsRoute: AppCampaignsRoute,
+  AppCasesRoute: AppCasesRouteWithChildren,
+  AppContactsRoute: AppContactsRoute,
   AppInboxRoute: AppInboxRoute,
+  AppPartnersRoute: AppPartnersRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppWorkflowsRoute: AppWorkflowsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -251,6 +447,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeaturesRoute: FeaturesRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,
 }
 export const routeTree = rootRouteImport

@@ -173,7 +173,7 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Toggle({ label, hint, on }: { label: string; hint: string; on?: boolean }) {
+function Toggle({ label, hint = "", on }: { label: string; hint?: string; on?: boolean }) {
   return (
     <div className="flex items-start justify-between rounded-lg border border-border p-4">
       <div className="pr-4">
