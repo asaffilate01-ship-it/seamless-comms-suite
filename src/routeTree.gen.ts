@@ -17,6 +17,8 @@ import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppInboxRouteImport } from './routes/app.inbox'
+import { Route as AppCasesRouteImport } from './routes/app.cases'
 
 const WorkflowPacksRoute = WorkflowPacksRouteImport.update({
   id: '/workflow-packs',
@@ -58,6 +60,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInboxRoute = AppInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCasesRoute = AppCasesRouteImport.update({
+  id: '/cases',
+  path: '/cases',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +79,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/workflow-packs': typeof WorkflowPacksRoute
+  '/app/cases': typeof AppCasesRoute
+  '/app/inbox': typeof AppInboxRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -76,6 +90,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/workflow-packs': typeof WorkflowPacksRoute
+  '/app/cases': typeof AppCasesRoute
+  '/app/inbox': typeof AppInboxRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -87,6 +103,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/workflow-packs': typeof WorkflowPacksRoute
+  '/app/cases': typeof AppCasesRoute
+  '/app/inbox': typeof AppInboxRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -99,6 +117,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/workflow-packs'
+    | '/app/cases'
+    | '/app/inbox'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,6 +128,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/workflow-packs'
+    | '/app/cases'
+    | '/app/inbox'
     | '/app'
   id:
     | '__root__'
@@ -118,6 +140,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/workflow-packs'
+    | '/app/cases'
+    | '/app/inbox'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -189,14 +213,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/inbox': {
+      id: '/app/inbox'
+      path: '/inbox'
+      fullPath: '/app/inbox'
+      preLoaderRoute: typeof AppInboxRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/cases': {
+      id: '/app/cases'
+      path: '/cases'
+      fullPath: '/app/cases'
+      preLoaderRoute: typeof AppCasesRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppCasesRoute: typeof AppCasesRoute
+  AppInboxRoute: typeof AppInboxRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCasesRoute: AppCasesRoute,
+  AppInboxRoute: AppInboxRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
