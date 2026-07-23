@@ -143,16 +143,16 @@ function RootComponent() {
 }
 
 function LanguageFader({ children }: { children: ReactNode }) {
-  const { lang, transitioning } = useI18n();
+  const { transitioning } = useI18n();
   return (
     <div
-      key={lang}
       style={{
-        opacity: transitioning ? 0 : 1,
-        transition: "opacity 180ms ease",
+        opacity: transitioning ? 0.6 : 1,
+        transition: "opacity 200ms ease",
       }}
     >
       {children}
     </div>
   );
 }
+
