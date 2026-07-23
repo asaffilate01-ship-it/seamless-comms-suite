@@ -20,6 +20,7 @@ type NavItem = {
 };
 const nav: NavItem[] = [
   { to: "/app", labelKey: "app.nav.overview", icon: LayoutDashboard, exact: true },
+  { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle, badge: "LIVE" },
   { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox, badge: "12" },
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
