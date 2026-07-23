@@ -10,7 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+  badge?: string;
+};
+const nav: NavItem[] = [
   { to: "/app", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/app/inbox", label: "Inbox", icon: Inbox, badge: "12" },
   { to: "/app/cases", label: "Cases", icon: MessageCircle },
@@ -20,7 +27,7 @@ const nav = [
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/app/partners", label: "Partners", icon: Handshake },
   { to: "/app/settings", label: "Settings", icon: Settings },
-] as const;
+];
 
 export function AppShell({ children, title, subtitle, actions }: {
   children: ReactNode; title: string; subtitle?: string; actions?: ReactNode;
