@@ -7,6 +7,8 @@ import {
   MessageCircle, ShieldCheck, Workflow, Sparkles, Building2, Handshake,
   CheckCircle2, ArrowRight, Lock, FileText, Clock,
 } from "lucide-react";
+import { useT, useI18n } from "@/lib/i18n";
+import { translations } from "@/lib/translations";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,6 +31,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const t = useT();
+  const { lang } = useI18n();
+  const home = (translations[lang] as any).home as {
+    opsCards: [string, string][];
+    packs: { name: string; desc: string }[];
+  };
   return (
     <div className="min-h-screen bg-background">
       <MarketingNav />
@@ -41,32 +49,30 @@ function Landing() {
           <div className="grid gap-12 md:grid-cols-2 md:items-center">
             <div>
               <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
-                <ShieldCheck className="mr-1.5 h-3 w-3" /> Made in Germany · Hosted in Frankfurt
+                <ShieldCheck className="mr-1.5 h-3 w-3" /> {t("home.badge")}
               </Badge>
               <h1 className="mt-5 font-display text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
-                WhatsApp becomes<br />
-                <span className="text-primary">a controlled business process.</span>
+                {t("home.heroLine1")}<br />
+                <span className="text-primary">{t("home.heroLine2")}</span>
               </h1>
               <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-                LoungeConnect turns every conversation into a case: qualification, appointment,
-                document request, quotation, payment, third-party fulfilment and follow-up.
-                One engine, three commercial surfaces.
+                {t("home.heroSub")}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link to="/app">
                   <Button size="lg" className="h-11 px-6">
-                    Open interactive demo <ArrowRight className="ml-2 h-4 w-4" />
+                    {t("home.ctaDemo")} <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link to="/pricing">
-                  <Button size="lg" variant="outline" className="h-11 px-6">See pricing</Button>
+                  <Button size="lg" variant="outline" className="h-11 px-6">{t("home.ctaPricing")}</Button>
                 </Link>
               </div>
               <dl className="mt-10 grid max-w-lg grid-cols-3 gap-6">
                 {[
-                  { k: "1.8 min", v: "avg. first response" },
-                  { k: "62 %", v: "automation rate" },
-                  { k: "4.7 / 5", v: "customer CSAT" },
+                  { k: t("home.stat1k"), v: t("home.stat1v") },
+                  { k: t("home.stat2k"), v: t("home.stat2v") },
+                  { k: t("home.stat3k"), v: t("home.stat3v") },
                 ].map((s) => (
                   <div key={s.v}>
                     <dt className="font-display text-2xl font-semibold text-foreground">{s.k}</dt>
@@ -86,11 +92,11 @@ function Landing() {
                       <MessageCircle className="h-4 w-4" />
                     </span>
                     <div>
-                      <div className="text-sm font-semibold">Anna Weber · Terminanfrage</div>
-                      <div className="text-[11px] text-muted-foreground">WhatsApp · SLA 6 min</div>
+                      <div className="text-sm font-semibold">{t("home.chatTitle")}</div>
+                      <div className="text-[11px] text-muted-foreground">{t("home.chatSub")}</div>
                     </div>
                   </div>
-                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-[10px]">Case #2481</Badge>
+                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-[10px]">{t("home.chatCase")}</Badge>
                 </div>
                 <CardContent className="space-y-3 bg-[oklch(0.98_0.008_150)] p-4">
                   <Bubble side="in">Guten Tag, ich hätte gern einen Termin für eine Hautanalyse.</Bubble>
@@ -104,9 +110,9 @@ function Landing() {
                 </CardContent>
               </Card>
               <div className="mt-4 grid grid-cols-3 gap-3">
-                <MiniStat icon={<Clock className="h-3.5 w-3.5" />} label="Handle time" value="3.4 min" />
-                <MiniStat icon={<Lock className="h-3.5 w-3.5" />} label="Secure upload" value="portal-only" />
-                <MiniStat icon={<FileText className="h-3.5 w-3.5" />} label="Audit log" value="every event" />
+                <MiniStat icon={<Clock className="h-3.5 w-3.5" />} label={t("home.miniHandle")} value={t("home.miniHandleV")} />
+                <MiniStat icon={<Lock className="h-3.5 w-3.5" />} label={t("home.miniSecure")} value={t("home.miniSecureV")} />
+                <MiniStat icon={<FileText className="h-3.5 w-3.5" />} label={t("home.miniAudit")} value={t("home.miniAuditV")} />
               </div>
             </div>
           </div>
@@ -117,35 +123,36 @@ function Landing() {
       <section className="border-y border-border/60 bg-surface-2">
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="max-w-2xl">
-            <p className="font-display text-sm font-medium uppercase tracking-widest text-primary">Three commercial surfaces</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">One engine. Every buyer.</h2>
+            <p className="font-display text-sm font-medium uppercase tracking-widest text-primary">{t("home.surfacesEyebrow")}</p>
+            <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">{t("home.surfacesTitle")}</h2>
             <p className="mt-3 text-muted-foreground">
-              Sell it inside a LoungeTech product, as a standalone SaaS, or as a partner/white-label edition — with tenant, brand and billing isolation from day one.
+              {t("home.surfacesSub")}
             </p>
           </div>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             <SurfaceCard
               icon={<Building2 className="h-5 w-5" />}
-              title="Embedded add-on"
-              price="€29 / €69 / €149 mo"
-              buyer="Existing LoungeTech subscriber"
-              bullets={["Appears inside the host product", "Shared login, data and billing", "Vertical workflow packs preinstalled"]}
+              title={t("home.s1t")}
+              price={t("home.s1p")}
+              buyer={t("home.s1b")}
+              bullets={[t("home.s1l1"), t("home.s1l2"), t("home.s1l3")]}
               tone="soft"
             />
             <SurfaceCard
               icon={<MessageCircle className="h-5 w-5" />}
-              title="Standalone SaaS/app"
-              price="€49 / €99 / €249"
-              buyer="Independent German SME or institution"
-              bullets={["Own tenant, number, inbox", "Portal, staff app, workflows", "Trial sandbox in minutes"]}
+              title={t("home.s2t")}
+              price={t("home.s2p")}
+              buyer={t("home.s2b")}
+              bullets={[t("home.s2l1"), t("home.s2l2"), t("home.s2l3")]}
               tone="primary"
+              mostLabel={t("home.s2most")}
             />
             <SurfaceCard
               icon={<Handshake className="h-5 w-5" />}
-              title="Partner edition"
-              price="from €499 / mo"
-              buyer="Agency, consultant, vendor, group"
-              bullets={["Multiple client tenants", "Delegated support, branding", "Commission ledger built-in"]}
+              title={t("home.s3t")}
+              price={t("home.s3p")}
+              buyer={t("home.s3b")}
+              bullets={[t("home.s3l1"), t("home.s3l2"), t("home.s3l3")]}
               tone="soft"
             />
           </div>
@@ -155,9 +162,9 @@ function Landing() {
       {/* Pillars */}
       <section className="mx-auto max-w-7xl px-6 py-24">
         <div className="grid gap-10 md:grid-cols-3">
-          <Pillar icon={<Workflow className="h-5 w-5" />} title="Cases, not chats" body="Every WhatsApp conversation is a state machine: intake → qualify → quote → schedule → fulfil → follow-up. Deadlines, approvals and audit are first-class." />
-          <Pillar icon={<Sparkles className="h-5 w-5" />} title="AI with a boss" body="AI drafts, triages and captures data. Humans own exceptions, regulated advice and financial commitments. Every AI action is logged and revocable." />
-          <Pillar icon={<ShieldCheck className="h-5 w-5" />} title="German compliance" body="GDPR, TTDSG and § 203 StGB by construction. EU data residency, RLS, break-glass with review, and secure portal links for sensitive documents." />
+          <Pillar icon={<Workflow className="h-5 w-5" />} title={t("home.pillar1t")} body={t("home.pillar1b")} />
+          <Pillar icon={<Sparkles className="h-5 w-5" />} title={t("home.pillar2t")} body={t("home.pillar2b")} />
+          <Pillar icon={<ShieldCheck className="h-5 w-5" />} title={t("home.pillar3t")} body={t("home.pillar3b")} />
         </div>
       </section>
 
@@ -165,26 +172,13 @@ function Landing() {
       <section className="border-y border-border/60 bg-surface-2">
         <div className="mx-auto max-w-7xl px-6 py-20">
           <h2 className="max-w-3xl font-display text-3xl font-semibold md:text-4xl">
-            Everything an operator needs — nothing a team inbox gives you.
+            {t("home.opsTitle")}
           </h2>
           <div className="mt-10 grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {[
-              ["Unified inbox", "AI, agent, manager, partner — same thread, different lenses."],
-              ["Case timeline", "State, SLA, owner, next-best-action on every case."],
-              ["Consent & suppression", "Purpose-scoped consent, frequency caps, DSGVO logs."],
-              ["Secure portal links", "Short-lived signed URLs for IDs, invoices, contracts."],
-              ["Roles & approvals", "Owner, admin, manager, agent, finance, compliance, partner."],
-              ["Third-party assignments", "Invite legal entities, scope data, track SLA."],
-              ["Workflow builder", "Reusable steps with AI, staff, customer, partner owners."],
-              ["Template governance", "Meta-approved templates, versions, sign-off, roll-back."],
-              ["Payment & quotes", "Draft → approve → send → collect → reconcile."],
-              ["Analytics & KPIs", "Automation rate, CSAT, SLA breach, revenue attribution."],
-              ["Audit & DSGVO exports", "Every event, every actor, every retention class."],
-              ["White-label", "Brand, domain, from-name, templates — per tenant."],
-            ].map(([t, d]) => (
-              <div key={t} className="rounded-xl border border-border bg-card p-5">
+            {home.opsCards.map(([title, d]) => (
+              <div key={title} className="rounded-xl border border-border bg-card p-5">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                <h3 className="mt-3 text-sm font-semibold">{t}</h3>
+                <h3 className="mt-3 text-sm font-semibold">{title}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{d}</p>
               </div>
             ))}
@@ -196,30 +190,23 @@ function Landing() {
       <section className="mx-auto max-w-7xl px-6 py-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="font-display text-sm font-medium uppercase tracking-widest text-primary">Vertical workflow packs</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">Preinstalled for every LoungeTech product.</h2>
+            <p className="font-display text-sm font-medium uppercase tracking-widest text-primary">{t("home.verticalsEyebrow")}</p>
+            <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">{t("home.verticalsTitle")}</h2>
           </div>
           <Link to="/workflow-packs">
-            <Button variant="outline">Explore all packs <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            <Button variant="outline">{t("home.exploreAll")} <ArrowRight className="ml-2 h-4 w-4" /></Button>
           </Link>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            { name: "LoungeBeauty", desc: "Appointments, cancellations, no-show recovery, review requests.", tone: "primary" },
-            { name: "LoungeTrades", desc: "Emergency triage, technician dispatch, quotes, invoice, follow-up.", tone: "info" },
-            { name: "LoungeCare", desc: "Prescription re-orders, insurance capture, pharmacy handover.", tone: "primary" },
-            { name: "LoungeEstate", desc: "Viewings, credit checks, tenant onboarding, maintenance tickets.", tone: "info" },
-            { name: "LoungeHosp", desc: "Reservations, deposit collection, group booking, feedback loop.", tone: "primary" },
-            { name: "LoungeAuto", desc: "Service intake, courtesy car requests, pickup notifications.", tone: "info" },
-          ].map((v) => (
+          {home.packs.map((v) => (
             <div key={v.name} className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition hover:shadow-elegant">
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-lg font-semibold">{v.name}</h3>
-                <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-[10px]">Ready</Badge>
+                <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-[10px]">{t("home.ready")}</Badge>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{v.desc}</p>
               <div className="mt-4 flex items-center gap-2 text-xs text-primary">
-                <span className="underline-offset-4 group-hover:underline">Included workflows</span>
+                <span className="underline-offset-4 group-hover:underline">{t("home.includedWorkflows")}</span>
                 <ArrowRight className="h-3 w-3" />
               </div>
             </div>
@@ -231,20 +218,20 @@ function Landing() {
       <section className="border-t border-border/60 bg-sidebar text-sidebar-foreground">
         <div className="mx-auto max-w-7xl px-6 py-20 text-center">
           <h2 className="mx-auto max-w-2xl font-display text-3xl font-semibold md:text-4xl">
-            Give WhatsApp the operating system it never had.
+            {t("home.ctaTitle")}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-sidebar-foreground/70">
-            Spin up a sandbox tenant in minutes. Production messaging activates after business & channel verification.
+            {t("home.ctaSub")}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link to="/app">
               <Button size="lg" className="h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
-                Open the demo
+                {t("common.openDemo")}
               </Button>
             </Link>
             <Link to="/pricing">
               <Button size="lg" variant="outline" className="h-11 border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent">
-                See pricing
+                {t("common.seePricing")}
               </Button>
             </Link>
           </div>
@@ -281,8 +268,8 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 function SurfaceCard({
-  icon, title, price, buyer, bullets, tone,
-}: { icon: React.ReactNode; title: string; price: string; buyer: string; bullets: string[]; tone: "primary" | "soft" }) {
+  icon, title, price, buyer, bullets, tone, mostLabel,
+}: { icon: React.ReactNode; title: string; price: string; buyer: string; bullets: string[]; tone: "primary" | "soft"; mostLabel?: string }) {
   const border = tone === "primary" ? "border-primary/40 bg-card ring-1 ring-primary/20" : "border-border bg-card";
   return (
     <div className={`rounded-2xl p-6 ${border}`}>
@@ -290,8 +277,8 @@ function SurfaceCard({
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary">
           {icon}
         </span>
-        {tone === "primary" && (
-          <Badge className="bg-primary text-primary-foreground hover:bg-primary">Most flexible</Badge>
+        {tone === "primary" && mostLabel && (
+          <Badge className="bg-primary text-primary-foreground hover:bg-primary">{mostLabel}</Badge>
         )}
       </div>
       <h3 className="mt-5 font-display text-xl font-semibold">{title}</h3>

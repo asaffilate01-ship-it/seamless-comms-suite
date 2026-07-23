@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { I18nProvider, useI18n } from "../lib/i18n";
 
 function NotFoundComponent() {
   return (
@@ -132,7 +133,26 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <I18nProvider>
+        <LanguageFader>
+          <Outlet />
+        </LanguageFader>
+      </I18nProvider>
     </QueryClientProvider>
+  );
+}
+
+function LanguageFader({ children }: { children: ReactNode }) {
+  const { lang, transitioning } = useI18n();
+  return (
+    <div
+      key={lang}
+      style={{
+        opacity: transitioning ? 0 : 1,
+        transition: "opacity 180ms ease",
+      }}
+    >
+      {children}
+    </div>
   );
 }
