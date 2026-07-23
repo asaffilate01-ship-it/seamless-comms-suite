@@ -15,10 +15,12 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
+import { Route as AppWhatsappRouteImport } from './routes/app.whatsapp'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppPartnersRouteImport } from './routes/app.partners'
 import { Route as AppInboxRouteImport } from './routes/app.inbox'
@@ -28,6 +30,7 @@ import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
 const WorkflowPacksRoute = WorkflowPacksRouteImport.update({
   id: '/workflow-packs',
@@ -59,6 +62,11 @@ const ComplianceRoute = ComplianceRouteImport.update({
   path: '/compliance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -77,6 +85,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
   id: '/workflows',
   path: '/workflows',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWhatsappRoute = AppWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -124,10 +137,17 @@ const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
   path: '/$caseId',
   getParentRoute: () => AppCasesRoute,
 } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRoute
@@ -141,13 +161,16 @@ export interface FileRoutesByFullPath {
   '/app/inbox': typeof AppInboxRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/whatsapp': typeof AppWhatsappRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/app/': typeof AppIndexRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRoute
@@ -160,15 +183,18 @@ export interface FileRoutesByTo {
   '/app/inbox': typeof AppInboxRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/whatsapp': typeof AppWhatsappRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/app': typeof AppIndexRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/cases': typeof AppCasesIndexRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRoute
@@ -182,16 +208,19 @@ export interface FileRoutesById {
   '/app/inbox': typeof AppInboxRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/whatsapp': typeof AppWhatsappRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/app/': typeof AppIndexRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/app'
+    | '/auth'
     | '/compliance'
     | '/features'
     | '/login'
@@ -205,13 +234,16 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/partners'
     | '/app/settings'
+    | '/app/whatsapp'
     | '/app/workflows'
     | '/app/'
     | '/app/cases/$caseId'
     | '/app/cases/'
+    | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/compliance'
     | '/features'
     | '/login'
@@ -224,14 +256,17 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/partners'
     | '/app/settings'
+    | '/app/whatsapp'
     | '/app/workflows'
     | '/app'
     | '/app/cases/$caseId'
     | '/app/cases'
+    | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
     | '/'
     | '/app'
+    | '/auth'
     | '/compliance'
     | '/features'
     | '/login'
@@ -245,21 +280,25 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/partners'
     | '/app/settings'
+    | '/app/whatsapp'
     | '/app/workflows'
     | '/app/'
     | '/app/cases/$caseId'
     | '/app/cases/'
+    | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
   ComplianceRoute: typeof ComplianceRoute
   FeaturesRoute: typeof FeaturesRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -306,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComplianceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app': {
       id: '/app'
       path: '/app'
@@ -332,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows'
       fullPath: '/app/workflows'
       preLoaderRoute: typeof AppWorkflowsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/whatsapp': {
+      id: '/app/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/app/whatsapp'
+      preLoaderRoute: typeof AppWhatsappRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -397,6 +450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCasesCaseIdRouteImport
       parentRoute: typeof AppCasesRoute
     }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -422,6 +482,7 @@ interface AppRouteChildren {
   AppInboxRoute: typeof AppInboxRoute
   AppPartnersRoute: typeof AppPartnersRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppWhatsappRoute: typeof AppWhatsappRoute
   AppWorkflowsRoute: typeof AppWorkflowsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -434,6 +495,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInboxRoute: AppInboxRoute,
   AppPartnersRoute: AppPartnersRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppWhatsappRoute: AppWhatsappRoute,
   AppWorkflowsRoute: AppWorkflowsRoute,
   AppIndexRoute: AppIndexRoute,
 }
@@ -443,12 +505,14 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
   ComplianceRoute: ComplianceRoute,
   FeaturesRoute: FeaturesRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

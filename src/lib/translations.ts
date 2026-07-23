@@ -243,6 +243,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       search: "Kontakte, Vorgänge, Templates suchen…",
       nav: {
         overview: "Übersicht",
+        whatsapp: "WhatsApp Live",
         inbox: "Posteingang",
         cases: "Vorgänge",
         contacts: "Kontakte",
@@ -499,6 +500,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       search: "Search contacts, cases, templates…",
       nav: {
         overview: "Overview",
+        whatsapp: "WhatsApp Live",
         inbox: "Inbox",
         cases: "Cases",
         contacts: "Contacts",
