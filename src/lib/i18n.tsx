@@ -57,21 +57,21 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLang = useCallback(
     (next: Lang) => {
-      if (next === lang) return;
-      setTransitioning(true);
-      // Fade out, swap, fade in
-      window.setTimeout(() => {
-        setLangState(next);
+      setLangState((prev) => {
+        if (prev === next) return prev;
         try {
           localStorage.setItem(STORAGE_KEY, next);
         } catch {
           /* ignore */
         }
-        window.setTimeout(() => setTransitioning(false), 180);
-      }, 160);
+        setTransitioning(true);
+        window.setTimeout(() => setTransitioning(false), 220);
+        return next;
+      });
     },
-    [lang],
+    [],
   );
+
 
   const t = useCallback(
     (key: string) => resolve(translations[lang], key),
