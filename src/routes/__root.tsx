@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { I18nProvider, useI18n } from "../lib/i18n";
+import { I18nProvider, useI18nSafe } from "../lib/i18n";
 
 function NotFoundComponent() {
   return (
