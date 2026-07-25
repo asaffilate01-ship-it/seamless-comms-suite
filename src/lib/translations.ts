@@ -19,7 +19,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     },
     footer: {
       tagline:
-        "WhatsApp-Workflow-Plattform für deutsche KMU, Institutionen und LoungeTech-Produkte.",
+        "WhatsApp-Workflow-Plattform für deutsche KMU, Institutionen und Konnevia-Produkte.",
       product: "Produkt",
       features: "Funktionen",
       packs: "Workflow-Pakete",
@@ -31,7 +31,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       dpa: "AVV",
       subprocessors: "Unterauftragsverarbeiter",
       company: "Unternehmen",
-      madeIn: "© 2026 LoungeTech Digitallösungen GmbH · Made in Germany",
+      madeIn: "© 2026 Konnevia · Made in Germany",
       metaLine: "WhatsApp Business Platform · Cloud API · Autorisierter Meta-Weg",
     },
     home: {
@@ -39,7 +39,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       heroLine1: "WhatsApp wird",
       heroLine2: "zum kontrollierten Geschäftsprozess.",
       heroSub:
-        "LoungeConnect verwandelt jedes Gespräch in einen Vorgang: Qualifizierung, Termin, Dokumentenanfrage, Angebot, Zahlung, Fremdleistung und Nachfassen. Eine Engine, drei Vertriebsflächen.",
+        "Konnevia verwandelt jedes Gespräch in einen Vorgang: Qualifizierung, Termin, Dokumentenanfrage, Angebot, Zahlung, Fremdleistung und Nachfassen. Eine Engine, drei Vertriebsflächen.",
       ctaDemo: "Interaktive Demo öffnen",
       ctaPricing: "Preise ansehen",
       stat1k: "1,8 Min.",
@@ -60,10 +60,10 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       surfacesEyebrow: "Drei Vertriebsflächen",
       surfacesTitle: "Eine Engine. Jeder Käufer.",
       surfacesSub:
-        "Als Add-on innerhalb eines LoungeTech-Produkts, als eigenständiges SaaS oder als Partner-/White-Label-Edition — mit Mandanten-, Marken- und Abrechnungs-Isolation von Tag eins.",
+        "Als Add-on innerhalb eines Konnevia-Produkts, als eigenständiges SaaS oder als Partner-/White-Label-Edition — mit Mandanten-, Marken- und Abrechnungs-Isolation von Tag eins.",
       s1t: "Eingebettetes Add-on",
       s1p: "29 € / 69 € / 149 € pro Monat",
-      s1b: "Bestehender LoungeTech-Abonnent",
+      s1b: "Bestehender Konnevia-Abonnent",
       s1l1: "Erscheint im Host-Produkt",
       s1l2: "Gemeinsamer Login, Daten & Abrechnung",
       s1l3: "Vertikale Workflow-Pakete vorinstalliert",
@@ -106,7 +106,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         ["White-Label", "Marke, Domain, From-Name, Templates — pro Mandant."],
       ],
       verticalsEyebrow: "Vertikale Workflow-Pakete",
-      verticalsTitle: "Vorinstalliert für jedes LoungeTech-Produkt.",
+      verticalsTitle: "Vorinstalliert für jedes Konnevia-Produkt.",
       exploreAll: "Alle Pakete ansehen",
       ready: "Bereit",
       includedWorkflows: "Enthaltene Workflows",
@@ -124,7 +124,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     },
     features: {
       title: "Ein vollständiges Betriebssystem rund um WhatsApp.",
-      sub: "LoungeConnect ist kein Chat-Postfach. Es ist Vorgangssystem, Workflow-Engine, Governance-Schicht und Handelsplattform — mit WhatsApp als Kundenkanal.",
+      sub: "Konnevia ist kein Chat-Postfach. Es ist Vorgangssystem, Workflow-Engine, Governance-Schicht und Handelsplattform — mit WhatsApp als Kundenkanal.",
       badge: "Produkt",
       g1: "Betrieb",
       g2: "Automation & KI",
@@ -186,14 +186,14 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         },
       ],
       addons: [
-        { name: "Eingebettetes Add-on", desc: "Aktiviert sich in einem LoungeTech-Produkt via SSO und Entitlements.", price: "29 € / 69 € / 149 € Monat" },
+        { name: "Eingebettetes Add-on", desc: "Aktiviert sich in einem Konnevia-Produkt via SSO und Entitlements.", price: "29 € / 69 € / 149 € Monat" },
         { name: "Partner-Edition", desc: "Mandantenkonsole für Agenturen und Berater mit Provisionsbuchhaltung.", price: "ab 499 € / Monat" },
         { name: "KI-Aktionen", desc: "Über das Kontingent hinaus — mandantenübergreifend gepoolt, transparenter Preis je Aktion.", price: "0,008 € / Aktion" },
         { name: "Meta-Durchleitung", desc: "WhatsApp-Konversationsgebühren zu Selbstkosten + 0 Marge, ausgewiesen.", price: "Meta-Preisliste" },
       ],
     },
     compliance: {
-      badge: "Vertrauen · gepflegt von LoungeTech Digitallösungen GmbH",
+      badge: "Vertrauen · gepflegt von Konnevia",
       title: "Compliance ist Produktentscheidung, keine Policy.",
       sub: "Die folgenden Kontrollen setzt die Plattform durch oder legt sie App-Ownern offen. Diese Seite ist keine unabhängige Zertifizierung — sie beschreibt Fähigkeiten, keine Audit-Ergebnisse.",
       cards: [
@@ -220,17 +220,17 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         ["Öffentlicher Sektor.", "DACH-only-Residenz, Fragebogen-Unterstützung und dedizierter CS ab Scale/Enterprise."],
       ],
       footnote:
-        "Diese Seite wird von LoungeTech Digitallösungen GmbH gepflegt, um typische Fragen zu LoungeConnect zu beantworten. Sie ist App-Owner-editierbar — keine unabhängige Zertifizierung.",
+        "Diese Seite wird von Konnevia gepflegt, um typische Fragen zu Konnevia zu beantworten. Sie ist App-Owner-editierbar — keine unabhängige Zertifizierung.",
     },
     packs: {
       badge: "Vertikale Workflow-Pakete",
-      title: "Jedes LoungeTech-Produkt kommt mit dem passenden Playbook.",
+      title: "Jedes Konnevia-Produkt kommt mit dem passenden Playbook.",
       sub: "Pakete bündeln Prompts, Templates, Workflows, Rollen und Analytics für eine Branche. Erweiterbar im Workflow-Builder — die Defaults funktionieren aber sofort.",
       preinstalled: "Vorinstalliert",
     },
     login: {
       title: "Willkommen zurück",
-      sub: "Melden Sie sich bei Ihrem LoungeConnect-Mandanten an.",
+      sub: "Melden Sie sich bei Ihrem Konnevia-Mandanten an.",
       email: "Geschäfts-E-Mail",
       password: "Passwort",
       cta: "Anmelden",
@@ -276,7 +276,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     },
     footer: {
       tagline:
-        "WhatsApp workflow platform for German SMEs, institutions and LoungeTech products.",
+        "WhatsApp workflow platform for German SMEs, institutions and Konnevia products.",
       product: "Product",
       features: "Features",
       packs: "Workflow packs",
@@ -288,7 +288,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       dpa: "DPA",
       subprocessors: "Subprocessors",
       company: "Company",
-      madeIn: "© 2026 LoungeTech Digitallösungen GmbH · Made in Germany",
+      madeIn: "© 2026 Konnevia · Made in Germany",
       metaLine: "WhatsApp Business Platform · Cloud API · Meta authorised route",
     },
     home: {
@@ -296,7 +296,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       heroLine1: "WhatsApp becomes",
       heroLine2: "a controlled business process.",
       heroSub:
-        "LoungeConnect turns every conversation into a case: qualification, appointment, document request, quotation, payment, third-party fulfilment and follow-up. One engine, three commercial surfaces.",
+        "Konnevia turns every conversation into a case: qualification, appointment, document request, quotation, payment, third-party fulfilment and follow-up. One engine, three commercial surfaces.",
       ctaDemo: "Open interactive demo",
       ctaPricing: "See pricing",
       stat1k: "1.8 min",
@@ -317,10 +317,10 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       surfacesEyebrow: "Three commercial surfaces",
       surfacesTitle: "One engine. Every buyer.",
       surfacesSub:
-        "Sell it inside a LoungeTech product, as a standalone SaaS, or as a partner/white-label edition — with tenant, brand and billing isolation from day one.",
+        "Sell it inside a Konnevia product, as a standalone SaaS, or as a partner/white-label edition — with tenant, brand and billing isolation from day one.",
       s1t: "Embedded add-on",
       s1p: "€29 / €69 / €149 mo",
-      s1b: "Existing LoungeTech subscriber",
+      s1b: "Existing Konnevia subscriber",
       s1l1: "Appears inside the host product",
       s1l2: "Shared login, data and billing",
       s1l3: "Vertical workflow packs preinstalled",
@@ -363,7 +363,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         ["White-label", "Brand, domain, from-name, templates — per tenant."],
       ],
       verticalsEyebrow: "Vertical workflow packs",
-      verticalsTitle: "Preinstalled for every LoungeTech product.",
+      verticalsTitle: "Preinstalled for every Konnevia product.",
       exploreAll: "Explore all packs",
       ready: "Ready",
       includedWorkflows: "Included workflows",
@@ -381,7 +381,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     },
     features: {
       title: "A full operating system around WhatsApp.",
-      sub: "LoungeConnect is not a chat inbox. It is a case system, a workflow engine, a governance layer and a commerce surface — using WhatsApp as the customer channel.",
+      sub: "Konnevia is not a chat inbox. It is a case system, a workflow engine, a governance layer and a commerce surface — using WhatsApp as the customer channel.",
       badge: "Product",
       g1: "Operations",
       g2: "Automation & AI",
@@ -443,14 +443,14 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         },
       ],
       addons: [
-        { name: "Embedded add-on", desc: "Turns on inside a LoungeTech product using SSO and entitlements.", price: "€29 / €69 / €149 mo" },
+        { name: "Embedded add-on", desc: "Turns on inside a Konnevia product using SSO and entitlements.", price: "€29 / €69 / €149 mo" },
         { name: "Partner edition", desc: "Multi-tenant console for agencies and consultants with commission ledger.", price: "from €499 / mo" },
         { name: "AI actions", desc: "Beyond bundled quota — pooled across the tenant, transparent per-action pricing.", price: "€0.008 / action" },
         { name: "Meta pass-through", desc: "WhatsApp conversation charges billed at cost + 0 markup, itemised.", price: "Meta rate card" },
       ],
     },
     compliance: {
-      badge: "Trust · maintained by LoungeTech Digitallösungen GmbH",
+      badge: "Trust · maintained by Konnevia",
       title: "Compliance is a product decision, not a policy.",
       sub: "The controls below are what the platform enforces or exposes to app owners. This page is not an independent certification — it describes capabilities, not audit outcomes.",
       cards: [
@@ -477,17 +477,17 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         ["Public sector.", "DACH-only residency, questionnaire support and dedicated CS on Scale/Enterprise."],
       ],
       footnote:
-        "This page is maintained by LoungeTech Digitallösungen GmbH to answer common questions about LoungeConnect. It is app-owned editable content — not an independent certification.",
+        "This page is maintained by Konnevia to answer common questions about Konnevia. It is app-owned editable content — not an independent certification.",
     },
     packs: {
       badge: "Vertical workflow packs",
-      title: "Every LoungeTech product ships with the right playbook.",
+      title: "Every Konnevia product ships with the right playbook.",
       sub: "Packs bundle prompts, templates, workflows, roles and analytics for a specific vertical. Extend them in the workflow builder — but the defaults already work.",
       preinstalled: "Preinstalled",
     },
     login: {
       title: "Welcome back",
-      sub: "Sign in to your LoungeConnect tenant.",
+      sub: "Sign in to your Konnevia tenant.",
       email: "Work email",
       password: "Password",
       cta: "Sign in",

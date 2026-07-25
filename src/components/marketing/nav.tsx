@@ -62,7 +62,7 @@ export function MarketingFooter() {
         <div>
           <h4 className="text-sm font-semibold">{t("footer.company")}</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>LoungeTech Digitallösungen GmbH</li>
+            <li>Konnevia</li>
             <li>Berlin · München · Frankfurt</li>
             <li>hallo@loungeconnect.de</li>
           </ul>
