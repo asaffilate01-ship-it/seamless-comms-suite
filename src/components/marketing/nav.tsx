@@ -35,10 +35,7 @@ export function MarketingFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <MessageCircle className="h-4 w-4" />
-            </span>
-            <span className="font-display text-lg font-semibold">LoungeConnect</span>
+            <img src={logoAsset.url} alt="Konnevia" className="h-8 w-auto" />
           </div>
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
             {t("footer.tagline")}
