@@ -143,11 +143,11 @@ function RootComponent() {
 }
 
 function LanguageFader({ children }: { children: ReactNode }) {
-  const { transitioning } = useI18n();
+  const ctx = useI18nSafe();
   return (
     <div
       style={{
-        opacity: transitioning ? 0.6 : 1,
+        opacity: ctx?.transitioning ? 0.6 : 1,
         transition: "opacity 200ms ease",
       }}
     >
