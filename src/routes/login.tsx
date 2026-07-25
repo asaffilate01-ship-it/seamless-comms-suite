@@ -10,10 +10,10 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — LoungeConnect" },
-      { name: "description", content: "Sign in to your LoungeConnect tenant." },
-      { property: "og:title", content: "Sign in — LoungeConnect" },
-      { property: "og:description", content: "Sign in to your LoungeConnect tenant." },
+      { title: "Sign in — Konnevia" },
+      { name: "description", content: "Sign in to your Konnevia tenant." },
+      { property: "og:title", content: "Sign in — Konnevia" },
+      { property: "og:description", content: "Sign in to your Konnevia tenant." },
     ],
   }),
   component: Login,

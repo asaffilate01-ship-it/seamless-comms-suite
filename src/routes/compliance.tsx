@@ -8,10 +8,10 @@ import { translations } from "@/lib/translations";
 export const Route = createFileRoute("/compliance")({
   head: () => ({
     meta: [
-      { title: "Compliance & security — LoungeConnect" },
+      { title: "Compliance & security — Konnevia" },
       { name: "description", content: "GDPR, TTDSG and § 203 StGB by construction. EU data residency, RLS, audit trail, secure portal links and DSGVO subject rights." },
-      { property: "og:title", content: "Compliance & security — LoungeConnect" },
-      { property: "og:description", content: "German compliance posture, data classification and security controls of LoungeConnect." },
+      { property: "og:title", content: "Compliance & security — Konnevia" },
+      { property: "og:description", content: "German compliance posture, data classification and security controls of Konnevia." },
     ],
   }),
   component: Compliance,
