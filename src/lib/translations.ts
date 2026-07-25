@@ -19,7 +19,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     },
     footer: {
       tagline:
-        "WhatsApp-Workflow-Plattform für deutsche KMU, Institutionen und Konnevia-Produkte.",
+        "Alle Kunden. Alle Gespräche. Ein System.",
       product: "Produkt",
       features: "Funktionen",
       packs: "Workflow-Pakete",
