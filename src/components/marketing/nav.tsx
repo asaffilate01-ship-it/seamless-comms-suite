@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle } from "lucide-react";
+import logoAsset from "@/assets/konnevia-logo.png.asset.json";
 import { LanguageToggle, useT } from "@/lib/i18n";
 
 export function MarketingNav() {
@@ -8,10 +8,7 @@ export function MarketingNav() {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <MessageCircle className="h-4 w-4" />
-          </span>
-          <span className="font-display text-lg font-semibold tracking-tight">LoungeConnect</span>
+          <img src={logoAsset.url} alt="Konnevia" className="h-8 w-auto" />
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
           <Link to="/features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{t("nav.product")}</Link>
@@ -38,10 +35,7 @@ export function MarketingFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <MessageCircle className="h-4 w-4" />
-            </span>
-            <span className="font-display text-lg font-semibold">LoungeConnect</span>
+            <img src={logoAsset.url} alt="Konnevia" className="h-8 w-auto" />
           </div>
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
             {t("footer.tagline")}

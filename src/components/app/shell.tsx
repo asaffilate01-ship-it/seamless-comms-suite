@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { LanguageToggle, useT } from "@/lib/i18n";
+import logoAsset from "@/assets/konnevia-logo.png.asset.json";
 
 type NavItem = {
   to: string;
@@ -41,13 +42,7 @@ export function AppShell({ children, title, subtitle, actions }: {
     <div className="flex min-h-screen bg-surface-2">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <MessageCircle className="h-4 w-4" />
-          </span>
-          <div>
-            <div className="font-display text-sm font-semibold leading-none">LoungeConnect</div>
-            <div className="mt-1 text-[11px] text-sidebar-foreground/60">{t("app.brandSub")}</div>
-          </div>
+          <img src={logoAsset.url} alt="Konnevia" className="h-8 w-auto brightness-0 invert" />
         </div>
         <nav className="flex-1 space-y-0.5 px-3 py-4">
           {nav.map((item) => {
