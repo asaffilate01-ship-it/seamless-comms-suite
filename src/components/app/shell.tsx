@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { LanguageToggle, useT } from "@/lib/i18n";
+import logoAsset from "@/assets/konnevia-logo.png.asset.json";
 
 type NavItem = {
   to: string;
