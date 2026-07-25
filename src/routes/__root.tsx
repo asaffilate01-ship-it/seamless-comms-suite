@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { I18nProvider, useI18n } from "../lib/i18n";
+import { I18nProvider, useI18nSafe } from "../lib/i18n";
 
 function NotFoundComponent() {
   return (
@@ -143,11 +143,11 @@ function RootComponent() {
 }
 
 function LanguageFader({ children }: { children: ReactNode }) {
-  const { transitioning } = useI18n();
+  const ctx = useI18nSafe();
   return (
     <div
       style={{
-        opacity: transitioning ? 0.6 : 1,
+        opacity: ctx?.transitioning ? 0.6 : 1,
         transition: "opacity 200ms ease",
       }}
     >
