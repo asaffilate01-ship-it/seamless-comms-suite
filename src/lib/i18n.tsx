@@ -92,6 +92,10 @@ export function useI18n() {
   return ctx;
 }
 
+export function useI18nSafe() {
+  return useContext(I18nContext);
+}
+
 export function useT() {
   return useI18n().t;
 }
