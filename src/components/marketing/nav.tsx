@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle } from "lucide-react";
+import logoAsset from "@/assets/konnevia-logo.png.asset.json";
 import { LanguageToggle, useT } from "@/lib/i18n";
 
 export function MarketingNav() {
