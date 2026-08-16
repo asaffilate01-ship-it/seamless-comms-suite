@@ -76,10 +76,15 @@ export const updateCase = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof updateSchema>) => updateSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (data.status) patch['status'] = data.status;
-    if (data.priority) patch['priority'] = data.priority;
-    if (data.assignToMe) patch['assignee'] = userId;
+    const patch: {
+      updated_at: string;
+      status?: string;
+      priority?: string;
+      assignee?: string;
+    } = { updated_at: new Date().toISOString() };
+    if (data.status) patch.status = data.status;
+    if (data.priority) patch.priority = data.priority;
+    if (data.assignToMe) patch.assignee = userId;
 
     const { error } = await supabase
       .from("cases")
