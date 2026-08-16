@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowPacksRouteImport } from './routes/workflow-packs'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -45,11 +44,6 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesRoute = FeaturesRouteImport.update({
@@ -158,7 +152,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/features': typeof FeaturesRoute
-  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
@@ -182,7 +175,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/features': typeof FeaturesRoute
-  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
@@ -205,7 +197,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/features': typeof FeaturesRoute
-  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
@@ -231,7 +222,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/compliance'
     | '/features'
-    | '/login'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
@@ -255,7 +245,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/compliance'
     | '/features'
-    | '/login'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
@@ -277,7 +266,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/compliance'
     | '/features'
-    | '/login'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
@@ -302,7 +290,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ComplianceRoute: typeof ComplianceRoute
   FeaturesRoute: typeof FeaturesRoute
-  LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
@@ -331,13 +318,6 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/features': {
@@ -518,7 +498,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ComplianceRoute: ComplianceRoute,
   FeaturesRoute: FeaturesRoute,
-  LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,
