@@ -62,9 +62,11 @@ export function MarketingFooter() {
         <div>
           <h4 className="text-sm font-semibold">{t("footer.company")}</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>Konnevia</li>
-            <li>Berlin · München · Frankfurt</li>
-            <li>hallo@loungeconnect.de</li>
+            <li>Konnevia GmbH · Berlin</li>
+            <li><a href="mailto:hallo@konnevia.de" className="hover:text-foreground">hallo@konnevia.de</a></li>
+            <li><Link to="/impressum" className="hover:text-foreground">Impressum</Link></li>
+            <li><Link to="/datenschutz" className="hover:text-foreground">Datenschutz</Link></li>
+            <li><Link to="/agb" className="hover:text-foreground">AGB</Link></li>
           </ul>
         </div>
       </div>
