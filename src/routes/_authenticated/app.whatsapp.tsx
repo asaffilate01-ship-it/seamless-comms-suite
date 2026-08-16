@@ -375,6 +375,21 @@ function ChannelSetup({
               Stored encrypted at rest. Only owners and admins of your workspace can read it.
             </p>
           </div>
+          <div>
+            <Label>App secret</Label>
+            <Input
+              value={appSecret}
+              onChange={(e) => setAppSecret(e.target.value)}
+              type="password"
+              required
+              minLength={20}
+              placeholder="Meta App → Settings → Basic → App Secret"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Required: every inbound webhook is verified with an HMAC-SHA256 signature.
+            </p>
+          </div>
+
           <Button type="submit" className="w-full" disabled={busy}>
             <CheckCircle2 className="mr-1 h-4 w-4" /> {busy ? "Saving…" : "Save & activate channel"}
           </Button>
