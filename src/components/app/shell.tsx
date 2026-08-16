@@ -40,58 +40,128 @@ const nav: NavItem[] = [
   { to: "/app/settings", labelKey: "app.nav.settings", icon: Settings },
 ];
 
+function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const t = useT();
+  return (
+    <>
+      <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
+        <img src={logoAsset.url} alt="Konnevia" className="h-8 w-auto brightness-0 invert" />
+      </div>
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+        {nav.map((item) => {
+          const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to as "/app"}
+              onClick={onNavigate}
+              className={cn(
+                "group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                active
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="flex-1">{t(item.labelKey)}</span>
+              {item.badge && (
+                <span className="rounded-full bg-sidebar-primary/20 px-2 py-0.5 text-[10px] font-medium text-sidebar-primary">
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="space-y-3 border-t border-sidebar-border p-4">
+        <LanguageToggle variant="sidebar" />
+        <div className="flex items-center gap-3 rounded-md bg-sidebar-accent/40 p-3">
+          <ShieldCheck className="h-4 w-4 text-sidebar-primary" />
+          <div className="text-xs">
+            <div className="font-medium text-sidebar-accent-foreground">{t("app.gdpr")}</div>
+            <div className="text-sidebar-foreground/60">{t("app.region")}</div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function AccountMenu() {
+  const t = useT();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+  }, []);
+
+  const initials = (email ?? "K").slice(0, 2).toUpperCase();
+
+  const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("app.account")}>
+          <Avatar className="h-9 w-9">
+            <AvatarFallback className="bg-primary-soft text-primary">{initials}</AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="truncate text-xs font-normal text-muted-foreground">
+          {email ?? "—"}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/app/settings">{t("app.nav.settings")}</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={signOut}>
+          <LogOut className="mr-2 h-4 w-4" /> {t("app.signOut")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function AppShell({ children, title, subtitle, actions }: {
   children: ReactNode; title: string; subtitle?: string; actions?: ReactNode;
 }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const t = useT();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-surface-2">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-          <img src={logoAsset.url} alt="Konnevia" className="h-8 w-auto brightness-0 invert" />
-        </div>
-        <nav className="flex-1 space-y-0.5 px-3 py-4">
-          {nav.map((item) => {
-            const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to as "/app"}
-                className={cn(
-                  "group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="flex-1">{t(item.labelKey)}</span>
-                {"badge" in item && item.badge && (
-                  <span className="rounded-full bg-sidebar-primary/20 px-2 py-0.5 text-[10px] font-medium text-sidebar-primary">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="space-y-3 border-t border-sidebar-border p-4">
-          <LanguageToggle variant="sidebar" />
-          <div className="flex items-center gap-3 rounded-md bg-sidebar-accent/40 p-3">
-            <ShieldCheck className="h-4 w-4 text-sidebar-primary" />
-            <div className="text-xs">
-              <div className="font-medium text-sidebar-accent-foreground">{t("app.gdpr")}</div>
-              <div className="text-sidebar-foreground/60">{t("app.region")}</div>
-            </div>
-          </div>
-        </div>
+        <SidebarNav />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/95 px-6 backdrop-blur">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur sm:px-6">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("app.menu")}>
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="left"
+              className="flex w-72 flex-col border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+            >
+              <SheetTitle className="sr-only">{t("app.menu")}</SheetTitle>
+              <SidebarNav onNavigate={() => setMobileOpen(false)} />
+            </SheetContent>
+          </Sheet>
+
           <div className="relative hidden max-w-sm flex-1 md:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder={t("app.search")} className="pl-9" />
@@ -105,23 +175,21 @@ export function AppShell({ children, title, subtitle, actions }: {
             <Button size="sm" className="hidden sm:inline-flex">
               <Plus className="mr-1 h-4 w-4" /> {t("app.new")}
             </Button>
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary-soft text-primary">LM</AvatarFallback>
-            </Avatar>
+            <AccountMenu />
           </div>
         </header>
 
-        <div className="border-b border-border bg-background px-6 py-5">
+        <div className="border-b border-border bg-background px-4 py-5 sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h1 className="font-display text-2xl font-semibold tracking-tight">{title}</h1>
+              <h1 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
               {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
             </div>
-            <div className="flex items-center gap-2">{actions}</div>
+            <div className="flex flex-wrap items-center gap-2">{actions}</div>
           </div>
         </div>
 
-        <main className="flex-1 px-6 py-6">{children}</main>
+        <main className="flex-1 px-4 py-6 sm:px-6">{children}</main>
       </div>
     </div>
   );
