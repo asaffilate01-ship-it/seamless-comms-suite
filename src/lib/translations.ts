@@ -501,6 +501,9 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     app: {
       new: "New case",
       search: "Search contacts, cases, templates…",
+      menu: "Menu",
+      account: "Account",
+      signOut: "Sign out",
       nav: {
         overview: "Overview",
         whatsapp: "WhatsApp Live",
