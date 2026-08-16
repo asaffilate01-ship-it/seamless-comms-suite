@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { conversations, contacts } from "@/lib/mockData";
 import { Search } from "lucide-react";
 
-export const Route = createFileRoute("/app/cases/")({
+export const Route = createFileRoute("/_authenticated/app/cases/")({
   component: Cases,
 });
 

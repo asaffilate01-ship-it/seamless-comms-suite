@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { conversations, contacts } from "@/lib/mockData";
 import { ArrowLeft, Bot, ShieldAlert, User, MessageCircle, Clock, CheckCircle2, FileText, CreditCard } from "lucide-react";
 
-export const Route = createFileRoute("/app/cases/$caseId")({
+export const Route = createFileRoute("/_authenticated/app/cases/$caseId")({
   component: CaseDetail,
 });
 

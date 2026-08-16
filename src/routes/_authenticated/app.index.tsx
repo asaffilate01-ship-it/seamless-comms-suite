@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { kpis, inboxVolume, conversations, contacts, workflows } from "@/lib/mockData";
 import { ArrowRight, TrendingUp, Clock, Bot, Users, Zap, AlertTriangle } from "lucide-react";
 
-export const Route = createFileRoute("/app/")({
+export const Route = createFileRoute("/_authenticated/app/")({
   component: Overview,
 });
 

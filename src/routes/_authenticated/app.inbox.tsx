@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Bot, Send, Paperclip, Lock, User, Filter, ShieldAlert, ArrowUp, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/app/inbox")({
+export const Route = createFileRoute("/_authenticated/app/inbox")({
   component: Inbox,
 });
 

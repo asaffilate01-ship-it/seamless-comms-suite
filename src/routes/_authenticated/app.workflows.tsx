@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { workflows } from "@/lib/mockData";
 import { Plus, Bot, User, Users, Building, UserCheck } from "lucide-react";
 
-export const Route = createFileRoute("/app/workflows")({
+export const Route = createFileRoute("/_authenticated/app/workflows")({
   component: Workflows,
 });
 

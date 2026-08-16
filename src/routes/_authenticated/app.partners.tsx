@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { partners } from "@/lib/mockData";
 import { Plus, ShieldCheck } from "lucide-react";
 
-export const Route = createFileRoute("/app/partners")({
+export const Route = createFileRoute("/_authenticated/app/partners")({
   component: Partners,
 });
 

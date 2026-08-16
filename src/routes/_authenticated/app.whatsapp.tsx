@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import { CheckCircle2, Copy, Send, ShieldCheck, MessageCircle } from "lucide-react";
 
-export const Route = createFileRoute("/app/whatsapp")({
+export const Route = createFileRoute("/_authenticated/app/whatsapp")({
   head: () => ({
     meta: [
       { title: "WhatsApp Live — Konnevia" },

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { inboxVolume, workflows, kpis } from "@/lib/mockData";
 import { Progress } from "@/components/ui/progress";
 
-export const Route = createFileRoute("/app/analytics")({
+export const Route = createFileRoute("/_authenticated/app/analytics")({
   component: Analytics,
 });
 
