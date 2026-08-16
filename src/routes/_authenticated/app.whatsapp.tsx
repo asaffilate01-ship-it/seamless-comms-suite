@@ -270,6 +270,7 @@ function ChannelSetup({
   const [wabaId, setWabaId] = useState("");
   const [displayPhone, setDisplayPhone] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  const [appSecret, setAppSecret] = useState("");
   const [verifyToken, setVerifyToken] = useState(() =>
     Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10),
   );
@@ -286,6 +287,7 @@ function ChannelSetup({
           wabaId: wabaId || null,
           displayPhone: displayPhone || null,
           accessToken,
+          appSecret,
           verifyToken,
         },
       });
