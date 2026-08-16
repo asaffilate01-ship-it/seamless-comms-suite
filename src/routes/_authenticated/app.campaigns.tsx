@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { campaigns } from "@/lib/mockData";
 import { Plus } from "lucide-react";
 
-export const Route = createFileRoute("/app/campaigns")({
+export const Route = createFileRoute("/_authenticated/app/campaigns")({
   component: Campaigns,
 });
 

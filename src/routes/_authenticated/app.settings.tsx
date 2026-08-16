@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { roleMatrix } from "@/lib/mockData";
 import { Bot, ShieldCheck, KeyRound, Phone, Palette } from "lucide-react";
 
-export const Route = createFileRoute("/app/settings")({
+export const Route = createFileRoute("/_authenticated/app/settings")({
   component: Settings,
 });
 

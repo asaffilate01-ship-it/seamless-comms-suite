@@ -19,7 +19,9 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/workflow-packs", changefreq: "monthly", priority: "0.8" },
           { path: "/pricing", changefreq: "monthly", priority: "0.9" },
           { path: "/compliance", changefreq: "monthly", priority: "0.6" },
-          { path: "/login", changefreq: "yearly", priority: "0.3" },
+          { path: "/impressum", changefreq: "yearly", priority: "0.3" },
+          { path: "/datenschutz", changefreq: "yearly", priority: "0.3" },
+          { path: "/agb", changefreq: "yearly", priority: "0.3" },
         ];
 
         const urls = entries.map((e) =>

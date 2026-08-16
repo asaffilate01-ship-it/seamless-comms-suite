@@ -19,6 +19,36 @@ type WhatsAppChangeValue = {
   statuses?: Array<{ id: string; status: string; timestamp: string }>;
 };
 
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return mismatch === 0;
+}
+
+// Meta sends sha256=<hex hmac of the raw body> in X-Hub-Signature-256.
+async function verifyMetaSignature(
+  rawBody: string,
+  signatureHeader: string | null,
+  appSecret: string,
+): Promise<boolean> {
+  if (!signatureHeader?.startsWith("sha256=")) return false;
+  const provided = signatureHeader.slice("sha256=".length).toLowerCase();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(appSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+  const expected = Array.from(new Uint8Array(mac))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return timingSafeEqualHex(provided, expected);
+}
+
+
 export const Route = createFileRoute("/api/public/whatsapp/webhook")({
   server: {
     handlers: {
@@ -42,6 +72,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
 
       POST: async ({ request }) => {
         const raw = await request.text();
+        const signatureHeader = request.headers.get("x-hub-signature-256");
         let body: { entry?: Array<{ changes?: Array<{ value: WhatsAppChangeValue }> }> };
         try {
           body = JSON.parse(raw);
@@ -59,10 +90,21 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
 
             const { data: channel } = await supabaseAdmin
               .from("whatsapp_channels")
-              .select("id, tenant_id")
+              .select("id, tenant_id, app_secret")
               .eq("phone_number_id", phoneNumberId)
               .maybeSingle();
             if (!channel) continue;
+
+            // Meta signs every payload with the app secret. Reject anything unverified.
+            const appSecret = channel.app_secret as string | null;
+            if (!appSecret) {
+              console.error("[whatsapp] channel has no app_secret configured; payload rejected");
+              return new Response("Forbidden", { status: 403 });
+            }
+            if (!(await verifyMetaSignature(raw, signatureHeader, appSecret))) {
+              return new Response("Invalid signature", { status: 401 });
+            }
+
             const tenantId = channel.tenant_id as string;
 
             for (const msg of v.messages ?? []) {

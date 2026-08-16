@@ -12,25 +12,28 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowPacksRouteImport } from './routes/workflow-packs'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as LoginRouteImport } from './routes/login'
+import { Route as ImpressumRouteImport } from './routes/impressum'
 import { Route as FeaturesRouteImport } from './routes/features'
+import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AppRouteImport } from './routes/app'
+import { Route as AgbRouteImport } from './routes/agb'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppIndexRouteImport } from './routes/app.index'
-import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
-import { Route as AppWhatsappRouteImport } from './routes/app.whatsapp'
-import { Route as AppSettingsRouteImport } from './routes/app.settings'
-import { Route as AppPartnersRouteImport } from './routes/app.partners'
-import { Route as AppInboxRouteImport } from './routes/app.inbox'
-import { Route as AppContactsRouteImport } from './routes/app.contacts'
-import { Route as AppCasesRouteImport } from './routes/app.cases'
-import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
-import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
-import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
-import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppWorkflowsRouteImport } from './routes/_authenticated/app.workflows'
+import { Route as AuthenticatedAppWhatsappRouteImport } from './routes/_authenticated/app.whatsapp'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
+import { Route as AuthenticatedAppPartnersRouteImport } from './routes/_authenticated/app.partners'
+import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
+import { Route as AuthenticatedAppContactsRouteImport } from './routes/_authenticated/app.contacts'
+import { Route as AuthenticatedAppCasesRouteImport } from './routes/_authenticated/app.cases'
+import { Route as AuthenticatedAppCampaignsRouteImport } from './routes/_authenticated/app.campaigns'
+import { Route as AuthenticatedAppAnalyticsRouteImport } from './routes/_authenticated/app.analytics'
+import { Route as AuthenticatedAppCasesIndexRouteImport } from './routes/_authenticated/app.cases.index'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
+import { Route as AuthenticatedAppCasesCaseIdRouteImport } from './routes/_authenticated/app.cases.$caseId'
 
 const WorkflowPacksRoute = WorkflowPacksRouteImport.update({
   id: '/workflow-packs',
@@ -47,14 +50,19 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const ImpressumRoute = ImpressumRouteImport.update({
+  id: '/impressum',
+  path: '/impressum',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesRoute = FeaturesRouteImport.update({
   id: '/features',
   path: '/features',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DatenschutzRoute = DatenschutzRouteImport.update({
+  id: '/datenschutz',
+  path: '/datenschutz',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComplianceRoute = ComplianceRouteImport.update({
@@ -67,9 +75,13 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
+const AgbRoute = AgbRouteImport.update({
+  id: '/agb',
+  path: '/agb',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -77,156 +89,179 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
-  id: '/workflows',
-  path: '/workflows',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppWhatsappRoute = AppWhatsappRouteImport.update({
-  id: '/whatsapp',
-  path: '/whatsapp',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPartnersRoute = AppPartnersRouteImport.update({
-  id: '/partners',
-  path: '/partners',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInboxRoute = AppInboxRouteImport.update({
+const AuthenticatedAppWorkflowsRoute =
+  AuthenticatedAppWorkflowsRouteImport.update({
+    id: '/workflows',
+    path: '/workflows',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppWhatsappRoute =
+  AuthenticatedAppWhatsappRouteImport.update({
+    id: '/whatsapp',
+    path: '/whatsapp',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSettingsRoute =
+  AuthenticatedAppSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPartnersRoute =
+  AuthenticatedAppPartnersRouteImport.update({
+    id: '/partners',
+    path: '/partners',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppInboxRoute = AuthenticatedAppInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AppContactsRoute = AppContactsRouteImport.update({
-  id: '/contacts',
-  path: '/contacts',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCasesRoute = AppCasesRouteImport.update({
+const AuthenticatedAppContactsRoute =
+  AuthenticatedAppContactsRouteImport.update({
+    id: '/contacts',
+    path: '/contacts',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCasesRoute = AuthenticatedAppCasesRouteImport.update({
   id: '/cases',
   path: '/cases',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AppCampaignsRoute = AppCampaignsRouteImport.update({
-  id: '/campaigns',
-  path: '/campaigns',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppCasesRoute,
-} as any)
-const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
-  id: '/$caseId',
-  path: '/$caseId',
-  getParentRoute: () => AppCasesRoute,
-} as any)
+const AuthenticatedAppCampaignsRoute =
+  AuthenticatedAppCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAnalyticsRoute =
+  AuthenticatedAppAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCasesIndexRoute =
+  AuthenticatedAppCasesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppCasesRoute,
+  } as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAppCasesCaseIdRoute =
+  AuthenticatedAppCasesCaseIdRouteImport.update({
+    id: '/$caseId',
+    path: '/$caseId',
+    getParentRoute: () => AuthenticatedAppCasesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRouteWithChildren
+  '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
+  '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
-  '/login': typeof LoginRoute
+  '/impressum': typeof ImpressumRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
-  '/app/analytics': typeof AppAnalyticsRoute
-  '/app/campaigns': typeof AppCampaignsRoute
-  '/app/cases': typeof AppCasesRouteWithChildren
-  '/app/contacts': typeof AppContactsRoute
-  '/app/inbox': typeof AppInboxRoute
-  '/app/partners': typeof AppPartnersRoute
-  '/app/settings': typeof AppSettingsRoute
-  '/app/whatsapp': typeof AppWhatsappRoute
-  '/app/workflows': typeof AppWorkflowsRoute
-  '/app/': typeof AppIndexRoute
-  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
-  '/app/cases/': typeof AppCasesIndexRoute
+  '/app': typeof AuthenticatedAppRouteWithChildren
+  '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/app/campaigns': typeof AuthenticatedAppCampaignsRoute
+  '/app/cases': typeof AuthenticatedAppCasesRouteWithChildren
+  '/app/contacts': typeof AuthenticatedAppContactsRoute
+  '/app/inbox': typeof AuthenticatedAppInboxRoute
+  '/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
+  '/app/workflows': typeof AuthenticatedAppWorkflowsRoute
+  '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/app/cases/': typeof AuthenticatedAppCasesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
+  '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
-  '/login': typeof LoginRoute
+  '/impressum': typeof ImpressumRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
-  '/app/analytics': typeof AppAnalyticsRoute
-  '/app/campaigns': typeof AppCampaignsRoute
-  '/app/contacts': typeof AppContactsRoute
-  '/app/inbox': typeof AppInboxRoute
-  '/app/partners': typeof AppPartnersRoute
-  '/app/settings': typeof AppSettingsRoute
-  '/app/whatsapp': typeof AppWhatsappRoute
-  '/app/workflows': typeof AppWorkflowsRoute
-  '/app': typeof AppIndexRoute
-  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
-  '/app/cases': typeof AppCasesIndexRoute
+  '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/app/campaigns': typeof AuthenticatedAppCampaignsRoute
+  '/app/contacts': typeof AuthenticatedAppContactsRoute
+  '/app/inbox': typeof AuthenticatedAppInboxRoute
+  '/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
+  '/app/workflows': typeof AuthenticatedAppWorkflowsRoute
+  '/app': typeof AuthenticatedAppIndexRoute
+  '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/app/cases': typeof AuthenticatedAppCasesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRouteWithChildren
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
+  '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
-  '/login': typeof LoginRoute
+  '/impressum': typeof ImpressumRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
-  '/app/analytics': typeof AppAnalyticsRoute
-  '/app/campaigns': typeof AppCampaignsRoute
-  '/app/cases': typeof AppCasesRouteWithChildren
-  '/app/contacts': typeof AppContactsRoute
-  '/app/inbox': typeof AppInboxRoute
-  '/app/partners': typeof AppPartnersRoute
-  '/app/settings': typeof AppSettingsRoute
-  '/app/whatsapp': typeof AppWhatsappRoute
-  '/app/workflows': typeof AppWorkflowsRoute
-  '/app/': typeof AppIndexRoute
-  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
-  '/app/cases/': typeof AppCasesIndexRoute
+  '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/_authenticated/app/campaigns': typeof AuthenticatedAppCampaignsRoute
+  '/_authenticated/app/cases': typeof AuthenticatedAppCasesRouteWithChildren
+  '/_authenticated/app/contacts': typeof AuthenticatedAppContactsRoute
+  '/_authenticated/app/inbox': typeof AuthenticatedAppInboxRoute
+  '/_authenticated/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
+  '/_authenticated/app/workflows': typeof AuthenticatedAppWorkflowsRoute
+  '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/_authenticated/app/cases/': typeof AuthenticatedAppCasesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/app'
+    | '/agb'
     | '/auth'
     | '/compliance'
+    | '/datenschutz'
     | '/features'
-    | '/login'
+    | '/impressum'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
+    | '/app'
     | '/app/analytics'
     | '/app/campaigns'
     | '/app/cases'
@@ -238,15 +273,17 @@ export interface FileRouteTypes {
     | '/app/workflows'
     | '/app/'
     | '/app/cases/$caseId'
-    | '/app/cases/'
     | '/api/public/whatsapp/webhook'
+    | '/app/cases/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agb'
     | '/auth'
     | '/compliance'
+    | '/datenschutz'
     | '/features'
-    | '/login'
+    | '/impressum'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
@@ -260,41 +297,46 @@ export interface FileRouteTypes {
     | '/app/workflows'
     | '/app'
     | '/app/cases/$caseId'
-    | '/app/cases'
     | '/api/public/whatsapp/webhook'
+    | '/app/cases'
   id:
     | '__root__'
     | '/'
-    | '/app'
+    | '/_authenticated'
+    | '/agb'
     | '/auth'
     | '/compliance'
+    | '/datenschutz'
     | '/features'
-    | '/login'
+    | '/impressum'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
-    | '/app/analytics'
-    | '/app/campaigns'
-    | '/app/cases'
-    | '/app/contacts'
-    | '/app/inbox'
-    | '/app/partners'
-    | '/app/settings'
-    | '/app/whatsapp'
-    | '/app/workflows'
-    | '/app/'
-    | '/app/cases/$caseId'
-    | '/app/cases/'
+    | '/_authenticated/app'
+    | '/_authenticated/app/analytics'
+    | '/_authenticated/app/campaigns'
+    | '/_authenticated/app/cases'
+    | '/_authenticated/app/contacts'
+    | '/_authenticated/app/inbox'
+    | '/_authenticated/app/partners'
+    | '/_authenticated/app/settings'
+    | '/_authenticated/app/whatsapp'
+    | '/_authenticated/app/workflows'
+    | '/_authenticated/app/'
+    | '/_authenticated/app/cases/$caseId'
     | '/api/public/whatsapp/webhook'
+    | '/_authenticated/app/cases/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRouteWithChildren
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AgbRoute: typeof AgbRoute
   AuthRoute: typeof AuthRoute
   ComplianceRoute: typeof ComplianceRoute
+  DatenschutzRoute: typeof DatenschutzRoute
   FeaturesRoute: typeof FeaturesRoute
-  LoginRoute: typeof LoginRoute
+  ImpressumRoute: typeof ImpressumRoute
   PricingRoute: typeof PricingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
@@ -324,11 +366,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/impressum': {
+      id: '/impressum'
+      path: '/impressum'
+      fullPath: '/impressum'
+      preLoaderRoute: typeof ImpressumRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/features': {
@@ -336,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/features'
       fullPath: '/features'
       preLoaderRoute: typeof FeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/datenschutz': {
+      id: '/datenschutz'
+      path: '/datenschutz'
+      fullPath: '/datenschutz'
+      preLoaderRoute: typeof DatenschutzRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compliance': {
@@ -352,11 +401,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
+    '/agb': {
+      id: '/agb'
+      path: '/agb'
+      fullPath: '/agb'
+      preLoaderRoute: typeof AgbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -366,89 +422,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/': {
-      id: '/app/'
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/': {
+      id: '/_authenticated/app/'
       path: '/'
       fullPath: '/app/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/workflows': {
-      id: '/app/workflows'
+    '/_authenticated/app/workflows': {
+      id: '/_authenticated/app/workflows'
       path: '/workflows'
       fullPath: '/app/workflows'
-      preLoaderRoute: typeof AppWorkflowsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppWorkflowsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/whatsapp': {
-      id: '/app/whatsapp'
+    '/_authenticated/app/whatsapp': {
+      id: '/_authenticated/app/whatsapp'
       path: '/whatsapp'
       fullPath: '/app/whatsapp'
-      preLoaderRoute: typeof AppWhatsappRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppWhatsappRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/settings': {
-      id: '/app/settings'
+    '/_authenticated/app/settings': {
+      id: '/_authenticated/app/settings'
       path: '/settings'
       fullPath: '/app/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/partners': {
-      id: '/app/partners'
+    '/_authenticated/app/partners': {
+      id: '/_authenticated/app/partners'
       path: '/partners'
       fullPath: '/app/partners'
-      preLoaderRoute: typeof AppPartnersRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppPartnersRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/inbox': {
-      id: '/app/inbox'
+    '/_authenticated/app/inbox': {
+      id: '/_authenticated/app/inbox'
       path: '/inbox'
       fullPath: '/app/inbox'
-      preLoaderRoute: typeof AppInboxRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppInboxRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/contacts': {
-      id: '/app/contacts'
+    '/_authenticated/app/contacts': {
+      id: '/_authenticated/app/contacts'
       path: '/contacts'
       fullPath: '/app/contacts'
-      preLoaderRoute: typeof AppContactsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppContactsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/cases': {
-      id: '/app/cases'
+    '/_authenticated/app/cases': {
+      id: '/_authenticated/app/cases'
       path: '/cases'
       fullPath: '/app/cases'
-      preLoaderRoute: typeof AppCasesRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppCasesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/campaigns': {
-      id: '/app/campaigns'
+    '/_authenticated/app/campaigns': {
+      id: '/_authenticated/app/campaigns'
       path: '/campaigns'
       fullPath: '/app/campaigns'
-      preLoaderRoute: typeof AppCampaignsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppCampaignsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/analytics': {
-      id: '/app/analytics'
+    '/_authenticated/app/analytics': {
+      id: '/_authenticated/app/analytics'
       path: '/analytics'
       fullPath: '/app/analytics'
-      preLoaderRoute: typeof AppAnalyticsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AuthenticatedAppAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/app/cases/': {
-      id: '/app/cases/'
+    '/_authenticated/app/cases/': {
+      id: '/_authenticated/app/cases/'
       path: '/'
       fullPath: '/app/cases/'
-      preLoaderRoute: typeof AppCasesIndexRouteImport
-      parentRoute: typeof AppCasesRoute
-    }
-    '/app/cases/$caseId': {
-      id: '/app/cases/$caseId'
-      path: '/$caseId'
-      fullPath: '/app/cases/$caseId'
-      preLoaderRoute: typeof AppCasesCaseIdRouteImport
-      parentRoute: typeof AppCasesRoute
+      preLoaderRoute: typeof AuthenticatedAppCasesIndexRouteImport
+      parentRoute: typeof AuthenticatedAppCasesRoute
     }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
@@ -457,58 +513,80 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/app/cases/$caseId': {
+      id: '/_authenticated/app/cases/$caseId'
+      path: '/$caseId'
+      fullPath: '/app/cases/$caseId'
+      preLoaderRoute: typeof AuthenticatedAppCasesCaseIdRouteImport
+      parentRoute: typeof AuthenticatedAppCasesRoute
+    }
   }
 }
 
-interface AppCasesRouteChildren {
-  AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
-  AppCasesIndexRoute: typeof AppCasesIndexRoute
+interface AuthenticatedAppCasesRouteChildren {
+  AuthenticatedAppCasesCaseIdRoute: typeof AuthenticatedAppCasesCaseIdRoute
+  AuthenticatedAppCasesIndexRoute: typeof AuthenticatedAppCasesIndexRoute
 }
 
-const AppCasesRouteChildren: AppCasesRouteChildren = {
-  AppCasesCaseIdRoute: AppCasesCaseIdRoute,
-  AppCasesIndexRoute: AppCasesIndexRoute,
+const AuthenticatedAppCasesRouteChildren: AuthenticatedAppCasesRouteChildren = {
+  AuthenticatedAppCasesCaseIdRoute: AuthenticatedAppCasesCaseIdRoute,
+  AuthenticatedAppCasesIndexRoute: AuthenticatedAppCasesIndexRoute,
 }
 
-const AppCasesRouteWithChildren = AppCasesRoute._addFileChildren(
-  AppCasesRouteChildren,
-)
+const AuthenticatedAppCasesRouteWithChildren =
+  AuthenticatedAppCasesRoute._addFileChildren(
+    AuthenticatedAppCasesRouteChildren,
+  )
 
-interface AppRouteChildren {
-  AppAnalyticsRoute: typeof AppAnalyticsRoute
-  AppCampaignsRoute: typeof AppCampaignsRoute
-  AppCasesRoute: typeof AppCasesRouteWithChildren
-  AppContactsRoute: typeof AppContactsRoute
-  AppInboxRoute: typeof AppInboxRoute
-  AppPartnersRoute: typeof AppPartnersRoute
-  AppSettingsRoute: typeof AppSettingsRoute
-  AppWhatsappRoute: typeof AppWhatsappRoute
-  AppWorkflowsRoute: typeof AppWorkflowsRoute
-  AppIndexRoute: typeof AppIndexRoute
+interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAnalyticsRoute: typeof AuthenticatedAppAnalyticsRoute
+  AuthenticatedAppCampaignsRoute: typeof AuthenticatedAppCampaignsRoute
+  AuthenticatedAppCasesRoute: typeof AuthenticatedAppCasesRouteWithChildren
+  AuthenticatedAppContactsRoute: typeof AuthenticatedAppContactsRoute
+  AuthenticatedAppInboxRoute: typeof AuthenticatedAppInboxRoute
+  AuthenticatedAppPartnersRoute: typeof AuthenticatedAppPartnersRoute
+  AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppWhatsappRoute: typeof AuthenticatedAppWhatsappRoute
+  AuthenticatedAppWorkflowsRoute: typeof AuthenticatedAppWorkflowsRoute
+  AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
-const AppRouteChildren: AppRouteChildren = {
-  AppAnalyticsRoute: AppAnalyticsRoute,
-  AppCampaignsRoute: AppCampaignsRoute,
-  AppCasesRoute: AppCasesRouteWithChildren,
-  AppContactsRoute: AppContactsRoute,
-  AppInboxRoute: AppInboxRoute,
-  AppPartnersRoute: AppPartnersRoute,
-  AppSettingsRoute: AppSettingsRoute,
-  AppWhatsappRoute: AppWhatsappRoute,
-  AppWorkflowsRoute: AppWorkflowsRoute,
-  AppIndexRoute: AppIndexRoute,
+const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAnalyticsRoute: AuthenticatedAppAnalyticsRoute,
+  AuthenticatedAppCampaignsRoute: AuthenticatedAppCampaignsRoute,
+  AuthenticatedAppCasesRoute: AuthenticatedAppCasesRouteWithChildren,
+  AuthenticatedAppContactsRoute: AuthenticatedAppContactsRoute,
+  AuthenticatedAppInboxRoute: AuthenticatedAppInboxRoute,
+  AuthenticatedAppPartnersRoute: AuthenticatedAppPartnersRoute,
+  AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppWhatsappRoute: AuthenticatedAppWhatsappRoute,
+  AuthenticatedAppWorkflowsRoute: AuthenticatedAppWorkflowsRoute,
+  AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AuthenticatedAppRouteWithChildren =
+  AuthenticatedAppRoute._addFileChildren(AuthenticatedAppRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRouteWithChildren,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AgbRoute: AgbRoute,
   AuthRoute: AuthRoute,
   ComplianceRoute: ComplianceRoute,
+  DatenschutzRoute: DatenschutzRoute,
   FeaturesRoute: FeaturesRoute,
-  LoginRoute: LoginRoute,
+  ImpressumRoute: ImpressumRoute,
   PricingRoute: PricingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,

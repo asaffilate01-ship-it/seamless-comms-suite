@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import { CheckCircle2, Copy, Send, ShieldCheck, MessageCircle } from "lucide-react";
 
-export const Route = createFileRoute("/app/whatsapp")({
+export const Route = createFileRoute("/_authenticated/app/whatsapp")({
   head: () => ({
     meta: [
       { title: "WhatsApp Live — Konnevia" },
@@ -270,6 +270,7 @@ function ChannelSetup({
   const [wabaId, setWabaId] = useState("");
   const [displayPhone, setDisplayPhone] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  const [appSecret, setAppSecret] = useState("");
   const [verifyToken, setVerifyToken] = useState(() =>
     Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10),
   );
@@ -286,6 +287,7 @@ function ChannelSetup({
           wabaId: wabaId || null,
           displayPhone: displayPhone || null,
           accessToken,
+          appSecret,
           verifyToken,
         },
       });
@@ -373,6 +375,21 @@ function ChannelSetup({
               Stored encrypted at rest. Only owners and admins of your workspace can read it.
             </p>
           </div>
+          <div>
+            <Label>App secret</Label>
+            <Input
+              value={appSecret}
+              onChange={(e) => setAppSecret(e.target.value)}
+              type="password"
+              required
+              minLength={20}
+              placeholder="Meta App → Settings → Basic → App Secret"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Required: every inbound webhook is verified with an HMAC-SHA256 signature.
+            </p>
+          </div>
+
           <Button type="submit" className="w-full" disabled={busy}>
             <CheckCircle2 className="mr-1 h-4 w-4" /> {busy ? "Saving…" : "Save & activate channel"}
           </Button>
