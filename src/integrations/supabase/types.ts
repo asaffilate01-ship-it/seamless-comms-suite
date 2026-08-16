@@ -429,6 +429,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_write: { Args: { _tenant: string; _user: string }; Returns: boolean }
       has_tenant_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
