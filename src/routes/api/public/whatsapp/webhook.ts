@@ -42,6 +42,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
 
       POST: async ({ request }) => {
         const raw = await request.text();
+        const signatureHeader = request.headers.get("x-hub-signature-256");
         let body: { entry?: Array<{ changes?: Array<{ value: WhatsAppChangeValue }> }> };
         try {
           body = JSON.parse(raw);
@@ -59,10 +60,21 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
 
             const { data: channel } = await supabaseAdmin
               .from("whatsapp_channels")
-              .select("id, tenant_id")
+              .select("id, tenant_id, app_secret")
               .eq("phone_number_id", phoneNumberId)
               .maybeSingle();
             if (!channel) continue;
+
+            // Meta signs every payload with the app secret. Reject anything unverified.
+            const appSecret = channel.app_secret as string | null;
+            if (!appSecret) {
+              console.error("[whatsapp] channel has no app_secret configured; payload rejected");
+              return new Response("Forbidden", { status: 403 });
+            }
+            if (!(await verifyMetaSignature(raw, signatureHeader, appSecret))) {
+              return new Response("Invalid signature", { status: 401 });
+            }
+
             const tenantId = channel.tenant_id as string;
 
             for (const msg of v.messages ?? []) {
