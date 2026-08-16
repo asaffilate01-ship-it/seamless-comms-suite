@@ -186,6 +186,13 @@ export type Database = {
             foreignKeyName: "conversations_channel_id_fkey"
             columns: ["channel_id"]
             isOneToOne: false
+            referencedRelation: "whatsapp_channel_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
             referencedRelation: "whatsapp_channels"
             referencedColumns: ["id"]
           },
@@ -388,7 +395,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      whatsapp_channel_status: {
+        Row: {
+          display_phone: string | null
+          id: string | null
+          status: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          display_phone?: string | null
+          id?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          display_phone?: string | null
+          id?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_channels_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_tenant_role: {
