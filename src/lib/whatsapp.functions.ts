@@ -24,7 +24,7 @@ const upsertSchema = z.object({
   displayPhone: z.string().optional().nullable(),
   accessToken: z.string().min(20),
   verifyToken: z.string().min(6),
-  appSecret: z.string().optional().nullable(),
+  appSecret: z.string().min(20, "App-Secret ist erforderlich, damit eingehende Webhooks verifiziert werden können"),
 });
 
 export const upsertChannel = createServerFn({ method: "POST" })
@@ -40,7 +40,7 @@ export const upsertChannel = createServerFn({ method: "POST" })
         display_phone: data.displayPhone ?? null,
         access_token: data.accessToken,
         verify_token: data.verifyToken,
-        app_secret: data.appSecret ?? null,
+        app_secret: data.appSecret,
         status: "configured",
         updated_at: new Date().toISOString(),
       },
