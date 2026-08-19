@@ -12,6 +12,10 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider, useI18nSafe } from "../lib/i18n";
+import { PromoLangProvider } from "../lib/promo-lang";
+import { CookieConsentProvider } from "../lib/cookie-consent";
+import { SiteGate } from "../lib/site-gate";
+
 
 function NotFoundComponent() {
   return (
