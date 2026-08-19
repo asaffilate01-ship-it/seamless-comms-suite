@@ -6,9 +6,9 @@ export function MarketingNav() {
   const t = useT();
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logoAsset.url} alt="Konnevia" className="h-8 w-auto" />
+          <img src={logoAsset.url} alt="Konnevia" className="h-16 w-auto" />
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
           <Link to="/features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{t("nav.product")}</Link>
