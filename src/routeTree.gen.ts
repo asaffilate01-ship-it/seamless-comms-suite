@@ -16,6 +16,7 @@ import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as ImpressumRouteImport } from './routes/impressum'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgbRouteImport } from './routes/agb'
@@ -69,6 +70,11 @@ const FeaturesRoute = FeaturesRouteImport.update({
 const DatenschutzRoute = DatenschutzRouteImport.update({
   id: '/datenschutz',
   path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComplianceRoute = ComplianceRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
+  '/cookies': typeof CookiesRoute
   '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
   '/impressum': typeof ImpressumRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
+  '/cookies': typeof CookiesRoute
   '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
   '/impressum': typeof ImpressumRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
+  '/cookies': typeof CookiesRoute
   '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
   '/impressum': typeof ImpressumRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/agb'
     | '/auth'
     | '/compliance'
+    | '/cookies'
     | '/datenschutz'
     | '/features'
     | '/impressum'
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/agb'
     | '/auth'
     | '/compliance'
+    | '/cookies'
     | '/datenschutz'
     | '/features'
     | '/impressum'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/agb'
     | '/auth'
     | '/compliance'
+    | '/cookies'
     | '/datenschutz'
     | '/features'
     | '/impressum'
@@ -346,6 +358,7 @@ export interface RootRouteChildren {
   AgbRoute: typeof AgbRoute
   AuthRoute: typeof AuthRoute
   ComplianceRoute: typeof ComplianceRoute
+  CookiesRoute: typeof CookiesRoute
   DatenschutzRoute: typeof DatenschutzRoute
   FeaturesRoute: typeof FeaturesRoute
   ImpressumRoute: typeof ImpressumRoute
@@ -405,6 +418,13 @@ declare module '@tanstack/react-router' {
       path: '/datenschutz'
       fullPath: '/datenschutz'
       preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compliance': {
@@ -604,6 +624,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgbRoute: AgbRoute,
   AuthRoute: AuthRoute,
   ComplianceRoute: ComplianceRoute,
+  CookiesRoute: CookiesRoute,
   DatenschutzRoute: DatenschutzRoute,
   FeaturesRoute: FeaturesRoute,
   ImpressumRoute: ImpressumRoute,
