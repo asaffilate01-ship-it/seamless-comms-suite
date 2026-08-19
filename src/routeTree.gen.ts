@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowPacksRouteImport } from './routes/workflow-packs'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as ImpressumRouteImport } from './routes/impressum'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
@@ -48,6 +49,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlatformRoute = PlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImpressumRoute = ImpressumRouteImport.update({
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
   '/impressum': typeof ImpressumRoute
+  '/platform': typeof PlatformRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
   '/impressum': typeof ImpressumRoute
+  '/platform': typeof PlatformRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/datenschutz': typeof DatenschutzRoute
   '/features': typeof FeaturesRoute
   '/impressum': typeof ImpressumRoute
+  '/platform': typeof PlatformRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workflow-packs': typeof WorkflowPacksRoute
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/datenschutz'
     | '/features'
     | '/impressum'
+    | '/platform'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/datenschutz'
     | '/features'
     | '/impressum'
+    | '/platform'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/datenschutz'
     | '/features'
     | '/impressum'
+    | '/platform'
     | '/pricing'
     | '/sitemap.xml'
     | '/workflow-packs'
@@ -337,6 +349,7 @@ export interface RootRouteChildren {
   DatenschutzRoute: typeof DatenschutzRoute
   FeaturesRoute: typeof FeaturesRoute
   ImpressumRoute: typeof ImpressumRoute
+  PlatformRoute: typeof PlatformRoute
   PricingRoute: typeof PricingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/platform': {
+      id: '/platform'
+      path: '/platform'
+      fullPath: '/platform'
+      preLoaderRoute: typeof PlatformRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/impressum': {
@@ -587,6 +607,7 @@ const rootRouteChildren: RootRouteChildren = {
   DatenschutzRoute: DatenschutzRoute,
   FeaturesRoute: FeaturesRoute,
   ImpressumRoute: ImpressumRoute,
+  PlatformRoute: PlatformRoute,
   PricingRoute: PricingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,
