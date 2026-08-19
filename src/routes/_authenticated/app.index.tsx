@@ -32,14 +32,10 @@ function Overview() {
 
   useEffect(() => {
     if (!tenantId) return;
-    let cancelled = false;
     fetchDash({ data: { tenantId } })
-      .then((d) => !cancelled && setDash(d as Dash))
+      .then((d) => setDash(d as Dash))
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Laden fehlgeschlagen"))
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
+      .finally(() => setLoading(false));
   }, [tenantId, fetchDash]);
 
   const busy = tenantLoading || loading;
