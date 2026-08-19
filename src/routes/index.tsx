@@ -1,309 +1,379 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { MarketingNav, MarketingFooter } from "@/components/marketing/nav";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import {
-  MessageCircle, ShieldCheck, Workflow, Sparkles, Building2, Handshake,
-  CheckCircle2, ArrowRight, Lock, FileText, Clock,
+  Inbox, FolderKanban, Workflow, Sparkles, Megaphone, ShieldCheck,
+  ArrowRight, Check, ChevronDown, Blocks, Building2, Handshake,
+  Scissors, Wrench, Stethoscope, UtensilsCrossed, Home as HomeIcon, ShoppingBag,
+  KeyRound, MonitorSmartphone, Smartphone,
 } from "lucide-react";
-import { useT, useI18n } from "@/lib/i18n";
-import { translations } from "@/lib/translations";
+import { PromoHeader, PromoFooter, PromoBottomNav } from "@/components/promo/promo-chrome";
+import { WebAppMockup, MobileAppMockup } from "@/components/promo/mockups";
+import { usePromo } from "@/lib/promo-lang";
+import { unlockSite } from "@/lib/site-gate";
+import { useNavigate } from "@tanstack/react-router";
+import heroImage from "@/assets/promo-hero.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Konnevia — WhatsApp Workflow Platform for Germany" },
+      { title: "Konnevia — Alle Kunden. Alle Gespräche. Ein System." },
       {
         name: "description",
         content:
-          "Turn WhatsApp into a compliant business process. Intake, cases, quotes, payments, third-party fulfilment. GDPR-first, made in Germany.",
+          "Konnevia macht WhatsApp zum kontrollierten Geschäftsprozess: gemeinsamer Posteingang, Fälle, Workflows, KI-Assistent und DSGVO-konforme Protokolle. Gehostet in Frankfurt.",
       },
-      { property: "og:title", content: "Konnevia — WhatsApp Workflow Platform for Germany" },
+      { property: "og:title", content: "Konnevia — Alle Kunden. Alle Gespräche. Ein System." },
       {
         property: "og:description",
         content:
-          "One WhatsApp workflow engine for Konnevia products, independent SMEs and partner agencies.",
+          "WhatsApp-Workflow-Plattform für Deutschland: Posteingang, Fälle, Automatisierung, KI-Assistent und Compliance in einem System.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Landing,
+  component: PromoHome,
 });
 
-function Landing() {
-  const t = useT();
-  const { lang } = useI18n();
-  const home = (translations[lang] as any).home as {
-    opsCards: [string, string][];
-    packs: { name: string; desc: string }[];
-  };
+const featureIcons = [Inbox, FolderKanban, Workflow, Sparkles, Megaphone, ShieldCheck];
+const editionIcons = [Blocks, Building2, Handshake];
+const packIcons = [Scissors, Wrench, Stethoscope, UtensilsCrossed, HomeIcon, ShoppingBag];
+
+function PromoHome() {
+  const { c, dir, transitioning } = usePromo();
   return (
-    <div className="min-h-screen bg-background">
-      <MarketingNav />
-
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid opacity-40" aria-hidden />
-        <div className="absolute inset-x-0 top-0 -z-10 h-[500px] bg-gradient-to-b from-primary-soft/60 via-background to-background" aria-hidden />
-        <div className="relative mx-auto max-w-7xl px-6 pb-20 pt-20 md:pt-28">
-          <div className="grid gap-12 md:grid-cols-2 md:items-center">
-            <div>
-              <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
-                <ShieldCheck className="mr-1.5 h-3 w-3" /> {t("home.badge")}
-              </Badge>
-              <h1 className="mt-5 font-display text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
-                {t("home.heroLine1")}<br />
-                <span className="text-primary">{t("home.heroLine2")}</span>
-              </h1>
-              <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-                {t("home.heroSub")}
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link to="/app">
-                  <Button size="lg" className="h-11 px-6">
-                    {t("home.ctaDemo")} <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link to="/pricing">
-                  <Button size="lg" variant="outline" className="h-11 px-6">{t("home.ctaPricing")}</Button>
-                </Link>
-              </div>
-              <dl className="mt-10 grid max-w-lg grid-cols-3 gap-6">
-                {[
-                  { k: t("home.stat1k"), v: t("home.stat1v") },
-                  { k: t("home.stat2k"), v: t("home.stat2v") },
-                  { k: t("home.stat3k"), v: t("home.stat3v") },
-                ].map((s) => (
-                  <div key={s.v}>
-                    <dt className="font-display text-2xl font-semibold text-foreground">{s.k}</dt>
-                    <dd className="text-xs text-muted-foreground">{s.v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-
-            {/* Chat mockup */}
-            <div className="relative">
-              <div className="absolute -inset-6 -z-10 rounded-3xl bg-gradient-to-br from-primary/15 via-transparent to-info/10 blur-2xl" />
-              <Card className="overflow-hidden border-border/60 shadow-elegant">
-                <div className="flex items-center justify-between border-b border-border bg-surface-2 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <MessageCircle className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <div className="text-sm font-semibold">{t("home.chatTitle")}</div>
-                      <div className="text-[11px] text-muted-foreground">{t("home.chatSub")}</div>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-[10px]">{t("home.chatCase")}</Badge>
-                </div>
-                <CardContent className="space-y-3 bg-[oklch(0.98_0.008_150)] p-4">
-                  <Bubble side="in">Guten Tag, ich hätte gern einen Termin für eine Hautanalyse.</Bubble>
-                  <Bubble side="ai">Hallo Anna 👋 Gern. Behandlungsart und Wunschzeit?</Bubble>
-                  <Bubble side="in">Hautanalyse + Reinigung. Do. Nachmittag?</Bubble>
-                  <Bubble side="out">Perfekt — 15:30 oder 16:15 wäre frei. ✅</Bubble>
-                  <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-xs text-primary-foreground/80">
-                    <span className="font-medium text-primary">System:</span>{" "}
-                    <span className="text-foreground/70">Termin gebucht · Kalender aktualisiert · SMS-Erinnerung 24h vorher.</span>
-                  </div>
-                </CardContent>
-              </Card>
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <MiniStat icon={<Clock className="h-3.5 w-3.5" />} label={t("home.miniHandle")} value={t("home.miniHandleV")} />
-                <MiniStat icon={<Lock className="h-3.5 w-3.5" />} label={t("home.miniSecure")} value={t("home.miniSecureV")} />
-                <MiniStat icon={<FileText className="h-3.5 w-3.5" />} label={t("home.miniAudit")} value={t("home.miniAuditV")} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Surfaces */}
-      <section className="border-y border-border/60 bg-surface-2">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="max-w-2xl">
-            <p className="font-display text-sm font-medium uppercase tracking-widest text-primary">{t("home.surfacesEyebrow")}</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">{t("home.surfacesTitle")}</h2>
-            <p className="mt-3 text-muted-foreground">
-              {t("home.surfacesSub")}
-            </p>
-          </div>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
-            <SurfaceCard
-              icon={<Building2 className="h-5 w-5" />}
-              title={t("home.s1t")}
-              price={t("home.s1p")}
-              buyer={t("home.s1b")}
-              bullets={[t("home.s1l1"), t("home.s1l2"), t("home.s1l3")]}
-              tone="soft"
-            />
-            <SurfaceCard
-              icon={<MessageCircle className="h-5 w-5" />}
-              title={t("home.s2t")}
-              price={t("home.s2p")}
-              buyer={t("home.s2b")}
-              bullets={[t("home.s2l1"), t("home.s2l2"), t("home.s2l3")]}
-              tone="primary"
-              mostLabel={t("home.s2most")}
-            />
-            <SurfaceCard
-              icon={<Handshake className="h-5 w-5" />}
-              title={t("home.s3t")}
-              price={t("home.s3p")}
-              buyer={t("home.s3b")}
-              bullets={[t("home.s3l1"), t("home.s3l2"), t("home.s3l3")]}
-              tone="soft"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Pillars */}
-      <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="grid gap-10 md:grid-cols-3">
-          <Pillar icon={<Workflow className="h-5 w-5" />} title={t("home.pillar1t")} body={t("home.pillar1b")} />
-          <Pillar icon={<Sparkles className="h-5 w-5" />} title={t("home.pillar2t")} body={t("home.pillar2b")} />
-          <Pillar icon={<ShieldCheck className="h-5 w-5" />} title={t("home.pillar3t")} body={t("home.pillar3b")} />
-        </div>
-      </section>
-
-      {/* Feature strip */}
-      <section className="border-y border-border/60 bg-surface-2">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <h2 className="max-w-3xl font-display text-3xl font-semibold md:text-4xl">
-            {t("home.opsTitle")}
-          </h2>
-          <div className="mt-10 grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {home.opsCards.map(([title, d]) => (
-              <div key={title} className="rounded-xl border border-border bg-card p-5">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                <h3 className="mt-3 text-sm font-semibold">{title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Verticals */}
-      <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl">
-            <p className="font-display text-sm font-medium uppercase tracking-widest text-primary">{t("home.verticalsEyebrow")}</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">{t("home.verticalsTitle")}</h2>
-          </div>
-          <Link to="/workflow-packs">
-            <Button variant="outline">{t("home.exploreAll")} <ArrowRight className="ml-2 h-4 w-4" /></Button>
-          </Link>
-        </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {home.packs.map((v) => (
-            <div key={v.name} className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition hover:shadow-elegant">
-              <div className="flex items-center justify-between">
-                <h3 className="font-display text-lg font-semibold">{v.name}</h3>
-                <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-[10px]">{t("home.ready")}</Badge>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">{v.desc}</p>
-              <div className="mt-4 flex items-center gap-2 text-xs text-primary">
-                <span className="underline-offset-4 group-hover:underline">{t("home.includedWorkflows")}</span>
-                <ArrowRight className="h-3 w-3" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="border-t border-border/60 bg-sidebar text-sidebar-foreground">
-        <div className="mx-auto max-w-7xl px-6 py-20 text-center">
-          <h2 className="mx-auto max-w-2xl font-display text-3xl font-semibold md:text-4xl">
-            {t("home.ctaTitle")}
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-sidebar-foreground/70">
-            {t("home.ctaSub")}
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/app">
-              <Button size="lg" className="h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
-                {t("common.openDemo")}
-              </Button>
-            </Link>
-            <Link to="/pricing">
-              <Button size="lg" variant="outline" className="h-11 border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent">
-                {t("common.seePricing")}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <MarketingFooter />
+    <div
+      dir={dir}
+      className="min-h-screen bg-background transition-opacity duration-200"
+      style={{ opacity: transitioning ? 0.35 : 1 }}
+    >
+      <PromoHeader />
+      <main>
+        <Hero />
+        <Stats />
+        <Features />
+        <Screens />
+        <Editions />
+        <Packs />
+        <Faq />
+        <AccessSection />
+      </main>
+      <PromoFooter />
+      <PromoBottomNav />
     </div>
   );
 }
 
-function Bubble({ side, children }: { side: "in" | "out" | "ai"; children: React.ReactNode }) {
-  const styles =
-    side === "in"
-      ? "bg-white border border-border"
-      : side === "ai"
-      ? "ml-auto bg-primary-soft text-foreground"
-      : "ml-auto bg-primary text-primary-foreground";
+function Hero() {
+  const { c } = usePromo();
   return (
-    <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${styles}`}>
-      {side === "ai" && <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">AI · Aida</div>}
-      {children}
-    </div>
-  );
-}
-
-function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2">
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">{icon}{label}</div>
-      <div className="mt-0.5 text-sm font-semibold">{value}</div>
-    </div>
-  );
-}
-
-function SurfaceCard({
-  icon, title, price, buyer, bullets, tone, mostLabel,
-}: { icon: React.ReactNode; title: string; price: string; buyer: string; bullets: string[]; tone: "primary" | "soft"; mostLabel?: string }) {
-  const border = tone === "primary" ? "border-primary/40 bg-card ring-1 ring-primary/20" : "border-border bg-card";
-  return (
-    <div className={`rounded-2xl p-6 ${border}`}>
-      <div className="flex items-center justify-between">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary">
-          {icon}
+    <section id="top" className="relative overflow-hidden">
+      <img
+        src={heroImage}
+        alt=""
+        width={1920}
+        height={1088}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[oklch(0.16_0.03_170/0.88)] via-[oklch(0.16_0.03_170/0.82)] to-[oklch(0.16_0.03_170/0.95)]" />
+      <div className="relative mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/90 backdrop-blur">
+          <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.8_0.17_150)]" />
+          {c.hero.badge}
         </span>
-        {tone === "primary" && mostLabel && (
-          <Badge className="bg-primary text-primary-foreground hover:bg-primary">{mostLabel}</Badge>
-        )}
+        <h1 className="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.08] text-primary-foreground sm:text-6xl">
+          {c.hero.titleA}
+          <span className="block bg-gradient-to-r from-[oklch(0.85_0.16_150)] to-[oklch(0.88_0.11_100)] bg-clip-text text-transparent">
+            {c.hero.titleB}
+          </span>
+        </h1>
+        <p className="mt-6 max-w-2xl text-base leading-relaxed text-primary-foreground/80">{c.hero.sub}</p>
+
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => document.getElementById("access")?.scrollIntoView({ behavior: "smooth" })}
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-95"
+          >
+            {c.hero.ctaPrimary}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+            className="inline-flex items-center rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-6 py-3 text-sm font-semibold text-primary-foreground backdrop-blur transition hover:bg-primary-foreground/20"
+          >
+            {c.hero.ctaSecondary}
+          </button>
+        </div>
+
+        <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
+          {c.hero.trust.map((tItem) => (
+            <li key={tItem} className="flex items-center gap-2 text-xs text-primary-foreground/75">
+              <Check className="h-3.5 w-3.5 text-[oklch(0.82_0.16_150)]" />
+              {tItem}
+            </li>
+          ))}
+        </ul>
       </div>
-      <h3 className="mt-5 font-display text-xl font-semibold">{title}</h3>
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{buyer}</p>
-      <div className="mt-3 font-display text-2xl font-semibold text-foreground">{price}</div>
-      <ul className="mt-4 space-y-2">
-        {bullets.map((b) => (
-          <li key={b} className="flex gap-2 text-sm text-foreground/85">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <span>{b}</span>
-          </li>
+    </section>
+  );
+}
+
+function Stats() {
+  const { c } = usePromo();
+  return (
+    <section className="border-b border-border/60 bg-surface-2">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-10 lg:grid-cols-4">
+        {c.stats.map((s) => (
+          <div key={s.label}>
+            <div className="font-display text-2xl font-semibold text-foreground">{s.value}</div>
+            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{s.label}</div>
+          </div>
         ))}
-      </ul>
+      </div>
+    </section>
+  );
+}
+
+function SectionHead({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div className="mx-auto max-w-2xl text-center">
+      <h2 className="font-display text-3xl font-semibold text-foreground sm:text-4xl">{title}</h2>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{sub}</p>
     </div>
   );
 }
 
-function Pillar({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+function Features() {
+  const { c } = usePromo();
   return (
-    <div>
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary">
-        {icon}
-      </span>
-      <h3 className="mt-4 font-display text-xl font-semibold">{title}</h3>
-      <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-    </div>
+    <section id="features" className="scroll-mt-28 py-20">
+      <div className="mx-auto max-w-7xl px-6">
+        <SectionHead title={c.features.title} sub={c.features.sub} />
+        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {c.features.items.map((f, i) => {
+            const Icon = featureIcons[i] ?? Sparkles;
+            return (
+              <article
+                key={f.title}
+                className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card p-6 shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-premium"
+              >
+                <div className="absolute inset-x-0 -top-24 h-40 bg-gradient-to-b from-primary/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground shadow-glow">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className="relative mt-5 text-base font-semibold text-foreground">{f.title}</h3>
+                <p className="relative mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Screens() {
+  const { c } = usePromo();
+  return (
+    <section id="screens" className="scroll-mt-28 border-y border-border/60 bg-surface-2 py-20">
+      <div className="mx-auto max-w-7xl px-6">
+        <SectionHead title={c.screens.title} sub={c.screens.sub} />
+        <div className="mt-12 grid gap-10 lg:grid-cols-[1.6fr_1fr] lg:items-center">
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+              <MonitorSmartphone className="h-4 w-4" />
+              {c.screens.webLabel}
+            </div>
+            <WebAppMockup />
+            <p className="mt-3 text-xs text-muted-foreground">{c.screens.webCaption}</p>
+          </div>
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+              <Smartphone className="h-4 w-4" />
+              {c.screens.mobileLabel}
+            </div>
+            <MobileAppMockup />
+            <p className="mt-3 text-center text-xs text-muted-foreground">{c.screens.mobileCaption}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Editions() {
+  const { c } = usePromo();
+  return (
+    <section id="editions" className="scroll-mt-28 py-20">
+      <div className="mx-auto max-w-7xl px-6">
+        <SectionHead title={c.editions.title} sub={c.editions.sub} />
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {c.editions.items.map((e, i) => {
+            const Icon = editionIcons[i] ?? Blocks;
+            return (
+              <article
+                key={e.name}
+                className="relative flex flex-col rounded-2xl border border-border/70 bg-card p-6 shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-premium"
+              >
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-5 text-base font-semibold text-foreground">{e.name}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{e.desc}</p>
+                <ul className="mt-4 space-y-2">
+                  {e.points.map((p) => (
+                    <li key={p} className="flex items-start gap-2 text-xs text-foreground/80">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Packs() {
+  const { c } = usePromo();
+  return (
+    <section className="border-y border-border/60 bg-surface-2 py-20">
+      <div className="mx-auto max-w-7xl px-6">
+        <SectionHead title={c.packs.title} sub={c.packs.sub} />
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {c.packs.items.map((p, i) => {
+            const Icon = packIcons[i] ?? Scissors;
+            return (
+              <div
+                key={p.name}
+                className="flex items-start gap-4 rounded-2xl border border-border/70 bg-card p-5 shadow-elegant transition-colors hover:border-primary/35"
+              >
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Icon className="h-4.5 w-4.5" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">{p.name}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{p.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Faq() {
+  const { c } = usePromo();
+  const [open, setOpen] = useState<number | null>(0);
+  return (
+    <section id="faq" className="scroll-mt-28 py-20">
+      <div className="mx-auto max-w-3xl px-6">
+        <SectionHead title={c.faq.title} sub={c.faq.sub} />
+        <div className="mt-10 space-y-3">
+          {c.faq.items.map((item, i) => {
+            const isOpen = open === i;
+            return (
+              <div
+                key={item.q}
+                className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-elegant"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-center justify-between gap-4 p-5 text-start"
+                >
+                  <span className="text-sm font-semibold text-foreground">{item.q}</span>
+                  <ChevronDown
+                    className={[
+                      "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                      isOpen ? "rotate-180" : "",
+                    ].join(" ")}
+                  />
+                </button>
+                <div
+                  className="grid transition-all duration-300 ease-out"
+                  style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                >
+                  <div className="overflow-hidden">
+                    <p className="px-5 pb-5 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AccessSection() {
+  const { c } = usePromo();
+  const navigate = useNavigate();
+  const [value, setValue] = useState("");
+  const [error, setError] = useState(false);
+  return (
+    <section id="access" className="scroll-mt-28 pb-24 pt-8 lg:pb-20">
+      <div className="mx-auto max-w-5xl px-6">
+        <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-[oklch(0.2_0.04_170)] to-[oklch(0.3_0.08_160)] p-8 shadow-premium sm:p-12">
+          <div className="absolute -end-16 -top-16 h-56 w-56 rounded-full bg-primary/25 blur-3xl" />
+          <div className="relative grid gap-8 lg:grid-cols-2 lg:items-center">
+            <div>
+              <h2 className="font-display text-2xl font-semibold text-primary-foreground sm:text-3xl">{c.cta.title}</h2>
+              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/80">{c.cta.sub}</p>
+              <a
+                href="mailto:hallo@konnevia.de?subject=Konnevia%20Pilot"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary-foreground px-6 py-3 text-sm font-semibold text-foreground transition hover:opacity-90"
+              >
+                {c.cta.button}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <p className="mt-3 text-[11px] text-primary-foreground/60">{c.cta.note}</p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (unlockSite(value)) {
+                  setError(false);
+                  navigate({ to: "/platform" });
+                } else {
+                  setError(true);
+                }
+              }}
+              className="rounded-2xl border border-primary-foreground/20 bg-primary-foreground/10 p-5 backdrop-blur"
+            >
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground/80">
+                <KeyRound className="h-4 w-4" />
+                {c.gate.title}
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-primary-foreground/70">{c.gate.sub}</p>
+              <input
+                type="password"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder={c.gate.placeholder}
+                className="mt-4 h-11 w-full rounded-xl border border-primary-foreground/25 bg-background/95 px-3 text-sm text-foreground outline-none focus:border-primary"
+              />
+              {error && <p className="mt-2 text-xs font-medium text-[oklch(0.8_0.14_25)]">{c.gate.error}</p>}
+              <button
+                type="submit"
+                className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-primary text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-95"
+              >
+                {c.gate.submit}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
