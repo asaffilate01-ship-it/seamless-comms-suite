@@ -117,7 +117,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="de">
       <head>
         <HeadContent />
       </head>
@@ -133,14 +133,21 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <LanguageFader>
-          <Outlet />
-        </LanguageFader>
-      </I18nProvider>
+      <PromoLangProvider>
+        <CookieConsentProvider>
+          <I18nProvider>
+            <LanguageFader>
+              <SiteGate>
+                <Outlet />
+              </SiteGate>
+            </LanguageFader>
+          </I18nProvider>
+        </CookieConsentProvider>
+      </PromoLangProvider>
     </QueryClientProvider>
   );
 }
+
 
 function LanguageFader({ children }: { children: ReactNode }) {
   const ctx = useI18nSafe();
