@@ -32,14 +32,10 @@ function Overview() {
 
   useEffect(() => {
     if (!tenantId) return;
-    let cancelled = false;
     fetchDash({ data: { tenantId } })
-      .then((d) => !cancelled && setDash(d as Dash))
+      .then((d) => setDash(d as Dash))
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Laden fehlgeschlagen"))
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
+      .finally(() => setLoading(false));
   }, [tenantId, fetchDash]);
 
   const busy = tenantLoading || loading;
@@ -97,9 +93,9 @@ function Overview() {
                   <h3 className="font-display text-lg font-semibold">Nachrichtenvolumen · 7 Tage</h3>
                   <Badge variant="secondary">{dash?.messages7d ?? 0} Nachrichten</Badge>
                 </div>
-                <div className="mt-6 flex h-56 items-end gap-3">
+                <div className="mt-6 flex h-56 items-stretch gap-3">
                   {(dash?.volume ?? []).map((d) => (
-                    <div key={d.day} className="flex flex-1 flex-col items-center gap-2">
+                    <div key={d.day} className="flex min-h-0 flex-1 flex-col items-center gap-2">
                       <div className="flex h-full w-full flex-col justify-end gap-0.5">
                         <div
                           className="w-full rounded-t bg-primary"
