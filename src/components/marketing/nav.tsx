@@ -35,7 +35,7 @@ export function MarketingFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
         <div>
           <div className="flex h-16 items-center gap-2">
-            <img src={logoAsset.url} alt="Konnevia" className="h-12 w-auto" />
+            <img src={logoAsset.url} alt="Konnevia" className="h-16 w-auto" />
           </div>
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
             {t("footer.tagline")}
