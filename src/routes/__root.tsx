@@ -12,6 +12,10 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider, useI18nSafe } from "../lib/i18n";
+import { PromoLangProvider } from "../lib/promo-lang";
+import { CookieConsentProvider } from "../lib/cookie-consent";
+import { SiteGate } from "../lib/site-gate";
+
 
 function NotFoundComponent() {
   return (
@@ -117,7 +121,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="de">
       <head>
         <HeadContent />
       </head>
@@ -133,14 +137,21 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <LanguageFader>
-          <Outlet />
-        </LanguageFader>
-      </I18nProvider>
+      <PromoLangProvider>
+        <CookieConsentProvider>
+          <I18nProvider>
+            <LanguageFader>
+              <SiteGate>
+                <Outlet />
+              </SiteGate>
+            </LanguageFader>
+          </I18nProvider>
+        </CookieConsentProvider>
+      </PromoLangProvider>
     </QueryClientProvider>
   );
 }
+
 
 function LanguageFader({ children }: { children: ReactNode }) {
   const ctx = useI18nSafe();
