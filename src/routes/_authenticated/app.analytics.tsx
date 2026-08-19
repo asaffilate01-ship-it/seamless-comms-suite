@@ -75,9 +75,9 @@ function Analytics() {
             {volume.every((d) => d.inbound + d.outbound === 0) ? (
               <p className="mt-4 text-sm text-muted-foreground">Noch keine Nachrichten in diesem Zeitraum.</p>
             ) : (
-              <div className="mt-6 flex h-64 items-end gap-3">
+              <div className="mt-6 flex h-64 items-stretch gap-3">
                 {volume.map((d) => (
-                  <div key={d.day} className="flex flex-1 flex-col items-center gap-2">
+                  <div key={d.day} className="flex min-h-0 flex-1 flex-col items-center gap-2">
                     <div className="flex h-full w-full flex-col justify-end gap-0.5">
                       <div className="w-full rounded-t bg-primary" style={{ height: `${(d.inbound / max) * 100}%` }} />
                       <div className="w-full rounded-b bg-info" style={{ height: `${(d.outbound / max) * 100}%` }} />
