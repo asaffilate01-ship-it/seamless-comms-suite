@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PromoHeader, PromoFooter } from "@/components/promo/promo-chrome";
 import { usePromo } from "@/lib/promo-lang";
 import { useCookieConsent } from "@/lib/cookie-consent";
+import { legalContent } from "@/lib/legal-content";
 
 export const Route = createFileRoute("/cookies")({
   head: () => ({
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/cookies")({
 function CookiePolicy() {
   const { c, dir, lang } = usePromo();
   const { consent, openSettings, reset } = useCookieConsent();
-  const de = lang === "de";
+  const l = legalContent[lang] ?? legalContent.de;
   return (
     <div dir={dir} className="min-h-screen bg-background">
       <PromoHeader />
@@ -37,18 +38,16 @@ function CookiePolicy() {
 
         <div className="mt-8 space-y-4">
           <Section title={c.cookies.necessary} desc={c.cookies.necessaryDesc} items={["omniqora.promo.lang", "omniqora.cookieConsent.v1", "omniqora.site.unlock"]} />
-          <Section title={c.cookies.analytics} desc={c.cookies.analyticsDesc} items={de ? ["Derzeit nicht aktiv – wird erst nach Einwilligung geladen."] : ["Not active yet – loaded only after consent."]} />
-          <Section title={c.cookies.marketing} desc={c.cookies.marketingDesc} items={de ? ["Derzeit nicht aktiv – wird erst nach Einwilligung geladen."] : ["Not active yet – loaded only after consent."]} />
+          <Section title={c.cookies.analytics} desc={c.cookies.analyticsDesc} items={[l.cookiesInactive]} />
+          <Section title={c.cookies.marketing} desc={c.cookies.marketingDesc} items={[l.cookiesInactive]} />
         </div>
 
         <div className="mt-10 rounded-2xl border border-border/70 bg-surface-2 p-5">
           <h2 className="text-sm font-semibold text-foreground">{c.footer.cookieSettings}</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {consent
-              ? `${de ? "Ihre Auswahl" : "Your selection"}: ${c.cookies.necessary} ✓ · ${c.cookies.analytics} ${consent.analytics ? "✓" : "✕"} · ${c.cookies.marketing} ${consent.marketing ? "✓" : "✕"}`
-              : de
-                ? "Es liegt noch keine Auswahl vor."
-                : "No selection stored yet."}
+              ? `${l.yourSelection}: ${c.cookies.necessary} ✓ · ${c.cookies.analytics} ${consent.analytics ? "✓" : "✕"} · ${c.cookies.marketing} ${consent.marketing ? "✓" : "✕"}`
+              : l.noSelection}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
@@ -63,7 +62,7 @@ function CookiePolicy() {
               onClick={reset}
               className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted"
             >
-              {de ? "Einwilligung widerrufen" : "Withdraw consent"}
+              {l.withdraw}
             </button>
           </div>
         </div>
