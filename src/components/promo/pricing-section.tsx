@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Sparkles, ArrowRight } from "lucide-react";
 import {
   addonOrder,
@@ -10,6 +10,9 @@ import {
 } from "@/lib/pricing-data";
 import { pricingContent, type PricingCopy } from "@/lib/pricing-content";
 import type { PromoLang } from "@/lib/promo-content";
+import { detectCurrency } from "@/lib/detect-locale";
+
+const CURRENCY_KEY = "omniqora.currency";
 
 function defaultCurrency(lang: PromoLang): CurrencyCode {
   if (lang === "en") return "GBP";
@@ -28,6 +31,30 @@ export function PricingSection({
   const copy: PricingCopy = pricingContent[lang] ?? pricingContent.de;
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency(lang));
 
+  /** Geofence: pick the visitor's currency after hydration (GBP in the UK,
+   *  EUR in Europe, USD in the USA and rest of world), unless they chose one. */
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CURRENCY_KEY) as CurrencyCode | null;
+      if (saved && currencies.some((c) => c.code === saved)) {
+        setCurrency(saved);
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    setCurrency(detectCurrency());
+  }, []);
+
+  const chooseCurrency = (code: CurrencyCode) => {
+    setCurrency(code);
+    try {
+      localStorage.setItem(CURRENCY_KEY, code);
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <section id="pricing" className="scroll-mt-28 py-20">
       <div className="mx-auto max-w-7xl px-6">
@@ -44,7 +71,7 @@ export function PricingSection({
                 <button
                   key={cur.code}
                   type="button"
-                  onClick={() => setCurrency(cur.code)}
+                  onClick={() => chooseCurrency(cur.code)}
                   aria-pressed={active}
                   className={[
                     "rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-all",
