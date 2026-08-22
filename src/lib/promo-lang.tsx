@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { promoContent, promoLangs, type PromoContent, type PromoLang } from "./promo-content";
+import { detectLang } from "./detect-locale";
+
 
 const STORAGE_KEY = "omniqora.promo.lang";
 

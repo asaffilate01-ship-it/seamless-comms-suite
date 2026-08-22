@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { translations, type Lang } from "./translations";
+import { detectLang } from "./detect-locale";
+
 
 type Ctx = {
   lang: Lang;
