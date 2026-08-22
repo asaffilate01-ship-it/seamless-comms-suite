@@ -20,13 +20,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "OmniQora macht WhatsApp zum kontrollierten Geschäftsprozess: gemeinsamer Posteingang, Fälle, Workflows, KI-Assistent und DSGVO-konforme Protokolle. Gehostet in Frankfurt.",
+          "OmniQora bündelt WhatsApp, Instagram, Messenger, SMS, E-Mail, Web-Chat und Anrufe in einem Posteingang – mit Fällen, Workflows, KI-Assistent und DSGVO-konformen Protokollen.",
       },
       { property: "og:title", content: "OmniQora — Alle Kunden. Alle Gespräche. Ein System." },
       {
         property: "og:description",
         content:
-          "WhatsApp-Workflow-Plattform für Deutschland: Posteingang, Fälle, Automatisierung, KI-Assistent und Compliance in einem System.",
+          "Omnichannel-Workflow-Plattform: Posteingang für alle Kanäle, Fälle, Automatisierung, KI-Assistent und Compliance in einem System.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
