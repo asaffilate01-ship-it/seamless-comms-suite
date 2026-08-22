@@ -1,17 +1,22 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X } from "lucide-react";
+import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag } from "lucide-react";
 import { useState } from "react";
 import logoAsset from "@/assets/omniqora-logo.png.asset.json";
 import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
 import { useCookieConsent } from "@/lib/cookie-consent";
+import { pricingContent } from "@/lib/pricing-content";
 
 const sections = [
   { id: "top", key: "home", icon: Home },
   { id: "features", key: "features", icon: Sparkles },
   { id: "screens", key: "screens", icon: MonitorSmartphone },
+  { id: "pricing", key: "pricing", icon: Tag },
   { id: "faq", key: "faq", icon: HelpCircle },
   { id: "access", key: "access", icon: KeyRound },
 ] as const;
+
+/** Five slots only, so the mobile bar stays native-feeling. */
+const bottomSections = sections.filter((s) => s.key !== "screens");
 
 function scrollTo(id: string) {
   if (typeof document === "undefined") return;
@@ -20,15 +25,23 @@ function scrollTo(id: string) {
 }
 
 export function PromoHeader() {
-  const { c, dir } = usePromo();
+  const { c, dir, lang } = usePromo();
   const [open, setOpen] = useState(false);
   const labels: Record<string, string> = {
     home: "OmniQora",
     features: c.nav.features,
     screens: c.nav.screens,
+    pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
     access: c.nav.access,
   };
+  const desktopNav = [
+    { id: "features", label: c.nav.features },
+    { id: "screens", label: c.nav.screens },
+    { id: "editions", label: c.nav.editions },
+    { id: "pricing", label: pricingContent[lang].nav },
+    { id: "faq", label: c.nav.faq },
+  ];
   return (
     <header
       dir={dir}
@@ -40,23 +53,16 @@ export function PromoHeader() {
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
-          {sections.slice(1, 4).map((s) => (
+          {desktopNav.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => scrollTo(s.id)}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              {labels[s.key]}
+              {s.label}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => scrollTo("editions")}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {c.nav.editions}
-          </button>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -110,11 +116,12 @@ export function PromoHeader() {
 
 /** Native-app style bottom navigation for mobile. */
 export function PromoBottomNav() {
-  const { c, dir } = usePromo();
+  const { c, dir, lang } = usePromo();
   const labels: Record<string, string> = {
     home: "Start",
     features: c.nav.features,
     screens: c.nav.screens,
+    pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
     access: c.nav.access,
   };
@@ -125,7 +132,7 @@ export function PromoBottomNav() {
       aria-label="Sections"
     >
       <div className="grid grid-cols-5">
-        {sections.map((s) => (
+        {bottomSections.map((s) => (
           <button
             key={s.id}
             type="button"
@@ -182,7 +189,7 @@ export function PromoFooter() {
       <div className="border-t border-border/60">
         <div className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 iTechLounge Ltd &amp; iTechLounge GmbH · {c.footer.rights}</span>
-          <span>WhatsApp Business Platform · Cloud API · International service</span>
+          <span>Omnichannel-Plattform · EU &amp; UK · International service</span>
         </div>
       </div>
     </footer>

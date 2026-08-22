@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { PromoHeader, PromoFooter, PromoBottomNav } from "@/components/promo/promo-chrome";
 import { WebAppMockup, MobileAppMockup } from "@/components/promo/mockups";
+import { PricingSection } from "@/components/promo/pricing-section";
 import { usePromo } from "@/lib/promo-lang";
 import { unlockSite } from "@/lib/site-gate";
 import { useNavigate } from "@tanstack/react-router";
@@ -40,7 +41,7 @@ const editionIcons = [Blocks, Building2, Handshake];
 const packIcons = [Scissors, Wrench, Stethoscope, UtensilsCrossed, HomeIcon, ShoppingBag];
 
 function PromoHome() {
-  const { c, dir, transitioning } = usePromo();
+  const { dir, transitioning, lang } = usePromo();
   return (
     <div
       dir={dir}
@@ -55,6 +56,10 @@ function PromoHome() {
         <Features />
         <Screens />
         <Editions />
+        <PricingSection
+          lang={lang}
+          onCta={() => document.getElementById("access")?.scrollIntoView({ behavior: "smooth" })}
+        />
         <Packs />
         <Faq />
         <AccessSection />
