@@ -28,11 +28,17 @@ export function PromoLangProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as PromoLang | null;
-      if (saved && saved in promoContent) setLangState(saved);
+      if (saved && saved in promoContent) {
+        setLangState(saved);
+        return;
+      }
     } catch {
       /* ignore */
     }
+    const detected = detectLang();
+    if (detected in promoContent) setLangState(detected as PromoLang);
   }, []);
+
 
   const setLang = useCallback((next: PromoLang) => {
     setLangState((prev) => {
