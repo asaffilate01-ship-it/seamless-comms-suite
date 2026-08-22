@@ -20,13 +20,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "OmniQora macht WhatsApp zum kontrollierten Geschäftsprozess: gemeinsamer Posteingang, Fälle, Workflows, KI-Assistent und DSGVO-konforme Protokolle. Gehostet in Frankfurt.",
+          "OmniQora bündelt WhatsApp, Instagram, Messenger, SMS, E-Mail, Web-Chat und Anrufe in einem Posteingang – mit Fällen, Workflows, KI-Assistent und DSGVO-konformen Protokollen.",
       },
       { property: "og:title", content: "OmniQora — Alle Kunden. Alle Gespräche. Ein System." },
       {
         property: "og:description",
         content:
-          "WhatsApp-Workflow-Plattform für Deutschland: Posteingang, Fälle, Automatisierung, KI-Assistent und Compliance in einem System.",
+          "Omnichannel-Workflow-Plattform: Posteingang für alle Kanäle, Fälle, Automatisierung, KI-Assistent und Compliance in einem System.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -51,6 +51,7 @@ function PromoHome() {
       <main>
         <Hero />
         <Stats />
+        <Channels />
         <Features />
         <Screens />
         <Editions />
@@ -131,6 +132,28 @@ function Stats() {
             <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{s.label}</div>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function Channels() {
+  const { c } = usePromo();
+  return (
+    <section id="channels" className="scroll-mt-28 py-16">
+      <div className="mx-auto max-w-7xl px-6">
+        <SectionHead title={c.channels.title} sub={c.channels.sub} />
+        <ul className="mx-auto mt-10 flex max-w-4xl flex-wrap justify-center gap-2.5">
+          {c.channels.items.map((ch) => (
+            <li
+              key={ch}
+              className="rounded-full border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground/80 shadow-elegant transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              {ch}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-5 text-center text-[11px] text-muted-foreground">{c.channels.note}</p>
       </div>
     </section>
   );
