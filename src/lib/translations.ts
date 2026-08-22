@@ -35,7 +35,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       metaLine: "WhatsApp Business Platform · Cloud API · Autorisierter Meta-Weg",
     },
     home: {
-      badge: "International · EU-Hosting in EU",
+      badge: "International · EU-Hosting",
       heroLine1: "WhatsApp wird",
       heroLine2: "zum kontrollierten Geschäftsprozess.",
       heroSub:
@@ -295,7 +295,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       metaLine: "WhatsApp Business Platform · Cloud API · Meta authorised route",
     },
     home: {
-      badge: "International · EU hosting in EU",
+      badge: "International · EU hosting",
       heroLine1: "WhatsApp becomes",
       heroLine2: "a controlled business process.",
       heroSub:
