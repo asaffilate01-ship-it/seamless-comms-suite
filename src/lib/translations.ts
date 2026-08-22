@@ -31,11 +31,11 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       dpa: "AVV",
       subprocessors: "Unterauftragsverarbeiter",
       company: "Unternehmen",
-      madeIn: "© 2026 OmniQora · Made in Germany",
+      madeIn: "© 2026 OmniQora · International · EU & UK",
       metaLine: "WhatsApp Business Platform · Cloud API · Autorisierter Meta-Weg",
     },
     home: {
-      badge: "Made in Germany · Gehostet in Frankfurt",
+      badge: "International · EU-Hosting in Frankfurt",
       heroLine1: "WhatsApp wird",
       heroLine2: "zum kontrollierten Geschäftsprozess.",
       heroSub:
@@ -291,11 +291,11 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       dpa: "DPA",
       subprocessors: "Subprocessors",
       company: "Company",
-      madeIn: "© 2026 OmniQora · Made in Germany",
+      madeIn: "© 2026 OmniQora · International · EU & UK",
       metaLine: "WhatsApp Business Platform · Cloud API · Meta authorised route",
     },
     home: {
-      badge: "Made in Germany · Hosted in Frankfurt",
+      badge: "International · EU hosting in Frankfurt",
       heroLine1: "WhatsApp becomes",
       heroLine2: "a controlled business process.",
       heroSub:

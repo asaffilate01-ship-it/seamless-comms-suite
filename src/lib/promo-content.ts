@@ -68,7 +68,7 @@ export type PromoContent = {
 const de: PromoContent = {
   nav: { features: "Funktionen", screens: "Einblicke", editions: "Editionen", faq: "FAQ", access: "Zugang" },
   hero: {
-    badge: "Bald verfügbar · Made in Germany",
+    badge: "Bald verfügbar · International · EU & UK",
     titleA: "Alle Kunden. Alle Gespräche.",
     titleB: "Ein System.",
     sub: "OmniQora macht WhatsApp zum kontrollierten Geschäftsprozess: Anfrage, Qualifizierung, Angebot, Termin, Ausführung und Nachfassen – DSGVO-konform und in Frankfurt gehostet.",
@@ -165,7 +165,7 @@ const de: PromoContent = {
     policy: "Cookie-Richtlinie",
   },
   footer: {
-    trading: "OmniQora ist ein Handelsname der iTechLounge GmbH.",
+    trading: "OmniQora ist eine Handelsmarke der iTechLounge Ltd (UK) und der iTechLounge GmbH (Deutschland). Internationaler Service.",
     rights: "Alle Rechte vorbehalten.",
     cookieSettings: "Cookie-Einstellungen",
     legal: "Rechtliches",
@@ -201,7 +201,7 @@ const de: PromoContent = {
 const en: PromoContent = {
   nav: { features: "Features", screens: "Product tour", editions: "Editions", faq: "FAQ", access: "Access" },
   hero: {
-    badge: "Coming soon · Made in Germany",
+    badge: "Coming soon · International · EU & UK",
     titleA: "Every customer. Every conversation.",
     titleB: "One system.",
     sub: "OmniQora turns WhatsApp into a controlled business process: intake, qualification, quote, scheduling, fulfilment and follow-up — GDPR-first and hosted in Frankfurt.",
@@ -298,7 +298,7 @@ const en: PromoContent = {
     policy: "Cookie policy",
   },
   footer: {
-    trading: "OmniQora is a trading name of iTechLounge GmbH.",
+    trading: "OmniQora is a trading brand of iTechLounge Ltd in the UK and iTechLounge GmbH in Germany. An international service.",
     rights: "All rights reserved.",
     cookieSettings: "Cookie settings",
     legal: "Legal",
@@ -431,7 +431,7 @@ const tr: PromoContent = {
     policy: "Çerez politikası",
   },
   footer: {
-    trading: "OmniQora, iTechLounge GmbH'nin ticari adıdır.",
+    trading: "OmniQora, Birleşik Krallık'ta iTechLounge Ltd ve Almanya'da iTechLounge GmbH'nin ticari markasıdır. Uluslararası bir hizmet.",
     rights: "Tüm hakları saklıdır.",
     cookieSettings: "Çerez ayarları",
     legal: "Yasal",
@@ -564,7 +564,7 @@ const ar: PromoContent = {
     policy: "سياسة ملفات الارتباط",
   },
   footer: {
-    trading: "OmniQora هو اسم تجاري لشركة iTechLounge GmbH.",
+    trading: "OmniQora علامة تجارية لشركة iTechLounge Ltd في المملكة المتحدة وشركة iTechLounge GmbH في ألمانيا. خدمة دولية.",
     rights: "جميع الحقوق محفوظة.",
     cookieSettings: "إعدادات الارتباط",
     legal: "قانوني",
@@ -697,7 +697,7 @@ const uk: PromoContent = {
     policy: "Політика cookie",
   },
   footer: {
-    trading: "OmniQora — торгова назва компанії iTechLounge GmbH.",
+    trading: "OmniQora — торгова марка iTechLounge Ltd (Великобританія) та iTechLounge GmbH (Німеччина). Міжнародний сервіс.",
     rights: "Усі права захищено.",
     cookieSettings: "Налаштування cookie",
     legal: "Правова інформація",

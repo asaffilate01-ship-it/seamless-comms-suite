@@ -169,7 +169,8 @@ export function PromoFooter() {
         <div>
           <h4 className="text-sm font-semibold text-foreground">{c.footer.contact}</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>iTechLounge GmbH</li>
+            <li>iTechLounge Ltd · United Kingdom</li>
+            <li>iTechLounge GmbH · Deutschland</li>
             <li><a href="mailto:hallo@omniqora.com" className="hover:text-foreground">hallo@omniqora.com</a></li>
             <li>Frankfurt · eu-central-1</li>
           </ul>
@@ -180,8 +181,8 @@ export function PromoFooter() {
       </div>
       <div className="border-t border-border/60">
         <div className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>© 2026 iTechLounge GmbH · {c.footer.rights}</span>
-          <span>WhatsApp Business Platform · Cloud API · Made in Germany</span>
+          <span>© 2026 iTechLounge Ltd &amp; iTechLounge GmbH · {c.footer.rights}</span>
+          <span>WhatsApp Business Platform · Cloud API · International service</span>
         </div>
       </div>
     </footer>
