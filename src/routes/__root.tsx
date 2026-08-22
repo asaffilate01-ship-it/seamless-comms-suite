@@ -85,18 +85,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "OmniQora — WhatsApp Workflow Platform for Germany" },
+      { title: "OmniQora — Every conversation. One intelligent core" },
       {
         name: "description",
         content:
-          "OmniQora turns WhatsApp into a compliant business process for German SMEs and institutions: intake, cases, quotes, payments and third-party fulfilment — with AI, roles and audit built in.",
+          "OmniQora unifies every customer conversation — messaging, email, web chat, telephony and VoIP — into one intelligent core with cases, workflows, AI and audit-ready compliance.",
       },
       { name: "author", content: "OmniQora" },
-      { property: "og:title", content: "OmniQora — WhatsApp Workflow Platform for Germany" },
+      { property: "og:title", content: "OmniQora — Every conversation. One intelligent core" },
       {
         property: "og:description",
         content:
-          "One WhatsApp workflow engine. Embedded add-on, standalone SaaS, and partner edition. GDPR-first, audit-ready, human-in-the-loop AI.",
+          "OmniQora is a trading name of iTechLounge Ltd. in the UK and iTechLounge GmbH in Germany. One omnichannel workspace: inbox, cases, workflows, AI and compliance.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
