@@ -1,10 +1,10 @@
 /**
  * Browser-side locale detection.
  * German-speaking visitors (e.g. Germany, Austria, Switzerland) get German,
- * everyone else defaults to English. Turkish, Arabic and Ukrainian are also
+ * everyone else defaults to English. Turkish, Arabic and French are also
  * detected for the promo site.
  */
-export type DetectedLang = "de" | "en" | "tr" | "ar" | "uk";
+export type DetectedLang = "de" | "en" | "tr" | "ar" | "fr";
 
 const GERMAN_TIMEZONES = ["Europe/Berlin", "Europe/Vienna", "Europe/Zurich", "Europe/Busingen"];
 
@@ -22,7 +22,7 @@ export function detectLang(): DetectedLang {
     if (tag.startsWith("de")) return "de";
     if (tag.startsWith("tr")) return "tr";
     if (tag.startsWith("ar")) return "ar";
-    if (tag.startsWith("uk")) return "uk";
+    if (tag.startsWith("fr")) return "fr";
     if (tag.startsWith("en")) return "en";
   }
   try {
