@@ -25,15 +25,23 @@ function scrollTo(id: string) {
 }
 
 export function PromoHeader() {
-  const { c, dir } = usePromo();
+  const { c, dir, lang } = usePromo();
   const [open, setOpen] = useState(false);
   const labels: Record<string, string> = {
     home: "OmniQora",
     features: c.nav.features,
     screens: c.nav.screens,
+    pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
     access: c.nav.access,
   };
+  const desktopNav = [
+    { id: "features", label: c.nav.features },
+    { id: "screens", label: c.nav.screens },
+    { id: "editions", label: c.nav.editions },
+    { id: "pricing", label: pricingContent[lang].nav },
+    { id: "faq", label: c.nav.faq },
+  ];
   return (
     <header
       dir={dir}
@@ -45,23 +53,16 @@ export function PromoHeader() {
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
-          {sections.slice(1, 4).map((s) => (
+          {desktopNav.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => scrollTo(s.id)}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              {labels[s.key]}
+              {s.label}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => scrollTo("editions")}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {c.nav.editions}
-          </button>
         </nav>
 
         <div className="flex items-center gap-2">
