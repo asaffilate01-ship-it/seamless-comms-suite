@@ -1,17 +1,22 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X } from "lucide-react";
+import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag } from "lucide-react";
 import { useState } from "react";
 import logoAsset from "@/assets/omniqora-logo.png.asset.json";
 import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
 import { useCookieConsent } from "@/lib/cookie-consent";
+import { pricingContent } from "@/lib/pricing-content";
 
 const sections = [
   { id: "top", key: "home", icon: Home },
   { id: "features", key: "features", icon: Sparkles },
   { id: "screens", key: "screens", icon: MonitorSmartphone },
+  { id: "pricing", key: "pricing", icon: Tag },
   { id: "faq", key: "faq", icon: HelpCircle },
   { id: "access", key: "access", icon: KeyRound },
 ] as const;
+
+/** Five slots only, so the mobile bar stays native-feeling. */
+const bottomSections = sections.filter((s) => s.key !== "screens");
 
 function scrollTo(id: string) {
   if (typeof document === "undefined") return;
