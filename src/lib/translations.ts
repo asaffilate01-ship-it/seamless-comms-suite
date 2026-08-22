@@ -35,7 +35,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       metaLine: "WhatsApp Business Platform · Cloud API · Autorisierter Meta-Weg",
     },
     home: {
-      badge: "International · EU-Hosting",
+      badge: "International · Multi-Region-Hosting",
       heroLine1: "WhatsApp wird",
       heroLine2: "zum kontrollierten Geschäftsprozess.",
       heroSub:
@@ -147,7 +147,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         audit: ["Audit & DSGVO-Export", "Jedes Ereignis, jeder Akteur, jede Aufbewahrungsklasse. Break-Glass mit Review."],
         tenant: ["Mandantenmodell", "Isolierte Organisationen, Marken, Standorte und Drittparteien — Ende-zu-Ende berechtigt."],
         wl: ["White-Label", "Marke, Domain, From-Name, Templates, Farb-Tokens — pro Mandant."],
-        eu: ["Deutsche Residenz", "eu-central-1-Hosting, AVV, Unterauftragsverarbeiterliste, DACH-Supportzeiten."],
+        eu: ["Deutsche Residenz", "Multi-Region-Hosting, AVV, Unterauftragsverarbeiterliste, DACH-Supportzeiten."],
       },
     },
     pricing: {
@@ -295,7 +295,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       metaLine: "WhatsApp Business Platform · Cloud API · Meta authorised route",
     },
     home: {
-      badge: "International · EU hosting",
+      badge: "International · Multi-region hosting",
       heroLine1: "WhatsApp becomes",
       heroLine2: "a controlled business process.",
       heroSub:
@@ -407,7 +407,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         audit: ["Audit & DSGVO exports", "Every event, every actor, every retention class. Break-glass with review."],
         tenant: ["Multi-tenant model", "Isolated organisations, brands, locations and third parties — permissioned end-to-end."],
         wl: ["White-label", "Brand, domain, from-name, templates, colour tokens — per tenant."],
-        eu: ["German residency", "eu-central-1 hosting, DPA, subprocessor list, DACH support hours."],
+        eu: ["German residency", "multi-region hosting, DPA, subprocessor list, DACH support hours."],
       },
     },
     pricing: {
