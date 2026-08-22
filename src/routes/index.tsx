@@ -17,21 +17,25 @@ import heroImage from "@/assets/promo-hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "OmniQora — Alle Kunden. Alle Gespräche. Ein System." },
+      { title: "OmniQora — Every conversation. One intelligent core" },
       {
         name: "description",
         content:
-          "OmniQora bündelt WhatsApp, Instagram, Messenger, SMS, E-Mail, Web-Chat und Anrufe in einem Posteingang – mit Fällen, Workflows, KI-Assistent und DSGVO-konformen Protokollen.",
+          "OmniQora unifies WhatsApp, Instagram, Messenger, SMS, email, web chat, telephony and VoIP in one inbox — with cases, workflows, an AI assistant and audit-ready compliance.",
       },
-      { property: "og:title", content: "OmniQora — Alle Kunden. Alle Gespräche. Ein System." },
+      { property: "og:title", content: "OmniQora — Every conversation. One intelligent core" },
       {
         property: "og:description",
         content:
-          "Omnichannel-Workflow-Plattform: Posteingang für alle Kanäle, Fälle, Automatisierung, KI-Assistent und Compliance in einem System.",
+          "OmniQora is a trading name of iTechLounge Ltd. in the UK and iTechLounge GmbH in Germany. One omnichannel core: inbox, cases, workflows, AI and compliance.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "/" },
+      { property: "og:image", content: "https://omniqora.com/images/promo-hero.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://omniqora.com/images/promo-hero.jpg" },
     ],
+    links: [{ rel: "canonical", href: "/" }],
   }),
   component: PromoHome,
 });
