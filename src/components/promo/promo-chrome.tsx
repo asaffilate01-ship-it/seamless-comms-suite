@@ -162,9 +162,9 @@ export function PromoFooter() {
         <div>
           <h4 className="text-sm font-semibold text-foreground">{c.footer.legal}</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/impressum" className="hover:text-foreground">Impressum</Link></li>
-            <li><Link to="/datenschutz" className="hover:text-foreground">Datenschutz / Privacy</Link></li>
-            <li><Link to="/agb" className="hover:text-foreground">AGB / Terms</Link></li>
+            <li><Link to="/impressum" className="hover:text-foreground">{legal.imprint.title}</Link></li>
+            <li><Link to="/datenschutz" className="hover:text-foreground">{legal.privacy.title}</Link></li>
+            <li><Link to="/agb" className="hover:text-foreground">{legal.terms.title}</Link></li>
             <li><Link to="/cookies" className="hover:text-foreground">{c.cookies.policy}</Link></li>
             <li>
               <button type="button" onClick={openSettings} className="hover:text-foreground">
