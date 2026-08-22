@@ -189,7 +189,7 @@ export function PromoFooter() {
       <div className="border-t border-border/60">
         <div className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 iTechLounge Ltd &amp; iTechLounge GmbH · {c.footer.rights}</span>
-          <span>WhatsApp Business Platform · Cloud API · International service</span>
+          <span>Omnichannel-Plattform · EU &amp; UK · International service</span>
         </div>
       </div>
     </footer>
