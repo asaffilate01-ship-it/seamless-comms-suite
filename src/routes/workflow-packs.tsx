@@ -7,10 +7,10 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/workflow-packs")({
   head: () => ({
     meta: [
-      { title: "Workflow packs — Konnevia" },
+      { title: "Workflow packs — OmniQora" },
       { name: "description", content: "Preinstalled workflow packs for LoungeBeauty, LoungeTrades, LoungeCare, LoungeEstate, LoungeHosp and LoungeAuto." },
-      { property: "og:title", content: "Workflow packs — Konnevia" },
-      { property: "og:description", content: "Vertical WhatsApp workflow packs bundled with Konnevia." },
+      { property: "og:title", content: "Workflow packs — OmniQora" },
+      { property: "og:description", content: "Vertical WhatsApp workflow packs bundled with OmniQora." },
     ],
   }),
   component: Packs,

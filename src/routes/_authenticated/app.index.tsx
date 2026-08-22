@@ -14,7 +14,7 @@ import { MessageCircle, FolderOpen, Users, ShieldAlert, ArrowRight, Bot } from "
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
     meta: [
-      { title: "Übersicht — Konnevia" },
+      { title: "Übersicht — OmniQora" },
       { name: "description", content: "Live-Kennzahlen zu Gesprächen, Fällen und Automatisierung." },
       { name: "robots", content: "noindex" },
     ],

@@ -11,7 +11,7 @@ import { Cookie, ShieldCheck, BarChart3, Megaphone, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { usePromo } from "./promo-lang";
 
-const STORAGE_KEY = "konnevia.cookieConsent.v1";
+const STORAGE_KEY = "omniqora.cookieConsent.v1";
 
 export type Consent = {
   necessary: true;
@@ -66,7 +66,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     setShowPanel(false);
     // Wire-up point: optional scripts are only ever loaded from here.
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("konnevia:consent", { detail: next }));
+      window.dispatchEvent(new CustomEvent("omniqora:consent", { detail: next }));
       document.documentElement.dataset["consentAnalytics"] = String(next.analytics);
       document.documentElement.dataset["consentMarketing"] = String(next.marketing);
     }

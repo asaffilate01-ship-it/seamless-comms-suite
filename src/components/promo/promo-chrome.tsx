@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X } from "lucide-react";
 import { useState } from "react";
-import logoAsset from "@/assets/konnevia-logo.png.asset.json";
+import logoAsset from "@/assets/omniqora-logo.png.asset.json";
 import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
 import { useCookieConsent } from "@/lib/cookie-consent";
 
@@ -23,7 +23,7 @@ export function PromoHeader() {
   const { c, dir } = usePromo();
   const [open, setOpen] = useState(false);
   const labels: Record<string, string> = {
-    home: "Konnevia",
+    home: "OmniQora",
     features: c.nav.features,
     screens: c.nav.screens,
     faq: c.nav.faq,
@@ -36,7 +36,7 @@ export function PromoHeader() {
     >
       <div className="mx-auto flex h-24 max-w-7xl items-center justify-between gap-4 px-5 sm:px-6">
         <Link to="/" className="flex items-center" onClick={() => scrollTo("top")}>
-          <img src={logoAsset.url} alt="Konnevia" className="h-24 w-auto object-contain" />
+          <img src={logoAsset.url} alt="OmniQora" className="h-24 w-auto object-contain" />
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
@@ -148,7 +148,7 @@ export function PromoFooter() {
     <footer dir={dir} className="border-t border-border/60 bg-surface-2 pb-24 lg:pb-0">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-3">
         <div>
-          <img src={logoAsset.url} alt="Konnevia" className="h-16 w-auto object-contain" />
+          <img src={logoAsset.url} alt="OmniQora" className="h-16 w-auto object-contain" />
           <p className="mt-4 max-w-xs text-sm text-muted-foreground">{c.hero.titleA} {c.hero.titleB}</p>
           <p className="mt-3 max-w-xs text-xs text-muted-foreground">{c.footer.trading}</p>
         </div>
@@ -170,7 +170,7 @@ export function PromoFooter() {
           <h4 className="text-sm font-semibold text-foreground">{c.footer.contact}</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li>iTechLounge GmbH</li>
-            <li><a href="mailto:hallo@konnevia.de" className="hover:text-foreground">hallo@konnevia.de</a></li>
+            <li><a href="mailto:hallo@omniqora.de" className="hover:text-foreground">hallo@omniqora.de</a></li>
             <li>Frankfurt · eu-central-1</li>
           </ul>
           <div className="mt-4">

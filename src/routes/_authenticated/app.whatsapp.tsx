@@ -23,7 +23,7 @@ import { CheckCircle2, Copy, Send, ShieldCheck, MessageCircle } from "lucide-rea
 export const Route = createFileRoute("/_authenticated/app/whatsapp")({
   head: () => ({
     meta: [
-      { title: "WhatsApp Live — Konnevia" },
+      { title: "WhatsApp Live — OmniQora" },
       { name: "description", content: "Connect your WhatsApp Business number and handle live conversations." },
       { name: "robots", content: "noindex" },
     ],

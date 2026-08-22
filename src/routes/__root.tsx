@@ -34,7 +34,7 @@ function NotFoundComponent() {
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Back to Konnevia
+            Back to OmniQora
           </Link>
         </div>
       </div>
@@ -85,14 +85,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Konnevia — WhatsApp Workflow Platform for Germany" },
+      { title: "OmniQora — WhatsApp Workflow Platform for Germany" },
       {
         name: "description",
         content:
-          "Konnevia turns WhatsApp into a compliant business process for German SMEs and institutions: intake, cases, quotes, payments and third-party fulfilment — with AI, roles and audit built in.",
+          "OmniQora turns WhatsApp into a compliant business process for German SMEs and institutions: intake, cases, quotes, payments and third-party fulfilment — with AI, roles and audit built in.",
       },
-      { name: "author", content: "Konnevia" },
-      { property: "og:title", content: "Konnevia — WhatsApp Workflow Platform for Germany" },
+      { name: "author", content: "OmniQora" },
+      { property: "og:title", content: "OmniQora — WhatsApp Workflow Platform for Germany" },
       {
         property: "og:description",
         content:
@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Konnevia" },
+      { name: "twitter:site", content: "@OmniQora" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

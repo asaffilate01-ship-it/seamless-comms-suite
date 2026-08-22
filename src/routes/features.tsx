@@ -11,10 +11,10 @@ import { translations } from "@/lib/translations";
 export const Route = createFileRoute("/features")({
   head: () => ({
     meta: [
-      { title: "Product — Konnevia" },
-      { name: "description", content: "Cases, workflows, consent, partners, AI controls, portal links, analytics — every capability of the Konnevia platform." },
-      { property: "og:title", content: "Product — Konnevia" },
-      { property: "og:description", content: "The end-to-end platform behind the Konnevia WhatsApp workflow engine." },
+      { title: "Product — OmniQora" },
+      { name: "description", content: "Cases, workflows, consent, partners, AI controls, portal links, analytics — every capability of the OmniQora platform." },
+      { property: "og:title", content: "Product — OmniQora" },
+      { property: "og:description", content: "The end-to-end platform behind the OmniQora WhatsApp workflow engine." },
     ],
   }),
   component: Features,

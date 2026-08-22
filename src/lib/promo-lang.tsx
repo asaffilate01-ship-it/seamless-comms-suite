@@ -9,7 +9,7 @@ import {
 } from "react";
 import { promoContent, promoLangs, type PromoContent, type PromoLang } from "./promo-content";
 
-const STORAGE_KEY = "konnevia.promo.lang";
+const STORAGE_KEY = "omniqora.promo.lang";
 
 type Ctx = {
   lang: PromoLang;

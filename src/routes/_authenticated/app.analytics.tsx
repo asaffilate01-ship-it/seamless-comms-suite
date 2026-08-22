@@ -12,7 +12,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/app/analytics")({
   head: () => ({
     meta: [
-      { title: "Analysen — Konnevia" },
+      { title: "Analysen — OmniQora" },
       { name: "description", content: "Operative Kennzahlen, Automatisierungsqualität und Fallverteilung." },
       { name: "robots", content: "noindex" },
     ],

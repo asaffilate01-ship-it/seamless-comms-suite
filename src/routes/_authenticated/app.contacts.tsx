@@ -15,7 +15,7 @@ import { Search, Users } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/app/contacts")({
   head: () => ({
     meta: [
-      { title: "Kontakte — Konnevia" },
+      { title: "Kontakte — OmniQora" },
       { name: "description", content: "Alle WhatsApp-Kontakte mit Einwilligungsstatus und Sprache." },
       { name: "robots", content: "noindex" },
     ],

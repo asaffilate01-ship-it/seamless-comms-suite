@@ -14,7 +14,7 @@ import { ArrowLeft, ShieldAlert, User, MessageCircle, Clock, CheckCircle2 } from
 export const Route = createFileRoute("/_authenticated/app/cases/$caseId")({
   head: () => ({
     meta: [
-      { title: "Falldetails — Konnevia" },
+      { title: "Falldetails — OmniQora" },
       { name: "description", content: "Vollständige Fallhistorie, Freigaben und Audit-Trail." },
       { name: "robots", content: "noindex" },
     ],

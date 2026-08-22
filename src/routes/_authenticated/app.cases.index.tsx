@@ -15,7 +15,7 @@ import { Search, Plus, FolderOpen } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/app/cases/")({
   head: () => ({
     meta: [
-      { title: "Fälle — Konnevia" },
+      { title: "Fälle — OmniQora" },
       { name: "description", content: "Jedes WhatsApp-Gespräch als kontrollierter Geschäftsprozess." },
       { name: "robots", content: "noindex" },
     ],

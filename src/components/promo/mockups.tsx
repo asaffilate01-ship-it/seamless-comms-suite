@@ -1,6 +1,6 @@
 import { Search, Sparkles, Send, Paperclip, ShieldCheck, Bell, Circle } from "lucide-react";
 import { usePromo } from "@/lib/promo-lang";
-import logoAsset from "@/assets/konnevia-logo.png.asset.json";
+import logoAsset from "@/assets/omniqora-logo.png.asset.json";
 
 /** Live, translated "screenshot" of the web platform. Text follows the selected language. */
 export function WebAppMockup() {
@@ -19,14 +19,14 @@ export function WebAppMockup() {
         </span>
         <div className="mx-auto flex items-center gap-1.5 rounded-md bg-background px-3 py-1 text-[10px] text-muted-foreground">
           <ShieldCheck className="h-3 w-3 text-primary" />
-          app.konnevia.de
+          app.omniqora.de
         </div>
       </div>
 
       <div className="grid min-h-[340px] grid-cols-[112px_1fr] sm:grid-cols-[150px_1.1fr_1fr]">
         {/* sidebar */}
         <aside className="border-e border-sidebar-border bg-sidebar p-3">
-          <img src={logoAsset.url} alt="Konnevia" className="h-5 w-auto brightness-0 invert" />
+          <img src={logoAsset.url} alt="OmniQora" className="h-5 w-auto brightness-0 invert" />
           <div className="mt-4 space-y-1">
             {c.mock.tabs.map((tab, i) => (
               <div
@@ -150,7 +150,7 @@ export function MobileAppMockup() {
         </div>
 
         <div className="bg-gradient-to-b from-primary to-primary/85 px-4 pb-4 pt-6 text-primary-foreground">
-          <img src={logoAsset.url} alt="Konnevia" className="h-4 w-auto brightness-0 invert" />
+          <img src={logoAsset.url} alt="OmniQora" className="h-4 w-auto brightness-0 invert" />
           <div className="mt-3 text-[11px] font-semibold">{c.mock.inbox}</div>
           <div className="mt-2 flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-2.5 py-1.5 text-[9px]">
             <Search className="h-3 w-3" />

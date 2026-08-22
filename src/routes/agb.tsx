@@ -5,14 +5,14 @@ import { useI18nSafe } from "@/lib/i18n";
 export const Route = createFileRoute("/agb")({
   head: () => ({
     meta: [
-      { title: "AGB — Konnevia" },
+      { title: "AGB — OmniQora" },
       {
         name: "description",
         content:
-          "Allgemeine Geschäftsbedingungen für die Nutzung von Konnevia: Vertragsschluss, Leistungen, Preise, Laufzeiten, Verfügbarkeit und Haftung im B2B-Kontext.",
+          "Allgemeine Geschäftsbedingungen für die Nutzung von OmniQora: Vertragsschluss, Leistungen, Preise, Laufzeiten, Verfügbarkeit und Haftung im B2B-Kontext.",
       },
-      { property: "og:title", content: "AGB — Konnevia" },
-      { property: "og:description", content: "Allgemeine Geschäftsbedingungen von Konnevia (B2B)." },
+      { property: "og:title", content: "AGB — OmniQora" },
+      { property: "og:description", content: "Allgemeine Geschäftsbedingungen von OmniQora (B2B)." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -22,8 +22,8 @@ export const Route = createFileRoute("/agb")({
 
 const clauses = {
   de: [
-    ["1. Geltungsbereich", "Diese Bedingungen gelten für alle Verträge zwischen der Konnevia GmbH und Unternehmen im Sinne des § 14 BGB über die Nutzung der Konnevia-Plattform (SaaS), der eingebetteten Add-on-Variante und der Partner-Edition."],
-    ["2. Leistungsgegenstand", "Konnevia stellt eine mandantenfähige Software zur Steuerung von Kundenkommunikation über die WhatsApp Business Platform bereit, inklusive Postfach, Fällen, Workflows, KI-Unterstützung mit menschlicher Freigabe, Rollen und Audit-Protokollen."],
+    ["1. Geltungsbereich", "Diese Bedingungen gelten für alle Verträge zwischen der OmniQora GmbH und Unternehmen im Sinne des § 14 BGB über die Nutzung der OmniQora-Plattform (SaaS), der eingebetteten Add-on-Variante und der Partner-Edition."],
+    ["2. Leistungsgegenstand", "OmniQora stellt eine mandantenfähige Software zur Steuerung von Kundenkommunikation über die WhatsApp Business Platform bereit, inklusive Postfach, Fällen, Workflows, KI-Unterstützung mit menschlicher Freigabe, Rollen und Audit-Protokollen."],
     ["3. Vertragsschluss und Testphase", "Der Vertrag kommt mit Freischaltung des Arbeitsbereichs zustande. Testphasen enden automatisch und gehen nur nach ausdrücklicher Bestellung in ein kostenpflichtiges Abonnement über."],
     ["4. Preise und Zahlung", "Es gilt die zum Bestellzeitpunkt gültige Preisliste, monatlich oder jährlich im Voraus. Nutzungsabhängige Bestandteile (z. B. WhatsApp-Konversationen) werden nachschüssig abgerechnet. Alle Preise netto zzgl. USt."],
     ["5. Pflichten des Kunden", "Der Kunde verantwortet Inhalte, Einwilligungen der Endkunden, die Einhaltung der Meta-Richtlinien sowie die Verwaltung seiner Nutzer und Rollen. Zugangsdaten und API-Token sind vertraulich zu behandeln."],
@@ -34,8 +34,8 @@ const clauses = {
     ["10. Schlussbestimmungen", "Es gilt deutsches Recht. Gerichtsstand ist Berlin. Änderungen dieser Bedingungen werden mindestens 30 Tage vorher mitgeteilt."],
   ],
   en: [
-    ["1. Scope", "These terms apply to all contracts between Konnevia GmbH and business customers (§ 14 BGB) for the Konnevia platform (SaaS), the embedded add-on and the partner edition."],
-    ["2. Services", "Konnevia provides multi-tenant software to run customer communication over the WhatsApp Business Platform, including inbox, cases, workflows, AI assistance with human approval, roles and audit logs."],
+    ["1. Scope", "These terms apply to all contracts between OmniQora GmbH and business customers (§ 14 BGB) for the OmniQora platform (SaaS), the embedded add-on and the partner edition."],
+    ["2. Services", "OmniQora provides multi-tenant software to run customer communication over the WhatsApp Business Platform, including inbox, cases, workflows, AI assistance with human approval, roles and audit logs."],
     ["3. Formation and trials", "The contract is concluded when the workspace is activated. Trials end automatically and only convert to a paid subscription upon an explicit order."],
     ["4. Prices and payment", "The price list valid at the time of order applies, billed monthly or annually in advance. Usage-based components (e.g. WhatsApp conversations) are billed in arrears. All prices are net plus VAT."],
     ["5. Customer obligations", "The customer is responsible for content, end-customer consent, compliance with Meta policies and the management of its users and roles. Credentials and API tokens must be kept confidential."],
