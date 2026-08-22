@@ -44,12 +44,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY) as Lang | null;
       if (saved === "de" || saved === "en") {
         if (saved !== lang) setLangState(saved);
+        return;
       }
     } catch {
       /* ignore */
     }
+    setLangState(detectLang() === "de" ? "de" : "en");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   useEffect(() => {
     if (typeof document !== "undefined") {
