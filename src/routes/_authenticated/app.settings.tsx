@@ -118,7 +118,7 @@ function Settings() {
         <TabsContent value="compliance">
           <Card><CardContent className="p-6 space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Data residency" value="Frankfurt · eu-central-1" />
+              <Field label="Data residency" value="EU" />
               <Field label="Retention · business class" value="36 months" />
               <Field label="Retention · sensitive class" value="30 days after case close" />
               <Field label="DPA version" value="v3.1 · signed 2026-04-11" />

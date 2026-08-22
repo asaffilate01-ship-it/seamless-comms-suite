@@ -179,7 +179,6 @@ export function PromoFooter() {
             <li>iTechLounge Ltd · United Kingdom</li>
             <li>iTechLounge GmbH · Deutschland</li>
             <li><a href="mailto:hallo@omniqora.com" className="hover:text-foreground">hallo@omniqora.com</a></li>
-            <li>Frankfurt · eu-central-1</li>
           </ul>
           <div className="mt-4">
             <PromoLanguageSelect compact />
