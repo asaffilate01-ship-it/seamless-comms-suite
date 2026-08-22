@@ -147,7 +147,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
         audit: ["Audit & DSGVO-Export", "Jedes Ereignis, jeder Akteur, jede Aufbewahrungsklasse. Break-Glass mit Review."],
         tenant: ["Mandantenmodell", "Isolierte Organisationen, Marken, Standorte und Drittparteien — Ende-zu-Ende berechtigt."],
         wl: ["White-Label", "Marke, Domain, From-Name, Templates, Farb-Tokens — pro Mandant."],
-        eu: ["Deutsche Residenz", "eu-central-1-Hosting, AVV, Unterauftragsverarbeiterliste, DACH-Supportzeiten."],
+        eu: ["Deutsche Residenz", "Multi-Region-Hosting, AVV, Unterauftragsverarbeiterliste, DACH-Supportzeiten."],
       },
     },
     pricing: {
