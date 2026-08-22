@@ -51,8 +51,14 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const [showPanel, setShowPanel] = useState(false);
 
   useEffect(() => {
-    setConsent(readConsent());
+    const existing = readConsent();
+    setConsent(existing);
     setHydrated(true);
+    // Re-apply dataset attributes from stored consent on every load
+    if (existing && typeof document !== "undefined") {
+      document.documentElement.dataset["consentAnalytics"] = String(existing.analytics);
+      document.documentElement.dataset["consentMarketing"] = String(existing.marketing);
+    }
   }, []);
 
   const save = useCallback((c: { analytics: boolean; marketing: boolean }) => {
