@@ -35,7 +35,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       metaLine: "WhatsApp Business Platform · Cloud API · Autorisierter Meta-Weg",
     },
     home: {
-      badge: "International · EU-Hosting in Frankfurt",
+      badge: "International · EU-Hosting in EU",
       heroLine1: "WhatsApp wird",
       heroLine2: "zum kontrollierten Geschäftsprozess.",
       heroSub:
@@ -197,7 +197,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       title: "Compliance ist Produktentscheidung, keine Policy.",
       sub: "Die folgenden Kontrollen setzt die Plattform durch oder legt sie App-Ownern offen. Diese Seite ist keine unabhängige Zertifizierung — sie beschreibt Fähigkeiten, keine Audit-Ergebnisse.",
       cards: [
-        ["EU-Datenresidenz", "Frankfurt (eu-central-1) standardmäßig. Message-Medien und Portal-Uploads bleiben in der EU."],
+        ["EU-Datenresidenz", "EU standardmäßig. Message-Medien und Portal-Uploads bleiben in der EU."],
         ["Row-Level-Security", "Jede Tabelle nach Mandant, Marke und Rolle. Break-Glass-Zugriff mit Grund, Frist und Review."],
         ["Nur WhatsApp Cloud API", "Offizieller Business-Platform-Weg via Meta oder autorisierten BSP. Kein Scraping."],
         ["DSGVO-Betroffenenrechte", "Export, Berichtigung und Löschung mit zweckbezogenen Aufbewahrungsklassen."],
@@ -258,7 +258,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       },
       brandSub: "Beauty Studio München",
       gdpr: "DSGVO-konform",
-      region: "Frankfurt eu-central-1",
+      region: "EU",
     },
   },
   en: {
@@ -295,7 +295,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       metaLine: "WhatsApp Business Platform · Cloud API · Meta authorised route",
     },
     home: {
-      badge: "International · EU hosting in Frankfurt",
+      badge: "International · EU hosting in EU",
       heroLine1: "WhatsApp becomes",
       heroLine2: "a controlled business process.",
       heroSub:
@@ -457,7 +457,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       title: "Compliance is a product decision, not a policy.",
       sub: "The controls below are what the platform enforces or exposes to app owners. This page is not an independent certification — it describes capabilities, not audit outcomes.",
       cards: [
-        ["EU data residency", "Frankfurt (eu-central-1) by default. Message media and portal uploads stay in the EU."],
+        ["EU data residency", "EU by default. Message media and portal uploads stay in the EU."],
         ["Row-level security", "Every table scoped by tenant, brand and role. Break-glass access uses a separate path with reason, expiry and review."],
         ["WhatsApp Cloud API only", "Official Business Platform route via Meta or an authorised BSP. No unofficial scraping."],
         ["DSGVO subject rights", "Export, rectification and erasure workflows for controllers, with per-purpose retention classes."],
@@ -518,7 +518,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
       },
       brandSub: "Beauty Studio München",
       gdpr: "GDPR-compliant",
-      region: "Frankfurt eu-central-1",
+      region: "EU",
     },
   },
 };
