@@ -170,7 +170,7 @@ export function PromoFooter() {
           <h4 className="text-sm font-semibold text-foreground">{c.footer.contact}</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li>iTechLounge GmbH</li>
-            <li><a href="mailto:hallo@omniqora.de" className="hover:text-foreground">hallo@omniqora.de</a></li>
+            <li><a href="mailto:hallo@omniqora.com" className="hover:text-foreground">hallo@omniqora.com</a></li>
             <li>Frankfurt · eu-central-1</li>
           </ul>
           <div className="mt-4">

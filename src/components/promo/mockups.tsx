@@ -19,7 +19,7 @@ export function WebAppMockup() {
         </span>
         <div className="mx-auto flex items-center gap-1.5 rounded-md bg-background px-3 py-1 text-[10px] text-muted-foreground">
           <ShieldCheck className="h-3 w-3 text-primary" />
-          app.omniqora.de
+          app.omniqora.com
         </div>
       </div>
 

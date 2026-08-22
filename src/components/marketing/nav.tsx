@@ -63,7 +63,7 @@ export function MarketingFooter() {
           <h4 className="text-sm font-semibold">{t("footer.company")}</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li>OmniQora GmbH · Berlin</li>
-            <li><a href="mailto:hallo@omniqora.de" className="hover:text-foreground">hallo@omniqora.de</a></li>
+            <li><a href="mailto:hallo@omniqora.com" className="hover:text-foreground">hallo@omniqora.com</a></li>
             <li><Link to="/impressum" className="hover:text-foreground">Impressum</Link></li>
             <li><Link to="/datenschutz" className="hover:text-foreground">Datenschutz</Link></li>
             <li><Link to="/agb" className="hover:text-foreground">AGB</Link></li>

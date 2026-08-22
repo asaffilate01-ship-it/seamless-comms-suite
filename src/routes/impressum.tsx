@@ -40,7 +40,7 @@ function Impressum() {
           <div>
             <h2 className="text-base font-semibold text-foreground">{de ? "Kontakt" : "Contact"}</h2>
             <p className="mt-2">
-              E-Mail: hallo@omniqora.de<br />
+              E-Mail: hallo@omniqora.com<br />
               {de ? "Telefon" : "Phone"}: +49 30 000000-0
             </p>
           </div>

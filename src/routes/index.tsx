@@ -330,7 +330,7 @@ function AccessSection() {
               <h2 className="font-display text-2xl font-semibold text-primary-foreground sm:text-3xl">{c.cta.title}</h2>
               <p className="mt-3 text-sm leading-relaxed text-primary-foreground/80">{c.cta.sub}</p>
               <a
-                href="mailto:hallo@omniqora.de?subject=OmniQora%20Pilot"
+                href="mailto:hallo@omniqora.com?subject=OmniQora%20Pilot"
                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary-foreground px-6 py-3 text-sm font-semibold text-foreground transition hover:opacity-90"
               >
                 {c.cta.button}
