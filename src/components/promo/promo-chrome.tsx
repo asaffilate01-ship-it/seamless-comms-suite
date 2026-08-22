@@ -116,11 +116,12 @@ export function PromoHeader() {
 
 /** Native-app style bottom navigation for mobile. */
 export function PromoBottomNav() {
-  const { c, dir } = usePromo();
+  const { c, dir, lang } = usePromo();
   const labels: Record<string, string> = {
     home: "Start",
     features: c.nav.features,
     screens: c.nav.screens,
+    pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
     access: c.nav.access,
   };
@@ -131,7 +132,7 @@ export function PromoBottomNav() {
       aria-label="Sections"
     >
       <div className="grid grid-cols-5">
-        {sections.map((s) => (
+        {bottomSections.map((s) => (
           <button
             key={s.id}
             type="button"
