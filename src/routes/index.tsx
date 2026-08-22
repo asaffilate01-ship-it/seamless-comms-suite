@@ -41,7 +41,7 @@ const editionIcons = [Blocks, Building2, Handshake];
 const packIcons = [Scissors, Wrench, Stethoscope, UtensilsCrossed, HomeIcon, ShoppingBag];
 
 function PromoHome() {
-  const { c, dir, transitioning } = usePromo();
+  const { dir, transitioning, lang } = usePromo();
   return (
     <div
       dir={dir}
@@ -56,6 +56,10 @@ function PromoHome() {
         <Features />
         <Screens />
         <Editions />
+        <PricingSection
+          lang={lang}
+          onCta={() => document.getElementById("access")?.scrollIntoView({ behavior: "smooth" })}
+        />
         <Packs />
         <Faq />
         <AccessSection />
