@@ -5,6 +5,7 @@ import logoAsset from "@/assets/omniqora-logo.png.asset.json";
 import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
 import { useCookieConsent } from "@/lib/cookie-consent";
 import { pricingContent } from "@/lib/pricing-content";
+import { legalContent } from "@/lib/legal-content";
 
 const sections = [
   { id: "top", key: "home", icon: Home },
@@ -149,7 +150,8 @@ export function PromoBottomNav() {
 }
 
 export function PromoFooter() {
-  const { c, dir } = usePromo();
+  const { c, dir, lang } = usePromo();
+  const legal = legalContent[lang] ?? legalContent.de;
   const { openSettings } = useCookieConsent();
   return (
     <footer dir={dir} className="border-t border-border/60 bg-surface-2 pb-24 lg:pb-0">
