@@ -31,10 +31,21 @@ function Impressum() {
           <div>
             <h2 className="text-base font-semibold text-foreground">{de ? "Anbieter" : "Provider"}</h2>
             <p className="mt-2">
-              OmniQora GmbH<br />
+              {de
+                ? "OmniQora ist eine Handelsmarke der iTechLounge Ltd (Vereinigtes Königreich) und der iTechLounge GmbH (Deutschland). OmniQora wird international angeboten."
+                : "OmniQora is a trading brand of iTechLounge Ltd (United Kingdom) and iTechLounge GmbH (Germany). OmniQora is offered internationally."}
+            </p>
+            <p className="mt-4">
+              iTechLounge GmbH<br />
               Musterstraße 1<br />
               10115 Berlin<br />
               {de ? "Deutschland" : "Germany"}
+            </p>
+            <p className="mt-4">
+              iTechLounge Ltd<br />
+              1 Example Street<br />
+              London EC1A 1AA<br />
+              {de ? "Vereinigtes Königreich" : "United Kingdom"}
             </p>
           </div>
           <div>
