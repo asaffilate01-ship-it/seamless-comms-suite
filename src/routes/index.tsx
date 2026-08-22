@@ -51,6 +51,7 @@ function PromoHome() {
       <main>
         <Hero />
         <Stats />
+        <Channels />
         <Features />
         <Screens />
         <Editions />
