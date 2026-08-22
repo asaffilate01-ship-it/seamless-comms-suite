@@ -137,6 +137,28 @@ function Stats() {
   );
 }
 
+function Channels() {
+  const { c } = usePromo();
+  return (
+    <section id="channels" className="scroll-mt-28 py-16">
+      <div className="mx-auto max-w-7xl px-6">
+        <SectionHead title={c.channels.title} sub={c.channels.sub} />
+        <ul className="mx-auto mt-10 flex max-w-4xl flex-wrap justify-center gap-2.5">
+          {c.channels.items.map((ch) => (
+            <li
+              key={ch}
+              className="rounded-full border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground/80 shadow-elegant transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              {ch}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-5 text-center text-[11px] text-muted-foreground">{c.channels.note}</p>
+      </div>
+    </section>
+  );
+}
+
 function SectionHead({ title, sub }: { title: string; sub: string }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
