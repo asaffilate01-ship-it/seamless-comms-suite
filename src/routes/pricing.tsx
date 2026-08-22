@@ -9,10 +9,10 @@ import { translations } from "@/lib/translations";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — Konnevia" },
+      { title: "Pricing — OmniQora" },
       { name: "description", content: "Transparent tiers for embedded add-on, standalone SaaS, and partner/white-label edition. Usage-priced WhatsApp messaging, seats and AI actions." },
-      { property: "og:title", content: "Pricing — Konnevia" },
-      { property: "og:description", content: "Standalone, embedded and partner pricing for the Konnevia WhatsApp workflow platform." },
+      { property: "og:title", content: "Pricing — OmniQora" },
+      { property: "og:description", content: "Standalone, embedded and partner pricing for the OmniQora WhatsApp workflow platform." },
     ],
   }),
   component: Pricing,

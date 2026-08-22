@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/app/inbox")({
   head: () => ({
     meta: [
-      { title: "Inbox — Konnevia" },
+      { title: "Inbox — OmniQora" },
       { name: "description", content: "Alle WhatsApp-Gespräche in einem geteilten Team-Postfach." },
       { name: "robots", content: "noindex" },
     ],

@@ -16,13 +16,13 @@ import heroImage from "@/assets/promo-hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Konnevia — Alle Kunden. Alle Gespräche. Ein System." },
+      { title: "OmniQora — Alle Kunden. Alle Gespräche. Ein System." },
       {
         name: "description",
         content:
-          "Konnevia macht WhatsApp zum kontrollierten Geschäftsprozess: gemeinsamer Posteingang, Fälle, Workflows, KI-Assistent und DSGVO-konforme Protokolle. Gehostet in Frankfurt.",
+          "OmniQora macht WhatsApp zum kontrollierten Geschäftsprozess: gemeinsamer Posteingang, Fälle, Workflows, KI-Assistent und DSGVO-konforme Protokolle. Gehostet in Frankfurt.",
       },
-      { property: "og:title", content: "Konnevia — Alle Kunden. Alle Gespräche. Ein System." },
+      { property: "og:title", content: "OmniQora — Alle Kunden. Alle Gespräche. Ein System." },
       {
         property: "og:description",
         content:
@@ -330,7 +330,7 @@ function AccessSection() {
               <h2 className="font-display text-2xl font-semibold text-primary-foreground sm:text-3xl">{c.cta.title}</h2>
               <p className="mt-3 text-sm leading-relaxed text-primary-foreground/80">{c.cta.sub}</p>
               <a
-                href="mailto:hallo@konnevia.de?subject=Konnevia%20Pilot"
+                href="mailto:hallo@omniqora.com?subject=OmniQora%20Pilot"
                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary-foreground px-6 py-3 text-sm font-semibold text-foreground transition hover:opacity-90"
               >
                 {c.cta.button}

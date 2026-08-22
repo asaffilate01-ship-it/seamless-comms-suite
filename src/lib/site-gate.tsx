@@ -1,12 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { KeyRound, Lock } from "lucide-react";
-import logoAsset from "@/assets/konnevia-logo.png.asset.json";
+import logoAsset from "@/assets/omniqora-logo.png.asset.json";
 import { usePromo, PromoLanguageSelect } from "./promo-lang";
 
-const STORAGE_KEY = "konnevia.site.unlock";
+const STORAGE_KEY = "omniqora.site.unlock";
 /** Promo-phase access password for the full platform. */
-const PASSWORD = "konnevia2026";
+const PASSWORD = "omniqora2026";
 
 /** Routes reachable without the promo password. */
 const PUBLIC_PATHS = ["/", "/impressum", "/datenschutz", "/agb", "/cookies"];
@@ -54,7 +54,7 @@ export function GateScreen({ onUnlocked }: { onUnlocked: () => void }) {
       <div className="absolute -top-32 start-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
       <div className="relative w-full max-w-md rounded-3xl border border-border/70 bg-card/90 p-8 shadow-premium backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3">
-          <img src={logoAsset.url} alt="Konnevia" className="h-12 w-auto object-contain" />
+          <img src={logoAsset.url} alt="OmniQora" className="h-12 w-auto object-contain" />
           <PromoLanguageSelect compact />
         </div>
         <span className="mt-6 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-soft text-primary">

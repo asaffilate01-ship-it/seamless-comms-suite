@@ -6,16 +6,16 @@ import { useCookieConsent } from "@/lib/cookie-consent";
 export const Route = createFileRoute("/cookies")({
   head: () => ({
     meta: [
-      { title: "Cookie-Richtlinie — Konnevia" },
+      { title: "Cookie-Richtlinie — OmniQora" },
       {
         name: "description",
         content:
-          "Welche Cookies Konnevia einsetzt, welche Einwilligung nach TTDSG § 25 erforderlich ist und wie Sie Ihre Auswahl jederzeit ändern.",
+          "Welche Cookies OmniQora einsetzt, welche Einwilligung nach TTDSG § 25 erforderlich ist und wie Sie Ihre Auswahl jederzeit ändern.",
       },
-      { property: "og:title", content: "Cookie-Richtlinie — Konnevia" },
+      { property: "og:title", content: "Cookie-Richtlinie — OmniQora" },
       {
         property: "og:description",
-        content: "Notwendige, statistische und Marketing-Cookies bei Konnevia – transparent erklärt.",
+        content: "Notwendige, statistische und Marketing-Cookies bei OmniQora – transparent erklärt.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -36,7 +36,7 @@ function CookiePolicy() {
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{c.cookies.body}</p>
 
         <div className="mt-8 space-y-4">
-          <Section title={c.cookies.necessary} desc={c.cookies.necessaryDesc} items={["konnevia.promo.lang", "konnevia.cookieConsent.v1", "konnevia.site.unlock"]} />
+          <Section title={c.cookies.necessary} desc={c.cookies.necessaryDesc} items={["omniqora.promo.lang", "omniqora.cookieConsent.v1", "omniqora.site.unlock"]} />
           <Section title={c.cookies.analytics} desc={c.cookies.analyticsDesc} items={de ? ["Derzeit nicht aktiv – wird erst nach Einwilligung geladen."] : ["Not active yet – loaded only after consent."]} />
           <Section title={c.cookies.marketing} desc={c.cookies.marketingDesc} items={de ? ["Derzeit nicht aktiv – wird erst nach Einwilligung geladen."] : ["Not active yet – loaded only after consent."]} />
         </div>

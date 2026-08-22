@@ -11,8 +11,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Konnevia" },
-      { name: "description", content: "Sign in to your Konnevia workspace." },
+      { title: "Sign in — OmniQora" },
+      { name: "description", content: "Sign in to your OmniQora workspace." },
       { name: "robots", content: "noindex" },
     ],
   }),

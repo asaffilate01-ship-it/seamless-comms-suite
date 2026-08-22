@@ -13,17 +13,17 @@ import { translations } from "@/lib/translations";
 export const Route = createFileRoute("/platform")({
   head: () => ({
     meta: [
-      { title: "Konnevia — WhatsApp Workflow Platform for Germany" },
+      { title: "OmniQora — WhatsApp Workflow Platform for Germany" },
       {
         name: "description",
         content:
           "Turn WhatsApp into a compliant business process. Intake, cases, quotes, payments, third-party fulfilment. GDPR-first, made in Germany.",
       },
-      { property: "og:title", content: "Konnevia — WhatsApp Workflow Platform for Germany" },
+      { property: "og:title", content: "OmniQora — WhatsApp Workflow Platform for Germany" },
       {
         property: "og:description",
         content:
-          "One WhatsApp workflow engine for Konnevia products, independent SMEs and partner agencies.",
+          "One WhatsApp workflow engine for OmniQora products, independent SMEs and partner agencies.",
       },
     ],
   }),

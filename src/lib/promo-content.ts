@@ -68,10 +68,10 @@ export type PromoContent = {
 const de: PromoContent = {
   nav: { features: "Funktionen", screens: "Einblicke", editions: "Editionen", faq: "FAQ", access: "Zugang" },
   hero: {
-    badge: "Bald verfügbar · Made in Germany",
+    badge: "Bald verfügbar · International · EU & UK",
     titleA: "Alle Kunden. Alle Gespräche.",
     titleB: "Ein System.",
-    sub: "Konnevia macht WhatsApp zum kontrollierten Geschäftsprozess: Anfrage, Qualifizierung, Angebot, Termin, Ausführung und Nachfassen – DSGVO-konform und in Frankfurt gehostet.",
+    sub: "OmniQora macht WhatsApp zum kontrollierten Geschäftsprozess: Anfrage, Qualifizierung, Angebot, Termin, Ausführung und Nachfassen – DSGVO-konform und in Frankfurt gehostet.",
     ctaPrimary: "Zugang anfordern",
     ctaSecondary: "Funktionen ansehen",
     trust: ["DSGVO & TTDSG", "Offizielle WhatsApp Cloud API", "EU-Hosting Frankfurt"],
@@ -127,7 +127,7 @@ const de: PromoContent = {
     title: "Häufige Fragen",
     sub: "Alles Wichtige vor dem Start.",
     items: [
-      { q: "Ist Konnevia DSGVO-konform?", a: "Ja. Verarbeitung in der EU (Frankfurt), AV-Vertrag, Löschkonzept, Einwilligungsverwaltung und vollständige Protokollierung." },
+      { q: "Ist OmniQora DSGVO-konform?", a: "Ja. Verarbeitung in der EU (Frankfurt), AV-Vertrag, Löschkonzept, Einwilligungsverwaltung und vollständige Protokollierung." },
       { q: "Wie verbindet sich das System mit WhatsApp?", a: "Über die offizielle WhatsApp Business Platform (Cloud API) von Meta – kein inoffizieller Zugang, keine gesperrten Nummern." },
       { q: "Kann ich meine bestehende Nummer nutzen?", a: "Ja, eine bestehende Geschäftsnummer kann bei Meta migriert werden. Wir begleiten den Prozess." },
       { q: "Entscheidet die KI eigenständig?", a: "Nein. Aida triagiert und formuliert Entwürfe. Freigaben mit finanzieller oder rechtlicher Wirkung bleiben beim Menschen." },
@@ -165,7 +165,7 @@ const de: PromoContent = {
     policy: "Cookie-Richtlinie",
   },
   footer: {
-    trading: "Konnevia ist ein Handelsname der iTechLounge GmbH.",
+    trading: "OmniQora ist eine Handelsmarke der iTechLounge Ltd (UK) und der iTechLounge GmbH (Deutschland). Internationaler Service.",
     rights: "Alle Rechte vorbehalten.",
     cookieSettings: "Cookie-Einstellungen",
     legal: "Rechtliches",
@@ -201,10 +201,10 @@ const de: PromoContent = {
 const en: PromoContent = {
   nav: { features: "Features", screens: "Product tour", editions: "Editions", faq: "FAQ", access: "Access" },
   hero: {
-    badge: "Coming soon · Made in Germany",
+    badge: "Coming soon · International · EU & UK",
     titleA: "Every customer. Every conversation.",
     titleB: "One system.",
-    sub: "Konnevia turns WhatsApp into a controlled business process: intake, qualification, quote, scheduling, fulfilment and follow-up — GDPR-first and hosted in Frankfurt.",
+    sub: "OmniQora turns WhatsApp into a controlled business process: intake, qualification, quote, scheduling, fulfilment and follow-up — GDPR-first and hosted in Frankfurt.",
     ctaPrimary: "Request access",
     ctaSecondary: "See features",
     trust: ["GDPR & TTDSG", "Official WhatsApp Cloud API", "EU hosting in Frankfurt"],
@@ -260,7 +260,7 @@ const en: PromoContent = {
     title: "Frequently asked questions",
     sub: "Everything you need before you start.",
     items: [
-      { q: "Is Konnevia GDPR compliant?", a: "Yes. EU processing (Frankfurt), DPA, retention concept, consent management and complete logging." },
+      { q: "Is OmniQora GDPR compliant?", a: "Yes. EU processing (Frankfurt), DPA, retention concept, consent management and complete logging." },
       { q: "How does it connect to WhatsApp?", a: "Through Meta's official WhatsApp Business Platform (Cloud API) — no unofficial access, no banned numbers." },
       { q: "Can I keep my existing number?", a: "Yes, an existing business number can be migrated to Meta. We guide you through it." },
       { q: "Does the AI decide on its own?", a: "No. Aida triages and drafts. Anything with financial or legal impact stays with a human." },
@@ -298,7 +298,7 @@ const en: PromoContent = {
     policy: "Cookie policy",
   },
   footer: {
-    trading: "Konnevia is a trading name of iTechLounge GmbH.",
+    trading: "OmniQora is a trading brand of iTechLounge Ltd in the UK and iTechLounge GmbH in Germany. An international service.",
     rights: "All rights reserved.",
     cookieSettings: "Cookie settings",
     legal: "Legal",
@@ -337,7 +337,7 @@ const tr: PromoContent = {
     badge: "Çok yakında · Almanya'da geliştirildi",
     titleA: "Tüm müşteriler. Tüm görüşmeler.",
     titleB: "Tek sistem.",
-    sub: "Konnevia, WhatsApp'ı kontrollü bir iş sürecine dönüştürür: talep, değerlendirme, teklif, randevu, uygulama ve takip — KVKK/GDPR uyumlu ve Frankfurt'ta barındırılır.",
+    sub: "OmniQora, WhatsApp'ı kontrollü bir iş sürecine dönüştürür: talep, değerlendirme, teklif, randevu, uygulama ve takip — KVKK/GDPR uyumlu ve Frankfurt'ta barındırılır.",
     ctaPrimary: "Erişim talep et",
     ctaSecondary: "Özellikleri gör",
     trust: ["GDPR & TTDSG", "Resmî WhatsApp Cloud API", "AB barındırma, Frankfurt"],
@@ -393,7 +393,7 @@ const tr: PromoContent = {
     title: "Sık sorulan sorular",
     sub: "Başlamadan önce bilmeniz gerekenler.",
     items: [
-      { q: "Konnevia GDPR uyumlu mu?", a: "Evet. AB'de işleme (Frankfurt), veri işleme sözleşmesi, saklama planı, izin yönetimi ve tam kayıt." },
+      { q: "OmniQora GDPR uyumlu mu?", a: "Evet. AB'de işleme (Frankfurt), veri işleme sözleşmesi, saklama planı, izin yönetimi ve tam kayıt." },
       { q: "WhatsApp bağlantısı nasıl kurulur?", a: "Meta'nın resmî WhatsApp Business Platform (Cloud API) altyapısıyla — gayri resmî erişim yok." },
       { q: "Mevcut numaramı kullanabilir miyim?", a: "Evet, mevcut işletme numarası Meta'ya taşınabilir. Süreçte size eşlik ederiz." },
       { q: "Yapay zekâ tek başına karar verir mi?", a: "Hayır. Aida sınıflandırır ve taslak yazar; mali veya hukuki etkisi olan onaylar insanda kalır." },
@@ -431,7 +431,7 @@ const tr: PromoContent = {
     policy: "Çerez politikası",
   },
   footer: {
-    trading: "Konnevia, iTechLounge GmbH'nin ticari adıdır.",
+    trading: "OmniQora, Birleşik Krallık'ta iTechLounge Ltd ve Almanya'da iTechLounge GmbH'nin ticari markasıdır. Uluslararası bir hizmet.",
     rights: "Tüm hakları saklıdır.",
     cookieSettings: "Çerez ayarları",
     legal: "Yasal",
@@ -470,7 +470,7 @@ const ar: PromoContent = {
     badge: "قريباً · صُنع في ألمانيا",
     titleA: "كل العملاء. كل المحادثات.",
     titleB: "نظام واحد.",
-    sub: "يحوّل Konnevia واتساب إلى عملية عمل منضبطة: الاستقبال، التأهيل، العرض، الموعد، التنفيذ والمتابعة — متوافق مع GDPR ومستضاف في فرانكفورت.",
+    sub: "يحوّل OmniQora واتساب إلى عملية عمل منضبطة: الاستقبال، التأهيل، العرض، الموعد، التنفيذ والمتابعة — متوافق مع GDPR ومستضاف في فرانكفورت.",
     ctaPrimary: "اطلب الوصول",
     ctaSecondary: "استعرض المزايا",
     trust: ["GDPR و TTDSG", "واجهة واتساب السحابية الرسمية", "استضافة أوروبية في فرانكفورت"],
@@ -526,7 +526,7 @@ const ar: PromoContent = {
     title: "الأسئلة الشائعة",
     sub: "كل ما تحتاجه قبل البدء.",
     items: [
-      { q: "هل Konnevia متوافق مع GDPR؟", a: "نعم. معالجة داخل الاتحاد الأوروبي (فرانكفورت)، عقد معالجة بيانات، سياسة حذف، إدارة موافقات وسجل كامل." },
+      { q: "هل OmniQora متوافق مع GDPR؟", a: "نعم. معالجة داخل الاتحاد الأوروبي (فرانكفورت)، عقد معالجة بيانات، سياسة حذف، إدارة موافقات وسجل كامل." },
       { q: "كيف يتصل النظام بواتساب؟", a: "عبر منصة واتساب للأعمال الرسمية (Cloud API) من Meta — بلا وصول غير رسمي." },
       { q: "هل أستخدم رقمي الحالي؟", a: "نعم، يمكن ترحيل رقم العمل الحالي إلى Meta ونرافقك في العملية." },
       { q: "هل يقرر الذكاء الاصطناعي وحده؟", a: "لا. Aida تفرز وتكتب مسودات، أما القرارات المالية أو القانونية فتبقى للإنسان." },
@@ -564,7 +564,7 @@ const ar: PromoContent = {
     policy: "سياسة ملفات الارتباط",
   },
   footer: {
-    trading: "Konnevia هو اسم تجاري لشركة iTechLounge GmbH.",
+    trading: "OmniQora علامة تجارية لشركة iTechLounge Ltd في المملكة المتحدة وشركة iTechLounge GmbH في ألمانيا. خدمة دولية.",
     rights: "جميع الحقوق محفوظة.",
     cookieSettings: "إعدادات الارتباط",
     legal: "قانوني",
@@ -603,7 +603,7 @@ const uk: PromoContent = {
     badge: "Незабаром · Зроблено в Німеччині",
     titleA: "Усі клієнти. Усі розмови.",
     titleB: "Одна система.",
-    sub: "Konnevia перетворює WhatsApp на керований бізнес-процес: запит, кваліфікація, пропозиція, запис, виконання та подальший супровід — відповідно до GDPR, хостинг у Франкфурті.",
+    sub: "OmniQora перетворює WhatsApp на керований бізнес-процес: запит, кваліфікація, пропозиція, запис, виконання та подальший супровід — відповідно до GDPR, хостинг у Франкфурті.",
     ctaPrimary: "Запросити доступ",
     ctaSecondary: "Переглянути можливості",
     trust: ["GDPR і TTDSG", "Офіційний WhatsApp Cloud API", "Хостинг у ЄС, Франкфурт"],
@@ -659,7 +659,7 @@ const uk: PromoContent = {
     title: "Часті запитання",
     sub: "Усе важливе перед стартом.",
     items: [
-      { q: "Чи відповідає Konnevia GDPR?", a: "Так. Обробка в ЄС (Франкфурт), договір обробки, політика зберігання, керування згодами та повне логування." },
+      { q: "Чи відповідає OmniQora GDPR?", a: "Так. Обробка в ЄС (Франкфурт), договір обробки, політика зберігання, керування згодами та повне логування." },
       { q: "Як система під'єднується до WhatsApp?", a: "Через офіційну WhatsApp Business Platform (Cloud API) від Meta — без неофіційних шляхів." },
       { q: "Чи можу я лишити свій номер?", a: "Так, наявний бізнес-номер можна перенести до Meta. Ми супроводжуємо процес." },
       { q: "Чи вирішує ШІ самостійно?", a: "Ні. Aida сортує та готує чернетки; рішення з фінансовим чи правовим ефектом ухвалює людина." },
@@ -697,7 +697,7 @@ const uk: PromoContent = {
     policy: "Політика cookie",
   },
   footer: {
-    trading: "Konnevia — торгова назва компанії iTechLounge GmbH.",
+    trading: "OmniQora — торгова марка iTechLounge Ltd (Великобританія) та iTechLounge GmbH (Німеччина). Міжнародний сервіс.",
     rights: "Усі права захищено.",
     cookieSettings: "Налаштування cookie",
     legal: "Правова інформація",
