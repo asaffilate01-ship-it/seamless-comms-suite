@@ -153,7 +153,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     pricing: {
       badge: "Transparent · Kein Lock-in",
       title: "Preise, die tatsächliche Arbeit abbilden.",
-      sub: "Basis-Mandantengebühr + gepoolte Kontingente + Meta-Durchleitung. Monatlich anpassbar; Nutzung wird idempotent mit Ledger auf der Rechnung erfasst.",
+      sub: "Ein Abo pro Workspace, gepoolte Kontingente und modulare Zusatzmodule. Gebühren Dritter für Kanäle, Modelle und Zahlungen werden separat ausgewiesen.",
       most: "Beliebteste",
       addonsTitle: "Zusatzoptionen & Durchleitung",
       enterpriseTitle: "Enterprise & öffentlicher Sektor",
@@ -413,7 +413,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     pricing: {
       badge: "Transparent · No lock-in",
       title: "Pricing that reflects work done.",
-      sub: "Base tenant fee + pooled quotas + Meta pass-through. Upgrade or downgrade any month; usage is metered idempotently with an on-invoice ledger.",
+      sub: "One subscription per workspace, pooled allowances and modular add-ons. Third-party channel, model and payment charges are passed through and shown separately.",
       most: "Most popular",
       addonsTitle: "Add-ons & pass-through",
       enterpriseTitle: "Enterprise & public sector",
