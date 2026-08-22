@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { PromoHeader, PromoFooter, PromoBottomNav } from "@/components/promo/promo-chrome";
 import { WebAppMockup, MobileAppMockup } from "@/components/promo/mockups";
+import { PricingSection } from "@/components/promo/pricing-section";
 import { usePromo } from "@/lib/promo-lang";
 import { unlockSite } from "@/lib/site-gate";
 import { useNavigate } from "@tanstack/react-router";
