@@ -76,15 +76,15 @@ function Hero() {
         height={1088}
         className="absolute inset-0 h-full w-full object-cover"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[oklch(0.16_0.03_170/0.88)] via-[oklch(0.16_0.03_170/0.82)] to-[oklch(0.16_0.03_170/0.95)]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[oklch(0.13_0.07_275/0.9)] via-[oklch(0.15_0.08_270/0.84)] to-[oklch(0.11_0.06_278/0.96)]" />
       <div className="relative mx-auto max-w-7xl px-6 py-20 sm:py-28">
         <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/90 backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.8_0.17_150)]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.85_0.14_200)]" />
           {c.hero.badge}
         </span>
         <h1 className="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.08] text-primary-foreground sm:text-6xl">
           {c.hero.titleA}
-          <span className="block bg-gradient-to-r from-[oklch(0.85_0.16_150)] to-[oklch(0.88_0.11_100)] bg-clip-text text-transparent">
+          <span className="block bg-gradient-to-r from-[oklch(0.72_0.17_265)] to-[oklch(0.86_0.14_200)] bg-clip-text text-transparent">
             {c.hero.titleB}
           </span>
         </h1>
@@ -111,7 +111,7 @@ function Hero() {
         <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
           {c.hero.trust.map((tItem) => (
             <li key={tItem} className="flex items-center gap-2 text-xs text-primary-foreground/75">
-              <Check className="h-3.5 w-3.5 text-[oklch(0.82_0.16_150)]" />
+              <Check className="h-3.5 w-3.5 text-[oklch(0.85_0.14_200)]" />
               {tItem}
             </li>
           ))}
@@ -346,7 +346,7 @@ function AccessSection() {
   return (
     <section id="access" className="scroll-mt-28 pb-24 pt-8 lg:pb-20">
       <div className="mx-auto max-w-5xl px-6">
-        <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-[oklch(0.2_0.04_170)] to-[oklch(0.3_0.08_160)] p-8 shadow-premium sm:p-12">
+        <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-[oklch(0.18_0.09_278)] to-[oklch(0.34_0.16_265)] p-8 shadow-premium sm:p-12">
           <div className="absolute -end-16 -top-16 h-56 w-56 rounded-full bg-primary/25 blur-3xl" />
           <div className="relative grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>

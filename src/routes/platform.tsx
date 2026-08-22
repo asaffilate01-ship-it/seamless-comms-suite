@@ -98,7 +98,7 @@ function Landing() {
                   </div>
                   <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-[10px]">{t("home.chatCase")}</Badge>
                 </div>
-                <CardContent className="space-y-3 bg-[oklch(0.98_0.008_150)] p-4">
+                <CardContent className="space-y-3 bg-[oklch(0.98_0.01_265)] p-4">
                   <Bubble side="in">Guten Tag, ich hätte gern einen Termin für eine Hautanalyse.</Bubble>
                   <Bubble side="ai">Hallo Anna 👋 Gern. Behandlungsart und Wunschzeit?</Bubble>
                   <Bubble side="in">Hautanalyse + Reinigung. Do. Nachmittag?</Bubble>
