@@ -69,7 +69,7 @@ export type PromoContent = {
 const de: PromoContent = {
   nav: { features: "Funktionen", screens: "Einblicke", editions: "Editionen", faq: "FAQ", access: "Zugang" },
   hero: {
-    badge: "Bald verfügbar · International · EU & UK",
+    badge: "",
     titleA: "Alle Kunden. Alle Gespräche.",
     titleB: "Ein System.",
     sub: "OmniQora macht jede Kundenkommunikation zum kontrollierten Geschäftsprozess: Anfrage, Qualifizierung, Angebot, Termin, Ausführung und Nachfassen – DSGVO-konform und in Frankfurt gehostet.",
@@ -82,7 +82,7 @@ const de: PromoContent = {
     { value: "24/7", label: "Automatische Ersterfassung" },
     { value: "5 Sprachen", label: "Mehrsprachige Kundenkommunikation" },
     { value: "100 %", label: "Prüfbare Audit-Historie" },
-  ],  channels: { title: "Ein Posteingang für jeden Kanal", sub: "Kundengespräche kommen von überall. OmniQora bündelt sie – und verbindet Kalender, CRM, Zahlungen und Ihre Fachsysteme.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "E-Mail", "Web-Chat", "Telegram", "Voice", "Kalender", "CRM", "Payments", "API & Webhooks"], note: "Weitere Kanäle und Systeme auf Anfrage." },
+  ],  channels: { title: "Ein Posteingang für jeden Kanal", sub: "Kundengespräche kommen von überall. OmniQora bündelt sie – und verbindet Kalender, CRM, Zahlungen und Ihre Fachsysteme.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "E-Mail", "Web-Chat", "Telegram", "Telefonie & VoIP", "Rufnummern-Mitnahme", "Kalender", "CRM", "Payments", "API & Webhooks"], note: "Weitere Kanäle und Systeme auf Anfrage." },
 
   features: {
     title: "Was die Plattform leistet",
@@ -203,7 +203,7 @@ const de: PromoContent = {
 const en: PromoContent = {
   nav: { features: "Features", screens: "Product tour", editions: "Editions", faq: "FAQ", access: "Access" },
   hero: {
-    badge: "Coming soon · International · EU & UK",
+    badge: "",
     titleA: "Every customer. Every conversation.",
     titleB: "One system.",
     sub: "OmniQora turns every customer conversation into a controlled business process: intake, qualification, quote, scheduling, fulfilment and follow-up — GDPR-first and hosted in Frankfurt.",
@@ -216,7 +216,7 @@ const en: PromoContent = {
     { value: "24/7", label: "Automated first response" },
     { value: "5 languages", label: "Multilingual customer comms" },
     { value: "100%", label: "Auditable history" },
-  ],  channels: { title: "One inbox for every channel", sub: "Customers reach you everywhere. OmniQora unifies it all — and connects calendars, CRM, payments and your line-of-business systems.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "E-Mail", "Web-Chat", "Telegram", "Voice", "Kalender", "CRM", "Payments", "API & Webhooks"], note: "Further channels and systems on request." },
+  ],  channels: { title: "One inbox for every channel", sub: "Customers reach you everywhere. OmniQora unifies it all — and connects calendars, CRM, payments and your line-of-business systems.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "Email", "Web chat", "Telegram", "Telephony & VoIP", "Number porting", "Calendar", "CRM", "Payments", "API & webhooks"], note: "Further channels and systems on request." },
 
   features: {
     title: "What the platform does",
@@ -337,7 +337,7 @@ const en: PromoContent = {
 const tr: PromoContent = {
   nav: { features: "Özellikler", screens: "Ürün turu", editions: "Sürümler", faq: "SSS", access: "Erişim" },
   hero: {
-    badge: "Çok yakında · Almanya'da geliştirildi",
+    badge: "",
     titleA: "Tüm müşteriler. Tüm görüşmeler.",
     titleB: "Tek sistem.",
     sub: "OmniQora tüm müşteri iletişimini kontrollü bir iş sürecine dönüştürür: talep, değerlendirme, teklif, randevu, uygulama ve takip — KVKK/GDPR uyumlu ve Frankfurt'ta barındırılır.",
@@ -350,7 +350,7 @@ const tr: PromoContent = {
     { value: "7/24", label: "Otomatik ilk yanıt" },
     { value: "5 dil", label: "Çok dilli müşteri iletişimi" },
     { value: "%100", label: "Denetlenebilir geçmiş" },
-  ],  channels: { title: "Her kanal için tek gelen kutusu", sub: "Müşteriler her yerden yazıyor. OmniQora hepsini birleştirir; takvim, CRM, ödeme ve iş sistemlerinizle bağlar.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "E-Mail", "Web-Chat", "Telegram", "Voice", "Kalender", "CRM", "Payments", "API & Webhooks"], note: "Diğer kanallar ve sistemler talep üzerine." },
+  ],  channels: { title: "Her kanal için tek gelen kutusu", sub: "Müşteriler her yerden yazıyor. OmniQora hepsini birleştirir; takvim, CRM, ödeme ve iş sistemlerinizle bağlar.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "E-posta", "Web sohbeti", "Telegram", "Telefon & VoIP", "Numara taşıma", "Takvim", "CRM", "Ödemeler", "API & webhook"], note: "Diğer kanallar ve sistemler talep üzerine." },
 
   features: {
     title: "Platform ne yapar",
@@ -471,7 +471,7 @@ const tr: PromoContent = {
 const ar: PromoContent = {
   nav: { features: "المزايا", screens: "جولة المنتج", editions: "الإصدارات", faq: "الأسئلة", access: "الدخول" },
   hero: {
-    badge: "قريباً · صُنع في ألمانيا",
+    badge: "",
     titleA: "كل العملاء. كل المحادثات.",
     titleB: "نظام واحد.",
     sub: "يحوّل OmniQora كل تواصل مع العملاء إلى عملية عمل منضبطة: الاستقبال، التأهيل، العرض، الموعد، التنفيذ والمتابعة — متوافق مع GDPR ومستضاف في فرانكفورت.",
@@ -484,7 +484,7 @@ const ar: PromoContent = {
     { value: "٢٤/٧", label: "استقبال آلي على مدار الساعة" },
     { value: "٥ لغات", label: "تواصل متعدد اللغات مع العملاء" },
     { value: "١٠٠٪", label: "سجل قابل للتدقيق" },
-  ],  channels: { title: "صندوق واحد لكل قناة", sub: "يصلك العملاء من كل مكان. يوحّد OmniQora كل ذلك ويربط التقويم وCRM والمدفوعات وأنظمة عملك.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "E-Mail", "Web-Chat", "Telegram", "Voice", "Kalender", "CRM", "Payments", "API & Webhooks"], note: "قنوات وأنظمة إضافية عند الطلب." },
+  ],  channels: { title: "صندوق واحد لكل قناة", sub: "يصلك العملاء من كل مكان. يوحّد OmniQora كل ذلك ويربط التقويم وCRM والمدفوعات وأنظمة عملك.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "البريد الإلكتروني", "الدردشة على الويب", "Telegram", "الهاتف وVoIP", "نقل الأرقام", "التقويم", "CRM", "المدفوعات", "API وWebhooks"], note: "قنوات وأنظمة إضافية عند الطلب." },
 
   features: {
     title: "ماذا تقدّم المنصة",
@@ -605,7 +605,7 @@ const ar: PromoContent = {
 const uk: PromoContent = {
   nav: { features: "Можливості", screens: "Огляд", editions: "Видання", faq: "Питання", access: "Доступ" },
   hero: {
-    badge: "Незабаром · Зроблено в Німеччині",
+    badge: "",
     titleA: "Усі клієнти. Усі розмови.",
     titleB: "Одна система.",
     sub: "OmniQora перетворює будь-яку комунікацію з клієнтом на керований бізнес-процес: запит, кваліфікація, пропозиція, запис, виконання та подальший супровід — відповідно до GDPR, хостинг у Франкфурті.",
@@ -618,7 +618,7 @@ const uk: PromoContent = {
     { value: "24/7", label: "Автоматичний перший контакт" },
     { value: "5 мов", label: "Багатомовна комунікація" },
     { value: "100 %", label: "Повний журнал аудиту" },
-  ],  channels: { title: "Одна скринька для всіх каналів", sub: "Клієнти пишуть звідусіль. OmniQora об’єднує все — і підключає календарі, CRM, платежі та ваші бізнес-системи.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "E-Mail", "Web-Chat", "Telegram", "Voice", "Kalender", "CRM", "Payments", "API & Webhooks"], note: "Інші канали та системи — на запит." },
+  ],  channels: { title: "Одна скринька для всіх каналів", sub: "Клієнти пишуть звідусіль. OmniQora об’єднує все — і підключає календарі, CRM, платежі та ваші бізнес-системи.", items: ["WhatsApp", "Instagram", "Facebook Messenger", "SMS", "Email", "Веб-чат", "Telegram", "Телефонія та VoIP", "Перенесення номерів", "Календар", "CRM", "Платежі", "API та вебхуки"], note: "Інші канали та системи — на запит." },
 
   features: {
     title: "Що вміє платформа",
