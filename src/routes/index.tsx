@@ -87,11 +87,14 @@ function Hero() {
       />
       <div className="absolute inset-0 bg-gradient-to-b from-[oklch(0.13_0.07_275/0.9)] via-[oklch(0.15_0.08_270/0.84)] to-[oklch(0.11_0.06_278/0.96)]" />
       <div className="relative mx-auto max-w-7xl px-6 py-20 sm:py-28">
-        <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/90 backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.85_0.14_200)]" />
-          {c.hero.badge}
-        </span>
-        <h1 className="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.08] text-primary-foreground sm:text-6xl">
+        {c.hero.badge ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/90 backdrop-blur">
+            <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.85_0.14_200)]" />
+            {c.hero.badge}
+          </span>
+        ) : null}
+        <h1 className="max-w-3xl font-display text-4xl font-semibold leading-[1.08] text-primary-foreground sm:text-6xl">
+
           {c.hero.titleA}
           <span className="block bg-gradient-to-r from-[oklch(0.72_0.17_265)] to-[oklch(0.86_0.14_200)] bg-clip-text text-transparent">
             {c.hero.titleB}
