@@ -1,11 +1,11 @@
 import { PromoFooter, PromoHeader } from "@/components/promo/promo-chrome";
 import { usePromo } from "@/lib/promo-lang";
-import { legalContent, type LegalDoc } from "@/lib/legal-content";
+import { legalContent } from "@/lib/legal-content";
 
-export function LegalPage({ doc }: { doc: (l: ReturnType<typeof legalPack>) => LegalDoc }) {
+export function LegalPage({ doc }: { doc: "imprint" | "privacy" | "terms" }) {
   const { lang, dir } = usePromo();
   const pack = legalContent[lang] ?? legalContent.de;
-  const d = doc(pack);
+  const d = pack[doc];
   return (
     <div dir={dir} className="min-h-screen bg-background">
       <PromoHeader />
@@ -27,8 +27,4 @@ export function LegalPage({ doc }: { doc: (l: ReturnType<typeof legalPack>) => L
       <PromoFooter />
     </div>
   );
-}
-
-function legalPack() {
-  return legalContent.de;
 }
