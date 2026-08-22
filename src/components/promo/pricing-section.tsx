@@ -71,7 +71,7 @@ export function PricingSection({
                 <button
                   key={cur.code}
                   type="button"
-                  onClick={() => setCurrency(cur.code)}
+                  onClick={() => chooseCurrency(cur.code)}
                   aria-pressed={active}
                   className={[
                     "rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-all",
