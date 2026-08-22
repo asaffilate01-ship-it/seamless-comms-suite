@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { promoContent, promoLangs, type PromoContent, type PromoLang } from "./promo-content";
+import { detectLang } from "./detect-locale";
+
 
 const STORAGE_KEY = "omniqora.promo.lang";
 
@@ -28,11 +30,17 @@ export function PromoLangProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as PromoLang | null;
-      if (saved && saved in promoContent) setLangState(saved);
+      if (saved && saved in promoContent) {
+        setLangState(saved);
+        return;
+      }
     } catch {
       /* ignore */
     }
+    const detected = detectLang();
+    if (detected in promoContent) setLangState(detected as PromoLang);
   }, []);
+
 
   const setLang = useCallback((next: PromoLang) => {
     setLangState((prev) => {
