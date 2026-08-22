@@ -17,21 +17,25 @@ import heroImage from "@/assets/promo-hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "OmniQora — Alle Kunden. Alle Gespräche. Ein System." },
+      { title: "OmniQora — Every conversation. One intelligent core" },
       {
         name: "description",
         content:
-          "OmniQora bündelt WhatsApp, Instagram, Messenger, SMS, E-Mail, Web-Chat und Anrufe in einem Posteingang – mit Fällen, Workflows, KI-Assistent und DSGVO-konformen Protokollen.",
+          "OmniQora unifies WhatsApp, Instagram, Messenger, SMS, email, web chat, telephony and VoIP in one inbox — with cases, workflows, an AI assistant and audit-ready compliance.",
       },
-      { property: "og:title", content: "OmniQora — Alle Kunden. Alle Gespräche. Ein System." },
+      { property: "og:title", content: "OmniQora — Every conversation. One intelligent core" },
       {
         property: "og:description",
         content:
-          "Omnichannel-Workflow-Plattform: Posteingang für alle Kanäle, Fälle, Automatisierung, KI-Assistent und Compliance in einem System.",
+          "OmniQora is a trading name of iTechLounge Ltd. in the UK and iTechLounge GmbH in Germany. One omnichannel core: inbox, cases, workflows, AI and compliance.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "/" },
+      { property: "og:image", content: "https://omniqora.com/images/promo-hero.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://omniqora.com/images/promo-hero.jpg" },
     ],
+    links: [{ rel: "canonical", href: "/" }],
   }),
   component: PromoHome,
 });
@@ -83,11 +87,14 @@ function Hero() {
       />
       <div className="absolute inset-0 bg-gradient-to-b from-[oklch(0.13_0.07_275/0.9)] via-[oklch(0.15_0.08_270/0.84)] to-[oklch(0.11_0.06_278/0.96)]" />
       <div className="relative mx-auto max-w-7xl px-6 py-20 sm:py-28">
-        <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/90 backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.85_0.14_200)]" />
-          {c.hero.badge}
-        </span>
-        <h1 className="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.08] text-primary-foreground sm:text-6xl">
+        {c.hero.badge ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/90 backdrop-blur">
+            <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.85_0.14_200)]" />
+            {c.hero.badge}
+          </span>
+        ) : null}
+        <h1 className="max-w-3xl font-display text-4xl font-semibold leading-[1.08] text-primary-foreground sm:text-6xl">
+
           {c.hero.titleA}
           <span className="block bg-gradient-to-r from-[oklch(0.72_0.17_265)] to-[oklch(0.86_0.14_200)] bg-clip-text text-transparent">
             {c.hero.titleB}
