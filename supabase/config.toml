@@ -1,1 +1,18 @@
+
 project_id = "mqbmbzsadypjzirbfhja"
+
+# Veyumo validates the local user or server signature inside the function.
+[functions.veyumo-bridge]
+verify_jwt = false
+
+# Veyumo validates the local user or server signature inside the function.
+[functions.veyumo-api]
+verify_jwt = false
+
+# Veyumo validates the local user or server signature inside the function.
+[functions.veyumo-gigs-webhook]
+verify_jwt = false
+
+# Veyumo validates the local user or server signature inside the function.
+[functions.veyumo-worker]
+verify_jwt = false
