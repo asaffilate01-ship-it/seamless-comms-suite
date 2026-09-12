@@ -153,19 +153,20 @@ export async function central(req: Request) {
     const entitlements = check(
       await service.from("veyumo_account_links").select("entitlement").eq("account_id", account.id),
     );
-    const qualifying = entitlements.find((x: any) => eligible(x.entitlement))?.entitlement;
+    const qualifying = entitlements?.find((x) => eligible(x.entitlement))?.entitlement;
     const purchasesEnabled = gigsConfigured() && env("VEYUMO_SALES_ENABLED") === "true";
     const bundlesEnabled = env("VEYUMO_BUNDLES_APPROVED") === "true";
-    const offers = check(
-      await service
-        .from("veyumo_offers")
-        .select("*")
-        .eq("market", account.market)
-        .eq("enabled", true),
-    ).filter(
-      (o: any) =>
-        canOffer(o, qualifying, account.market) && (!o.requires_subscription || bundlesEnabled),
-    );
+    const offers =
+      check(
+        await service
+          .from("veyumo_offers")
+          .select("*")
+          .eq("market", account.market)
+          .eq("enabled", true),
+      )?.filter(
+        (o) =>
+          canOffer(o, qualifying, account.market) && (!o.requires_subscription || bundlesEnabled),
+      ) ?? [];
     let providerUser = check(
       await service
         .from("veyumo_gigs_users")

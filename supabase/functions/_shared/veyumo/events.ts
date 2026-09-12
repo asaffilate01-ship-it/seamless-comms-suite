@@ -96,7 +96,7 @@ export async function worker(req: Request) {
                 .eq("account_id", user.account_id)
                 .in("source", ["zoryn_pay", "zoryn_rewards"]),
             );
-            for (const link of links) {
+            for (const link of links ?? []) {
               const payload = {
                 id: job.event_id,
                 type: "veyumo.subscription.observed",

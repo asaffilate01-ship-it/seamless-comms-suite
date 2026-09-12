@@ -1,11 +1,11 @@
-import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { createClient } from "npm:@supabase/supabase-js@2.110.7";
 import { BridgeError, readBody } from "./protocol.mjs";
 export const env = (key: string) => Deno.env.get(key) || "";
 export const db = () =>
   createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-export function check(result: any) {
+export function check<T>(result: { data: T; error: unknown }) {
   if (result.error) throw new BridgeError("storage_unavailable", 503);
   return result.data;
 }

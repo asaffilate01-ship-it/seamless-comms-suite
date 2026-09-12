@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { createClient } from "npm:@supabase/supabase-js@2.110.7";
 import { BridgeError, parseAction, signedHeaders, httpsUrl } from "./protocol.mjs";
 import { env, db, check, body, json, fail, originHeaders } from "./runtime.ts";
 
@@ -22,7 +22,7 @@ export function bridge(source: string) {
       if (!user.email || !user.email_confirmed_at) throw new BridgeError("verify_email_first", 403);
       const command = parseAction(await body(req));
       let subject = user.id;
-      let entitlement: any = { active: false };
+      let entitlement: { active: boolean; expiresAt?: string } = { active: false };
       const service = db();
       if (source === "haccora") {
         const context = check(await client.rpc("get_my_context"));
