@@ -1,3 +1,4 @@
+import { PortfolioServices } from "@/components/PortfolioServices";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -176,6 +177,8 @@ function Overview() {
           )}
         </>
       )}
+      {!busy && (role === "owner" || role === "admin") && <PortfolioServices source="omniqora" placement="dashboard" country="DE" locale="de" />}
     </AppShell>
   );
 }
+
