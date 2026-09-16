@@ -32,6 +32,7 @@ import { Route as AuthenticatedAppComplianceIntelligenceRouteImport } from './ro
 import { Route as AuthenticatedAppContactsRouteImport } from './routes/_authenticated/app.contacts'
 import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
 import { Route as AuthenticatedAppPartnersRouteImport } from './routes/_authenticated/app.partners'
+import { Route as AuthenticatedAppProcurementReadinessRouteImport } from './routes/_authenticated/app.procurement-readiness'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 import { Route as AuthenticatedAppTransformationRouteImport } from './routes/_authenticated/app.transformation'
 import { Route as AuthenticatedAppWhatsappRouteImport } from './routes/_authenticated/app.whatsapp'
@@ -159,6 +160,12 @@ const AuthenticatedAppPartnersRoute =
     path: '/partners',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppProcurementReadinessRoute =
+  AuthenticatedAppProcurementReadinessRouteImport.update({
+    id: '/procurement-readiness',
+    path: '/procurement-readiness',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppSettingsRoute =
   AuthenticatedAppSettingsRouteImport.update({
     id: '/settings',
@@ -224,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/app/contacts': typeof AuthenticatedAppContactsRoute
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
@@ -253,6 +261,7 @@ export interface FileRoutesByTo {
   '/app/contacts': typeof AuthenticatedAppContactsRoute
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
@@ -286,6 +295,7 @@ export interface FileRoutesById {
   '/_authenticated/app/contacts': typeof AuthenticatedAppContactsRoute
   '/_authenticated/app/inbox': typeof AuthenticatedAppInboxRoute
   '/_authenticated/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/_authenticated/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/_authenticated/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/app/contacts'
     | '/app/inbox'
     | '/app/partners'
+    | '/app/procurement-readiness'
     | '/app/settings'
     | '/app/transformation'
     | '/app/whatsapp'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/app/contacts'
     | '/app/inbox'
     | '/app/partners'
+    | '/app/procurement-readiness'
     | '/app/settings'
     | '/app/transformation'
     | '/app/whatsapp'
@@ -380,6 +392,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/contacts'
     | '/_authenticated/app/inbox'
     | '/_authenticated/app/partners'
+    | '/_authenticated/app/procurement-readiness'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/transformation'
     | '/_authenticated/app/whatsapp'
@@ -571,6 +584,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPartnersRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/procurement-readiness': {
+      id: '/_authenticated/app/procurement-readiness'
+      path: '/procurement-readiness'
+      fullPath: '/app/procurement-readiness'
+      preLoaderRoute: typeof AuthenticatedAppProcurementReadinessRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/settings': {
       id: '/_authenticated/app/settings'
       path: '/settings'
@@ -646,6 +666,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppContactsRoute: typeof AuthenticatedAppContactsRoute
   AuthenticatedAppInboxRoute: typeof AuthenticatedAppInboxRoute
   AuthenticatedAppPartnersRoute: typeof AuthenticatedAppPartnersRoute
+  AuthenticatedAppProcurementReadinessRoute: typeof AuthenticatedAppProcurementReadinessRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppTransformationRoute: typeof AuthenticatedAppTransformationRoute
   AuthenticatedAppWhatsappRoute: typeof AuthenticatedAppWhatsappRoute
@@ -662,6 +683,8 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppContactsRoute: AuthenticatedAppContactsRoute,
   AuthenticatedAppInboxRoute: AuthenticatedAppInboxRoute,
   AuthenticatedAppPartnersRoute: AuthenticatedAppPartnersRoute,
+  AuthenticatedAppProcurementReadinessRoute:
+    AuthenticatedAppProcurementReadinessRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppTransformationRoute: AuthenticatedAppTransformationRoute,
   AuthenticatedAppWhatsappRoute: AuthenticatedAppWhatsappRoute,

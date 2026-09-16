@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test:security": "node verification/access-controls.mjs",
+    "test:procurement": "node verification/procurement/readiness.test.mjs && node verification/procurement/database.test.mjs",
     "test:services": "python3 verification/run-services.py"
   },
   "dependencies": {
