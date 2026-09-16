@@ -1,0 +1,21 @@
+services:
+  ecosystem:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8787:8787"
+    environment:
+      ECOSYSTEM_ADMIN_USER: ${ECOSYSTEM_ADMIN_USER:-admin}
+      ECOSYSTEM_ADMIN_PASSWORD: ${ECOSYSTEM_ADMIN_PASSWORD:?Set a long random admin password}
+    volumes:
+      - ecosystem-data:/data
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["python3", "worker_loop.py"]
+    environment:
+      ECOSYSTEM_WEBHOOK_ENDPOINTS: ${ECOSYSTEM_WEBHOOK_ENDPOINTS:-{}}
+    volumes:
+      - ecosystem-data:/data
+volumes:
+  ecosystem-data:

@@ -1,0 +1,15 @@
+test_anonymous_cannot_read_or_mutate (test_server.StandaloneSecurityTests.test_anonymous_cannot_read_or_mutate) ... ok
+test_cannot_invite_another_tenants_user (test_server.StandaloneSecurityTests.test_cannot_invite_another_tenants_user) ... ok
+test_cross_tenant_reads_and_browser_identity_spoof_fail (test_server.StandaloneSecurityTests.test_cross_tenant_reads_and_browser_identity_spoof_fail) ... ok
+test_deactivated_user_loses_existing_session (test_server.StandaloneSecurityTests.test_deactivated_user_loses_existing_session) ... ok
+test_entitlement_rechecked_during_session (test_server.StandaloneSecurityTests.test_entitlement_rechecked_during_session) ... ok
+test_login_cookie_session_and_logout (test_server.StandaloneSecurityTests.test_login_cookie_session_and_logout) ... ok
+test_login_errors_generic_and_rate_limited (test_server.StandaloneSecurityTests.test_login_errors_generic_and_rate_limited) ... ok
+test_origin_and_csrf_required (test_server.StandaloneSecurityTests.test_origin_and_csrf_required) ... ok
+test_password_reset_revokes_sessions (test_server.StandaloneSecurityTests.test_password_reset_revokes_sessions) ... ok
+test_static_asset_allowlist_and_security_headers (test_server.StandaloneSecurityTests.test_static_asset_allowlist_and_security_headers) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 1.413s
+
+OK

@@ -1,0 +1,10 @@
+var/
+__pycache__/
+*.pyc
+*.db
+*.db-wal
+*.db-shm
+*.token
+.env
+.venv/
+node_modules/

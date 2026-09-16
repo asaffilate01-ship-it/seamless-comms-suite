@@ -22,7 +22,23 @@ build this saas/app to work with whatsapp etc, good ui/ux and features, read the
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://seamless-comms-suite.lovable.app
+**Live app**: https://omniqora.itechlounge.co.uk
+
+## Integrated business platform
+
+The 16 September 2026 source update adds the public services website at `/website`, authenticated Business360 at `/app/transformation`, and knowledge/compliance at `/app/compliance-intelligence`. Existing communication and commercial routes remain in place.
+
+Business360 covers business and department discovery, people and stakeholders, evidence, financial baselines, improvement opportunities and transaction planning. It shares the transformation service with the standalone edition and the optional specialist AI hub.
+
+See [integration and activation](docs/INTEGRATION-2026-09-16.md) for the source map, required migrations, service configuration, validation and current delivery boundaries. Git sync alone does not deploy the Python services or activate customer entitlements.
+
+```sh
+npm ci
+npm run build
+npm run typecheck
+npm run test:security
+npm run test:services
+```
 
 ## Build with Lovable
 

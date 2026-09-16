@@ -1,0 +1,3 @@
+import { env } from "cloudflare:workers";import { requireInternalIdentity } from "@/lib/auth/authorize";
+type Bindings={DB?:D1Database;ADMIN_EMAILS?:string};
+export async function GET(request:Request){const bindings=env as unknown as Bindings;const auth=requireInternalIdentity(request,bindings,["owner","admin","operator","viewer"]);if("response" in auth)return auth.response;if(!bindings.DB)return Response.json({mode:"simulation",items:[]});const rows=await bindings.DB.prepare("SELECT id, event_id, application_id, failure_stage, error_code, error_message, replay_count, status, last_replay_at, created_at FROM dead_letters ORDER BY created_at DESC LIMIT 100").all();return Response.json({items:rows.results});}

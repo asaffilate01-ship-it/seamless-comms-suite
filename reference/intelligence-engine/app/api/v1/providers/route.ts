@@ -1,0 +1,4 @@
+import { env } from "cloudflare:workers";
+import { requireInternalIdentity } from "@/lib/auth/authorize";
+type Bindings={ADMIN_EMAILS?:string};
+export async function GET(request:Request){const auth=requireInternalIdentity(request,env as unknown as Bindings,["owner","admin","operator","viewer"]);if("response" in auth)return auth.response;return Response.json({mode:"simulation",providers:[{id:"openai-primary",provider:"OpenAI",role:"Primary reasoning",credential_state:"not_connected",status:"Ready to connect"},{id:"openai-review",provider:"OpenAI",role:"Independent review",credential_state:"not_connected",status:"Ready to connect"},{id:"gemini-fast",provider:"Gemini",role:"Fast extraction",credential_state:"not_connected",status:"Ready to connect"},{id:"gemini-review",provider:"Gemini",role:"Cross-check",credential_state:"not_connected",status:"Ready to connect"}]});}

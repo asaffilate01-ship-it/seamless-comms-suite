@@ -1,0 +1,2 @@
+# Optional: required only for the Bedrock adapter. Resolve and lock an exact version for deployment.
+boto3>=1.40,<2

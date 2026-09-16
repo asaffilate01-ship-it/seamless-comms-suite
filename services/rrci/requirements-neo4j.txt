@@ -1,0 +1,2 @@
+# Optional backend. Tested against Neo4j Community 5.26; no APOC dependency.
+neo4j==5.28.6

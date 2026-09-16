@@ -1,0 +1,2 @@
+# Optional hosting process only. The local demonstration has no pip dependencies.
+gunicorn>=23,<24

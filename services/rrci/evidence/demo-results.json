@@ -1,0 +1,667 @@
+{
+  "version": "0.1.0",
+  "created_at": "2026-09-15T13:22:36.560745+00:00",
+  "mode": "offline_evidence_retrieval",
+  "llm_quality_evaluated": false,
+  "scope": "Small synthetic fixture checks; not an accuracy benchmark or production qualification.",
+  "passed": 8,
+  "total": 8,
+  "checks": [
+    {
+      "name": "Graph retrieves both downstream branch records",
+      "passed": true
+    },
+    {
+      "name": "Graph adds evidence absent from lexical baseline",
+      "passed": true
+    },
+    {
+      "name": "Procedure retrieval",
+      "passed": true
+    },
+    {
+      "name": "Expired source excluded",
+      "passed": true
+    },
+    {
+      "name": "Unknown topic returns no evidence",
+      "passed": true
+    },
+    {
+      "name": "Other company document excluded",
+      "passed": true
+    },
+    {
+      "name": "Same engine reused for taxnuvia",
+      "passed": true
+    },
+    {
+      "name": "Same engine reused for lawquo",
+      "passed": true
+    }
+  ],
+  "outputs": {
+    "rag": {
+      "run_id": "97b2413a-44ea-475d-97ea-fd90ccd87a03",
+      "status": "evidence_only",
+      "answer": "Relevant source excerpts are available below. A language model is not enabled, so no generated answer has been produced.",
+      "claims": [],
+      "evidence": [
+        {
+          "citation_id": "C1",
+          "chunk_id": "supplier-record:v1:0",
+          "document_id": "supplier-record",
+          "revision": 1,
+          "title": "supplier record",
+          "source_uri": "urn:fictional:supplier-record",
+          "quote": "Northstar Foods supplies Batch B17."
+        }
+      ],
+      "graph_paths": [],
+      "trace": {
+        "id": "97b2413a-44ea-475d-97ea-fd90ccd87a03",
+        "mode": "rag",
+        "status": "evidence_only",
+        "duration_ms": 0.72,
+        "source_chunks": [
+          "supplier-record:v1:0"
+        ],
+        "graph_edge_paths": [],
+        "retrieval": {
+          "method": "lexical_bm25",
+          "ranked_chunks": [
+            "supplier-record:v1:0"
+          ],
+          "matched_paths": 0,
+          "included_paths": 0
+        },
+        "usage": {},
+        "citation_references_checked": false,
+        "semantic_correctness_verified": false,
+        "as_of": "2026-09-15",
+        "model": null
+      },
+      "review_required": true
+    },
+    "graph": {
+      "run_id": "4429d153-190d-4b7d-899e-6429b371ad07",
+      "status": "evidence_only",
+      "answer": "Relevant source excerpts are available below. A language model is not enabled, so no generated answer has been produced.",
+      "claims": [],
+      "evidence": [
+        {
+          "citation_id": "C1",
+          "chunk_id": "supplier-record:v1:0",
+          "document_id": "supplier-record",
+          "revision": 1,
+          "title": "supplier record",
+          "source_uri": "urn:fictional:supplier-record",
+          "quote": "Northstar Foods supplies Batch B17."
+        },
+        {
+          "citation_id": "C2",
+          "chunk_id": "recipe-record:v1:0",
+          "document_id": "recipe-record",
+          "revision": 1,
+          "title": "recipe record",
+          "source_uri": "urn:fictional:recipe-record",
+          "quote": "Batch B17 is used in Lemon Tart."
+        },
+        {
+          "citation_id": "C3",
+          "chunk_id": "distribution-luton:v1:0",
+          "document_id": "distribution-luton",
+          "revision": 1,
+          "title": "distribution luton",
+          "source_uri": "urn:fictional:distribution-luton",
+          "quote": "Lemon Tart is served at Luton branch."
+        },
+        {
+          "citation_id": "C4",
+          "chunk_id": "distribution-st-albans:v1:0",
+          "document_id": "distribution-st-albans",
+          "revision": 1,
+          "title": "distribution st albans",
+          "source_uri": "urn:fictional:distribution-st-albans",
+          "quote": "Lemon Tart is served at St Albans branch."
+        }
+      ],
+      "graph_paths": [
+        {
+          "nodes": [
+            "Northstar Foods",
+            "Batch B17"
+          ],
+          "edges": [
+            {
+              "id": "supply",
+              "source": "Northstar Foods",
+              "relation": "supplies",
+              "target": "Batch B17",
+              "quote": "Northstar Foods supplies Batch B17.",
+              "citation_id": "C1"
+            }
+          ]
+        },
+        {
+          "nodes": [
+            "Northstar Foods",
+            "Batch B17",
+            "Lemon Tart"
+          ],
+          "edges": [
+            {
+              "id": "supply",
+              "source": "Northstar Foods",
+              "relation": "supplies",
+              "target": "Batch B17",
+              "quote": "Northstar Foods supplies Batch B17.",
+              "citation_id": "C1"
+            },
+            {
+              "id": "recipe",
+              "source": "Batch B17",
+              "relation": "used_in",
+              "target": "Lemon Tart",
+              "quote": "Batch B17 is used in Lemon Tart.",
+              "citation_id": "C2"
+            }
+          ]
+        },
+        {
+          "nodes": [
+            "Northstar Foods",
+            "Batch B17",
+            "Lemon Tart",
+            "Luton branch"
+          ],
+          "edges": [
+            {
+              "id": "supply",
+              "source": "Northstar Foods",
+              "relation": "supplies",
+              "target": "Batch B17",
+              "quote": "Northstar Foods supplies Batch B17.",
+              "citation_id": "C1"
+            },
+            {
+              "id": "recipe",
+              "source": "Batch B17",
+              "relation": "used_in",
+              "target": "Lemon Tart",
+              "quote": "Batch B17 is used in Lemon Tart.",
+              "citation_id": "C2"
+            },
+            {
+              "id": "luton",
+              "source": "Lemon Tart",
+              "relation": "served_at",
+              "target": "Luton branch",
+              "quote": "Lemon Tart is served at Luton branch.",
+              "citation_id": "C3"
+            }
+          ]
+        },
+        {
+          "nodes": [
+            "Northstar Foods",
+            "Batch B17",
+            "Lemon Tart",
+            "St Albans branch"
+          ],
+          "edges": [
+            {
+              "id": "supply",
+              "source": "Northstar Foods",
+              "relation": "supplies",
+              "target": "Batch B17",
+              "quote": "Northstar Foods supplies Batch B17.",
+              "citation_id": "C1"
+            },
+            {
+              "id": "recipe",
+              "source": "Batch B17",
+              "relation": "used_in",
+              "target": "Lemon Tart",
+              "quote": "Batch B17 is used in Lemon Tart.",
+              "citation_id": "C2"
+            },
+            {
+              "id": "st-albans",
+              "source": "Lemon Tart",
+              "relation": "served_at",
+              "target": "St Albans branch",
+              "quote": "Lemon Tart is served at St Albans branch.",
+              "citation_id": "C4"
+            }
+          ]
+        }
+      ],
+      "trace": {
+        "id": "4429d153-190d-4b7d-899e-6429b371ad07",
+        "mode": "graph",
+        "status": "evidence_only",
+        "duration_ms": 0.86,
+        "source_chunks": [
+          "supplier-record:v1:0",
+          "recipe-record:v1:0",
+          "distribution-luton:v1:0",
+          "distribution-st-albans:v1:0"
+        ],
+        "graph_edge_paths": [
+          [
+            "supply"
+          ],
+          [
+            "supply",
+            "recipe"
+          ],
+          [
+            "supply",
+            "recipe",
+            "luton"
+          ],
+          [
+            "supply",
+            "recipe",
+            "st-albans"
+          ]
+        ],
+        "retrieval": {
+          "method": "graph_only",
+          "ranked_chunks": [],
+          "matched_paths": 4,
+          "included_paths": 4
+        },
+        "usage": {},
+        "citation_references_checked": false,
+        "semantic_correctness_verified": false,
+        "as_of": "2026-09-15",
+        "model": null
+      },
+      "review_required": true
+    },
+    "hybrid": {
+      "run_id": "abc649cd-23de-4faf-b3a3-7409f00fb111",
+      "status": "evidence_only",
+      "answer": "Relevant source excerpts are available below. A language model is not enabled, so no generated answer has been produced.",
+      "claims": [],
+      "evidence": [
+        {
+          "citation_id": "C1",
+          "chunk_id": "supplier-record:v1:0",
+          "document_id": "supplier-record",
+          "revision": 1,
+          "title": "supplier record",
+          "source_uri": "urn:fictional:supplier-record",
+          "quote": "Northstar Foods supplies Batch B17."
+        },
+        {
+          "citation_id": "C2",
+          "chunk_id": "recipe-record:v1:0",
+          "document_id": "recipe-record",
+          "revision": 1,
+          "title": "recipe record",
+          "source_uri": "urn:fictional:recipe-record",
+          "quote": "Batch B17 is used in Lemon Tart."
+        },
+        {
+          "citation_id": "C3",
+          "chunk_id": "distribution-luton:v1:0",
+          "document_id": "distribution-luton",
+          "revision": 1,
+          "title": "distribution luton",
+          "source_uri": "urn:fictional:distribution-luton",
+          "quote": "Lemon Tart is served at Luton branch."
+        },
+        {
+          "citation_id": "C4",
+          "chunk_id": "distribution-st-albans:v1:0",
+          "document_id": "distribution-st-albans",
+          "revision": 1,
+          "title": "distribution st albans",
+          "source_uri": "urn:fictional:distribution-st-albans",
+          "quote": "Lemon Tart is served at St Albans branch."
+        }
+      ],
+      "graph_paths": [
+        {
+          "nodes": [
+            "Northstar Foods",
+            "Batch B17"
+          ],
+          "edges": [
+            {
+              "id": "supply",
+              "source": "Northstar Foods",
+              "relation": "supplies",
+              "target": "Batch B17",
+              "quote": "Northstar Foods supplies Batch B17.",
+              "citation_id": "C1"
+            }
+          ]
+        },
+        {
+          "nodes": [
+            "Northstar Foods",
+            "Batch B17",
+            "Lemon Tart"
+          ],
+          "edges": [
+            {
+              "id": "supply",
+              "source": "Northstar Foods",
+              "relation": "supplies",
+              "target": "Batch B17",
+              "quote": "Northstar Foods supplies Batch B17.",
+              "citation_id": "C1"
+            },
+            {
+              "id": "recipe",
+              "source": "Batch B17",
+              "relation": "used_in",
+              "target": "Lemon Tart",
+              "quote": "Batch B17 is used in Lemon Tart.",
+              "citation_id": "C2"
+            }
+          ]
+        },
+        {
+          "nodes": [
+            "Northstar Foods",
+            "Batch B17",
+            "Lemon Tart",
+            "Luton branch"
+          ],
+          "edges": [
+            {
+              "id": "supply",
+              "source": "Northstar Foods",
+              "relation": "supplies",
+              "target": "Batch B17",
+              "quote": "Northstar Foods supplies Batch B17.",
+              "citation_id": "C1"
+            },
+            {
+              "id": "recipe",
+              "source": "Batch B17",
+              "relation": "used_in",
+              "target": "Lemon Tart",
+              "quote": "Batch B17 is used in Lemon Tart.",
+              "citation_id": "C2"
+            },
+            {
+              "id": "luton",
+              "source": "Lemon Tart",
+              "relation": "served_at",
+              "target": "Luton branch",
+              "quote": "Lemon Tart is served at Luton branch.",
+              "citation_id": "C3"
+            }
+          ]
+        },
+        {
+          "nodes": [
+            "Northstar Foods",
+            "Batch B17",
+            "Lemon Tart",
+            "St Albans branch"
+          ],
+          "edges": [
+            {
+              "id": "supply",
+              "source": "Northstar Foods",
+              "relation": "supplies",
+              "target": "Batch B17",
+              "quote": "Northstar Foods supplies Batch B17.",
+              "citation_id": "C1"
+            },
+            {
+              "id": "recipe",
+              "source": "Batch B17",
+              "relation": "used_in",
+              "target": "Lemon Tart",
+              "quote": "Batch B17 is used in Lemon Tart.",
+              "citation_id": "C2"
+            },
+            {
+              "id": "st-albans",
+              "source": "Lemon Tart",
+              "relation": "served_at",
+              "target": "St Albans branch",
+              "quote": "Lemon Tart is served at St Albans branch.",
+              "citation_id": "C4"
+            }
+          ]
+        }
+      ],
+      "trace": {
+        "id": "abc649cd-23de-4faf-b3a3-7409f00fb111",
+        "mode": "hybrid",
+        "status": "evidence_only",
+        "duration_ms": 0.65,
+        "source_chunks": [
+          "supplier-record:v1:0",
+          "recipe-record:v1:0",
+          "distribution-luton:v1:0",
+          "distribution-st-albans:v1:0"
+        ],
+        "graph_edge_paths": [
+          [
+            "supply"
+          ],
+          [
+            "supply",
+            "recipe"
+          ],
+          [
+            "supply",
+            "recipe",
+            "luton"
+          ],
+          [
+            "supply",
+            "recipe",
+            "st-albans"
+          ]
+        ],
+        "retrieval": {
+          "method": "lexical_bm25",
+          "ranked_chunks": [
+            "supplier-record:v1:0"
+          ],
+          "matched_paths": 4,
+          "included_paths": 4
+        },
+        "usage": {},
+        "citation_references_checked": false,
+        "semantic_correctness_verified": false,
+        "as_of": "2026-09-15",
+        "model": null
+      },
+      "review_required": true
+    },
+    "fridge": {
+      "run_id": "e339011d-b3cb-4572-85a2-8413aa55fa37",
+      "status": "evidence_only",
+      "answer": "Relevant source excerpts are available below. A language model is not enabled, so no generated answer has been produced.",
+      "claims": [],
+      "evidence": [
+        {
+          "citation_id": "C1",
+          "chunk_id": "fridge-procedure:v1:0",
+          "document_id": "fridge-procedure",
+          "revision": 1,
+          "title": "fridge procedure",
+          "source_uri": "urn:fictional:fridge-procedure",
+          "quote": "Fictional training procedure: if the fridge fails, notify the duty manager, record the fault and follow the approved escalation procedure. Do not declare affected food safe based on this sample."
+        }
+      ],
+      "graph_paths": [],
+      "trace": {
+        "id": "e339011d-b3cb-4572-85a2-8413aa55fa37",
+        "mode": "rag",
+        "status": "evidence_only",
+        "duration_ms": 0.37,
+        "source_chunks": [
+          "fridge-procedure:v1:0"
+        ],
+        "graph_edge_paths": [],
+        "retrieval": {
+          "method": "lexical_bm25",
+          "ranked_chunks": [
+            "fridge-procedure:v1:0"
+          ],
+          "matched_paths": 0,
+          "included_paths": 0
+        },
+        "usage": {},
+        "citation_references_checked": false,
+        "semantic_correctness_verified": false,
+        "as_of": "2026-09-15",
+        "model": null
+      },
+      "review_required": true
+    },
+    "unknown": {
+      "run_id": "82f7aedc-1fa7-41af-9b7a-1d2a6ff61e79",
+      "status": "insufficient_evidence",
+      "answer": "No supporting evidence was retrieved. Add an appropriate source or clarify the question.",
+      "claims": [],
+      "evidence": [],
+      "graph_paths": [],
+      "trace": {
+        "id": "82f7aedc-1fa7-41af-9b7a-1d2a6ff61e79",
+        "mode": "rag",
+        "status": "insufficient_evidence",
+        "duration_ms": 0.51,
+        "source_chunks": [],
+        "graph_edge_paths": [],
+        "retrieval": {
+          "method": "lexical_bm25",
+          "ranked_chunks": [],
+          "matched_paths": 0,
+          "included_paths": 0
+        },
+        "usage": {},
+        "citation_references_checked": false,
+        "semantic_correctness_verified": false,
+        "as_of": "2026-09-15",
+        "model": null
+      },
+      "review_required": true
+    },
+    "isolation": {
+      "run_id": "e74f0376-99ca-49bc-a934-d7886f71935a",
+      "status": "insufficient_evidence",
+      "answer": "No supporting evidence was retrieved. Add an appropriate source or clarify the question.",
+      "claims": [],
+      "evidence": [],
+      "graph_paths": [],
+      "trace": {
+        "id": "e74f0376-99ca-49bc-a934-d7886f71935a",
+        "mode": "rag",
+        "status": "insufficient_evidence",
+        "duration_ms": 0.61,
+        "source_chunks": [],
+        "graph_edge_paths": [],
+        "retrieval": {
+          "method": "lexical_bm25",
+          "ranked_chunks": [],
+          "matched_paths": 0,
+          "included_paths": 0
+        },
+        "usage": {},
+        "citation_references_checked": false,
+        "semantic_correctness_verified": false,
+        "as_of": "2026-09-15",
+        "model": null
+      },
+      "review_required": true
+    },
+    "taxnuvia": {
+      "run_id": "cb84ea1f-d112-4504-be9a-ad4cfd26160e",
+      "status": "evidence_only",
+      "answer": "Relevant source excerpts are available below. A language model is not enabled, so no generated answer has been produced.",
+      "claims": [],
+      "evidence": [
+        {
+          "citation_id": "C1",
+          "chunk_id": "firm-guide:v1:0",
+          "document_id": "firm-guide",
+          "revision": 1,
+          "title": "firm guide",
+          "source_uri": "urn:fictional:firm-guide",
+          "quote": "Fictional Sample Ledger offers bookkeeping and payroll onboarding. Its onboarding guide asks clients for prior payroll reports and a company contact."
+        }
+      ],
+      "graph_paths": [],
+      "trace": {
+        "id": "cb84ea1f-d112-4504-be9a-ad4cfd26160e",
+        "mode": "rag",
+        "status": "evidence_only",
+        "duration_ms": 0.37,
+        "source_chunks": [
+          "firm-guide:v1:0"
+        ],
+        "graph_edge_paths": [],
+        "retrieval": {
+          "method": "lexical_bm25",
+          "ranked_chunks": [
+            "firm-guide:v1:0"
+          ],
+          "matched_paths": 0,
+          "included_paths": 0
+        },
+        "usage": {},
+        "citation_references_checked": false,
+        "semantic_correctness_verified": false,
+        "as_of": "2026-09-15",
+        "model": null
+      },
+      "review_required": true
+    },
+    "lawquo": {
+      "run_id": "3883a82b-69a3-4d90-8469-39e583272cc0",
+      "status": "evidence_only",
+      "answer": "Relevant source excerpts are available below. A language model is not enabled, so no generated answer has been produced.",
+      "claims": [],
+      "evidence": [
+        {
+          "citation_id": "C1",
+          "chunk_id": "case-intake:v1:0",
+          "document_id": "case-intake",
+          "revision": 1,
+          "title": "case intake",
+          "source_uri": "urn:fictional:case-intake",
+          "quote": "Fictional Case Alpha intake checklist: the reviewing lawyer requests the signed agreement and relevant correspondence. This document makes no statement about legal rights."
+        }
+      ],
+      "graph_paths": [],
+      "trace": {
+        "id": "3883a82b-69a3-4d90-8469-39e583272cc0",
+        "mode": "rag",
+        "status": "evidence_only",
+        "duration_ms": 0.54,
+        "source_chunks": [
+          "case-intake:v1:0"
+        ],
+        "graph_edge_paths": [],
+        "retrieval": {
+          "method": "lexical_bm25",
+          "ranked_chunks": [
+            "case-intake:v1:0"
+          ],
+          "matched_paths": 0,
+          "included_paths": 0
+        },
+        "usage": {},
+        "citation_references_checked": false,
+        "semantic_correctness_verified": false,
+        "as_of": "2026-09-15",
+        "model": null
+      },
+      "review_required": true
+    }
+  }
+}

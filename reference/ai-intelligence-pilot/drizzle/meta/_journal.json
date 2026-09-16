@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789456436544,
+      "tag": "0000_perpetual_doctor_faustus",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789456725984,
+      "tag": "0001_parallel_weapon_omega",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789456856239,
+      "tag": "0002_lyrical_exiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1789460769843,
+      "tag": "0003_smiling_kingpin",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1789461816447,
+      "tag": "0004_bitter_toad_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1789468833047,
+      "tag": "0005_groovy_wonder_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1789469336908,
+      "tag": "0006_tranquil_exodus",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1789469406989,
+      "tag": "0007_opposite_speed",
+      "breakpoints": true
+    }
+  ]
+}

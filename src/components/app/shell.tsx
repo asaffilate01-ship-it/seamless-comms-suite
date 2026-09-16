@@ -23,6 +23,7 @@ import logoAsset from "@/assets/omniqora-logo.png.asset.json";
 type NavItem = {
   to: string;
   labelKey: string;
+  label?: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
   badge?: string;
@@ -37,6 +38,8 @@ const nav: NavItem[] = [
   { to: "/app/campaigns", labelKey: "app.nav.campaigns", icon: Megaphone },
   { to: "/app/analytics", labelKey: "app.nav.analytics", icon: BarChart3 },
   { to: "/app/partners", labelKey: "app.nav.partners", icon: Handshake },
+  { to: "/app/transformation", labelKey: "", label: "Business360", icon: BarChart3 },
+  { to: "/app/compliance-intelligence", labelKey: "", label: "Knowledge & compliance", icon: ShieldCheck },
   { to: "/app/settings", labelKey: "app.nav.settings", icon: Settings },
 ];
 
@@ -65,7 +68,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               )}
             >
               <Icon className="h-4 w-4" />
-              <span className="flex-1">{t(item.labelKey)}</span>
+              <span className="flex-1">{item.label ?? t(item.labelKey)}</span>
               {item.badge && (
                 <span className="rounded-full bg-sidebar-primary/20 px-2 py-0.5 text-[10px] font-medium text-sidebar-primary">
                   {item.badge}

@@ -1,0 +1,144 @@
+{
+  "tenant_daily_model_calls": 200,
+  "models": [
+    {
+      "id": "openai-pilot",
+      "label": "OpenAI",
+      "provider": "openai",
+      "model": "REPLACE_WITH_APPROVED_MODEL_OR_DEPLOYMENT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ],
+      "credential_env": "OQ_SECRET_OPENAI_PILOT"
+    },
+    {
+      "id": "azure_openai-pilot",
+      "label": "Azure OpenAI",
+      "provider": "azure_openai",
+      "model": "REPLACE_WITH_APPROVED_MODEL_OR_DEPLOYMENT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ],
+      "credential_env": "OQ_SECRET_AZURE_OPENAI_PILOT",
+      "endpoint": "https://your-resource.openai.azure.com"
+    },
+    {
+      "id": "anthropic-pilot",
+      "label": "Claude",
+      "provider": "anthropic",
+      "model": "REPLACE_WITH_APPROVED_MODEL_OR_DEPLOYMENT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ],
+      "credential_env": "OQ_SECRET_ANTHROPIC_PILOT"
+    },
+    {
+      "id": "gemini-pilot",
+      "label": "Gemini",
+      "provider": "gemini",
+      "model": "REPLACE_WITH_APPROVED_MODEL_OR_DEPLOYMENT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ],
+      "credential_env": "OQ_SECRET_GEMINI_PILOT"
+    },
+    {
+      "id": "bedrock-pilot",
+      "label": "Bedrock",
+      "provider": "bedrock",
+      "model": "REPLACE_WITH_APPROVED_MODEL_OR_DEPLOYMENT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ],
+      "region": "eu-west-2"
+    },
+    {
+      "id": "ollama-pilot",
+      "label": "Private Ollama",
+      "provider": "ollama",
+      "model": "REPLACE_WITH_APPROVED_MODEL_OR_DEPLOYMENT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ],
+      "endpoint": "http://127.0.0.1:11434"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "graph-pilot",
+      "label": "Microsoft application inventory",
+      "kind": "microsoft_graph",
+      "operations": [
+        "applications",
+        "organisation",
+        "licences"
+      ],
+      "credential_env": "OQ_SECRET_GRAPH_PILOT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ]
+    },
+    {
+      "id": "github-pilot",
+      "label": "Approved application repository",
+      "kind": "github",
+      "owner": "replace-owner",
+      "repository": "replace-repository",
+      "operations": [
+        "repository",
+        "issues"
+      ],
+      "credential_env": "OQ_SECRET_GITHUB_PILOT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ]
+    },
+    {
+      "id": "inventory-feed",
+      "label": "Approved inventory export API",
+      "kind": "json_feed",
+      "endpoint": "https://approved-customer-host.example/inventory",
+      "fields": [
+        "id",
+        "name",
+        "owner",
+        "platform",
+        "status"
+      ],
+      "operations": [
+        "read"
+      ],
+      "credential_env": "OQ_SECRET_INVENTORY_PILOT",
+      "bindings": [
+        {
+          "tenant": "replace-with-tenant-id",
+          "project": "replace-with-project-id"
+        }
+      ]
+    }
+  ]
+}

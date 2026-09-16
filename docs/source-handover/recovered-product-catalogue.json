@@ -1,0 +1,490 @@
+[
+  {
+    "slug": "haccora",
+    "name": "Haccora",
+    "sector": "Food & hospitality",
+    "description": "Food safety, corrective actions and inspection evidence",
+    "template": "evidence",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "dokuvera",
+    "name": "Dokuvera",
+    "sector": "Property & construction",
+    "description": "Controlled documents, revisions and evidence packs",
+    "template": "documents",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "omniqora",
+    "name": "Omniqora",
+    "sector": "Communications",
+    "description": "Customer conversations, cases and follow-ups",
+    "template": "inbox",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "taxnuvia",
+    "name": "TaxNuvia",
+    "sector": "Professional services",
+    "description": "Qualified client intake for accountant matching",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "eventplanr",
+    "name": "EventPlanr",
+    "sector": "Marketplaces",
+    "description": "Event briefs, supplier quotations and coordination",
+    "template": "quotes",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "kinderstars",
+    "name": "KinderStars",
+    "sector": "Family & care",
+    "description": "Parent enquiries and independent childminder administration",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "ahlnikkah",
+    "name": "AhlNikkah",
+    "sector": "Family & care",
+    "description": "Introductions, compatibility workbooks and family coordination",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "affivon",
+    "name": "Affivon",
+    "sector": "Commerce",
+    "description": "Catalogue and offer operations for multiple affiliate websites",
+    "template": "commerce",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "merqora",
+    "name": "Merqora",
+    "sector": "Commerce",
+    "description": "Marketplace seller operations, listings and margin review",
+    "template": "commerce",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "premisora",
+    "name": "Premisora",
+    "sector": "Property & construction",
+    "description": "Construction projects, options and change control",
+    "template": "projects",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "gabley",
+    "name": "Gabley",
+    "sector": "Property & construction",
+    "description": "Survey and property information",
+    "template": "documents",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "gabley-retrofit",
+    "name": "Gabley Retrofit",
+    "sector": "Property & construction",
+    "description": "Retrofit planning, delivery evidence and warranties",
+    "template": "projects",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "domureva",
+    "name": "DOMUREVA",
+    "sector": "Property & construction",
+    "description": "Vacant property restoration and funding evidence",
+    "template": "projects",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "immoviq",
+    "name": "Immoviq",
+    "sector": "Property & construction",
+    "description": "Landlord and tenant maintenance operations",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "hmo-flow",
+    "name": "HMO Flow",
+    "sector": "Property & construction",
+    "description": "HMO conversion and property records",
+    "template": "projects",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "craftvaro",
+    "name": "Craftvaro",
+    "sector": "Property & construction",
+    "description": "Trade jobs, subcontractors and project delivery",
+    "template": "quotes",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "cirqiva",
+    "name": "Cirqiva",
+    "sector": "Marketplaces",
+    "description": "Waste collection quotations and collection evidence",
+    "template": "quotes",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "marktpass",
+    "name": "MarktPass",
+    "sector": "Commerce",
+    "description": "Product compliance documents for Germany and EU sellers",
+    "template": "documents",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "merqano",
+    "name": "Merqano",
+    "sector": "Commerce",
+    "description": "Independent merchant storefront operations",
+    "template": "commerce",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "dishbee",
+    "name": "Dishbee",
+    "sector": "Food & hospitality",
+    "description": "EPOS, online ordering and restaurant operations",
+    "template": "commerce",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "schonova",
+    "name": "Schonova",
+    "sector": "Marketplaces",
+    "description": "Beauty discovery, bookings and provider operations",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "xpertjobs",
+    "name": "XpertJobs",
+    "sector": "Education & careers",
+    "description": "Jobs, sponsor intelligence and application coordination",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "unipathways",
+    "name": "UniPathways",
+    "sector": "Education & careers",
+    "description": "Learning and certification preparation",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "traindirekt",
+    "name": "TrainDirekt",
+    "sector": "Education & careers",
+    "description": "Training cohorts, attendance and evidence",
+    "template": "evidence",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "lessonahead",
+    "name": "LessonAhead",
+    "sector": "Education & careers",
+    "description": "Learner enquiries and session coordination",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "kalethon-play",
+    "name": "Kalethon Play",
+    "sector": "Education & careers",
+    "description": "Sports sessions, memberships and venue bookings",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "nearcura",
+    "name": "NearCura",
+    "sector": "Family & care",
+    "description": "Healthcare provider discovery and enquiries",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "amityos",
+    "name": "AmityOS",
+    "sector": "Family & care",
+    "description": "Care administration; detailed module scope to review",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "pipkin",
+    "name": "Pipkin",
+    "sector": "Family & care",
+    "description": "Care SaaS; detailed product scope to review",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "taxcenda",
+    "name": "TaxCenda",
+    "sector": "Professional services",
+    "description": "Bookkeeping and tax document preparation",
+    "template": "documents",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "lawquo",
+    "name": "LawQuo",
+    "sector": "Professional services",
+    "description": "Professional legal enquiries and consultation coordination",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "beratermarkt",
+    "name": "BeraterMarkt",
+    "sector": "Professional services",
+    "description": "Adviser discovery and enquiry coordination",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "beistandplus",
+    "name": "BeistandPlus",
+    "sector": "Family & care",
+    "description": "Family and administrative case coordination",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "orvilo",
+    "name": "Orvilo",
+    "sector": "Creative & websites",
+    "description": "Website structure, template and content preparation",
+    "template": "content",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "voxentri",
+    "name": "Voxentri",
+    "sector": "Creative & websites",
+    "description": "Multilingual advertising content and production",
+    "template": "content",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "veyumo",
+    "name": "Veyumo",
+    "sector": "Communications",
+    "description": "Mobile service onboarding and customer support",
+    "template": "inbox",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "zoryn-pay",
+    "name": "Zoryn Pay",
+    "sector": "Payments & rewards",
+    "description": "Payment reconciliation and onboarding evidence",
+    "template": "evidence",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "zoryn-rewards",
+    "name": "Zoryn Rewards",
+    "sector": "Payments & rewards",
+    "description": "Loyalty programme operations and support",
+    "template": "inbox",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "insure360",
+    "name": "Insure360",
+    "sector": "Professional services",
+    "description": "Insurance enquiries, documents and renewal coordination",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "motoresq",
+    "name": "MotoResQ",
+    "sector": "Transport & logistics",
+    "description": "Vehicle recovery enquiries and coordination",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "all-road-aid",
+    "name": "All-Road-Aid",
+    "sector": "Transport & logistics",
+    "description": "Roadside assistance and recovery requests",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "fleetsora",
+    "name": "Fleetsora",
+    "sector": "Transport & logistics",
+    "description": "Fleet and rider operations",
+    "template": "coordination",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "fanzeno",
+    "name": "Fanzeno",
+    "sector": "Education & careers",
+    "description": "Sports quiz content and quality review",
+    "template": "content",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "auvane-one",
+    "name": "Auvane One",
+    "sector": "Marketplaces",
+    "description": "Hospitality and service supplier onboarding",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "leadlens",
+    "name": "LeadLens",
+    "sector": "Professional services",
+    "description": "Opportunity discovery and qualification",
+    "template": "intake",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "regulos",
+    "name": "Regulos",
+    "sector": "Professional services",
+    "description": "Regulatory change review and task allocation",
+    "template": "documents",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "threeonethree",
+    "name": "ThreeOneThree",
+    "sector": "Communications",
+    "description": "CRM and opportunity follow-up",
+    "template": "inbox",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "loungeconnect",
+    "name": "LoungeConnect",
+    "sector": "Communications",
+    "description": "Messages, customer cases and workflow coordination",
+    "template": "inbox",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "rettio",
+    "name": "Rettio",
+    "sector": "Marketplaces",
+    "description": "Local business workflows; product scope to review",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "kiezio",
+    "name": "Kiezio",
+    "sector": "Marketplaces",
+    "description": "Local commerce workflows; product scope to review",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "syndryvia",
+    "name": "Syndryvia",
+    "sector": "Scope to review",
+    "description": "Product name recovered; functionality needs confirmation",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "skillfinch",
+    "name": "SkillFinch",
+    "sector": "Scope to review",
+    "description": "Product functionality needs confirmation",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "stemcoach",
+    "name": "STEMCoach",
+    "sector": "Scope to review",
+    "description": "Product functionality needs confirmation",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "criclume",
+    "name": "Criclume",
+    "sector": "Scope to review",
+    "description": "Product functionality needs confirmation",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "formationgenie",
+    "name": "FormationGenie",
+    "sector": "Scope to review",
+    "description": "Product functionality needs confirmation",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "recovarable",
+    "name": "Recovarable",
+    "sector": "Scope to review",
+    "description": "Product functionality needs confirmation",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "depotmesh",
+    "name": "DepotMesh",
+    "sector": "Scope to review",
+    "description": "Validation-stage product; scope needs confirmation",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "gradlume",
+    "name": "Gradlume",
+    "sector": "Scope to review",
+    "description": "Training-engine concept; detailed scope to review",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "dearnext",
+    "name": "DearNext",
+    "sector": "Scope to review",
+    "description": "Earlier platform; detailed scope to review",
+    "template": "coordination",
+    "scope": "review"
+  },
+  {
+    "slug": "construction-planning",
+    "name": "AI Construction Planning",
+    "sector": "Property & construction",
+    "description": "Design options and change proposals for professional review",
+    "template": "projects",
+    "scope": "confirmed"
+  },
+  {
+    "slug": "portfolio-network",
+    "name": "Portfolio network",
+    "sector": "Payments & rewards",
+    "description": "Consented cross-product referrals and bundle rules",
+    "template": "intake",
+    "scope": "confirmed"
+  }
+]

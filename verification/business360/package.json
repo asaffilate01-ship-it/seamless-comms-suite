@@ -1,0 +1,11 @@
+{
+  "name": "business360-verification",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8"
+  },
+  "scripts": {
+    "test:rls": "node test_rls.mjs"
+  }
+}

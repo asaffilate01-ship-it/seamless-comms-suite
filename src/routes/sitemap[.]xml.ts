@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
-const BASE_URL = "";
+const BASE_URL = "https://omniqora.itechlounge.co.uk";
 
 interface SitemapEntry {
   path: string;
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: async () => {
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
+          { path: "/website", changefreq: "weekly", priority: "0.9" },
           { path: "/features", changefreq: "monthly", priority: "0.8" },
           { path: "/workflow-packs", changefreq: "monthly", priority: "0.8" },
           { path: "/pricing", changefreq: "monthly", priority: "0.9" },

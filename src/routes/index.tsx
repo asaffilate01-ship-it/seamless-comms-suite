@@ -53,6 +53,7 @@ function PromoHome() {
       style={{ opacity: transitioning ? 0.35 : 1 }}
     >
       <PromoHeader />
+      <aside className="border-b border-primary/20 bg-primary/10 px-6 py-4 text-center"><a href="/website" className="font-semibold text-primary hover:underline">Explore all Omniqora services — your business, working as one →</a></aside>
       <main>
         <Hero />
         <Stats />
