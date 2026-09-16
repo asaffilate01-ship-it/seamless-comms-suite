@@ -36,6 +36,7 @@ export function PromoHeader() {
     faq: c.nav.faq,
     access: c.nav.access,
   };
+  const serviceLabel = {en:"All services",de:"Alle Leistungen",tr:"Tüm hizmetler",ar:"جميع الخدمات",fr:"Tous les services"}[lang];
   const desktopNav = [
     { id: "features", label: c.nav.features },
     { id: "screens", label: c.nav.screens },
@@ -53,7 +54,8 @@ export function PromoHeader() {
           <img src={logoAsset.url} alt="OmniQora" className="h-24 w-auto object-contain" />
         </Link>
 
-        <nav className="hidden items-center gap-7 lg:flex">
+        <nav className="hidden items-center gap-5 lg:flex">
+          <a href="/website" className="text-sm font-semibold text-primary">{serviceLabel}</a>
           {desktopNav.map((s) => (
             <button
               key={s.id}
@@ -91,6 +93,7 @@ export function PromoHeader() {
       {open && (
         <div className="border-t border-border/60 bg-card px-5 py-4 lg:hidden">
           <div className="grid gap-1">
+            <a href="/website" className="rounded-xl px-3 py-2.5 text-sm font-semibold text-primary">{serviceLabel}</a>
             {sections.slice(1).map((s) => (
               <button
                 key={s.id}

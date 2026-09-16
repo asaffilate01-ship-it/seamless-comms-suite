@@ -58,3 +58,7 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Product connections and complete service catalogue
+
+See [the portfolio consolidation guide](docs/ecosystem/INTEGRATION.md) for the 81 deployment records, source-specific bridges, Veyumo integration and per-tenant activation steps. The full services site is `/website`; existing communications features and the multilingual home remain available. `/app/integrations` separates source readiness from configured connections.

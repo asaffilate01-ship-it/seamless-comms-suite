@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { VeyumoMobile } from "@/components/veyumo/VeyumoMobile";
 import { AppShell } from "@/components/app/shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ function Settings() {
       title="Settings"
       subtitle="Tenant, roles, channel, AI, compliance and branding"
     >
+      <VeyumoMobile />
       <Tabs defaultValue="tenant" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="tenant">Tenant</TabsTrigger>

@@ -28,17 +28,10 @@ export const getOrCreateMyTenant = createServerFn({ method: "POST" })
     const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
     const name = `${baseSlug}'s workspace`;
 
-    const { data: tenant, error: tErr } = await supabase
-      .from("tenants")
-      .insert({ name, slug })
-      .select("id, name, slug")
-      .single();
+    const { data: created, error: tErr } = await supabase
+      .rpc("create_my_tenant" as never, { _name: name, _slug: slug } as never);
+    const tenant = created as { id: string; name: string; slug: string } | null;
     if (tErr || !tenant) throw new Error(tErr?.message ?? "Could not create workspace");
-
-    const { error: mErr } = await supabase
-      .from("tenant_members")
-      .insert({ tenant_id: tenant.id, user_id: userId, role: "owner" });
-    if (mErr) throw new Error(mErr.message);
 
     const { data: membership, error: roleError } = await supabase
       .from("tenant_members").select("role").eq("tenant_id", tenant.id).eq("user_id", userId).single();

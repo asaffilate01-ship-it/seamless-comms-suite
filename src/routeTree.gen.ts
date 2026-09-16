@@ -31,15 +31,21 @@ import { Route as AuthenticatedAppCasesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppComplianceIntelligenceRouteImport } from './routes/_authenticated/app.compliance-intelligence'
 import { Route as AuthenticatedAppContactsRouteImport } from './routes/_authenticated/app.contacts'
 import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
+import { Route as AuthenticatedAppIntegrationsRouteImport } from './routes/_authenticated/app.integrations'
 import { Route as AuthenticatedAppPartnersRouteImport } from './routes/_authenticated/app.partners'
 import { Route as AuthenticatedAppProcurementReadinessRouteImport } from './routes/_authenticated/app.procurement-readiness'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 import { Route as AuthenticatedAppTransformationRouteImport } from './routes/_authenticated/app.transformation'
 import { Route as AuthenticatedAppWhatsappRouteImport } from './routes/_authenticated/app.whatsapp'
 import { Route as AuthenticatedAppWorkflowsRouteImport } from './routes/_authenticated/app.workflows'
+import { Route as ApiIntegrationsEventsRouteImport } from './routes/api.integrations.events'
+import { Route as ApiIntegrationsGatewayRouteImport } from './routes/api.integrations.gateway'
 import { Route as AuthenticatedAppCasesIndexRouteImport } from './routes/_authenticated/app.cases.index'
 import { Route as AuthenticatedAppCasesCaseIdRouteImport } from './routes/_authenticated/app.cases.$caseId'
+import { Route as ApiIntegrationsHaccoraConnectionIdRouteImport } from './routes/api.integrations.haccora.$connectionId'
+import { Route as ApiIntegrationsRunsRunIdRouteImport } from './routes/api.integrations.runs.$runId'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
+import { Route as ApiIntegrationsRunsRunIdContextRouteImport } from './routes/api.integrations.runs.$runId.context'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -154,6 +160,12 @@ const AuthenticatedAppInboxRoute = AuthenticatedAppInboxRouteImport.update({
   path: '/inbox',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppIntegrationsRoute =
+  AuthenticatedAppIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppPartnersRoute =
   AuthenticatedAppPartnersRouteImport.update({
     id: '/partners',
@@ -190,6 +202,16 @@ const AuthenticatedAppWorkflowsRoute =
     path: '/workflows',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const ApiIntegrationsEventsRoute = ApiIntegrationsEventsRouteImport.update({
+  id: '/api/integrations/events',
+  path: '/api/integrations/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntegrationsGatewayRoute = ApiIntegrationsGatewayRouteImport.update({
+  id: '/api/integrations/gateway',
+  path: '/api/integrations/gateway',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppCasesIndexRoute =
   AuthenticatedAppCasesIndexRouteImport.update({
     id: '/',
@@ -202,11 +224,29 @@ const AuthenticatedAppCasesCaseIdRoute =
     path: '/$caseId',
     getParentRoute: () => AuthenticatedAppCasesRoute,
   } as any)
+const ApiIntegrationsHaccoraConnectionIdRoute =
+  ApiIntegrationsHaccoraConnectionIdRouteImport.update({
+    id: '/api/integrations/haccora/$connectionId',
+    path: '/api/integrations/haccora/$connectionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsRunsRunIdRoute =
+  ApiIntegrationsRunsRunIdRouteImport.update({
+    id: '/api/integrations/runs/$runId',
+    path: '/api/integrations/runs/$runId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsRunsRunIdContextRoute =
+  ApiIntegrationsRunsRunIdContextRouteImport.update({
+    id: '/context',
+    path: '/context',
+    getParentRoute: () => ApiIntegrationsRunsRunIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -230,16 +270,22 @@ export interface FileRoutesByFullPath {
   '/app/compliance-intelligence': typeof AuthenticatedAppComplianceIntelligenceRoute
   '/app/contacts': typeof AuthenticatedAppContactsRoute
   '/app/inbox': typeof AuthenticatedAppInboxRoute
+  '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/app/workflows': typeof AuthenticatedAppWorkflowsRoute
+  '/api/integrations/events': typeof ApiIntegrationsEventsRoute
+  '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
+  '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/app/cases/': typeof AuthenticatedAppCasesIndexRoute
+  '/api/integrations/runs/$runId/context': typeof ApiIntegrationsRunsRunIdContextRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -260,16 +306,22 @@ export interface FileRoutesByTo {
   '/app/compliance-intelligence': typeof AuthenticatedAppComplianceIntelligenceRoute
   '/app/contacts': typeof AuthenticatedAppContactsRoute
   '/app/inbox': typeof AuthenticatedAppInboxRoute
+  '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/app/workflows': typeof AuthenticatedAppWorkflowsRoute
+  '/api/integrations/events': typeof ApiIntegrationsEventsRoute
+  '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
+  '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/app/cases': typeof AuthenticatedAppCasesIndexRoute
+  '/api/integrations/runs/$runId/context': typeof ApiIntegrationsRunsRunIdContextRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -294,16 +346,22 @@ export interface FileRoutesById {
   '/_authenticated/app/compliance-intelligence': typeof AuthenticatedAppComplianceIntelligenceRoute
   '/_authenticated/app/contacts': typeof AuthenticatedAppContactsRoute
   '/_authenticated/app/inbox': typeof AuthenticatedAppInboxRoute
+  '/_authenticated/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/_authenticated/app/partners': typeof AuthenticatedAppPartnersRoute
   '/_authenticated/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/_authenticated/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/_authenticated/app/workflows': typeof AuthenticatedAppWorkflowsRoute
+  '/api/integrations/events': typeof ApiIntegrationsEventsRoute
+  '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
+  '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/_authenticated/app/cases/': typeof AuthenticatedAppCasesIndexRoute
+  '/api/integrations/runs/$runId/context': typeof ApiIntegrationsRunsRunIdContextRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -328,16 +386,22 @@ export interface FileRouteTypes {
     | '/app/compliance-intelligence'
     | '/app/contacts'
     | '/app/inbox'
+    | '/app/integrations'
     | '/app/partners'
     | '/app/procurement-readiness'
     | '/app/settings'
     | '/app/transformation'
     | '/app/whatsapp'
     | '/app/workflows'
+    | '/api/integrations/events'
+    | '/api/integrations/gateway'
     | '/app/'
     | '/app/cases/$caseId'
+    | '/api/integrations/haccora/$connectionId'
+    | '/api/integrations/runs/$runId'
     | '/api/public/whatsapp/webhook'
     | '/app/cases/'
+    | '/api/integrations/runs/$runId/context'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -358,16 +422,22 @@ export interface FileRouteTypes {
     | '/app/compliance-intelligence'
     | '/app/contacts'
     | '/app/inbox'
+    | '/app/integrations'
     | '/app/partners'
     | '/app/procurement-readiness'
     | '/app/settings'
     | '/app/transformation'
     | '/app/whatsapp'
     | '/app/workflows'
+    | '/api/integrations/events'
+    | '/api/integrations/gateway'
     | '/app'
     | '/app/cases/$caseId'
+    | '/api/integrations/haccora/$connectionId'
+    | '/api/integrations/runs/$runId'
     | '/api/public/whatsapp/webhook'
     | '/app/cases'
+    | '/api/integrations/runs/$runId/context'
   id:
     | '__root__'
     | '/'
@@ -391,16 +461,22 @@ export interface FileRouteTypes {
     | '/_authenticated/app/compliance-intelligence'
     | '/_authenticated/app/contacts'
     | '/_authenticated/app/inbox'
+    | '/_authenticated/app/integrations'
     | '/_authenticated/app/partners'
     | '/_authenticated/app/procurement-readiness'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/transformation'
     | '/_authenticated/app/whatsapp'
     | '/_authenticated/app/workflows'
+    | '/api/integrations/events'
+    | '/api/integrations/gateway'
     | '/_authenticated/app/'
     | '/_authenticated/app/cases/$caseId'
+    | '/api/integrations/haccora/$connectionId'
+    | '/api/integrations/runs/$runId'
     | '/api/public/whatsapp/webhook'
     | '/_authenticated/app/cases/'
+    | '/api/integrations/runs/$runId/context'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -418,6 +494,10 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WebsiteRoute: typeof WebsiteRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
+  ApiIntegrationsEventsRoute: typeof ApiIntegrationsEventsRoute
+  ApiIntegrationsGatewayRoute: typeof ApiIntegrationsGatewayRoute
+  ApiIntegrationsHaccoraConnectionIdRoute: typeof ApiIntegrationsHaccoraConnectionIdRoute
+  ApiIntegrationsRunsRunIdRoute: typeof ApiIntegrationsRunsRunIdRouteWithChildren
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -577,6 +657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppInboxRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/integrations': {
+      id: '/_authenticated/app/integrations'
+      path: '/integrations'
+      fullPath: '/app/integrations'
+      preLoaderRoute: typeof AuthenticatedAppIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/partners': {
       id: '/_authenticated/app/partners'
       path: '/partners'
@@ -619,6 +706,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppWorkflowsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/api/integrations/events': {
+      id: '/api/integrations/events'
+      path: '/api/integrations/events'
+      fullPath: '/api/integrations/events'
+      preLoaderRoute: typeof ApiIntegrationsEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/gateway': {
+      id: '/api/integrations/gateway'
+      path: '/api/integrations/gateway'
+      fullPath: '/api/integrations/gateway'
+      preLoaderRoute: typeof ApiIntegrationsGatewayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/cases/': {
       id: '/_authenticated/app/cases/'
       path: '/'
@@ -633,12 +734,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCasesCaseIdRouteImport
       parentRoute: typeof AuthenticatedAppCasesRoute
     }
+    '/api/integrations/haccora/$connectionId': {
+      id: '/api/integrations/haccora/$connectionId'
+      path: '/api/integrations/haccora/$connectionId'
+      fullPath: '/api/integrations/haccora/$connectionId'
+      preLoaderRoute: typeof ApiIntegrationsHaccoraConnectionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/runs/$runId': {
+      id: '/api/integrations/runs/$runId'
+      path: '/api/integrations/runs/$runId'
+      fullPath: '/api/integrations/runs/$runId'
+      preLoaderRoute: typeof ApiIntegrationsRunsRunIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
       fullPath: '/api/public/whatsapp/webhook'
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/runs/$runId/context': {
+      id: '/api/integrations/runs/$runId/context'
+      path: '/context'
+      fullPath: '/api/integrations/runs/$runId/context'
+      preLoaderRoute: typeof ApiIntegrationsRunsRunIdContextRouteImport
+      parentRoute: typeof ApiIntegrationsRunsRunIdRoute
     }
   }
 }
@@ -665,6 +787,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppComplianceIntelligenceRoute: typeof AuthenticatedAppComplianceIntelligenceRoute
   AuthenticatedAppContactsRoute: typeof AuthenticatedAppContactsRoute
   AuthenticatedAppInboxRoute: typeof AuthenticatedAppInboxRoute
+  AuthenticatedAppIntegrationsRoute: typeof AuthenticatedAppIntegrationsRoute
   AuthenticatedAppPartnersRoute: typeof AuthenticatedAppPartnersRoute
   AuthenticatedAppProcurementReadinessRoute: typeof AuthenticatedAppProcurementReadinessRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
@@ -682,6 +805,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
     AuthenticatedAppComplianceIntelligenceRoute,
   AuthenticatedAppContactsRoute: AuthenticatedAppContactsRoute,
   AuthenticatedAppInboxRoute: AuthenticatedAppInboxRoute,
+  AuthenticatedAppIntegrationsRoute: AuthenticatedAppIntegrationsRoute,
   AuthenticatedAppPartnersRoute: AuthenticatedAppPartnersRoute,
   AuthenticatedAppProcurementReadinessRoute:
     AuthenticatedAppProcurementReadinessRoute,
@@ -706,6 +830,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApiIntegrationsRunsRunIdRouteChildren {
+  ApiIntegrationsRunsRunIdContextRoute: typeof ApiIntegrationsRunsRunIdContextRoute
+}
+
+const ApiIntegrationsRunsRunIdRouteChildren: ApiIntegrationsRunsRunIdRouteChildren =
+  {
+    ApiIntegrationsRunsRunIdContextRoute: ApiIntegrationsRunsRunIdContextRoute,
+  }
+
+const ApiIntegrationsRunsRunIdRouteWithChildren =
+  ApiIntegrationsRunsRunIdRoute._addFileChildren(
+    ApiIntegrationsRunsRunIdRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -721,6 +859,11 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WebsiteRoute: WebsiteRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,
+  ApiIntegrationsEventsRoute: ApiIntegrationsEventsRoute,
+  ApiIntegrationsGatewayRoute: ApiIntegrationsGatewayRoute,
+  ApiIntegrationsHaccoraConnectionIdRoute:
+    ApiIntegrationsHaccoraConnectionIdRoute,
+  ApiIntegrationsRunsRunIdRoute: ApiIntegrationsRunsRunIdRouteWithChildren,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport

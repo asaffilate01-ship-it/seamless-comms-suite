@@ -1,0 +1,812 @@
+[
+  {
+    "id": "motoresq-1",
+    "name": "MotoResQ",
+    "product": "motoresq",
+    "repository": "asaffilate01-ship-it/all-road-aid",
+    "source": "https://github.com/asaffilate01-ship-it/all-road-aid/pull/3",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "zivvo-2",
+    "name": "Zivvo UK and enabled markets",
+    "product": "zivvo",
+    "repository": "asaffilate01-ship-it/autosouq",
+    "source": "https://github.com/asaffilate01-ship-it/autosouq/pull/1",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "bidlumo-3",
+    "name": "Bidlumo",
+    "product": "bidlumo",
+    "repository": "asaffilate01-ship-it/bidora1",
+    "source": "https://github.com/asaffilate01-ship-it/bidora1/pull/2",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "amityos-4",
+    "name": "AmityOS",
+    "product": "amityos",
+    "repository": "asaffilate01-ship-it/care-connect",
+    "source": "https://github.com/asaffilate01-ship-it/care-connect/pull/1",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "skillfinch-5",
+    "name": "Skillfinch",
+    "product": "skillfinch",
+    "repository": "asaffilate01-ship-it/care-quest-learn",
+    "source": "https://github.com/asaffilate01-ship-it/care-quest-learn/pull/11",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "fleetsora-6",
+    "name": "FleetSora",
+    "product": "fleetsora",
+    "repository": "asaffilate01-ship-it/ddelivery3pl",
+    "source": "https://github.com/asaffilate01-ship-it/ddelivery3pl/pull/1",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "eventplanr-7",
+    "name": "EventPlanr UK",
+    "product": "eventplanr",
+    "repository": "asaffilate01-ship-it/eventplanr2",
+    "source": "https://github.com/asaffilate01-ship-it/eventplanr2/pull/2",
+    "profile": "generic",
+    "boundary": "Business and event scope; supplier availability, prices and reservations from source APIs.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "eventplanr-8",
+    "name": "EventPlanr Germany",
+    "product": "eventplanr",
+    "repository": "asaffilate01-ship-it/eventplanrger",
+    "source": "https://github.com/asaffilate01-ship-it/eventplanrger/pull/12",
+    "profile": "generic",
+    "boundary": "Business and event scope; supplier availability, prices and reservations from source APIs.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "haccora-9",
+    "name": "Haccora Germany",
+    "product": "haccora",
+    "repository": "asaffilate01-ship-it/haccora",
+    "source": "https://github.com/asaffilate01-ship-it/haccora/pull/17",
+    "profile": "haccora",
+    "boundary": "Company/site and authorised role; no fabricated readings or compliance certification.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "haccora-10",
+    "name": "Haccora UK",
+    "product": "haccora",
+    "repository": "asaffilate01-ship-it/haccora-connect",
+    "source": "https://github.com/asaffilate01-ship-it/haccora-connect/pull/37",
+    "profile": "haccora",
+    "boundary": "Company/site and authorised role; no fabricated readings or compliance certification.",
+    "status": "signed-webhook-receiver-implemented"
+  },
+  {
+    "id": "craftvaro-11",
+    "name": "Craftvaro",
+    "product": "craftvaro",
+    "repository": "asaffilate01-ship-it/jobflow-tradehub",
+    "source": "https://github.com/asaffilate01-ship-it/jobflow-tradehub/pull/8",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "kinderstars-12",
+    "name": "KinderStars Germany",
+    "product": "kinderstars",
+    "repository": "asaffilate01-ship-it/kinderstars",
+    "source": "https://github.com/asaffilate01-ship-it/kinderstars/pull/16",
+    "profile": "generic",
+    "boundary": "Provider/parent/child access boundaries; restricted child data excluded from generic marketing or portfolio sharing.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "kinderstars-13",
+    "name": "KinderStars UK",
+    "product": "kinderstars",
+    "repository": "asaffilate01-ship-it/kinderstars-childcare-saas",
+    "source": "https://github.com/asaffilate01-ship-it/kinderstars-childcare-saas/pull/7",
+    "profile": "generic",
+    "boundary": "Provider/parent/child access boundaries; restricted child data excluded from generic marketing or portfolio sharing.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "lawquo-14",
+    "name": "Lawquo / Veris Law",
+    "product": "lawquo",
+    "repository": "asaffilate01-ship-it/law-remix",
+    "source": "https://github.com/asaffilate01-ship-it/law-remix/pull/2",
+    "profile": "lawquo",
+    "boundary": "Firm, case assignment and ethical walls; legal approval/client publication remain in Lawquo.",
+    "status": "metadata-contract-implemented"
+  },
+  {
+    "id": "leadlens-15",
+    "name": "LeadLens",
+    "product": "leadlens",
+    "repository": "asaffilate01-ship-it/leadlens-discovery",
+    "source": "https://github.com/asaffilate01-ship-it/leadlens-discovery/pull/3",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "onyngo-16",
+    "name": "OnýnGo",
+    "product": "onyngo",
+    "repository": "asaffilate01-ship-it/onyn",
+    "source": "https://github.com/asaffilate01-ship-it/onyn/pull/2",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "iq-practice-cloud-17",
+    "name": "IQ Practice Cloud",
+    "product": "iq-practice-cloud",
+    "repository": "asaffilate01-ship-it/practicecraft-hub",
+    "source": "https://github.com/asaffilate01-ship-it/practicecraft-hub/pull/2",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "gabley-18",
+    "name": "Gabley",
+    "product": "gabley",
+    "repository": "asaffilate01-ship-it/remix-of-property-nexus",
+    "source": "https://github.com/asaffilate01-ship-it/remix-of-property-nexus/pull/3",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "dokuvera-19",
+    "name": "Dokuvera",
+    "product": "dokuvera",
+    "repository": "asaffilate01-ship-it/remix-of-remix-of-surveycam-app",
+    "source": "https://github.com/asaffilate01-ship-it/remix-of-remix-of-surveycam-app/pull/3",
+    "profile": "generic",
+    "boundary": "Workspace/project/document access; preserve originals and version provenance.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "ilmvero-20",
+    "name": "Ilmvero",
+    "product": "ilmvero",
+    "repository": "asaffilate01-ship-it/schooldash",
+    "source": "https://github.com/asaffilate01-ship-it/schooldash/pull/1",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "threeonethree-21",
+    "name": "ThreeOneThree",
+    "product": "threeonethree",
+    "repository": "asaffilate01-ship-it/threeonethree",
+    "source": "https://github.com/asaffilate01-ship-it/threeonethree/pull/1",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "taxcenda-22",
+    "name": "TaxCenda",
+    "product": "taxcenda",
+    "repository": "asaffilate01-ship-it/usataxlounge",
+    "source": "https://github.com/asaffilate01-ship-it/usataxlounge/pull/1",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "orvilo-23",
+    "name": "Orvilo",
+    "product": "orvilo",
+    "repository": "asaffilate01-ship-it/webtemplates",
+    "source": "https://github.com/asaffilate01-ship-it/webtemplates/pull/3",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "xpertjobs-24",
+    "name": "XpertJobs",
+    "product": "xpertjobs",
+    "repository": "asaffilate01-ship-it/xpertjobs",
+    "source": "https://github.com/asaffilate01-ship-it/xpertjobs/pull/3",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "taxnuvia-25",
+    "name": "TaxNuvia accountant finder",
+    "product": "taxnuvia",
+    "repository": "asaffilate01-ship-it/your-accountant-finder",
+    "source": "https://github.com/asaffilate01-ship-it/your-accountant-finder/pull/18",
+    "profile": "taxnuvia",
+    "boundary": "Separate public-directory, firm and client scopes; jurisdiction explicit; no live availability inferred.",
+    "status": "ranking-contract-implemented"
+  },
+  {
+    "id": "zarvane-26",
+    "name": "Zarvane",
+    "product": "zarvane",
+    "repository": "asaffilate01-ship-it/zarvane",
+    "source": "https://github.com/asaffilate01-ship-it/zarvane/pull/1",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "zivvo-27",
+    "name": "Zivvo Germany",
+    "product": "zivvo",
+    "repository": "asaffilate01-ship-it/zivvo",
+    "source": "https://github.com/asaffilate01-ship-it/zivvo/pull/20",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "zoryn-pay-28",
+    "name": "Zoryn Pay",
+    "product": "zoryn-pay",
+    "repository": "asaffilate01-ship-it/zoryn-nexus",
+    "source": "https://github.com/asaffilate01-ship-it/zoryn-nexus/pull/2",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "zoryn-rewards-29",
+    "name": "Zoryn Rewards",
+    "product": "zoryn-rewards",
+    "repository": "asaffilate01-ship-it/zoryn-rewards-hub",
+    "source": "https://github.com/asaffilate01-ship-it/zoryn-rewards-hub/pull/2",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "affivon-30",
+    "name": "Affivon",
+    "product": "affivon",
+    "repository": null,
+    "source": "https://affiliate-commerce-os.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Merchant/site scope and approved content; do not invent stock, prices, reviews or attribution.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "cirqiva-31",
+    "name": "Cirqiva",
+    "product": "cirqiva",
+    "repository": null,
+    "source": "https://wastora-uk.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "commerceops-32",
+    "name": "CommerceOps",
+    "product": "commerceops",
+    "repository": null,
+    "source": "https://commerceops.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "empfangiq-33",
+    "name": "EmpfangIQ",
+    "product": "empfangiq",
+    "repository": null,
+    "source": "https://empfangiq-dashboard.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "gabley-retrofit-34",
+    "name": "Gabley Retrofit",
+    "product": "gabley-retrofit",
+    "repository": null,
+    "source": "https://gabley-retrofit.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "insure360-35",
+    "name": "Insure360",
+    "product": "insure360",
+    "repository": null,
+    "source": "https://insure360.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "konnevia-36",
+    "name": "Konnevia CRM",
+    "product": "konnevia",
+    "repository": null,
+    "source": "https://konnevia-crm.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "lessonahead-37",
+    "name": "LessonAhead UK",
+    "product": "lessonahead",
+    "repository": null,
+    "source": "https://lessonahead-uk.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "loungetech-founders-38",
+    "name": "LoungeTech Gründungsportal",
+    "product": "loungetech-founders",
+    "repository": null,
+    "source": "https://loungetech-gruendung.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "loungetech-training-39",
+    "name": "LoungeTech Training Cloud",
+    "product": "loungetech-training",
+    "repository": null,
+    "source": "https://loungetech-training-cloud.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "marktpass-40",
+    "name": "MarktPass",
+    "product": "marktpass",
+    "repository": null,
+    "source": "https://marktpass-dashboard.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "premisora-41",
+    "name": "Premisora",
+    "product": "premisora",
+    "repository": null,
+    "source": "https://premisora-uk.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Organisation/project permissions; technical/professional decisions require the source review workflow.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "auvane-one-42",
+    "name": "Auvane One professional desk",
+    "product": "auvane-one",
+    "repository": null,
+    "source": "https://private-lifestyle-concierge.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "recovra-43",
+    "name": "Recovra",
+    "product": "recovra",
+    "repository": null,
+    "source": "https://recovra-recovery.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "regulos-44",
+    "name": "RegulaOS",
+    "product": "regulos",
+    "repository": null,
+    "source": "https://regulaos.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "xpertjobs-45",
+    "name": "Sponsor Intelligence UK",
+    "product": "xpertjobs",
+    "repository": null,
+    "source": "https://sponsor-intelligence-uk.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "taxnuvia-46",
+    "name": "TaxNuvia Accounts UK",
+    "product": "taxnuvia",
+    "repository": null,
+    "source": "https://taxnuvia-accounts.amersaleem.chatgpt.site",
+    "profile": "taxnuvia",
+    "boundary": "Separate public-directory, firm and client scopes; jurisdiction explicit; no live availability inferred.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "tenderos-47",
+    "name": "Tendryva",
+    "product": "tenderos",
+    "repository": null,
+    "source": "https://tenderos.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "travel-agency-os-48",
+    "name": "Travel Agency OS",
+    "product": "travel-agency-os",
+    "repository": null,
+    "source": "https://travel-agency-os.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "veyumo-49",
+    "name": "Veyumo",
+    "product": "veyumo",
+    "repository": null,
+    "source": "https://veyumo.amersaleem.chatgpt.site",
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "mobile-bridge-source-integrated"
+  },
+  {
+    "id": "ahlnikkah-50",
+    "name": "AhlNikkah",
+    "product": "ahlnikkah",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Consent, private-profile/photo access and family/member boundaries; no automatic suitability judgment.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "beistandplus-51",
+    "name": "BeistandPlus",
+    "product": "beistandplus",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "beratermarkt-52",
+    "name": "BeraterMarkt",
+    "product": "beratermarkt",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "construction-planning-53",
+    "name": "AI Construction Planning",
+    "product": "construction-planning",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "criclume-54",
+    "name": "Criclume",
+    "product": "criclume",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "dearnext-55",
+    "name": "DearNext",
+    "product": "dearnext",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "depotmesh-56",
+    "name": "DepotMesh",
+    "product": "depotmesh",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "dishbee-57",
+    "name": "Dishbee",
+    "product": "dishbee",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Business/branch role boundaries; source order/payment/KDS systems remain authoritative.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "domureva-58",
+    "name": "DOMUREVA",
+    "product": "domureva",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "fanzeno-59",
+    "name": "Fanzeno",
+    "product": "fanzeno",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "formationgenie-60",
+    "name": "FormationGenie",
+    "product": "formationgenie",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "gradlume-61",
+    "name": "Gradlume",
+    "product": "gradlume",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "hmo-flow-62",
+    "name": "HMO Flow",
+    "product": "hmo-flow",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "immoviq-63",
+    "name": "Immoviq",
+    "product": "immoviq",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "kalethon-play-64",
+    "name": "Kalethon Play",
+    "product": "kalethon-play",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "kiezio-65",
+    "name": "Kiezio",
+    "product": "kiezio",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "loungeconnect-66",
+    "name": "LoungeConnect",
+    "product": "loungeconnect",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "merqano-67",
+    "name": "Merqano",
+    "product": "merqano",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "merqora-68",
+    "name": "Merqora",
+    "product": "merqora",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Seller/business scope; Merqora is not automatically the separate Merqano product.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "nearcura-69",
+    "name": "NearCura",
+    "product": "nearcura",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "pipkin-70",
+    "name": "Pipkin",
+    "product": "pipkin",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "recovarable-71",
+    "name": "Recovarable",
+    "product": "recovarable",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "rettio-72",
+    "name": "Rettio",
+    "product": "rettio",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "schonova-73",
+    "name": "Schonova",
+    "product": "schonova",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "stemcoach-74",
+    "name": "STEMCoach",
+    "product": "stemcoach",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "syndryvia-75",
+    "name": "Syndryvia / user spelling Syndrivya — identity to confirm",
+    "product": "syndryvia",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "traindirekt-76",
+    "name": "TrainDirekt",
+    "product": "traindirekt",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "unipathways-77",
+    "name": "UniPathways",
+    "product": "unipathways",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "voxentri-78",
+    "name": "Voxentri",
+    "product": "voxentri",
+    "repository": null,
+    "source": null,
+    "profile": "generic",
+    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
+    "status": "source-adapter-required"
+  },
+  {
+    "id": "sparesgrid",
+    "name": "SparesGrid",
+    "product": "sparesgrid",
+    "repository": null,
+    "source": "appgprj_6aa9abd0be448191abbb0d000a7bb927",
+    "profile": "automotive",
+    "boundary": "Only records selected by the source tenant and role; reviewed drafts, no inferred fitment.",
+    "status": "gateway-contract-implemented"
+  },
+  {
+    "id": "business360",
+    "name": "Omniqora Business360",
+    "product": "business360",
+    "repository": "asaffilate01-ship-it/seamless-comms-suite",
+    "source": "apps/business360-standalone",
+    "profile": "transformation",
+    "boundary": "Separate tenant, project, department and restricted personnel permissions; same service for standalone and embedded deployment.",
+    "status": "shared-runtime-implemented"
+  },
+  {
+    "id": "epos-intelligence",
+    "name": "EPOS intelligence / Cafe1",
+    "product": "epos",
+    "repository": null,
+    "source": null,
+    "profile": "hospitality",
+    "boundary": "Branch and period scoped sales, refunds, costs and stock; no payment, refund or menu mutation. Source project identity needs confirmation.",
+    "status": "source-adapter-required"
+  }
+]

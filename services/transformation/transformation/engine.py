@@ -58,6 +58,8 @@ class Engine:
                 db.executescript(SCHEMA)
         from .ai_hub import AIHub
         self.ai = AIHub(self, ai_config)
+        from .bridges import Bridges
+        self.bridges = Bridges(self)
 
     @contextmanager
     def connection(self, actor=None):
@@ -499,7 +501,8 @@ class Engine:
         if command == "projects.create":
             return self.create_project(actor, data)
         project = identifier(project, "project_id")
-        commands = {"records.save": self.upsert, "finance.import": self.import_finance,
+        commands = {"bridges.submit": self.bridges.submit, "bridges.process": self.bridges.process, "bridges.get": self.bridges.get,
+                    "records.save": self.upsert, "finance.import": self.import_finance,
                     "ai.status": self.ai.status, "ai.policy.save": self.ai.save_policy,
                     "ai.runs.start": self.ai.start, "ai.runs.step": self.ai.step, "ai.runs.get": self.ai.get,
                     "ai.runs.list": self.ai.list_runs, "ai.runs.cancel": self.ai.cancel,
