@@ -40,6 +40,7 @@ const nav: NavItem[] = [
   { to: "/app/partners", labelKey: "app.nav.partners", icon: Handshake },
   { to: "/app/transformation", labelKey: "", label: "Business360", icon: BarChart3 },
   { to: "/app/compliance-intelligence", labelKey: "", label: "Knowledge & compliance", icon: ShieldCheck },
+  { to: "/app/integrations", labelKey: "", label: "Product connections", icon: GitBranch },
   { to: "/app/procurement-readiness", labelKey: "", label: "Procurement readiness", icon: ShieldCheck },
   { to: "/app/settings", labelKey: "app.nav.settings", icon: Settings },
 ];

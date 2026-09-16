@@ -52,7 +52,7 @@ await db.query("UPDATE public.addon_entitlements SET status='suspended' WHERE te
 await host(A,async()=>assert.deepEqual((await db.query('SELECT public.get_rrci_access($1) AS access',[workspace])).rows[0].access,[]));checks++;
 
 const tables=(await db.query("SELECT relname,relrowsecurity,relforcerowsecurity FROM pg_class JOIN pg_namespace ON pg_namespace.oid=relnamespace WHERE nspname='business360' AND relkind='r'")).rows;
-assert.equal(tables.length,11);assert(tables.every(x=>x.relrowsecurity&&x.relforcerowsecurity));checks++;
+assert.equal(tables.length,12);assert(tables.every(x=>x.relrowsecurity&&x.relforcerowsecurity));checks++;
 async function business(tenant,user,role,fn) {
  await db.exec('BEGIN; SET LOCAL ROLE business360_runtime; SET LOCAL search_path TO business360,pg_catalog;');
  for(const [k,v] of [['b360.tenant',tenant],['b360.user',user],['b360.tenant_role',role]]) await db.query('SELECT set_config($1,$2,true)',[k,v]);

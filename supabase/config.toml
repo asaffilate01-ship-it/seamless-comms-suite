@@ -1,1 +1,11 @@
 project_id = "mqbmbzsadypjzirbfhja"
+
+# These functions verify the user, signed source or worker credential internally.
+[functions.veyumo-bridge]
+verify_jwt = false
+[functions.veyumo-api]
+verify_jwt = false
+[functions.veyumo-gigs-webhook]
+verify_jwt = false
+[functions.veyumo-worker]
+verify_jwt = false

@@ -121,6 +121,7 @@ def create_app(engine=None,accounts=None,origin=None):
                         if not user['enabled']: raise APIError(403,'This workspace has not been enabled for Business360')
                         fields(payload,{'command','project_id','data'},{'command','data'})
                         if not isinstance(payload['command'],str) or not isinstance(payload['data'],dict): raise APIError(422,'Invalid command')
+                        if payload['command'].startswith('bridges.'): raise APIError(403,'Product bridges require the server gateway')
                         if payload['command']=='members.add' and not accounts.colleague(user['tenant'],payload['data'].get('user_id')): raise APIError(403,'Select an active member of this organisation')
                         result=engine.dispatch(Actor(user['tenant'],user['id'],user['role']),payload['command'],payload.get('project_id'),payload['data'])
                 body=json.dumps(result,ensure_ascii=False,allow_nan=False).encode()

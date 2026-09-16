@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit",
     "test:security": "node verification/access-controls.mjs",
     "test:procurement": "node verification/procurement/readiness.test.mjs && node verification/procurement/database.test.mjs",
-    "test:services": "python3 verification/run-services.py"
+    "test:services": "python3 verification/run-services.py",
+    "test:bridges": "node --test verification/product-bridges.test.mjs",
+    "test:mobile": "node --test supabase/functions/_shared/veyumo/protocol.test.mjs scripts/veyumo-database.test.mjs scripts/veyumo-gigs.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

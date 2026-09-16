@@ -1,0 +1,18 @@
+[
+  {
+    "id": "sparesgrid-business-a",
+    "product": "sparesgrid",
+    "tenant": "00000000-0000-4000-8000-000000000001",
+    "project": "00000000-0000-4000-8000-000000000002",
+    "serviceUser": "00000000-0000-4000-8000-000000000003",
+    "externalTenant": "replace-with-source-tenant",
+    "allowedScopes": ["replace-with-source-tenant"],
+    "secretEnv": "OQ_BRIDGE_SPARESGRID_A",
+    "protocol": "bearer",
+    "enabled": false,
+    "expiresAt": "2026-09-16T00:00:00Z",
+    "contracts": ["sparesgrid_question", "sparesgrid_enquiry"],
+    "profile": "product",
+    "dailyLimit": 50
+  }
+]

@@ -1,5 +1,9 @@
 import { createHmac, randomUUID } from "node:crypto";
 
+export class TransformationError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
+
 export async function callTransformation(
   identity: { tenant: string; user: string; tenant_role: string },
   request: { command: string; project_id?: string; data: Record<string, unknown> },
@@ -29,7 +33,7 @@ export async function callTransformation(
   const result: unknown = await response.json();
   if (!response.ok) {
     const error = result && typeof result === "object" && "error" in result ? String(result.error) : "Transformation request failed";
-    throw new Error(error);
+    throw new TransformationError(response.status, error);
   }
   return result;
 }

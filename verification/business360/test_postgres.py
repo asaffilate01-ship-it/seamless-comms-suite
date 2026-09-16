@@ -20,6 +20,7 @@ class PostgresIsolationTests(unittest.TestCase):
   with psycopg.connect(cls.admin,autocommit=True) as db:
    db.execute((ROOT/'supabase/migrations/20260916120000_business360_rls.sql').read_text())
    db.execute((ROOT/'supabase/migrations/20260916130000_business360_ai_rls.sql').read_text())
+   db.execute((ROOT/'supabase/migrations/20260916140000_business360_bridges.sql').read_text())
    db.execute('CREATE ROLE b360_test LOGIN NOSUPERUSER NOBYPASSRLS')
    db.execute('GRANT business360_runtime TO b360_test')
   parts=urlsplit(cls.admin);cls.url=urlunsplit(parts._replace(netloc=parts.netloc.replace('postgres:', 'b360_test:')))
@@ -39,7 +40,7 @@ class PostgresIsolationTests(unittest.TestCase):
  def test_real_database_forces_rls_on_every_table(self):
   with psycopg.connect(self.admin) as db:
    rows=db.execute("SELECT relname,relrowsecurity,relforcerowsecurity FROM pg_class JOIN pg_namespace ON pg_namespace.oid=relnamespace WHERE nspname='business360' AND relkind='r'").fetchall()
-   self.assertEqual(len(rows),11);self.assertTrue(all(r[1] and r[2] for r in rows))
+   self.assertEqual(len(rows),12);self.assertTrue(all(r[1] and r[2] for r in rows))
  def test_unfiltered_sql_cannot_read_other_tenant(self):
   with connect(self.url,self.owner) as db:self.assertEqual([r['id'] for r in db.execute('SELECT * FROM projects')],[self.project])
   with self.assertRaises(APIError):self.engine.dispatch(self.other,'snapshot',self.project,{})
@@ -94,5 +95,15 @@ class PostgresIsolationTests(unittest.TestCase):
   status=engine.dispatch(self.owner,'ai.status',self.project,{})
   self.assertEqual(status['usage_today']['model_calls'],1)
   with self.assertRaises(APIError):engine.dispatch(self.other,'ai.runs.get',self.project,{'id':'postgres-run'})
+
+ def test_bridge_receipt_is_hidden_from_other_project_members_at_database_level(self):
+  request={'connection':'source-test','id':'receipt','product':'haccora','contract':'event','profile':'compliance','scope':{'tenantId':'external-org'},'payload':{'type':'integration.test'},'daily_limit':10}
+  self.engine.dispatch(self.analyst,'bridges.submit',self.project,request)
+  with connect(self.url,self.analyst) as db:self.assertEqual(len(list(db.execute('SELECT * FROM bridge_jobs'))),1)
+  for actor in (self.owner,self.viewer,self.other):
+   with connect(self.url,actor) as db:
+    self.assertEqual(list(db.execute('SELECT * FROM bridge_jobs')),[])
+    self.assertEqual(db.execute("UPDATE bridge_jobs SET status='failed'").rowcount,0)
+  with self.assertRaises(APIError):self.engine.dispatch(self.owner,'bridges.get',self.project,{'connection':'source-test','id':'receipt'})
 
 if __name__=='__main__':unittest.main(verbosity=2)

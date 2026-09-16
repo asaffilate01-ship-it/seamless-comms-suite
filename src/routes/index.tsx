@@ -278,7 +278,7 @@ function Editions() {
 function Packs() {
   const { c } = usePromo();
   return (
-    <section className="border-y border-border/60 bg-surface-2 py-20">
+    <section id="packs" className="scroll-mt-28 border-y border-border/60 bg-surface-2 py-20">
       <div className="mx-auto max-w-7xl px-6">
         <SectionHead title={c.packs.title} sub={c.packs.sub} />
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
