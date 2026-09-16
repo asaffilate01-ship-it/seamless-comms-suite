@@ -45,4 +45,3 @@ export function originHeaders(req: Request) {
       }
     : {};
 }
-

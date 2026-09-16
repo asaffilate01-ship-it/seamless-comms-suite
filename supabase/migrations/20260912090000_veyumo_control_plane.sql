@@ -48,4 +48,3 @@ create function public.veyumo_store_subscription(p_id text,p_account uuid,p_user
 $$;
 revoke all on function public.veyumo_store_subscription(text,uuid,text,text,text,text,timestamptz) from public,anon,authenticated;
 grant execute on function public.veyumo_store_subscription(text,uuid,text,text,text,text,timestamptz) to service_role;
-

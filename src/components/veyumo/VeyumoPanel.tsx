@@ -357,4 +357,3 @@ export function VeyumoPanel({ call, appName }: { call: VeyumoCall; appName: stri
     </section>
   );
 }
-

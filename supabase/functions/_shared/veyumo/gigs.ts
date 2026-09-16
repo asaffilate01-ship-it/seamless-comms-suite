@@ -56,4 +56,3 @@ export async function syncUser(service: any, accountId: string, gigsUserId: stri
   } while (count < 1000);
   throw new BridgeError("provider_pagination_limit", 503);
 }
-

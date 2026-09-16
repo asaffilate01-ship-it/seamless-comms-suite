@@ -73,4 +73,3 @@ test("hosted checkout uses the mapped user and blocks a hostile provider redirec
   assert.equal(sent.user, "usr_owner");
   assert.equal(sent.callbackUrl, "https://app.test/account");
 });
-

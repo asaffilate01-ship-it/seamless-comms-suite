@@ -17,4 +17,3 @@ const call: VeyumoCall = async (command) => {
 export function VeyumoMobile() {
   return <VeyumoPanel call={call} appName="Omniqora" />;
 }
-

@@ -86,4 +86,3 @@ test("Svix rotation candidate accepted; changed body and stale event rejected", 
   await assert.rejects(() => verifySvix(h, secret, raw + " ", now));
   await assert.rejects(() => verifySvix(h, secret, raw, now + 301000));
 });
-

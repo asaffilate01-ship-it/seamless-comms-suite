@@ -237,4 +237,3 @@ export async function central(req: Request) {
     return fail(error);
   }
 }
-

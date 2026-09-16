@@ -190,4 +190,3 @@ export async function receiveEvent(req: Request) {
     return fail(e);
   }
 }
-

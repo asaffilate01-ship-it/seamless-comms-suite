@@ -139,4 +139,3 @@ async function stripeEntitlement(
     return { active: false };
   }
 }
-

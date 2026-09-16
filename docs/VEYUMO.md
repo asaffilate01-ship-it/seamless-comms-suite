@@ -78,4 +78,3 @@ The control-plane SQL and snapshot/link/dedup behaviour are tested with an isola
 - https://developers.gigs.com/api/latest/core/users
 - https://developers.gigs.com/api/latest/core/subscriptions
 - https://developers.gigs.com/docs/core/events/events-webhooks
-
