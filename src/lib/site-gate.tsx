@@ -9,7 +9,7 @@ const STORAGE_KEY = "omniqora.site.unlock";
 const PASSWORD = "omniqora2026";
 
 /** Routes reachable without the promo password. */
-const PUBLIC_PATHS = ["/", "/impressum", "/datenschutz", "/agb", "/cookies"];
+const PUBLIC_PATHS = ["/", "/website", "/impressum", "/datenschutz", "/agb", "/cookies"];
 
 function isPublic(pathname: string) {
   const p = pathname.replace(/\/+$/, "") || "/";

@@ -7,13 +7,14 @@ export const getOrCreateMyTenant = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId, claims } = context;
 
-    const { data: existing } = await supabase
+    const { data: existing, error: membershipError } = await supabase
       .from("tenant_members")
       .select("tenant_id, role, tenants(id, name, slug)")
       .eq("user_id", userId)
       .limit(1)
       .maybeSingle();
 
+    if (membershipError) throw new Error("Unable to verify workspace membership");
     if (existing?.tenant_id) {
       return {
         tenantId: existing.tenant_id as string,
@@ -39,5 +40,8 @@ export const getOrCreateMyTenant = createServerFn({ method: "POST" })
       .insert({ tenant_id: tenant.id, user_id: userId, role: "owner" });
     if (mErr) throw new Error(mErr.message);
 
-    return { tenantId: tenant.id, role: "owner", tenant };
+    const { data: membership, error: roleError } = await supabase
+      .from("tenant_members").select("role").eq("tenant_id", tenant.id).eq("user_id", userId).single();
+    if (roleError || !membership) throw new Error("Unable to verify the new workspace membership");
+    return { tenantId: tenant.id, role: membership.role, tenant };
   });

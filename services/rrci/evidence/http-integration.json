@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "transport": "real loopback HTTP using CLI-issued reader credential",
+  "document_count": 4,
+  "path_count": 4,
+  "answer_status": "evidence_only",
+  "both_branches_retrieved": true,
+  "live_llm_called": false
+}

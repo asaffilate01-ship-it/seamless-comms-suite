@@ -1,0 +1,1 @@
+export const receptionLabels:Record<string,string>={new:'Needs review',queued:'Awaiting source app',accepted:'KDS acknowledgment pending',confirmed:'Booking confirmed',delivered:'KDS acknowledged',handled:'Handled',cancelled:'Closed without fulfillment',failed:'Needs attention'};

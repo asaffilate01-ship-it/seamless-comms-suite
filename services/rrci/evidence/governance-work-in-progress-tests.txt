@@ -1,0 +1,79 @@
+test_api_authentication_and_read_only_credential (test_core.APITests.test_api_authentication_and_read_only_credential) ... ok
+test_api_cannot_override_namespace (test_core.APITests.test_api_cannot_override_namespace) ... ok
+test_api_malformed_json_object (test_core.APITests.test_api_malformed_json_object) ... ok
+test_api_returns_actual_graph_evidence (test_core.APITests.test_api_returns_actual_graph_evidence) ... ok
+test_bad_citation_is_rejected (test_core.CoreTests.test_bad_citation_is_rejected) ... ok
+test_collection_isolation (test_core.CoreTests.test_collection_isolation) ... ok
+test_delete_removes_evidence_and_graph (test_core.CoreTests.test_delete_removes_evidence_and_graph) ... ok
+test_document_commands_are_evidence_only (test_core.CoreTests.test_document_commands_are_evidence_only) ... ok
+test_edges_require_actual_quote_and_current_revision (test_core.CoreTests.test_edges_require_actual_quote_and_current_revision) ... ok
+test_expiry_and_future_documents (test_core.CoreTests.test_expiry_and_future_documents) ... ok
+test_explicit_foreign_graph_seed_cannot_cross_scope (test_core.CoreTests.test_explicit_foreign_graph_seed_cannot_cross_scope) ... ok
+test_graph_respects_expired_supporting_source (test_core.CoreTests.test_graph_respects_expired_supporting_source) ... ok
+test_graph_three_hops_and_budget (test_core.CoreTests.test_graph_three_hops_and_budget) ... ok
+test_idempotent_ingest_and_conflicting_update (test_core.CoreTests.test_idempotent_ingest_and_conflicting_update) ... ok
+test_invalid_body_and_limits (test_core.CoreTests.test_invalid_body_and_limits) ... ok
+test_jurisdiction_required_and_filtered (test_core.CoreTests.test_jurisdiction_required_and_filtered) ... ok
+test_no_evidence_skips_model (test_core.CoreTests.test_no_evidence_skips_model) ... ok
+test_project_isolation_with_same_tenant_and_document_id (test_core.CoreTests.test_project_isolation_with_same_tenant_and_document_id) ... ok
+test_provider_request_contract (test_core.CoreTests.test_provider_request_contract) ... ok
+test_real_loopback_provider_transport (test_core.CoreTests.test_real_loopback_provider_transport) ... ok
+test_synthetic_evaluation (test_core.CoreTests.test_synthetic_evaluation) ... ok
+test_tenant_isolation_before_text_and_graph_retrieval (test_core.CoreTests.test_tenant_isolation_before_text_and_graph_retrieval) ... ok
+test_trace_scope_and_no_document_text (test_core.CoreTests.test_trace_scope_and_no_document_text) ... ok
+test_update_invalidates_graph_edges (test_core.CoreTests.test_update_invalidates_graph_edges) ... ok
+test_valid_schema_is_a_draft_not_claimed_verified (test_core.CoreTests.test_valid_schema_is_a_draft_not_claimed_verified) ... ok
+test_vector_retrieval_can_find_non_keyword_match (test_core.CoreTests.test_vector_retrieval_can_find_non_keyword_match) ... ok
+test_wrong_delete_revision (test_core.CoreTests.test_wrong_delete_revision) ... ok
+test_explicit_neo4j_selection_uses_adapter (test_neo4j.BackendSelectionTests.test_explicit_neo4j_selection_uses_adapter) ... ok
+test_unknown_storage_does_not_fall_back (test_neo4j.BackendSelectionTests.test_unknown_storage_does_not_fall_back) ... ok
+test_api_authentication_and_read_only_credential (test_neo4j.Neo4jAPITests.test_api_authentication_and_read_only_credential) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_api_cannot_override_namespace (test_neo4j.Neo4jAPITests.test_api_cannot_override_namespace) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_api_malformed_json_object (test_neo4j.Neo4jAPITests.test_api_malformed_json_object) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_api_returns_actual_graph_evidence (test_neo4j.Neo4jAPITests.test_api_returns_actual_graph_evidence) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_bad_citation_is_rejected (test_neo4j.Neo4jCoreTests.test_bad_citation_is_rejected) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_collection_isolation (test_neo4j.Neo4jCoreTests.test_collection_isolation) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_concurrent_source_updates_allow_one_revision (test_neo4j.Neo4jCoreTests.test_concurrent_source_updates_allow_one_revision) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_cypher_parameters_treat_injection_as_a_label (test_neo4j.Neo4jCoreTests.test_cypher_parameters_treat_injection_as_a_label) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_delete_removes_evidence_and_graph (test_neo4j.Neo4jCoreTests.test_delete_removes_evidence_and_graph) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_document_commands_are_evidence_only (test_neo4j.Neo4jCoreTests.test_document_commands_are_evidence_only) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_edges_require_actual_quote_and_current_revision (test_neo4j.Neo4jCoreTests.test_edges_require_actual_quote_and_current_revision) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_expiry_and_future_documents (test_neo4j.Neo4jCoreTests.test_expiry_and_future_documents) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_explicit_foreign_graph_seed_cannot_cross_scope (test_neo4j.Neo4jCoreTests.test_explicit_foreign_graph_seed_cannot_cross_scope) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_graph_respects_expired_supporting_source (test_neo4j.Neo4jCoreTests.test_graph_respects_expired_supporting_source) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_graph_three_hops_and_budget (test_neo4j.Neo4jCoreTests.test_graph_three_hops_and_budget) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_idempotent_ingest_and_conflicting_update (test_neo4j.Neo4jCoreTests.test_idempotent_ingest_and_conflicting_update) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_invalid_body_and_limits (test_neo4j.Neo4jCoreTests.test_invalid_body_and_limits) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_jurisdiction_required_and_filtered (test_neo4j.Neo4jCoreTests.test_jurisdiction_required_and_filtered) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_native_graph_execution_is_recorded (test_neo4j.Neo4jCoreTests.test_native_graph_execution_is_recorded) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_no_evidence_skips_model (test_neo4j.Neo4jCoreTests.test_no_evidence_skips_model) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_project_isolation_with_same_tenant_and_document_id (test_neo4j.Neo4jCoreTests.test_project_isolation_with_same_tenant_and_document_id) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_provider_request_contract (test_neo4j.Neo4jCoreTests.test_provider_request_contract) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_real_loopback_provider_transport (test_neo4j.Neo4jCoreTests.test_real_loopback_provider_transport) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_replacing_edge_preserves_id_uniqueness (test_neo4j.Neo4jCoreTests.test_replacing_edge_preserves_id_uniqueness) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_synthetic_evaluation (test_neo4j.Neo4jCoreTests.test_synthetic_evaluation) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_tenant_isolation_before_text_and_graph_retrieval (test_neo4j.Neo4jCoreTests.test_tenant_isolation_before_text_and_graph_retrieval) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_trace_scope_and_no_document_text (test_neo4j.Neo4jCoreTests.test_trace_scope_and_no_document_text) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_update_invalidates_graph_edges (test_neo4j.Neo4jCoreTests.test_update_invalidates_graph_edges) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_valid_schema_is_a_draft_not_claimed_verified (test_neo4j.Neo4jCoreTests.test_valid_schema_is_a_draft_not_claimed_verified) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_vector_retrieval_can_find_non_keyword_match (test_neo4j.Neo4jCoreTests.test_vector_retrieval_can_find_non_keyword_match) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_wrong_delete_revision (test_neo4j.Neo4jCoreTests.test_wrong_delete_revision) ... skipped 'Set NEO4J_TEST_ENABLED=1 with a test Neo4j connection'
+test_actor_cannot_read_other_document (test_rrci.GovernanceTests.test_actor_cannot_read_other_document) ... ok
+test_audit_is_scoped_append_only_hash_chain (test_rrci.GovernanceTests.test_audit_is_scoped_append_only_hash_chain) ... ok
+test_authorised_evidence (test_rrci.GovernanceTests.test_authorised_evidence) ... ok
+test_authority_selects_configured_winner (test_rrci.GovernanceTests.test_authority_selects_configured_winner) ... ok
+test_authority_tie_requires_review (test_rrci.GovernanceTests.test_authority_tie_requires_review) ... ok
+test_delete_retry_and_old_event_cannot_resurrect (test_rrci.GovernanceTests.test_delete_retry_and_old_event_cannot_resurrect) ... ok
+test_expired_acl_denied_with_fresh_identity (test_rrci.GovernanceTests.test_expired_acl_denied_with_fresh_identity) ... ok
+test_expired_identity_and_entitlement_denied (test_rrci.GovernanceTests.test_expired_identity_and_entitlement_denied) ... ok
+test_outage_denies_evidence (test_rrci.GovernanceTests.test_outage_denies_evidence) ... ok
+test_permission_change_applies_before_next_query (test_rrci.GovernanceTests.test_permission_change_applies_before_next_query) ... ok
+test_reused_event_id_rejected (test_rrci.GovernanceTests.test_reused_event_id_rejected) ... ok
+test_sensitive_action_independent_approval_and_single_claim (test_rrci.GovernanceTests.test_sensitive_action_independent_approval_and_single_claim) ... ok
+test_source_ownership_cannot_cross_tenant (test_rrci.GovernanceTests.test_source_ownership_cannot_cross_tenant) ... ok
+test_tenant_scope_blocks_identical_workspace (test_rrci.GovernanceTests.test_tenant_scope_blocks_identical_workspace) ... ok
+
+----------------------------------------------------------------------
+Ran 74 tests in 0.334s
+
+OK (skipped=31)

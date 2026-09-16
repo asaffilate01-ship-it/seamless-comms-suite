@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "environment": "React DOM in jsdom against signed Node client and real Python service",
+  "checks": [
+    "project load",
+    "six workstreams",
+    "GraphRAG evidence",
+    "financial scenario",
+    "RICE priority",
+    "UAT gate",
+    "company plan generation",
+    "transition cost calculation",
+    "incomplete plan review blocked",
+    "Day 1 roadmap and gates",
+    "guided company intake",
+    "stale plan history",
+    "record save",
+    "agent planning",
+    "self-approval rejection",
+    "pause control"
+  ],
+  "visual_browser_verification": false
+}

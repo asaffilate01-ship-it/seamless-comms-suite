@@ -1,0 +1,5 @@
+*
+!requirements-hosting.txt
+!requirements-neo4j.txt
+!knowledge_core/
+!knowledge_core/*.py

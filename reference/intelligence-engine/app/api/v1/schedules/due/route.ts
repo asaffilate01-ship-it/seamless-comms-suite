@@ -1,0 +1,3 @@
+import { env } from "cloudflare:workers";import { requireInternalIdentity } from "@/lib/auth/authorize";
+type Bindings={DB?:D1Database;ADMIN_EMAILS?:string};
+export async function GET(request:Request){const bindings=env as unknown as Bindings;const auth=requireInternalIdentity(request,bindings,["owner","admin","operator"]);if("response" in auth)return auth.response;if(!bindings.DB)return Response.json({mode:"simulation",schedules:[]});const rows=await bindings.DB.prepare("SELECT id, workflow_id, tenant_id, cron_expression, timezone, next_run_at FROM schedules WHERE status = 'active' AND next_run_at <= CURRENT_TIMESTAMP ORDER BY next_run_at LIMIT 50").all();return Response.json({schedules:rows.results});}

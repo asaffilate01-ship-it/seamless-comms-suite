@@ -1,0 +1,200 @@
+{
+  "run_id": "b9723ad9-4699-4597-aa1a-050067411e90",
+  "status": "evidence_only",
+  "answer": "Relevant source excerpts are available below. A language model is not enabled, so no generated answer has been produced.",
+  "claims": [],
+  "evidence": [
+    {
+      "citation_id": "C1",
+      "chunk_id": "supplier-record:v1:0",
+      "document_id": "supplier-record",
+      "revision": 1,
+      "title": "supplier record",
+      "source_uri": "urn:fictional:supplier-record",
+      "quote": "Northstar Foods supplies Batch B17."
+    },
+    {
+      "citation_id": "C2",
+      "chunk_id": "recipe-record:v1:0",
+      "document_id": "recipe-record",
+      "revision": 1,
+      "title": "recipe record",
+      "source_uri": "urn:fictional:recipe-record",
+      "quote": "Batch B17 is used in Lemon Tart."
+    },
+    {
+      "citation_id": "C3",
+      "chunk_id": "distribution-luton:v1:0",
+      "document_id": "distribution-luton",
+      "revision": 1,
+      "title": "distribution luton",
+      "source_uri": "urn:fictional:distribution-luton",
+      "quote": "Lemon Tart is served at Luton branch."
+    },
+    {
+      "citation_id": "C4",
+      "chunk_id": "distribution-st-albans:v1:0",
+      "document_id": "distribution-st-albans",
+      "revision": 1,
+      "title": "distribution st albans",
+      "source_uri": "urn:fictional:distribution-st-albans",
+      "quote": "Lemon Tart is served at St Albans branch."
+    }
+  ],
+  "graph_paths": [
+    {
+      "nodes": [
+        "Northstar Foods",
+        "Batch B17"
+      ],
+      "edges": [
+        {
+          "id": "supply",
+          "source": "Northstar Foods",
+          "relation": "supplies",
+          "target": "Batch B17",
+          "quote": "Northstar Foods supplies Batch B17.",
+          "citation_id": "C1"
+        }
+      ]
+    },
+    {
+      "nodes": [
+        "Northstar Foods",
+        "Batch B17",
+        "Lemon Tart"
+      ],
+      "edges": [
+        {
+          "id": "supply",
+          "source": "Northstar Foods",
+          "relation": "supplies",
+          "target": "Batch B17",
+          "quote": "Northstar Foods supplies Batch B17.",
+          "citation_id": "C1"
+        },
+        {
+          "id": "recipe",
+          "source": "Batch B17",
+          "relation": "used_in",
+          "target": "Lemon Tart",
+          "quote": "Batch B17 is used in Lemon Tart.",
+          "citation_id": "C2"
+        }
+      ]
+    },
+    {
+      "nodes": [
+        "Northstar Foods",
+        "Batch B17",
+        "Lemon Tart",
+        "Luton branch"
+      ],
+      "edges": [
+        {
+          "id": "supply",
+          "source": "Northstar Foods",
+          "relation": "supplies",
+          "target": "Batch B17",
+          "quote": "Northstar Foods supplies Batch B17.",
+          "citation_id": "C1"
+        },
+        {
+          "id": "recipe",
+          "source": "Batch B17",
+          "relation": "used_in",
+          "target": "Lemon Tart",
+          "quote": "Batch B17 is used in Lemon Tart.",
+          "citation_id": "C2"
+        },
+        {
+          "id": "luton",
+          "source": "Lemon Tart",
+          "relation": "served_at",
+          "target": "Luton branch",
+          "quote": "Lemon Tart is served at Luton branch.",
+          "citation_id": "C3"
+        }
+      ]
+    },
+    {
+      "nodes": [
+        "Northstar Foods",
+        "Batch B17",
+        "Lemon Tart",
+        "St Albans branch"
+      ],
+      "edges": [
+        {
+          "id": "supply",
+          "source": "Northstar Foods",
+          "relation": "supplies",
+          "target": "Batch B17",
+          "quote": "Northstar Foods supplies Batch B17.",
+          "citation_id": "C1"
+        },
+        {
+          "id": "recipe",
+          "source": "Batch B17",
+          "relation": "used_in",
+          "target": "Lemon Tart",
+          "quote": "Batch B17 is used in Lemon Tart.",
+          "citation_id": "C2"
+        },
+        {
+          "id": "st-albans",
+          "source": "Lemon Tart",
+          "relation": "served_at",
+          "target": "St Albans branch",
+          "quote": "Lemon Tart is served at St Albans branch.",
+          "citation_id": "C4"
+        }
+      ]
+    }
+  ],
+  "trace": {
+    "id": "b9723ad9-4699-4597-aa1a-050067411e90",
+    "mode": "graph",
+    "status": "evidence_only",
+    "duration_ms": 20.39,
+    "source_chunks": [
+      "supplier-record:v1:0",
+      "recipe-record:v1:0",
+      "distribution-luton:v1:0",
+      "distribution-st-albans:v1:0"
+    ],
+    "graph_edge_paths": [
+      [
+        "supply"
+      ],
+      [
+        "supply",
+        "recipe"
+      ],
+      [
+        "supply",
+        "recipe",
+        "luton"
+      ],
+      [
+        "supply",
+        "recipe",
+        "st-albans"
+      ]
+    ],
+    "retrieval": {
+      "method": "graph_only",
+      "ranked_chunks": [],
+      "matched_paths": 4,
+      "included_paths": 4,
+      "storage_backend": "neo4j",
+      "graph_execution": "neo4j_cypher"
+    },
+    "usage": {},
+    "citation_references_checked": false,
+    "semantic_correctness_verified": false,
+    "as_of": "2026-09-15",
+    "model": null
+  },
+  "review_required": true
+}

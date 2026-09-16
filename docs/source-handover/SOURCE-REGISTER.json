@@ -1,0 +1,437 @@
+{
+  "created": "2026-09-15",
+  "originals": [
+    {
+      "file": "DishBee-Full-Hospitality-Site.zip",
+      "bytes": 1995527,
+      "sha256": "4a96316c21f319bebb73e67de731d4f08957729287103c8e11a636ec52b84f78",
+      "origin": "Recovered earlier deliverable",
+      "unchanged_original": true
+    },
+    {
+      "file": "DishBee-Full-Hospitality-Site.zip.openai-download-d8658446e6f1486fb8f6629491312e82",
+      "bytes": 917504,
+      "sha256": "a82d8bf1d8eeb57fcc2dc302dbed51edcb271c1ab69c1e84f0a87ce97f7f060d",
+      "origin": "Recovered earlier deliverable",
+      "unchanged_original": true
+    },
+    {
+      "file": "OmniQora_Full_Suite_2026-08-22.zip",
+      "bytes": 2073572,
+      "sha256": "aa252ae1f8227fcc5ff6f2427e5bdd39e99c7a2154a61ee7596f1ae07e16e780",
+      "origin": "Recovered earlier deliverable",
+      "unchanged_original": true
+    },
+    {
+      "file": "Omniqora-AI-Repo-Integration-Pack.zip",
+      "bytes": 403662,
+      "sha256": "c71f64d821f1efc036b82b26083ede5aafbbe9eb72361087567668537f5443d2",
+      "origin": "Recovered earlier deliverable",
+      "unchanged_original": true
+    },
+    {
+      "file": "Omniqora-Lawquo-Handover.md",
+      "bytes": 4997,
+      "sha256": "67135d4f1d70c811d8c2b6eaf0b7c1e48505f13ed07e8bd5fbb96126c82f96a0",
+      "origin": "Recovered earlier deliverable",
+      "unchanged_original": true
+    },
+    {
+      "file": "Omniqora_RRCI_Handover.zip",
+      "bytes": 150587,
+      "sha256": "b7aa79c77f606e8e1dcdcce08f1f1b0b9431f372c0db8dabef0ede328eb93dea",
+      "origin": "User-supplied RRCI attachment",
+      "unchanged_original": true
+    },
+    {
+      "file": "Shared_Knowledge_Core_Starter.zip",
+      "bytes": 65569,
+      "sha256": "aa26e2323eb8945e1465dea0cc9702f4d1d9f946e288a0e2171ad4dfeea32d1d",
+      "origin": "Recovered earlier deliverable",
+      "unchanged_original": true
+    },
+    {
+      "file": "iTechLounge-Ecosystem-Core.zip",
+      "bytes": 42828,
+      "sha256": "e0581c017ede77fb68f057caebae2c084785b172a209cbff1e1989e7a645f479",
+      "origin": "Recovered earlier deliverable",
+      "unchanged_original": true
+    },
+    {
+      "file": "iTechLounge-Ecosystem-Core.zip.openai-download-4e925559cb9a401aba2e8beb991977d9",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "origin": "Recovered earlier deliverable",
+      "unchanged_original": true
+    }
+  ],
+  "additional_attachments": [
+    {
+      "name": "Shared_Knowledge_Core_Starter(1).zip",
+      "result": "Byte-identical to recovered Shared_Knowledge_Core_Starter.zip"
+    },
+    {
+      "name": "Omniqora-Lawquo-Handover(1).md",
+      "result": "Byte-identical to recovered Omniqora-Lawquo-Handover.md"
+    },
+    {
+      "name": "Omniqora_RRCI_Handover(1).zip",
+      "result": "Newer unfinished governance/Omniqora update; included in full"
+    }
+  ],
+  "shared_chat_links": [
+    {
+      "url": "https://chatgpt.com/share/6aa9831e-c160-83eb-8d25-cec6718e5eb7",
+      "status": "Unable to open: DisabledError; contents not verified directly"
+    },
+    {
+      "url": "https://chatgpt.com/share/6aa983de-c448-83ed-bdbe-5a9aa01f41a2",
+      "status": "Unable to open: DisabledError; contents not verified directly"
+    },
+    {
+      "url": "https://chatgpt.com/share/6aa98410-cdf8-83eb-8e59-30b857e5a1d3",
+      "status": "Unable to open: DisabledError; contents not verified directly"
+    }
+  ],
+  "github_prs": [
+    {
+      "repo": "asaffilate01-ship-it/haccora",
+      "pr": 17,
+      "url": "https://github.com/asaffilate01-ship-it/haccora/pull/17",
+      "head": "7f4196d5b4aead1975d34604597eb1b8bc7860cd",
+      "mergeCommit": "fe9e1e6556c38f2dc5ce62df5d4d156773027281",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 7
+    },
+    {
+      "repo": "asaffilate01-ship-it/jobflow-tradehub",
+      "pr": 8,
+      "url": "https://github.com/asaffilate01-ship-it/jobflow-tradehub/pull/8",
+      "head": "b5576ce1631d4766faab772ba69098c17aa87b87",
+      "mergeCommit": "ec31186766c25da59c2f3b77a360bc441c34e4c8",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/xpertjobs",
+      "pr": 3,
+      "url": "https://github.com/asaffilate01-ship-it/xpertjobs/pull/3",
+      "head": "5b5080f3c408da584e90ac3dc992377feb898271",
+      "mergeCommit": "70833b2b7665aa827854820b999e221aa9df42b5",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/seamless-comms-suite",
+      "pr": 2,
+      "url": "https://github.com/asaffilate01-ship-it/seamless-comms-suite/pull/2",
+      "head": "eac707c8b72d30604e967fb76d405e99a114012a",
+      "mergeCommit": "0d49bc85c4309c3b1160d0a10c15fe3e4aaa69c0",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/eventplanr2",
+      "pr": 2,
+      "url": "https://github.com/asaffilate01-ship-it/eventplanr2/pull/2",
+      "head": "29dc60c6120a0017324069b405c7bb43db0189f9",
+      "mergeCommit": "74e3bc96ab56673993b8905230ab51b244bcee65",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/kinderstars-childcare-saas",
+      "pr": 7,
+      "url": "https://github.com/asaffilate01-ship-it/kinderstars-childcare-saas/pull/7",
+      "head": "b232afd7ba7e89af661160ad91404b156e24374c",
+      "mergeCommit": "86029a7fb5c3dde5b353a8d496a1842d01c601b9",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/zoryn-nexus",
+      "pr": 2,
+      "url": "https://github.com/asaffilate01-ship-it/zoryn-nexus/pull/2",
+      "head": "88a6fe93b4594d9ec2bc6411dbbf382c7bd9f721",
+      "mergeCommit": "ea366f6530f44498958cb570abbcb3c36dca3754",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/zoryn-rewards-hub",
+      "pr": 2,
+      "url": "https://github.com/asaffilate01-ship-it/zoryn-rewards-hub/pull/2",
+      "head": "fe7e7c59c2293ee30400dd6789adfea96873e9ac",
+      "mergeCommit": "5aad2e20e7401ddaf5ebc42baaa120287d13f2b5",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/your-accountant-finder",
+      "pr": 18,
+      "url": "https://github.com/asaffilate01-ship-it/your-accountant-finder/pull/18",
+      "head": "d77a4b717b8805bdead510343fd3b370c9130d74",
+      "mergeCommit": "910a05de8b66a63589726030d26baff99e7595de",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 2
+    },
+    {
+      "repo": "asaffilate01-ship-it/haccora-connect",
+      "pr": 37,
+      "url": "https://github.com/asaffilate01-ship-it/haccora-connect/pull/37",
+      "head": "a2681236d8e81f3f394149a057e40d9f29084458",
+      "mergeCommit": "62b0d09a59e0b2a644326c45d8f26122ab7bc5a4",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 70
+    },
+    {
+      "repo": "asaffilate01-ship-it/leadlens-discovery",
+      "pr": 3,
+      "url": "https://github.com/asaffilate01-ship-it/leadlens-discovery/pull/3",
+      "head": "fc8f907a86c80c1a2f6557695e30a1c28cd2fb05",
+      "mergeCommit": "8d023f58ea251274ff1f6e9f2332f0ac61c14067",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/threeonethree",
+      "pr": 1,
+      "url": "https://github.com/asaffilate01-ship-it/threeonethree/pull/1",
+      "head": "ef59d49ab4f073ec85b3a85609a0340c960fdc74",
+      "mergeCommit": "a4c78445065b671c52bab8aba6b39cf3392654ef",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/all-road-aid",
+      "pr": 3,
+      "url": "https://github.com/asaffilate01-ship-it/all-road-aid/pull/3",
+      "head": "5c199a7e2a5ea3c31126b07e4329d2a593f6fc88",
+      "mergeCommit": "f65457560f6ba70cf4e3d6d733db52a148592ded",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/zarvane",
+      "pr": 1,
+      "url": "https://github.com/asaffilate01-ship-it/zarvane/pull/1",
+      "head": "7eb66fd32d36201cedbcecbd099141bbf2d13152",
+      "mergeCommit": "7ecc438908ff194b9316e750c573a8b5834f9c82",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/remix-of-property-nexus",
+      "pr": 3,
+      "url": "https://github.com/asaffilate01-ship-it/remix-of-property-nexus/pull/3",
+      "head": "43af6f03ad7c4caaa7127d8c2483193ce7d1b80d",
+      "mergeCommit": "f0d78bfc455260b5a602b1acdefe79a9d59a3fd9",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/eventplanrger",
+      "pr": 12,
+      "url": "https://github.com/asaffilate01-ship-it/eventplanrger/pull/12",
+      "head": "4641f0fb86cfdc00c1cf5e516f3467923c8f1299",
+      "mergeCommit": "c638be0b189eb7893b3570dd8f1406f2b73fea5b",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/kinderstars",
+      "pr": 16,
+      "url": "https://github.com/asaffilate01-ship-it/kinderstars/pull/16",
+      "head": "558c45ed5fa0b06f44ab5c3799ca77fefdde4ee8",
+      "mergeCommit": "cfe99b6fdd07db0c8ad6311da4f08a69be9cd8cb",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/webtemplates",
+      "pr": 3,
+      "url": "https://github.com/asaffilate01-ship-it/webtemplates/pull/3",
+      "head": "6972f1b8a816690cb1d9e1d5a9f0f0ff9b8edf25",
+      "mergeCommit": "39d7f854010f30e6b46851cca6f56ab28b0692c6",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/remix-of-remix-of-surveycam-app",
+      "pr": 3,
+      "url": "https://github.com/asaffilate01-ship-it/remix-of-remix-of-surveycam-app/pull/3",
+      "head": "73d8b6d2f975425c76b06ea111ce67cf449c24ee",
+      "mergeCommit": "5d0f5fc0c3331989e5ac747ec9d75d7d9ba35972",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/ddelivery3pl",
+      "pr": 1,
+      "url": "https://github.com/asaffilate01-ship-it/ddelivery3pl/pull/1",
+      "head": "40425774231399381e65e908b20023b82d2103c1",
+      "mergeCommit": "3e584eb704a925e437f15fb4df23c9dbd657aac9",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/usataxlounge",
+      "pr": 1,
+      "url": "https://github.com/asaffilate01-ship-it/usataxlounge/pull/1",
+      "head": "84aa33b3427cd32af64a2c33c761602720aa5480",
+      "mergeCommit": "50f83c9a311c0b8b66b119922ee496eb82884020",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/care-connect",
+      "pr": 1,
+      "url": "https://github.com/asaffilate01-ship-it/care-connect/pull/1",
+      "head": "ff40f6d5f1656782e2b22808634aa40dbf4ef774",
+      "mergeCommit": "a383758bc2dd58f1c87a2a5f9332b0549cc32b18",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/care-quest-learn",
+      "pr": 11,
+      "url": "https://github.com/asaffilate01-ship-it/care-quest-learn/pull/11",
+      "head": "cda36da236ec8e504513752b13bdd96ab2bd5c1e",
+      "mergeCommit": "f6a647c3387256d30234ac5d18a85324a8f647b6",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/practicecraft-hub",
+      "pr": 2,
+      "url": "https://github.com/asaffilate01-ship-it/practicecraft-hub/pull/2",
+      "head": "83c8b0442ee3cd3f8accc333dfef9f2b232d1494",
+      "mergeCommit": "c9e0b3761a3dd5dbda5e301dc29edc2106a6903b",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/schooldash",
+      "pr": 1,
+      "url": "https://github.com/asaffilate01-ship-it/schooldash/pull/1",
+      "head": "5bbe6d84ca717ac4bee4a986613d8730833a5d2d",
+      "mergeCommit": "37deec4fa0e362635b46a1e526b7e4a999c32b63",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/autosouq",
+      "pr": 1,
+      "url": "https://github.com/asaffilate01-ship-it/autosouq/pull/1",
+      "head": "7e1d38808c34eb1b3d896d3d26b3042ee7c25dee",
+      "mergeCommit": "3080069673903f3d6642b8588db3c6ed3b5cb861",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/zivvo",
+      "pr": 20,
+      "url": "https://github.com/asaffilate01-ship-it/zivvo/pull/20",
+      "head": "2d6febe34d39e97a1b23a2f2b4ef8f044cf426f6",
+      "mergeCommit": "e3799b1653670538962a98e078435c2619212ef8",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/onyn",
+      "pr": 2,
+      "url": "https://github.com/asaffilate01-ship-it/onyn/pull/2",
+      "head": "5bc963a1eec6be0dfa443bd18aee6068f041bc25",
+      "mergeCommit": "104f175ff840c01ff8ab675abd5533c2439a9ced",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/bidora1",
+      "pr": 2,
+      "url": "https://github.com/asaffilate01-ship-it/bidora1/pull/2",
+      "head": "24a9e35a289e8640aea2dad26b36a64936ee4656",
+      "mergeCommit": "c34eaaa35c293f33376a92bc495f8fce701f83d5",
+      "merged": false,
+      "draft": false,
+      "changedFiles": 5
+    },
+    {
+      "repo": "asaffilate01-ship-it/law-remix",
+      "pr": 2,
+      "url": "https://github.com/asaffilate01-ship-it/law-remix/pull/2",
+      "head": "74d15059e0ca090d47f492d9d34d5dfff53f14cb",
+      "mergeCommit": "e22c9e5265078fa7b8ba2f1f60ea50f7ed13d47a",
+      "merged": true,
+      "draft": false,
+      "changedFiles": 6
+    },
+    {
+      "repo": "asaffilate01-ship-it/law-remix",
+      "pr": 1,
+      "url": "https://github.com/asaffilate01-ship-it/law-remix/pull/1",
+      "head": "740e6eb5708910b2b4f58f6c1094573eceeb274b",
+      "mergeCommit": "2880198b3832cdec04a7e83f3d765a418e87d9bf",
+      "merged": false,
+      "draft": true,
+      "changedFiles": 40
+    }
+  ],
+  "limits": [
+    "Personal-context retrieval and recovered deliverables do not establish that every conversation or every historical file was accessible.",
+    "Original Lawquo-Update-PR1.zip was not located; all 40 changed files were reconstructed from its verified GitHub head.",
+    "Sites entries are recovered rollout metadata plus reusable adapter packs, not fresh full Site source exports.",
+    "Unmapped product entries have generic reusable adapters and sourced briefs; they do not invent repository identity.",
+    "No git push, merge, migration or deployment occurred in this consolidation."
+  ],
+  "financial_adviser_and_learning_extension": {
+    "user_request": "Add financial-adviser portfolio reviews, client preparation and follow-ups; reuse intelligence, reasoning and mistake-learning from the trading app.",
+    "announcement": {
+      "url": "https://claude.com/blog/claude-for-financial-advisors",
+      "published": "2026-09-14",
+      "checked": "2026-09-15",
+      "retrieval": "Official search result and official solutions/webinar pages; newsletter tracking destination was not resolved."
+    },
+    "workflow_reference": "https://www.anthropic.com/webinars/inside-claude-for-financial-advisors",
+    "trading_repo": {
+      "repo": "asaffilate01-ship-it/remix-of-market-mind-intelligence-34",
+      "head": "23ccd8c054a474b6f1172c947ee97d1cc3aa1df1",
+      "reviewed_files": 59,
+      "old_archive": "ZaksTrader-full-repository-2026-08-15.zip",
+      "old_archive_sha256": "79878e0a9746ca2570bfcaed2619868fb54fb97fd8ffd2d3d489270fdc5b8376",
+      "refreshed_files": 8,
+      "unchanged_files_matched_to_current_head": 51
+    },
+    "new_code": "services/decision-intelligence; local kernel and deterministic adviser helpers, version 0.1",
+    "new_design": "Agent registrations, product mappings, graph entities and host UI/API/rollout requirements are plans, not already connected implementations.",
+    "repository_mutations": "None; no push, merge, deployment or production database write."
+  }
+}

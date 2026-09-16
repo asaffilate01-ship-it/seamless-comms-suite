@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "server": "Neo4j Community 5.26.0",
+  "python_driver": "5.28.6",
+  "all_tests_passed": 60,
+  "live_neo4j_tests": 31,
+  "neo4j_fixture_checks_passed": 8,
+  "http_api_with_neo4j": "passed",
+  "live_llm_called": false
+}

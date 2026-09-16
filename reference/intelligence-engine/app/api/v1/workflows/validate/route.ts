@@ -1,0 +1,3 @@
+import { env } from "cloudflare:workers";import { requireInternalIdentity } from "@/lib/auth/authorize";import { validateWorkflow,type WorkflowDraft } from "@/lib/workflow/validator";
+type Bindings={ADMIN_EMAILS?:string};
+export async function POST(request:Request){const auth=requireInternalIdentity(request,env as unknown as Bindings,["owner","admin","operator"]);if("response" in auth)return auth.response;let draft:WorkflowDraft;try{draft=await request.json() as WorkflowDraft}catch{return Response.json({error:"Invalid JSON"},{status:400})}const result=validateWorkflow(draft);return Response.json(result,{status:result.valid?200:422});}
