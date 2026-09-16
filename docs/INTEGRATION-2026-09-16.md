@@ -42,7 +42,11 @@ Original package guidance remains under `docs/business360/`, `docs/transformatio
 
 The merged root application builds and typechecks. The disposable PGlite test applies the full migration chain and passes 32 access-policy checks, including tenant bootstrap, revocation, project isolation, private pay restrictions and tenant-wide AI quota accounting. `npm run test:services` runs each Python package in an independent process to avoid conflicting `knowledge_core` namespaces. The optional Neo4j integration cases are skipped without a configured test database. Four ecosystem Node adapter tests and the standalone bundle build also pass locally.
 
-The new GitHub workflow repeats the build, typecheck, policy tests, service suites, standalone build and a native PostgreSQL adapter test using a disposable database. The native test cannot start in the scratch environment because its OS user setup is restricted; its GitHub CI result is the verification gate before merge. No live customer database, live provider credentials or production model calls are used in these checks. Reference applications and live voice/payment/provider connections are outside this verification.
+The new GitHub workflow is configured to repeat the build, typecheck, policy tests, service suites, standalone build and a native PostgreSQL adapter test using a disposable database. However, [run 35100227016](https://github.com/asaffilate01-ship-it/seamless-comms-suite/actions/runs/35100227016) and its retry failed before allocating a runner or executing any steps. No job logs were available, so the underlying GitHub account/runner cause is unconfirmed. This is not a passing CI run.
+
+The native PostgreSQL test also cannot start in the scratch environment because OS database-user creation and privilege dropping are restricted. Consequently native-driver/PostgreSQL integration remains unverified and must pass in a suitable environment before activating hosted Business360. The source merge relies on the passing local application, service and PGlite policy checks above; it does not activate the new services or alter repository branch protections. Restore GitHub Actions execution and rerun the supplied workflow before production activation.
+
+No live customer database, live provider credentials or production model calls are used in these checks. Reference applications and live voice/payment/provider connections are outside this verification.
 
 ## Release and rollback
 
