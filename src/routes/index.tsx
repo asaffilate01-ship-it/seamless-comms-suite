@@ -200,6 +200,17 @@ const mergedCopy: Record<PromoLang, {
 
 const serviceIcons = [MessagesSquare, BrainCircuit, ChartNoAxesCombined, Network, ShieldCheck, Building2];
 
+const capabilityIcons: Record<string, typeof Sparkles> = {
+  intelligence: ChartNoAxesCombined,
+  genai: Sparkles,
+  agentic: BrainCircuit,
+  reception: AudioLines,
+  transformation: Building2,
+  governance: ShieldCheck,
+  procurement: BookOpen,
+  ecosystem: Network,
+};
+
 function UnifiedHome() {
   const { dir, transitioning, lang } = usePromo();
   return (
