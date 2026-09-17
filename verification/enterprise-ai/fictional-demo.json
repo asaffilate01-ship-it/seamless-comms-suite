@@ -1,0 +1,122 @@
+{
+  "label": "FICTIONAL LOCAL DEMONSTRATION",
+  "case": {
+    "approval": {
+      "content_hash": "ab64669eff36f910a968c9447e17606aab4309662beb18110f079315b657d345",
+      "expires_at": 1789594258.818714,
+      "reviewer": "independent-reviewer"
+    },
+    "assessment": {
+      "policy_version": "enterprise-ai-pilot-v1",
+      "required_controls": [
+        "access_review",
+        "cost_forecast",
+        "data_owner_approval",
+        "domain_reviewer_approval",
+        "evaluation_results",
+        "human_output_review",
+        "named_owner",
+        "permission_negative_tests",
+        "retention_review",
+        "rollback_plan"
+      ],
+      "risk_tier": "high"
+    },
+    "contributors": [
+      "author"
+    ],
+    "editor": "author",
+    "evidence": {
+      "access_review": "fictional-evidence:access_review",
+      "cost_forecast": "fictional-evidence:cost_forecast",
+      "data_owner_approval": "fictional-evidence:data_owner_approval",
+      "domain_reviewer_approval": "fictional-evidence:domain_reviewer_approval",
+      "evaluation_results": "fictional-evidence:evaluation_results",
+      "human_output_review": "fictional-evidence:human_output_review",
+      "named_owner": "fictional-evidence:named_owner",
+      "permission_negative_tests": "fictional-evidence:permission_negative_tests",
+      "retention_review": "fictional-evidence:retention_review",
+      "rollback_plan": "fictional-evidence:rollback_plan"
+    },
+    "id": "b63ae974-0228-4346-bdbe-3721ba2e051a",
+    "revision": 5,
+    "spec": {
+      "action_mode": "draft",
+      "currency": "GBP",
+      "data_classification": "confidential",
+      "data_sources": [
+        "synthetic:research-notes"
+      ],
+      "decision_impact": "investment_decision",
+      "jurisdiction": "GB",
+      "model_reference": "not-connected",
+      "monthly_budget_minor": 100000,
+      "name": "Fictional research brief",
+      "owner": "business-owner",
+      "purpose": "Prepare research for human review"
+    },
+    "status": "pilot",
+    "approved_forecast_minor": 85200
+  },
+  "forecast": {
+    "currency": "GBP",
+    "monthly_tasks": "10000",
+    "model_rows": [
+      {
+        "model": "illustrative-model-not-a-price-quote",
+        "expected_calls": "20000",
+        "cost": "390.00"
+      }
+    ],
+    "model_cost": "390.00",
+    "subtotal": "710.00",
+    "budget_with_contingency": "852.00",
+    "cost_per_successful_task": "0.09",
+    "status": "planning_estimate",
+    "prices": "operator_supplied"
+  },
+  "audit": [
+    {
+      "case_id": "b63ae974-0228-4346-bdbe-3721ba2e051a",
+      "event": "created",
+      "record_hash": "f976a72d75090606869d72692f5fc1d514e777ad00ab48c87031022c278c12ac",
+      "revision": 1,
+      "subject": "author",
+      "time": 1789507858.8182368
+    },
+    {
+      "case_id": "b63ae974-0228-4346-bdbe-3721ba2e051a",
+      "event": "assessed",
+      "record_hash": "ffda399b2a35ef12e1253f191b4e4525f7776ab0e8376be84eca13635280acc8",
+      "revision": 2,
+      "subject": "author",
+      "time": 1789507858.8185003
+    },
+    {
+      "case_id": "b63ae974-0228-4346-bdbe-3721ba2e051a",
+      "event": "evidence_attached",
+      "record_hash": "df495be8d5333b304c69b77e9a85b29bfcff76caed6daff39a2de40c12da6395",
+      "revision": 3,
+      "subject": "author",
+      "time": 1789507858.8186283
+    },
+    {
+      "case_id": "b63ae974-0228-4346-bdbe-3721ba2e051a",
+      "event": "pilot_plan_approved",
+      "record_hash": "e39ed950f9c897b8ed9193ba847d7eefc636f9184897ed3abfbf927a204caa6e",
+      "revision": 4,
+      "subject": "independent-reviewer",
+      "time": 1789507858.8188434
+    },
+    {
+      "case_id": "b63ae974-0228-4346-bdbe-3721ba2e051a",
+      "event": "pilot_registered",
+      "record_hash": "2f433ec2e51a2f837e9ff3117bd20e60424f15b7306ec1b55d7629831784c369",
+      "revision": 5,
+      "subject": "author",
+      "time": 1789507858.8191197
+    }
+  ],
+  "live_provider_calls": 0,
+  "meaning": "Pilot registration only; no execution or production approval"
+}

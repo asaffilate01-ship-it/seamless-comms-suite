@@ -1,0 +1,402 @@
+{
+  "as_of": "2026-09-16",
+  "currency": "GBP",
+  "companies": [
+    {
+      "company_role": "operating",
+      "countries": [
+        "GB"
+      ],
+      "id": "business",
+      "name": "Fictional service business",
+      "owner": "Demo director",
+      "sector": "Business services"
+    }
+  ],
+  "coverage": [
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "purpose",
+      "status": "reported",
+      "question": "What does the business do, for whom, and why do customers choose it?",
+      "source_ids": [
+        "purpose"
+      ]
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "customers",
+      "status": "unassessed",
+      "question": "Who buys, uses and pays; what problems and complaints do they experience?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "revenue",
+      "status": "unassessed",
+      "question": "How does an enquiry become an order, delivered work, an invoice and cash?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "processes",
+      "status": "unassessed",
+      "question": "What are the main steps, handoffs, approvals and waiting points?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "people",
+      "status": "unassessed",
+      "question": "Which departments, roles, skills, reporting lines, salaries and benefits support delivery?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "assets",
+      "status": "unassessed",
+      "question": "What tangible and intangible resources are owned, leased, licensed or shared?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "technology",
+      "status": "unassessed",
+      "question": "Which applications, hardware, data and integrations are business-critical?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "costs",
+      "status": "unassessed",
+      "question": "What recurring costs, commitments, professional fees and avoidable losses exist?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "collections",
+      "status": "unassessed",
+      "question": "What is overdue, why, and how are disputes and payment allocations handled?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "suppliers",
+      "status": "unassessed",
+      "question": "Which suppliers are critical and what bottlenecks do they encounter?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "compliance",
+      "status": "unassessed",
+      "question": "Which obligations, advisers, controls and approvals apply to this scope?",
+      "source_ids": []
+    },
+    {
+      "company_id": "business",
+      "company": "Fictional service business",
+      "domain": "goals",
+      "status": "unassessed",
+      "question": "What are the short-, medium- and long-term goals and constraints?",
+      "source_ids": []
+    }
+  ],
+  "coverage_summary": {
+    "verified": 0,
+    "reported": 1,
+    "disputed": 0,
+    "unknown": 0,
+    "unassessed": 11
+  },
+  "departments": [
+    {
+      "company_id": "business",
+      "evidence_ref": "urn:fictional:sales",
+      "id": "sales",
+      "name": "Sales",
+      "owner": "Demo director",
+      "purpose": "Win and retain customers"
+    }
+  ],
+  "people": [
+    {
+      "company_id": "business",
+      "department_id": "sales",
+      "employment_type": "employee",
+      "evidence_ref": "urn:fictional:manager",
+      "id": "manager",
+      "job_title": "Sales manager",
+      "name": "Demo manager",
+      "owner": "Demo director"
+    }
+  ],
+  "stakeholders": [
+    {
+      "company_id": "business",
+      "evidence_ref": "urn:fictional:customer",
+      "id": "customer",
+      "interest": "Faster response and accurate invoices",
+      "name": "Demo customer contact",
+      "organisation": "Fictional customer Ltd",
+      "owner": "Demo director",
+      "party": "customer"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "september",
+      "company_id": "business",
+      "period_start": "2026-09-01",
+      "period_end": "2026-09-30",
+      "currency": "GBP",
+      "gross_profit": "60000.00",
+      "operating_profit": "25000.00",
+      "gross_margin_percent": "60.00",
+      "operating_margin_percent": "25.00",
+      "dso_days": "45.00",
+      "inventory_days": null,
+      "dpo_days": null,
+      "cash_conversion_days": null,
+      "cac": "250.00",
+      "lead_conversion_percent": "10.00",
+      "missed_call_percent": "10.00",
+      "evidence_ref": "urn:fictional:september",
+      "basis": "Management figures for the stated period. Missing inputs or non-positive denominators are unavailable. DSO/DIO/DPO use average balances and matching period flows. CAC uses only the supplied acquisition cost. No causation or assurance is implied."
+    }
+  ],
+  "processes": [],
+  "issues": [
+    {
+      "company_id": "business",
+      "domain": "collections",
+      "evidence_ref": "urn:fictional:invoice-delay",
+      "id": "invoice-delay",
+      "impact": "Cash arrives later and customers need clarifications",
+      "name": "Late invoicing",
+      "owner": "Demo director",
+      "party": "customer",
+      "problem": "Invoices are raised weekly after work is completed",
+      "recommendation": "Review job-completion and invoice handoff",
+      "severity": "high",
+      "status": "open"
+    }
+  ],
+  "opportunities": [
+    {
+      "action": "Review licence usage and renewal dates",
+      "amount": "500",
+      "assumptions": "Fictional estimate; confirm contract exit rights and operational need",
+      "benefit_type": "cost_saving",
+      "company_id": "business",
+      "evidence_ref": "urn:fictional:licences",
+      "frequency": "monthly",
+      "id": "licences",
+      "implementation_cost": "600",
+      "name": "Review duplicate licences",
+      "overlap_group": "licence-review",
+      "owner": "Demo director",
+      "recurring_cost": "0",
+      "target_date": "2026-10-16",
+      "annual_gross": "6000.00",
+      "first_year_net": "5400.00",
+      "overlap": false,
+      "status": "estimate_not_realised"
+    }
+  ],
+  "overlap_groups": [],
+  "collections": {
+    "overdue_total": "2500.00",
+    "overdue_count": 1,
+    "eligible_draft_count": 1,
+    "eligible_invoice_ids": [
+      "invoice"
+    ],
+    "basis": "Draft candidates only. Balance must be checked today; disputed, held, not-due and zero balances are excluded. No customer is contacted."
+  },
+  "actions": [
+    {
+      "id": "discover-business-purpose",
+      "title": "Confirm purpose for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "What does the business do, for whom, and why do customers choose it? Record and review supporting evidence.",
+      "source_ids": [
+        "purpose"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-customers",
+      "title": "Confirm customers for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "Who buys, uses and pays; what problems and complaints do they experience? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-revenue",
+      "title": "Confirm revenue for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "How does an enquiry become an order, delivered work, an invoice and cash? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-processes",
+      "title": "Confirm processes for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "What are the main steps, handoffs, approvals and waiting points? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-people",
+      "title": "Confirm people for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "Which departments, roles, skills, reporting lines, salaries and benefits support delivery? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-assets",
+      "title": "Confirm assets for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "What tangible and intangible resources are owned, leased, licensed or shared? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-technology",
+      "title": "Confirm technology for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "Which applications, hardware, data and integrations are business-critical? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-costs",
+      "title": "Confirm costs for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "What recurring costs, commitments, professional fees and avoidable losses exist? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-collections",
+      "title": "Confirm collections for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "What is overdue, why, and how are disputes and payment allocations handled? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-suppliers",
+      "title": "Confirm suppliers for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "Which suppliers are critical and what bottlenecks do they encounter? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-compliance",
+      "title": "Confirm compliance for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "Which obligations, advisers, controls and approvals apply to this scope? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "discover-business-goals",
+      "title": "Confirm goals for Fictional service business",
+      "owner": "Demo director",
+      "phase": "Discover",
+      "due_date": "2026-09-23",
+      "acceptance": "What are the short-, medium- and long-term goals and constraints? Record and review supporting evidence.",
+      "source_ids": [
+        "business"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "issue-invoice-delay",
+      "title": "Review job-completion and invoice handoff",
+      "owner": "Demo director",
+      "phase": "Improve",
+      "due_date": "2026-10-16",
+      "acceptance": "Validate the suspected cause, agree an outcome measure and compare results with the baseline.",
+      "source_ids": [
+        "invoice-delay"
+      ],
+      "status": "proposed"
+    },
+    {
+      "id": "improve-licences",
+      "title": "Review licence usage and renewal dates",
+      "owner": "Demo director",
+      "phase": "Implement",
+      "due_date": "2026-10-16",
+      "acceptance": "Fictional estimate; confirm contract exit rights and operational need Validate benefits separately from forecast values.",
+      "source_ids": [
+        "licences"
+      ],
+      "status": "proposed"
+    }
+  ],
+  "generation": "deterministic_rules",
+  "status": "draft_for_review",
+  "benefit_basis": "Amounts retain their benefit category. No grand total mixes cash recovery, profit, working capital and hours; overlapping opportunities are flagged. All opportunity figures are estimates.",
+  "data_version": 9
+}

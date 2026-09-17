@@ -1,0 +1,25 @@
+{
+  "expected_revision": 0,
+  "record": {
+    "id": "fictional-reconciliation-1",
+    "title": "Fictional account reconciliation",
+    "workstream_id": "enterprise",
+    "owner": "Finance owner",
+    "period": "2026-09-01",
+    "source_manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "target_manifest_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "source_ref": "urn:fictional:source-extract",
+    "target_ref": "urn:fictional:target-extract",
+    "tolerance_amount": "0.01",
+    "lines": [
+      {
+        "key": "cash-account-1000",
+        "currency": "GBP",
+        "source_amount": "10000.00",
+        "target_amount": "10000.00",
+        "source_count": 50,
+        "target_count": 50
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "START-HERE.md": "60f982116feaf614e53752187483d4b3064e06b82502db03b891edf32cfee9ab",
+  "docs/BUILD-SPECIFICATION.md": "9af2369c98453b6254b76decf6149c676b767570abed6508097c7b08c6334b22",
+  "docs/INTEGRATION.md": "63cc5d8136536d9f3ef4d6dfddaba70bf917cf0f27c53c05c4a9b1b517ecf157",
+  "docs/SOURCES.md": "677115c6884b967a3788b278c9b16288f7874e9bdc5e9cdca08e9602984e3835",
+  "omniqora-update/services/enterprise-ai/README.md": "d3fc1a919b30ccef69429024d5a84202eee08b7362bf778a5233b28d714b0a12",
+  "omniqora-update/services/enterprise-ai/demo.py": "4f71e1a31b4efb989beb7060f535996e6f54f4b7c3be70fec8a99196b0eee7e9",
+  "omniqora-update/services/enterprise-ai/enterprise_ai/__init__.py": "80e89e2d0bc26412e09f930c6037f3999096ed124f9b7768a2a86752c26e8d2a",
+  "omniqora-update/services/enterprise-ai/enterprise_ai/costs.py": "1410162080737d15c9818d21466081c04858a6edb322e0798500a346cdcb4452",
+  "omniqora-update/services/enterprise-ai/enterprise_ai/governance.py": "77012a4284b9f41c9f0b3960ef0ec403a5011adfa7930a21a7e6ba708302e5f8",
+  "omniqora-update/services/enterprise-ai/tests/test_enterprise_ai.py": "408dfbf5aac68207ac2ba92f31a319b6db34d62ba603232ea4ed8515311d3cc7",
+  "omniqora-update/src/modules/enterprise-ai/contracts.ts": "60c985ac0d1d7cd20e1ac6319388b1ea8d01442886075d5b29d0acedba3f523c",
+  "verification/RESULTS.md": "f0376e3902405274a283ba5201892690997532591537704807cfc0e524a67128",
+  "verification/fictional-demo.json": "9c2270197edfac3115f37523e60ba8c720689d4436c4212b35ca6a723088888b"
+}
