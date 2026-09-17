@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import OmniqoraWebsite from '../modules/marketing/OmniqoraWebsite';
+import { redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/website')({
   head: () => ({
@@ -13,5 +13,7 @@ export const Route = createFileRoute('/website')({
     ],
     links: [{ rel: 'icon', type: 'image/svg+xml', href: '/brand/omniqora-mark.svg' }],
   }),
-  component: OmniqoraWebsite,
+  beforeLoad: () => {
+    throw redirect({ href: '/#services' });
+  },
 });
