@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag } from "lucide-react";
+import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag, Layers3 } from "lucide-react";
 import { useState } from "react";
 import { OmniqoraLogo } from "@/components/brand/omniqora-logo";
 import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
@@ -9,7 +9,8 @@ import { legalContent } from "@/lib/legal-content";
 
 const sections = [
   { id: "top", key: "home", icon: Home },
-  { id: "features", key: "features", icon: Sparkles },
+  { id: "platform", key: "features", icon: Sparkles },
+  { id: "services", key: "services", icon: Layers3 },
   { id: "screens", key: "screens", icon: MonitorSmartphone },
   { id: "pricing", key: "pricing", icon: Tag },
   { id: "faq", key: "faq", icon: HelpCircle },
@@ -17,7 +18,7 @@ const sections = [
 ] as const;
 
 /** Five slots only, so the mobile bar stays native-feeling. */
-const bottomSections = sections.filter((s) => s.key !== "screens");
+const bottomSections = sections.filter((s) => ["home", "features", "services", "pricing", "access"].includes(s.key));
 
 function scrollTo(id: string) {
   if (typeof document === "undefined") return;
@@ -31,23 +32,23 @@ export function PromoHeader() {
   const labels: Record<string, string> = {
     home: "OmniQora",
     features: c.nav.features,
+    services: {en:"Services",de:"Leistungen",tr:"Hizmetler",ar:"الخدمات",fr:"Services"}[lang],
     screens: c.nav.screens,
     pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
     access: c.nav.access,
   };
-  const serviceLabel = {en:"All services",de:"Alle Leistungen",tr:"Tüm hizmetler",ar:"جميع الخدمات",fr:"Tous les services"}[lang];
   const desktopNav = [
-    { id: "features", label: c.nav.features },
-    { id: "screens", label: c.nav.screens },
-    { id: "editions", label: c.nav.editions },
+    { id: "platform", label: c.nav.features },
+    { id: "services", label: labels.services },
+    { id: "solutions", label: c.nav.editions },
     { id: "pricing", label: pricingContent[lang].nav },
     { id: "faq", label: c.nav.faq },
   ];
   return (
     <header
       dir={dir}
-      className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-xl"
+      className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl"
     >
       <div className="mx-auto flex h-24 max-w-7xl items-center justify-between gap-4 px-5 sm:px-6">
         <Link to="/" className="flex items-center" onClick={() => scrollTo("top")}>
@@ -55,13 +56,12 @@ export function PromoHeader() {
         </Link>
 
         <nav className="hidden items-center gap-5 lg:flex">
-          <a href="/website" className="text-sm font-semibold text-primary">{serviceLabel}</a>
           {desktopNav.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => scrollTo(s.id)}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {s.label}
             </button>
@@ -75,7 +75,7 @@ export function PromoHeader() {
           <button
             type="button"
             onClick={() => scrollTo("access")}
-            className="hidden items-center rounded-full bg-gradient-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-95 sm:inline-flex"
+             className="hidden items-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:bg-primary/90 sm:inline-flex"
           >
             {c.nav.access}
           </button>
@@ -83,7 +83,7 @@ export function PromoHeader() {
             type="button"
             aria-label="Menu"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border text-foreground lg:hidden"
+             className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border text-foreground lg:hidden"
           >
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -91,9 +91,8 @@ export function PromoHeader() {
       </div>
 
       {open && (
-        <div className="border-t border-border/60 bg-card px-5 py-4 lg:hidden">
+        <div className="border-t border-border bg-background px-5 py-4 lg:hidden">
           <div className="grid gap-1">
-            <a href="/website" className="rounded-xl px-3 py-2.5 text-sm font-semibold text-primary">{serviceLabel}</a>
             {sections.slice(1).map((s) => (
               <button
                 key={s.id}
@@ -102,7 +101,7 @@ export function PromoHeader() {
                   setOpen(false);
                   scrollTo(s.id);
                 }}
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-foreground hover:bg-muted"
+                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-foreground hover:bg-surface-2"
               >
                 <s.icon className="h-4 w-4 text-primary" />
                 {labels[s.key]}
@@ -124,6 +123,7 @@ export function PromoBottomNav() {
   const labels: Record<string, string> = {
     home: "Start",
     features: c.nav.features,
+    services: {en:"Services",de:"Leistungen",tr:"Hizmetler",ar:"الخدمات",fr:"Services"}[lang],
     screens: c.nav.screens,
     pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
