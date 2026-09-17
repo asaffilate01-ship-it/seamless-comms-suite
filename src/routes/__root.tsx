@@ -85,14 +85,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "OmniQora — Every conversation. One intelligent core" },
+      { title: "OmniQora — Your business, working as one" },
       {
         name: "description",
         content:
           "OmniQora unifies every customer conversation — messaging, email, web chat, telephony and VoIP — into one intelligent core with cases, workflows, AI and audit-ready compliance.",
       },
       { name: "author", content: "OmniQora" },
-      { property: "og:title", content: "OmniQora — Every conversation. One intelligent core" },
+      { property: "og:title", content: "OmniQora — Your business, working as one" },
       {
         property: "og:description",
         content:

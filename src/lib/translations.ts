@@ -19,7 +19,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     },
     footer: {
       tagline:
-        "Alle Kunden. Alle Gespräche. Ein System.",
+        "Ihr Unternehmen, als ein Ganzes.",
       product: "Produkt",
       features: "Funktionen",
       packs: "Workflow-Pakete",
@@ -279,7 +279,7 @@ export const translations: Record<Lang, Record<string, unknown>> = {
     },
     footer: {
       tagline:
-        "All customers. All conversations. One system.",
+        "Your business, working as one.",
       product: "Product",
       features: "Features",
       packs: "Workflow packs",

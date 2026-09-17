@@ -17,13 +17,13 @@ import heroImage from "@/assets/promo-hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "OmniQora — Every conversation. One intelligent core" },
+      { title: "OmniQora — Your business, working as one" },
       {
         name: "description",
         content:
           "OmniQora unifies WhatsApp, Instagram, Messenger, SMS, email, web chat, telephony and VoIP in one inbox — with cases, workflows, an AI assistant and audit-ready compliance.",
       },
-      { property: "og:title", content: "OmniQora — Every conversation. One intelligent core" },
+      { property: "og:title", content: "OmniQora — Your business, working as one" },
       {
         property: "og:description",
         content:
