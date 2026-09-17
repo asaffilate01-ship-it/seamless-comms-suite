@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { LanguageToggle, useT } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import logoAsset from "@/assets/omniqora-logo.png.asset.json";
+import { OmniqoraLogo } from "@/components/brand/omniqora-logo";
 
 type NavItem = {
   to: string;
@@ -51,7 +51,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-        <img src={logoAsset.url} alt="OmniQora" className="h-8 w-auto brightness-0 invert" />
+        <OmniqoraLogo slogan={t("footer.tagline")} theme="dark" size="sm" />
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {nav.map((item) => {

@@ -1,6 +1,6 @@
 import { Search, Sparkles, Send, Paperclip, ShieldCheck, Bell, Circle } from "lucide-react";
 import { usePromo } from "@/lib/promo-lang";
-import logoAsset from "@/assets/omniqora-logo.png.asset.json";
+import { OmniqoraLogo } from "@/components/brand/omniqora-logo";
 
 /** Live, translated "screenshot" of the web platform. Text follows the selected language. */
 export function WebAppMockup() {
@@ -26,7 +26,7 @@ export function WebAppMockup() {
       <div className="grid min-h-[340px] grid-cols-[112px_1fr] sm:grid-cols-[150px_1.1fr_1fr]">
         {/* sidebar */}
         <aside className="border-e border-sidebar-border bg-sidebar p-3">
-          <img src={logoAsset.url} alt="OmniQora" className="h-5 w-auto brightness-0 invert" />
+          <OmniqoraLogo slogan={`${c.hero.titleA} ${c.hero.titleB}`} theme="dark" size="xs" />
           <div className="mt-4 space-y-1">
             {c.mock.tabs.map((tab, i) => (
               <div
@@ -150,7 +150,7 @@ export function MobileAppMockup() {
         </div>
 
         <div className="bg-gradient-to-b from-primary to-primary/85 px-4 pb-4 pt-6 text-primary-foreground">
-          <img src={logoAsset.url} alt="OmniQora" className="h-4 w-auto brightness-0 invert" />
+          <OmniqoraLogo slogan={`${c.hero.titleA} ${c.hero.titleB}`} theme="dark" size="xs" showSlogan={false} />
           <div className="mt-3 text-[11px] font-semibold">{c.mock.inbox}</div>
           <div className="mt-2 flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-2.5 py-1.5 text-[9px]">
             <Search className="h-3 w-3" />

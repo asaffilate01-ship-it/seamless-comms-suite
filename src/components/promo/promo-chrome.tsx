@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag } from "lucide-react";
 import { useState } from "react";
-import logoAsset from "@/assets/omniqora-logo.png.asset.json";
+import { OmniqoraLogo } from "@/components/brand/omniqora-logo";
 import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
 import { useCookieConsent } from "@/lib/cookie-consent";
 import { pricingContent } from "@/lib/pricing-content";
@@ -51,7 +51,7 @@ export function PromoHeader() {
     >
       <div className="mx-auto flex h-24 max-w-7xl items-center justify-between gap-4 px-5 sm:px-6">
         <Link to="/" className="flex items-center" onClick={() => scrollTo("top")}>
-          <img src={logoAsset.url} alt="OmniQora" className="h-24 w-auto object-contain" />
+          <OmniqoraLogo slogan={`${c.hero.titleA} ${c.hero.titleB}`} size="md" />
         </Link>
 
         <nav className="hidden items-center gap-5 lg:flex">
@@ -160,8 +160,7 @@ export function PromoFooter() {
     <footer dir={dir} className="border-t border-border/60 bg-surface-2 pb-24 lg:pb-0">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-3">
         <div>
-          <img src={logoAsset.url} alt="OmniQora" className="h-16 w-auto object-contain" />
-          <p className="mt-4 max-w-xs text-sm text-muted-foreground">{c.hero.titleA} {c.hero.titleB}</p>
+          <OmniqoraLogo slogan={`${c.hero.titleA} ${c.hero.titleB}`} size="lg" />
           <p className="mt-3 max-w-xs text-xs text-muted-foreground">{c.footer.trading}</p>
         </div>
         <div>
