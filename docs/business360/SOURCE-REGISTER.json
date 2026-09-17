@@ -1,0 +1,27 @@
+{
+  "version": "0.3.0",
+  "updated_on": "2026-09-16",
+  "base_archive": "Omniqora-Transformation-and-Product-AI.zip",
+  "base_archive_sha256": "08476aa4dbd8dec7ee6393b1b87c4aa4f260d7fb50995429f50aec1f96ecad74",
+  "attachment_note": "Four attachment references resolved to one supplied local archive; only those single archive bytes were reviewed.",
+  "original_package_provenance": {
+    "created_on": "2026-09-15",
+    "host_repository": "asaffilate01-ship-it/seamless-comms-suite",
+    "host_commit_inspected": "0d49bc85c4309c3b1160d0a10c15fe3e4aaa69c0",
+    "new_package_version": "0.2.0",
+    "shared_knowledge_source": "Omniqora-Consolidated-AI-Pack.zip/development/rrci-handover/omniqora-update/services/rrci/knowledge_core",
+    "shared_knowledge_status": "Unmodified source snapshot; requirements and production limitations documented",
+    "previous_enterprise_extension_inspected": "Omniqora-Enterprise-AI-Extension.zip",
+    "pushed_to_github": false,
+    "deployed": false,
+    "updated_on": "2026-09-16",
+    "company_planning": "Typed company and transaction intake; deterministic, versioned draft planning; no live model/vendor discovery or cutover execution"
+  },
+  "first_shared_chat": "Not readable by URL; prior Enterprise AI Architecture Role context retrieved separately. Separate governance extension not copied into this archive.",
+  "second_shared_chat": "Unreadable; contents not represented as merged.",
+  "host_repository": "asaffilate01-ship-it/seamless-comms-suite",
+  "pushed_to_github": false,
+  "deployed": false,
+  "standalone": "New WSGI identity host and prebuilt shared React workspace.",
+  "knowledge_snapshot": "Unmodified relative to supplied archive."
+}

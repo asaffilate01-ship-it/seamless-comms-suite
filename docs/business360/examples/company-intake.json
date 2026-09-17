@@ -1,0 +1,366 @@
+{
+  "fictional_example": true,
+  "instructions": "Create a new project with GBP base currency, then submit each item in order through records.save. These records contain assumptions, not verified company facts. Generate using scope_id northstar-plan.",
+  "records": [
+    {
+      "kind": "system",
+      "record": {
+        "criticality": "high",
+        "evidence_ref": "urn:fictional:architecture",
+        "id": "erp",
+        "name": "Finance ERP",
+        "owner": "Finance lead",
+        "reviewed": true,
+        "status": "active"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "system",
+      "record": {
+        "criticality": "high",
+        "evidence_ref": "urn:fictional:architecture",
+        "id": "identity",
+        "name": "Identity platform",
+        "owner": "Workplace lead",
+        "reviewed": true,
+        "status": "active"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "tsa",
+      "record": {
+        "currency": "GBP",
+        "evidence_ref": "urn:fictional:tsa",
+        "exit_conditions": "Independent login, tested recovery, signed service acceptance",
+        "exit_date": "2026-11-30",
+        "id": "tsa-identity",
+        "monthly_cost": "18000",
+        "name": "Seller identity support",
+        "owner": "Workplace lead",
+        "status": "active",
+        "supplier": "Seller IT (fictional)"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "company",
+      "record": {
+        "id": "seller",
+        "name": "Northstar Seller (fictional)",
+        "company_role": "seller",
+        "sector": "Business services",
+        "countries": [
+          "United Kingdom",
+          "United Arab Emirates"
+        ],
+        "owner": "Programme sponsor",
+        "evidence_ref": "urn:fictional:perimeter"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "company",
+      "record": {
+        "id": "newco",
+        "name": "Northstar NewCo (fictional)",
+        "company_role": "newco",
+        "sector": "Business services",
+        "countries": [
+          "United Kingdom",
+          "United Arab Emirates"
+        ],
+        "owner": "Programme sponsor",
+        "evidence_ref": "urn:fictional:perimeter"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "business_service",
+      "record": {
+        "id": "pay-employees",
+        "name": "Pay employees accurately and on time",
+        "company_id": "newco",
+        "owner": "People operations",
+        "criticality": "critical",
+        "day_one_required": true,
+        "acceptance_criteria": "Parallel payroll reconciles and payment authority is independently verified",
+        "evidence_ref": "urn:fictional:payroll"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "asset",
+      "record": {
+        "id": "asset-identity",
+        "name": "Identity tenant",
+        "company_id": "seller",
+        "asset_type": "technology",
+        "quantity": 1,
+        "owner": "Technology lead",
+        "criticality": "critical",
+        "day_one_required": true,
+        "disposition": "separate",
+        "target_company_id": "newco",
+        "transferability": "unknown",
+        "workstream_id": "identity",
+        "system_id": "identity",
+        "evidence_ref": "urn:fictional:architecture"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "asset",
+      "record": {
+        "id": "asset-erp",
+        "name": "ERP environment",
+        "company_id": "seller",
+        "asset_type": "technology",
+        "quantity": 1,
+        "owner": "Technology lead",
+        "criticality": "critical",
+        "day_one_required": true,
+        "disposition": "separate",
+        "target_company_id": "newco",
+        "transferability": "unknown",
+        "workstream_id": "enterprise",
+        "system_id": "erp",
+        "evidence_ref": "urn:fictional:architecture"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "asset_dependency",
+      "record": {
+        "id": "erp-needs-identity",
+        "source": "asset-erp",
+        "target": "asset-identity",
+        "reviewed": true,
+        "evidence_ref": "urn:fictional:architecture"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "workforce",
+      "record": {
+        "id": "operations-team",
+        "name": "Business operations team",
+        "company_id": "seller",
+        "owner": "People lead",
+        "headcount": 10,
+        "fte": "8.5",
+        "skills": [
+          "Payroll",
+          "Service support",
+          "Finance operations"
+        ],
+        "key_dependencies": "Two team leads cover payroll approvals",
+        "target_company_id": "newco",
+        "transition_approach": "HR validates proposed coverage, required consultation and training before any employment decision",
+        "evidence_ref": "urn:fictional:workforce"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "cost_item",
+      "record": {
+        "id": "current-run",
+        "name": "current run",
+        "company_id": "seller",
+        "cost_key": "current-run",
+        "cost_state": "current",
+        "cost_category": "technology",
+        "amount": "25000",
+        "currency": "GBP",
+        "frequency": "monthly",
+        "owner": "Finance lead",
+        "basis": "estimated",
+        "evidence_ref": "urn:fictional:cost-assumptions"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "cost_item",
+      "record": {
+        "id": "target-run",
+        "name": "target run",
+        "company_id": "newco",
+        "cost_key": "target-run",
+        "cost_state": "target",
+        "cost_category": "technology",
+        "amount": "16000",
+        "currency": "GBP",
+        "frequency": "monthly",
+        "owner": "Finance lead",
+        "basis": "estimated",
+        "evidence_ref": "urn:fictional:cost-assumptions"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "cost_item",
+      "record": {
+        "id": "separation-cost",
+        "name": "separation cost",
+        "company_id": "newco",
+        "cost_key": "separation-cost",
+        "cost_state": "transition",
+        "cost_category": "technology",
+        "amount": "100000",
+        "currency": "GBP",
+        "frequency": "one_off",
+        "owner": "Finance lead",
+        "basis": "estimated",
+        "evidence_ref": "urn:fictional:cost-assumptions"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "cost_item",
+      "record": {
+        "id": "tsa-cost",
+        "name": "tsa cost",
+        "company_id": "newco",
+        "cost_key": "tsa-cost",
+        "cost_state": "transition",
+        "cost_category": "tsa",
+        "amount": "18000",
+        "currency": "GBP",
+        "frequency": "monthly",
+        "owner": "Finance lead",
+        "basis": "estimated",
+        "evidence_ref": "urn:fictional:cost-assumptions",
+        "duration_months": "3"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "objective",
+      "record": {
+        "id": "application-rationalisation",
+        "name": "Review application rationalisation opportunity",
+        "company_id": "newco",
+        "owner": "Technology lead",
+        "metric": "Applications in agreed comparable scope",
+        "baseline": "10",
+        "target": "8",
+        "unit": "applications",
+        "direction": "decrease",
+        "moscow": "should",
+        "target_date": "2027-01-08",
+        "evidence_ref": "urn:fictional:investment-thesis"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "delivery_mandate",
+      "record": {
+        "id": "embedded-delivery",
+        "name": "Embedded technical delivery (fictional)",
+        "company_id": "newco",
+        "owner": "Delivery director",
+        "delivery_model": "sub_contract",
+        "client": "Northstar sponsor (fictional)",
+        "prime_adviser": "Lead advisory firm (fictional)",
+        "delivery_partner": "Technical delivery partner (fictional)",
+        "branding": "co_branded",
+        "display_brand": "Northstar Transformation",
+        "workstream_ids": [
+          "enterprise",
+          "identity",
+          "cloud",
+          "security",
+          "integration",
+          "data"
+        ],
+        "decision_rights": "Lead adviser owns SMO decisions; client approves spend and cutover; partner owns agreed technical delivery",
+        "reporting_cadence": "Weekly workstream pack and daily cutover reporting",
+        "acceptance_criteria": "Business owners accept evidence against agreed milestones",
+        "commercial_ref": "urn:fictional:statement-of-work"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "tdd_finding",
+      "record": {
+        "id": "shared-identity",
+        "name": "Seller identity dependency",
+        "company_id": "seller",
+        "owner": "Technology lead",
+        "severity": "high",
+        "finding_status": "open",
+        "business_impact": "Day 1 access depends on seller support and licence rights",
+        "recommendation": "Confirm TSA scope and consent; rehearse independent access before exit",
+        "cost_item_ids": [
+          "separation-cost",
+          "tsa-cost"
+        ],
+        "evidence_ref": "urn:fictional:diligence"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "tsa_obligation",
+      "record": {
+        "id": "identity-services",
+        "name": "Seller identity services",
+        "company_id": "newco",
+        "owner": "Workplace lead",
+        "tsa_id": "tsa-identity",
+        "provider_company_id": "seller",
+        "recipient_company_id": "newco",
+        "asset_ids": [
+          "asset-identity"
+        ],
+        "service_scope": "Directory support and agreed authentication services",
+        "service_levels": "Define support hours, availability measurement and incident response in the agreement",
+        "charging_basis": "GBP 18,000 monthly, subject to negotiated terms",
+        "responsibilities": "Seller operates shared service; buyer owns target identity and acceptance",
+        "exit_roadmap": "Confirm rights, build target tenant, test users and recovery, reconcile permissions, approve exit",
+        "consent_status": "negotiating",
+        "evidence_ref": "urn:fictional:tsa-draft"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "decision",
+      "record": {
+        "id": "target-operating-model",
+        "name": "Proposed standalone operating model",
+        "company_id": "newco",
+        "owner": "Programme sponsor",
+        "decision_date": "2026-09-16",
+        "decision_status": "proposed",
+        "rationale": "Separate identity and finance while preserving service continuity",
+        "alternatives": "Extend shared service or replace selected applications",
+        "evidence_ref": "urn:fictional:options"
+      },
+      "expected_revision": 0
+    },
+    {
+      "kind": "planning_scope",
+      "record": {
+        "id": "northstar-plan",
+        "name": "Northstar company separation plan",
+        "deal_type": "carve_out",
+        "company_ids": [
+          "seller",
+          "newco"
+        ],
+        "target_company_id": "newco",
+        "owner": "Programme director",
+        "start_date": "2026-09-16",
+        "day_one_date": "2026-10-01",
+        "horizon_days": 100,
+        "constraints": "Protect payroll and finance close. Review all company, workforce, contract and country-specific requirements.",
+        "requirements_ref": "urn:fictional:scope-review",
+        "inventory_complete": false,
+        "workforce_complete": false,
+        "costs_complete": false,
+        "transition_budget": "180000"
+      },
+      "expected_revision": 0
+    }
+  ]
+}
