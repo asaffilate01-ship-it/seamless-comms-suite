@@ -28,7 +28,7 @@ export function OmniqoraLogo({
   return (
     <span className={cn("inline-flex shrink-0 items-center", scale.wrap, className)} aria-label={`OmniQora — ${slogan}`}>
       <img
-        src="/brand/omniqora-mark.svg"
+        src="/brand/omniqora-original-mark.png"
         alt=""
         aria-hidden="true"
         className={cn("shrink-0 object-contain", scale.mark)}
