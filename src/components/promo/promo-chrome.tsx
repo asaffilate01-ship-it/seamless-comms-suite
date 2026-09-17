@@ -31,17 +31,18 @@ export function PromoHeader() {
   const [open, setOpen] = useState(false);
   const labels: Record<string, string> = {
     home: "OmniQora",
-    features: c.nav.features,
+    features: {en:"Platform",de:"Plattform",tr:"Platform",ar:"المنصة",fr:"Plateforme"}[lang],
     services: {en:"Services",de:"Leistungen",tr:"Hizmetler",ar:"الخدمات",fr:"Services"}[lang],
     screens: c.nav.screens,
     pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
-    access: c.nav.access,
+    access: {en:"Contact",de:"Kontakt",tr:"İletişim",ar:"تواصل",fr:"Contact"}[lang],
   };
+  const solutionLabel = {en:"Solutions",de:"Lösungen",tr:"Çözümler",ar:"الحلول",fr:"Solutions"}[lang];
   const desktopNav = [
-    { id: "platform", label: c.nav.features },
+    { id: "platform", label: labels.features },
     { id: "services", label: labels.services },
-    { id: "solutions", label: c.nav.editions },
+    { id: "solutions", label: solutionLabel },
     { id: "pricing", label: pricingContent[lang].nav },
     { id: "faq", label: c.nav.faq },
   ];
@@ -77,7 +78,7 @@ export function PromoHeader() {
             onClick={() => scrollTo("access")}
              className="hidden items-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:bg-primary/90 sm:inline-flex"
           >
-            {c.nav.access}
+             {labels.access}
           </button>
           <button
             type="button"
@@ -122,12 +123,12 @@ export function PromoBottomNav() {
   const { c, dir, lang } = usePromo();
   const labels: Record<string, string> = {
     home: "Start",
-    features: c.nav.features,
+    features: {en:"Platform",de:"Plattform",tr:"Platform",ar:"المنصة",fr:"Plateforme"}[lang],
     services: {en:"Services",de:"Leistungen",tr:"Hizmetler",ar:"الخدمات",fr:"Services"}[lang],
     screens: c.nav.screens,
     pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
-    access: c.nav.access,
+    access: {en:"Contact",de:"Kontakt",tr:"İletişim",ar:"تواصل",fr:"Contact"}[lang],
   };
   return (
     <nav

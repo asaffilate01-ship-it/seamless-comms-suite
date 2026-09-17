@@ -90,7 +90,7 @@ const de: PromoContent = {
     items: [
       { title: "Omnichannel-Posteingang", desc: "WhatsApp, Instagram, Messenger, SMS, E-Mail, Web-Chat und Anrufe in einem Team-Postfach mit Zuweisung, Notizen und Echtzeit-Updates." },
       { title: "Fälle & SLA-Steuerung", desc: "Aus jedem Gespräch wird ein Vorgang mit Status, Verantwortlichem, Fristen und Eskalation." },
-      { title: "Workflow-Automatisierung", desc: "Regelbasierte Abläufe für Erfassung, Qualifizierung, Terminierung und Nachfassen." },
+      { title: "Intelligente Automatisierung", desc: "Unterstützt wiederkehrende Arbeit, klare Zuständigkeiten und verlässlichen Service." },
       { title: "KI-Assistent Aida", desc: "Triagiert, fasst zusammen und schlägt Antworten vor – Menschen entscheiden bei Geld und Risiko." },
       { title: "KI-Empfang rund um die Uhr", desc: "Nimmt Anrufe, Chats und Nachrichten auch außerhalb der Öffnungszeiten an, qualifiziert Anliegen, bucht Termine und übergibt saubere Fälle an Ihr Team." },
       { title: "Kampagnen & Vorlagen", desc: "Geprüfte Nachrichtenvorlagen, Opt-in-Verwaltung und automatische Einhaltung der Kanalregeln." },
@@ -225,7 +225,7 @@ const en: PromoContent = {
     items: [
       { title: "Omnichannel shared inbox", desc: "WhatsApp, Instagram, Messenger, SMS, email, web chat and calls in one team inbox with assignment, notes and realtime updates." },
       { title: "Cases & SLA control", desc: "Every conversation becomes a case with status, owner, deadlines and escalation." },
-      { title: "Workflow automation", desc: "Rule-based flows for intake, qualification, scheduling and follow-up." },
+      { title: "Intelligent automation", desc: "Supports repeatable work, clear ownership and consistent customer service." },
       { title: "Aida AI assistant", desc: "Triages, summarises and drafts replies — humans decide anything financial or risky." },
       { title: "AI receptionist, 24/7", desc: "Answers calls, chats and messages outside opening hours, qualifies the request, books appointments and hands a clean case to your team." },
       { title: "Campaigns & templates", desc: "Approved message templates, opt-in management and automatic channel-rule enforcement." },
@@ -360,7 +360,7 @@ const tr: PromoContent = {
     items: [
       { title: "Çok kanallı gelen kutusu", desc: "WhatsApp, Instagram, Messenger, SMS, e-posta, web sohbeti ve çağrılar tek ekip kutusunda; atama, not ve canlı güncelleme." },
       { title: "Dosyalar ve SLA kontrolü", desc: "Her görüşme; durum, sorumlu, süre ve eskalasyon içeren bir dosyaya dönüşür." },
-      { title: "İş akışı otomasyonu", desc: "Talep alma, değerlendirme, randevu ve takip için kural tabanlı akışlar." },
+      { title: "Akıllı otomasyon", desc: "Tekrarlanan işleri, net sorumluluğu ve tutarlı müşteri hizmetini destekler." },
       { title: "Aida yapay zekâ asistanı", desc: "Sınıflandırır, özetler ve yanıt taslağı yazar — parasal kararlar insanda kalır." },
       { title: "7/24 yapay zekâ resepsiyon", desc: "Çalışma saatleri dışında da aramaları, sohbetleri ve mesajları yanıtlar; talebi sınıflandırır, randevu oluşturur ve ekibinize düzenli bir kayıt devreder." },
       { title: "Kampanyalar ve şablonlar", desc: "Onaylı mesaj şablonları, izin yönetimi ve kanal kurallarının otomatik denetimi." },
@@ -495,7 +495,7 @@ const ar: PromoContent = {
     items: [
       { title: "صندوق موحّد لكل القنوات", desc: "واتساب وإنستغرام وماسنجر والرسائل القصيرة والبريد والدردشة والمكالمات في صندوق واحد مع الإسناد والملاحظات والتحديث الفوري." },
       { title: "الملفات وإدارة SLA", desc: "كل محادثة تتحول إلى ملف بحالة ومسؤول ومواعيد نهائية وتصعيد." },
-      { title: "أتمتة سير العمل", desc: "مسارات قائمة على القواعد للاستقبال والتأهيل والحجز والمتابعة." },
+      { title: "أتمتة ذكية", desc: "تدعم العمل المتكرر والمسؤولية الواضحة وخدمة العملاء المتسقة." },
       { title: "المساعد الذكي Aida", desc: "يفرز ويلخّص ويقترح الردود — والقرارات المالية تبقى للإنسان." },
       { title: "موظف استقبال ذكي على مدار الساعة", desc: "يرد على المكالمات والمحادثات والرسائل خارج ساعات العمل، ويؤهّل الطلب، ويحجز المواعيد، ويسلّم ملفًا مرتبًا لفريقك." },
       { title: "الحملات والقوالب", desc: "قوالب رسائل معتمدة وإدارة الموافقات والالتزام التلقائي بقواعد كل قناة." },
@@ -630,7 +630,7 @@ const fr: PromoContent = {
     items: [
       { title: "Boîte omnicanale", desc: "WhatsApp, Instagram, Messenger, SMS, e-mail, chat web et appels dans une boîte d'équipe, avec attribution, notes et mises à jour en temps réel." },
       { title: "Dossiers et suivi des SLA", desc: "Chaque conversation devient un dossier avec statut, responsable, échéances et escalade." },
-      { title: "Automatisation des processus", desc: "Des règles pour la prise en charge, la qualification, la prise de rendez-vous et les rappels." },
+      { title: "Automatisation intelligente", desc: "Soutient le travail récurrent, des responsabilités claires et un service client cohérent." },
       { title: "Assistant IA Aida", desc: "Trie, résume et prépare des réponses — les décisions à impact financier restent humaines." },
       { title: "Réceptionniste IA 24/7", desc: "Répond aux appels, chats et messages en dehors des horaires, qualifie la demande, planifie les rendez-vous et transmet un dossier propre à votre équipe." },
       { title: "Campagnes et modèles", desc: "Modèles de messages approuvés, gestion des consentements et respect automatique des règles de chaque canal." },
