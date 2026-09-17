@@ -6,6 +6,7 @@ import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
 import { useCookieConsent } from "@/lib/cookie-consent";
 import { pricingContent } from "@/lib/pricing-content";
 import { legalContent } from "@/lib/legal-content";
+import { capabilitiesContent } from "@/lib/capabilities-content";
 
 const sections = [
   { id: "top", key: "home", icon: Home },
@@ -42,6 +43,7 @@ export function PromoHeader() {
   const desktopNav = [
     { id: "platform", label: labels.features },
     { id: "services", label: labels.services },
+    { id: "capabilities", label: capabilitiesContent[lang].nav },
     { id: "solutions", label: solutionLabel },
     { id: "pricing", label: pricingContent[lang].nav },
     { id: "faq", label: c.nav.faq },
