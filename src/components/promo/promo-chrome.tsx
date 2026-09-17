@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag, Layers3 } from "lucide-react";
+import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag, Layers3, Boxes } from "lucide-react";
 import { useState } from "react";
 import { OmniqoraLogo } from "@/components/brand/omniqora-logo";
 import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
@@ -12,6 +12,7 @@ const sections = [
   { id: "top", key: "home", icon: Home },
   { id: "platform", key: "features", icon: Sparkles },
   { id: "services", key: "services", icon: Layers3 },
+  { id: "capabilities", key: "capabilities", icon: Boxes },
   { id: "screens", key: "screens", icon: MonitorSmartphone },
   { id: "pricing", key: "pricing", icon: Tag },
   { id: "faq", key: "faq", icon: HelpCircle },
