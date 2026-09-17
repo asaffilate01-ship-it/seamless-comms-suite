@@ -1,0 +1,35 @@
+{
+  "package": "Omniqora AI repository integration pack",
+  "exported_on": "2026-09-15",
+  "source_commit": "64d877c3718033c3dfe5c3d8b51d34b77a880671",
+  "published_pilot_url": "https://omniqora-ai.amersaleem.chatgpt.site",
+  "target_repository": "asaffilate01-ship-it/seamless-comms-suite",
+  "source_folder": "omniqora-ai-intelligence",
+  "source_stack": [
+    "React 19",
+    "Vinext",
+    "Cloudflare D1",
+    "Cloudflare R2",
+    "Sites identity"
+  ],
+  "target_stack_reviewed": [
+    "TanStack Start",
+    "React",
+    "Supabase"
+  ],
+  "drop_in_patch": false,
+  "source_validation": {
+    "automated_tests_passed": 63,
+    "typescript": "passed",
+    "production_build": "passed",
+    "live_provider_or_call_test": false
+  },
+  "excluded": [
+    "git history and credentials",
+    "installed dependencies",
+    "build output",
+    "runtime environment secrets",
+    "live customer database"
+  ],
+  "note": "Full source plus integration instructions. Adding the folder alone does not wire it into the main app."
+}
