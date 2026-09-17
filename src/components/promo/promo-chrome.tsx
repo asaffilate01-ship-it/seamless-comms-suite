@@ -35,6 +35,7 @@ export function PromoHeader() {
     home: "OmniQora",
     features: {en:"Platform",de:"Plattform",tr:"Platform",ar:"المنصة",fr:"Plateforme"}[lang],
     services: {en:"Services",de:"Leistungen",tr:"Hizmetler",ar:"الخدمات",fr:"Services"}[lang],
+    capabilities: capabilitiesContent[lang].nav,
     screens: c.nav.screens,
     pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
