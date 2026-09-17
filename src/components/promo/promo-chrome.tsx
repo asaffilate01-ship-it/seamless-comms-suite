@@ -1,16 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag, Layers3 } from "lucide-react";
+import { Home, Sparkles, MonitorSmartphone, HelpCircle, KeyRound, Menu, X, Tag, Layers3, Boxes } from "lucide-react";
 import { useState } from "react";
 import { OmniqoraLogo } from "@/components/brand/omniqora-logo";
 import { usePromo, PromoLanguageSelect } from "@/lib/promo-lang";
 import { useCookieConsent } from "@/lib/cookie-consent";
 import { pricingContent } from "@/lib/pricing-content";
 import { legalContent } from "@/lib/legal-content";
+import { capabilitiesContent } from "@/lib/capabilities-content";
 
 const sections = [
   { id: "top", key: "home", icon: Home },
   { id: "platform", key: "features", icon: Sparkles },
   { id: "services", key: "services", icon: Layers3 },
+  { id: "capabilities", key: "capabilities", icon: Boxes },
   { id: "screens", key: "screens", icon: MonitorSmartphone },
   { id: "pricing", key: "pricing", icon: Tag },
   { id: "faq", key: "faq", icon: HelpCircle },
@@ -33,6 +35,7 @@ export function PromoHeader() {
     home: "OmniQora",
     features: {en:"Platform",de:"Plattform",tr:"Platform",ar:"المنصة",fr:"Plateforme"}[lang],
     services: {en:"Services",de:"Leistungen",tr:"Hizmetler",ar:"الخدمات",fr:"Services"}[lang],
+    capabilities: capabilitiesContent[lang].nav,
     screens: c.nav.screens,
     pricing: pricingContent[lang].nav,
     faq: c.nav.faq,
@@ -42,6 +45,7 @@ export function PromoHeader() {
   const desktopNav = [
     { id: "platform", label: labels.features },
     { id: "services", label: labels.services },
+    { id: "capabilities", label: capabilitiesContent[lang].nav },
     { id: "solutions", label: solutionLabel },
     { id: "pricing", label: pricingContent[lang].nav },
     { id: "faq", label: c.nav.faq },

@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { usePromo } from "@/lib/promo-lang";
 import { unlockSite } from "@/lib/site-gate";
 import type { PromoLang } from "@/lib/promo-content";
+import { capabilitiesContent } from "@/lib/capabilities-content";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -199,6 +200,17 @@ const mergedCopy: Record<PromoLang, {
 
 const serviceIcons = [MessagesSquare, BrainCircuit, ChartNoAxesCombined, Network, ShieldCheck, Building2];
 
+const capabilityIcons: Record<string, typeof Sparkles> = {
+  intelligence: ChartNoAxesCombined,
+  genai: Sparkles,
+  agentic: BrainCircuit,
+  reception: AudioLines,
+  transformation: Building2,
+  governance: ShieldCheck,
+  procurement: BookOpen,
+  ecosystem: Network,
+};
+
 function UnifiedHome() {
   const { dir, transitioning, lang } = usePromo();
   return (
@@ -208,7 +220,9 @@ function UnifiedHome() {
         <Hero />
         <Platform />
         <Services lang={lang} />
+        <Capabilities lang={lang} />
         <ProductPreview lang={lang} />
+
         <WaysToWork lang={lang} />
         <PricingSection lang={lang} onCta={() => scrollToSection("access")} />
         <Faq />
@@ -299,6 +313,54 @@ function Services({ lang }: { lang: PromoLang }) {
           {copy.services.map((service, index) => { const Icon = serviceIcons[index] ?? Sparkles; return <article key={service.title} className="group bg-background p-7 transition hover:bg-surface"><div className="flex items-start justify-between"><Icon className="h-6 w-6 text-sidebar-primary" /><span className="text-xs text-muted-foreground">0{index + 1}</span></div><h3 className="mt-10 text-xl font-semibold">{service.title}</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">{service.text}</p></article>; })}
         </div>
         <Button onClick={() => scrollToSection("access")} className="mt-8 rounded-lg">{copy.serviceLink}<ArrowRight /></Button>
+      </div>
+    </section>
+  );
+}
+
+function Capabilities({ lang }: { lang: PromoLang }) {
+  const copy = capabilitiesContent[lang];
+  return (
+    <section id="capabilities" className="scroll-mt-24 border-y border-border py-20 sm:py-28">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">{copy.eyebrow}</p>
+          <h2 className="mt-4 font-display text-4xl font-semibold sm:text-5xl">{copy.title}</h2>
+          <p className="mt-5 text-base leading-7 text-muted-foreground">{copy.sub}</p>
+        </div>
+        <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {copy.groups.map((group, index) => {
+            const Icon = capabilityIcons[group.key] ?? Sparkles;
+            const wide = group.key === "ecosystem";
+            return (
+              <article
+                key={group.key}
+                className={`rounded-xl border border-border bg-surface/55 p-6 transition hover:-translate-y-1 hover:border-primary/60 ${wide ? "md:col-span-2 xl:col-span-4" : ""}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-sidebar-primary">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
+                </div>
+                <h3 className="mt-6 text-xl font-semibold">{group.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{group.intro}</p>
+                <ul className={`mt-5 grid gap-3 ${wide ? "sm:grid-cols-2 xl:grid-cols-4" : ""}`}>
+                  {group.items.map((item) => (
+                    <li key={item.name} className="flex gap-2.5">
+                      <Check className="mt-1 h-4 w-4 shrink-0 text-accent" />
+                      <span className="text-sm leading-6">
+                        <span className="font-medium text-foreground">{item.name}</span>
+                        <span className="text-muted-foreground"> — {item.text}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
+        </div>
+        <p className="mt-8 max-w-4xl text-xs leading-6 text-muted-foreground">{copy.note}</p>
       </div>
     </section>
   );
