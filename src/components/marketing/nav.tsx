@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import logoAsset from "@/assets/omniqora-logo.png.asset.json";
+import { OmniqoraLogo } from "@/components/brand/omniqora-logo";
 import { LanguageToggle, useT } from "@/lib/i18n";
 
 export function MarketingNav() {
@@ -8,7 +8,7 @@ export function MarketingNav() {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logoAsset.url} alt="OmniQora" className="h-16 w-auto" />
+          <OmniqoraLogo slogan={t("footer.tagline")} size="md" />
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
           <Link to="/features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{t("nav.product")}</Link>
@@ -35,11 +35,8 @@ export function MarketingFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
         <div>
           <div className="flex h-16 items-center gap-2">
-            <img src={logoAsset.url} alt="OmniQora" className="h-16 w-auto" />
+            <OmniqoraLogo slogan={t("footer.tagline")} size="lg" />
           </div>
-          <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-            {t("footer.tagline")}
-          </p>
         </div>
         <div>
           <h4 className="text-sm font-semibold">{t("footer.product")}</h4>
