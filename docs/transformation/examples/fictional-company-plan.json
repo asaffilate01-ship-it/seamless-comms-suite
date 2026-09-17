@@ -1,0 +1,2443 @@
+{
+  "tenant": "demo-tenant",
+  "project": "fc2cc4cc-7131-4ed6-a5f0-8eb3346fe3cc",
+  "id": "0eaf4e63-8477-4183-8a85-e67434d31778",
+  "scope_id": "northstar-plan",
+  "version": 47,
+  "created": "2026-09-16T08:58:21.051576+00:00",
+  "creator": "demo-owner",
+  "status": "draft",
+  "reviewer": null,
+  "review_ref": null,
+  "payload": {
+    "actions": [
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Enterprise systems and processes",
+        "depends_on": [],
+        "id": "prepare-enterprise",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Inventory legal entities, ledgers, modules, integrations and licensing; Approve separation rules for master data, transactions and history",
+        "workstream": "enterprise"
+      },
+      {
+        "acceptance_criteria": "Approve freeze window, backup, delta loads and rollback criteria; Complete post-cutover reconciliation and operational handover",
+        "depends_on": [
+          "prepare-enterprise",
+          "asset-asset-erp"
+        ],
+        "id": "day1-enterprise",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Enterprise systems and processes",
+        "workstream": "enterprise"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-enterprise"
+        ],
+        "id": "stabilise-enterprise",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over enterprise systems and processes",
+        "workstream": "enterprise"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Identity, endpoint and workplace",
+        "depends_on": [],
+        "id": "prepare-identity",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Map identities, groups, privileged roles, devices and application trust; Approve target tenant, identity matching, MFA and access policies",
+        "workstream": "identity"
+      },
+      {
+        "acceptance_criteria": "Approve domain, mail routing and migration-wave procedures; Verify endpoint coverage, support handover and rollback evidence",
+        "depends_on": [
+          "prepare-identity",
+          "asset-asset-identity"
+        ],
+        "id": "day1-identity",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Identity, endpoint and workplace",
+        "workstream": "identity"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-identity"
+        ],
+        "id": "stabilise-identity",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over identity, endpoint and workplace",
+        "workstream": "identity"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Cloud, infrastructure and networks",
+        "depends_on": [],
+        "id": "prepare-cloud",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Map workloads, network routes, DNS, certificates and dependencies; Review landing zones, regional placement, network boundaries and quotas",
+        "workstream": "cloud"
+      },
+      {
+        "acceptance_criteria": "Approve workload waves, routing changes and rollback conditions; Verify monitoring, cost ownership and decommissioning acceptance",
+        "depends_on": [
+          "prepare-cloud"
+        ],
+        "id": "day1-cloud",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Cloud, infrastructure and networks",
+        "workstream": "cloud"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-cloud"
+        ],
+        "id": "stabilise-cloud",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over cloud, infrastructure and networks",
+        "workstream": "cloud"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Security and GCC control assurance",
+        "depends_on": [],
+        "id": "prepare-security",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Confirm applicable frameworks, editions, scope and responsible assessors; Map controls to systems, owners, evidence and exceptions",
+        "workstream": "security"
+      },
+      {
+        "acceptance_criteria": "Review outstanding risk acceptances and evidence freshness; Assemble audit evidence and record independent assessor findings",
+        "depends_on": [
+          "prepare-security"
+        ],
+        "id": "day1-security",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Security and GCC control assurance",
+        "workstream": "security"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-security"
+        ],
+        "id": "stabilise-security",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over security and gcc control assurance",
+        "workstream": "security"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Software development and integration",
+        "depends_on": [],
+        "id": "prepare-integration",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Inventory APIs, events, batch jobs, consumers and interface owners; Approve contracts, schema mappings, versioning and separation boundaries",
+        "workstream": "integration"
+      },
+      {
+        "acceptance_criteria": "Approve routing switch, retry, replay and rollback procedures; Verify observability, support ownership and legacy retirement",
+        "depends_on": [
+          "prepare-integration"
+        ],
+        "id": "day1-integration",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Software development and integration",
+        "workstream": "integration"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-integration"
+        ],
+        "id": "stabilise-integration",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over software development and integration",
+        "workstream": "integration"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Data, BI and governance",
+        "depends_on": [],
+        "id": "prepare-data",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Map data assets, lineage, stewards, reports and business definitions; Approve target pipelines, access rules and data-quality thresholds",
+        "workstream": "data"
+      },
+      {
+        "acceptance_criteria": "Approve report-switch procedures and finance reporting acceptance; Record lineage, retention, operational ownership and benefits evidence",
+        "depends_on": [
+          "prepare-data"
+        ],
+        "id": "day1-data",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Data, BI and governance",
+        "workstream": "data"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-data"
+        ],
+        "id": "stabilise-data",
+        "owner": "demo-owner",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over data, bi and governance",
+        "workstream": "data"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Governance and decision rights",
+        "depends_on": [],
+        "id": "prepare-governance",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Approve scope, deal perimeter, accountable owners and escalation routes",
+        "workstream": "governance"
+      },
+      {
+        "acceptance_criteria": "Sponsor accepts the operating model and records outstanding exceptions",
+        "depends_on": [
+          "prepare-governance"
+        ],
+        "id": "day1-governance",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Governance and decision rights",
+        "workstream": "governance"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-governance"
+        ],
+        "id": "stabilise-governance",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over governance and decision rights",
+        "workstream": "governance"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Finance and close continuity",
+        "depends_on": [],
+        "id": "prepare-finance",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Confirm banking, opening balances, billing, payroll and close freeze calendar",
+        "workstream": "finance"
+      },
+      {
+        "acceptance_criteria": "CFO accepts reconciliations, finance access, funding and close continuity evidence",
+        "depends_on": [
+          "prepare-finance"
+        ],
+        "id": "day1-finance",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Finance and close continuity",
+        "workstream": "finance"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-finance"
+        ],
+        "id": "stabilise-finance",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over finance and close continuity",
+        "workstream": "finance"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for People and change",
+        "depends_on": [],
+        "id": "prepare-people",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Review team capacity, skills, consultation obligations, communications and training",
+        "workstream": "people"
+      },
+      {
+        "acceptance_criteria": "HR confirms authorised workforce arrangements and service coverage",
+        "depends_on": [
+          "prepare-people",
+          "team-operations-team"
+        ],
+        "id": "day1-people",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: People and change",
+        "workstream": "people"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-people"
+        ],
+        "id": "stabilise-people",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over people and change",
+        "workstream": "people"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Customers and operations",
+        "depends_on": [],
+        "id": "prepare-operations",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Map critical services, customer commitments, supply chain and continuity plans",
+        "workstream": "operations"
+      },
+      {
+        "acceptance_criteria": "Business owners evidence critical service tests and customer support coverage",
+        "depends_on": [
+          "prepare-operations",
+          "service-pay-employees"
+        ],
+        "id": "day1-operations",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Customers and operations",
+        "workstream": "operations"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-operations"
+        ],
+        "id": "stabilise-operations",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over customers and operations",
+        "workstream": "operations"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Contracts and suppliers",
+        "depends_on": [],
+        "id": "prepare-contracts",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Review novation, consent, licences, procurement, TSA terms and exit conditions",
+        "workstream": "contracts"
+      },
+      {
+        "acceptance_criteria": "Owners confirm required contractual rights and continuity arrangements",
+        "depends_on": [
+          "prepare-contracts"
+        ],
+        "id": "day1-contracts",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Contracts and suppliers",
+        "workstream": "contracts"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-contracts"
+        ],
+        "id": "stabilise-contracts",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over contracts and suppliers",
+        "workstream": "contracts"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Facilities and physical assets",
+        "depends_on": [],
+        "id": "prepare-facilities",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Inventory premises, equipment, leases, access and transfer dependencies",
+        "workstream": "facilities"
+      },
+      {
+        "acceptance_criteria": "Owners evidence site access, asset custody and physical service continuity",
+        "depends_on": [
+          "prepare-facilities"
+        ],
+        "id": "day1-facilities",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Facilities and physical assets",
+        "workstream": "facilities"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-facilities"
+        ],
+        "id": "stabilise-facilities",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over facilities and physical assets",
+        "workstream": "facilities"
+      },
+      {
+        "acceptance_criteria": "Reviewed scope and evidence for Product and adoption",
+        "depends_on": [],
+        "id": "prepare-product",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Link research and objectives to PRDs, prioritisation, backlog, UAT and GTM",
+        "workstream": "product"
+      },
+      {
+        "acceptance_criteria": "Product owner confirms critical releases, adoption baseline and support readiness",
+        "depends_on": [
+          "prepare-product"
+        ],
+        "id": "day1-product",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "day_one",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-01",
+        "title": "Confirm Day 1 continuity: Product and adoption",
+        "workstream": "product"
+      },
+      {
+        "acceptance_criteria": "Named operational owner accepts support, monitoring and unresolved exceptions",
+        "depends_on": [
+          "day1-product"
+        ],
+        "id": "stabilise-product",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "stabilise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2026-10-30",
+        "title": "Resolve exceptions and hand over product and adoption",
+        "workstream": "product"
+      },
+      {
+        "acceptance_criteria": "Validate business acceptance, transfer rights, test evidence and recovery or continuity arrangements",
+        "depends_on": [
+          "prepare-enterprise",
+          "asset-asset-identity"
+        ],
+        "id": "asset-asset-erp",
+        "owner": "Technology lead",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "asset-erp"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Separate: ERP environment",
+        "workstream": "enterprise"
+      },
+      {
+        "acceptance_criteria": "Validate business acceptance, transfer rights, test evidence and recovery or continuity arrangements",
+        "depends_on": [
+          "prepare-identity"
+        ],
+        "id": "asset-asset-identity",
+        "owner": "Technology lead",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "asset-identity"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Separate: Identity tenant",
+        "workstream": "identity"
+      },
+      {
+        "acceptance_criteria": "HR validates proposed coverage, required consultation and training before any employment decision",
+        "depends_on": [
+          "prepare-people"
+        ],
+        "id": "team-operations-team",
+        "owner": "People lead",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "operations-team"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Confirm operating coverage: Business operations team",
+        "workstream": "people"
+      },
+      {
+        "acceptance_criteria": "Parallel payroll reconciles and payment authority is independently verified",
+        "depends_on": [
+          "prepare-operations"
+        ],
+        "id": "service-pay-employees",
+        "owner": "People operations",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "pay-employees"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Test business continuity: Pay employees accurately and on time",
+        "workstream": "operations"
+      },
+      {
+        "acceptance_criteria": "Evidence Applications in agreed comparable scope: decrease to 8 applications",
+        "depends_on": [
+          "prepare-governance"
+        ],
+        "id": "objective-application-rationalisation",
+        "owner": "Technology lead",
+        "owner_assignment": "proposed_from_input",
+        "phase": "optimise",
+        "source_ids": [
+          "application-rationalisation"
+        ],
+        "status": "proposed",
+        "target_date": "2027-01-08",
+        "title": "Measure outcome: Review application rationalisation opportunity",
+        "workstream": "governance"
+      },
+      {
+        "acceptance_criteria": "Finance reviews transaction evidence, attribution and remaining commitments",
+        "depends_on": [
+          "stabilise-finance"
+        ],
+        "id": "optimise-benefits",
+        "owner": "Programme director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "optimise",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "proposed",
+        "target_date": "2027-01-08",
+        "title": "Review costs, benefits, adoption and remaining TSA exits",
+        "workstream": "finance"
+      },
+      {
+        "acceptance_criteria": "Business owners accept evidence against agreed milestones",
+        "depends_on": [
+          "prepare-governance"
+        ],
+        "id": "mandate-embedded-delivery",
+        "owner": "Delivery director",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "embedded-delivery"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Confirm delivery agreement: Embedded technical delivery (fictional)",
+        "workstream": "governance"
+      },
+      {
+        "acceptance_criteria": "Confirm TSA scope and consent; rehearse independent access before exit",
+        "depends_on": [
+          "prepare-governance"
+        ],
+        "id": "finding-shared-identity",
+        "owner": "Technology lead",
+        "owner_assignment": "proposed_from_input",
+        "phase": "prepare",
+        "source_ids": [
+          "shared-identity",
+          "separation-cost",
+          "tsa-cost"
+        ],
+        "status": "proposed",
+        "target_date": "2026-09-30",
+        "title": "Resolve diligence finding: Seller identity dependency",
+        "workstream": "governance"
+      },
+      {
+        "acceptance_criteria": "Confirm rights, build target tenant, test users and recovery, reconcile permissions, approve exit; Independent login, tested recovery, signed service acceptance",
+        "depends_on": [
+          "prepare-contracts"
+        ],
+        "id": "tsa-identity-services",
+        "owner": "Workplace lead",
+        "owner_assignment": "proposed_from_input",
+        "phase": "optimise",
+        "source_ids": [
+          "identity-services",
+          "tsa-identity"
+        ],
+        "status": "proposed",
+        "target_date": "2026-11-30",
+        "title": "Exit transition service: Seller identity services",
+        "workstream": "contracts"
+      }
+    ],
+    "as_of": "2026-09-16",
+    "asset_dispositions": [
+      {
+        "asset_type": "technology",
+        "company_id": "seller",
+        "criticality": "critical",
+        "day_one_required": true,
+        "disposition": "separate",
+        "evidence_ref": "urn:fictional:architecture",
+        "id": "asset-erp",
+        "name": "ERP environment",
+        "owner": "Technology lead",
+        "quantity": 1,
+        "system_id": "erp",
+        "target_company_id": "newco",
+        "transferability": "unknown",
+        "workstream_id": "enterprise"
+      },
+      {
+        "asset_type": "technology",
+        "company_id": "seller",
+        "criticality": "critical",
+        "day_one_required": true,
+        "disposition": "separate",
+        "evidence_ref": "urn:fictional:architecture",
+        "id": "asset-identity",
+        "name": "Identity tenant",
+        "owner": "Technology lead",
+        "quantity": 1,
+        "system_id": "identity",
+        "target_company_id": "newco",
+        "transferability": "unknown",
+        "workstream_id": "identity"
+      }
+    ],
+    "assumptions": [
+      "Dates are calendar planning targets, not resource-levelled commitments; durations and capacity require specialist validation.",
+      "Business and technical gates require review; generating or reviewing a plan does not authorise cutover or certify compliance.",
+      "Generic workstream templates require company, sector, jurisdiction and deal-specific tailoring.",
+      "Existing technical, product, financial and risk registers apply to this project; use separate projects for unrelated transformations.",
+      "Workforce inputs are aggregate team data. Employment decisions and consultation remain with accountable people.",
+      "The plan is generated from entered records using rules; an AI model does not invent inventory, savings, owners or evidence."
+    ],
+    "blocking_gap_count": 8,
+    "company_comparison": [
+      {
+        "assets": [],
+        "company_role": "newco",
+        "costs": {
+          "annual_recurring": {
+            "current": null,
+            "target": "192000.00",
+            "transition": "216000.00"
+          },
+          "annual_run_rate_difference": null,
+          "basis": "Entered estimates only, separate from the transaction ledger. 365 days/52 weeks/12 months/4 quarters per annual run-rate; excludes timing, tax, intercompany eliminations and inflation. Current and target states are compared, never added. Difference is not a verified saving. Missing states are null, not zero. Transition recurring costs need a duration before a total programme budget can be calculated.",
+          "coverage_attested": false,
+          "currency": "GBP",
+          "items": [
+            {
+              "annual_run_rate": null,
+              "basis": "estimated",
+              "company_id": "newco",
+              "evidence_ref": "urn:fictional:cost-assumptions",
+              "id": "separation-cost",
+              "one_off": "100000.00",
+              "state": "transition"
+            },
+            {
+              "annual_run_rate": "192000.00",
+              "basis": "estimated",
+              "company_id": "newco",
+              "evidence_ref": "urn:fictional:cost-assumptions",
+              "id": "target-run",
+              "one_off": null,
+              "state": "target"
+            },
+            {
+              "annual_run_rate": "216000.00",
+              "basis": "estimated",
+              "company_id": "newco",
+              "evidence_ref": "urn:fictional:cost-assumptions",
+              "id": "tsa-cost",
+              "one_off": null,
+              "state": "transition"
+            }
+          ],
+          "missing_duration_ids": [],
+          "transition_one_off": "100000.00",
+          "transition_total": "154000.00"
+        },
+        "countries": [
+          "United Kingdom",
+          "United Arab Emirates"
+        ],
+        "evidence_ref": "urn:fictional:perimeter",
+        "id": "newco",
+        "incoming_assets": [
+          "asset-erp",
+          "asset-identity"
+        ],
+        "name": "Northstar NewCo (fictional)",
+        "owner": "Programme sponsor",
+        "proposed_target_fte": "8.50",
+        "proposed_target_headcount": 10,
+        "recorded_fte": "0.00",
+        "recorded_headcount": 0,
+        "sector": "Business services"
+      },
+      {
+        "assets": [
+          "asset-erp",
+          "asset-identity"
+        ],
+        "company_role": "seller",
+        "costs": {
+          "annual_recurring": {
+            "current": "300000.00",
+            "target": null,
+            "transition": null
+          },
+          "annual_run_rate_difference": null,
+          "basis": "Entered estimates only, separate from the transaction ledger. 365 days/52 weeks/12 months/4 quarters per annual run-rate; excludes timing, tax, intercompany eliminations and inflation. Current and target states are compared, never added. Difference is not a verified saving. Missing states are null, not zero. Transition recurring costs need a duration before a total programme budget can be calculated.",
+          "coverage_attested": false,
+          "currency": "GBP",
+          "items": [
+            {
+              "annual_run_rate": "300000.00",
+              "basis": "estimated",
+              "company_id": "seller",
+              "evidence_ref": "urn:fictional:cost-assumptions",
+              "id": "current-run",
+              "one_off": null,
+              "state": "current"
+            }
+          ],
+          "missing_duration_ids": [],
+          "transition_one_off": null,
+          "transition_total": null
+        },
+        "countries": [
+          "United Kingdom",
+          "United Arab Emirates"
+        ],
+        "evidence_ref": "urn:fictional:perimeter",
+        "id": "seller",
+        "incoming_assets": [],
+        "name": "Northstar Seller (fictional)",
+        "owner": "Programme sponsor",
+        "proposed_target_fte": "0.00",
+        "proposed_target_headcount": 0,
+        "recorded_fte": "8.50",
+        "recorded_headcount": 10,
+        "sector": "Business services"
+      }
+    ],
+    "day_one_gates": [
+      {
+        "acceptance_criteria": "Approve freeze window, backup, delta loads and rollback criteria; Complete post-cutover reconciliation and operational handover",
+        "id": "enterprise",
+        "name": "Enterprise systems and processes",
+        "owner": "demo-owner",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Approve domain, mail routing and migration-wave procedures; Verify endpoint coverage, support handover and rollback evidence",
+        "id": "identity",
+        "name": "Identity, endpoint and workplace",
+        "owner": "demo-owner",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Approve workload waves, routing changes and rollback conditions; Verify monitoring, cost ownership and decommissioning acceptance",
+        "id": "cloud",
+        "name": "Cloud, infrastructure and networks",
+        "owner": "demo-owner",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Review outstanding risk acceptances and evidence freshness; Assemble audit evidence and record independent assessor findings",
+        "id": "security",
+        "name": "Security and GCC control assurance",
+        "owner": "demo-owner",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Approve routing switch, retry, replay and rollback procedures; Verify observability, support ownership and legacy retirement",
+        "id": "integration",
+        "name": "Software development and integration",
+        "owner": "demo-owner",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Approve report-switch procedures and finance reporting acceptance; Record lineage, retention, operational ownership and benefits evidence",
+        "id": "data",
+        "name": "Data, BI and governance",
+        "owner": "demo-owner",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Sponsor accepts the operating model and records outstanding exceptions",
+        "id": "governance",
+        "name": "Governance and decision rights",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "CFO accepts reconciliations, finance access, funding and close continuity evidence",
+        "id": "finance",
+        "name": "Finance and close continuity",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "HR confirms authorised workforce arrangements and service coverage",
+        "id": "people",
+        "name": "People and change",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Business owners evidence critical service tests and customer support coverage",
+        "id": "operations",
+        "name": "Customers and operations",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Owners confirm required contractual rights and continuity arrangements",
+        "id": "contracts",
+        "name": "Contracts and suppliers",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Owners evidence site access, asset custody and physical service continuity",
+        "id": "facilities",
+        "name": "Facilities and physical assets",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      },
+      {
+        "acceptance_criteria": "Product owner confirms critical releases, adoption baseline and support readiness",
+        "id": "product",
+        "name": "Product and adoption",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ],
+        "status": "evidence_required"
+      }
+    ],
+    "decision_log": [
+      {
+        "alternatives": "Extend shared service or replace selected applications",
+        "company_id": "newco",
+        "decision_date": "2026-09-16",
+        "decision_status": "proposed",
+        "evidence_ref": "urn:fictional:options",
+        "id": "target-operating-model",
+        "name": "Proposed standalone operating model",
+        "owner": "Programme sponsor",
+        "rationale": "Separate identity and finance while preserving service continuity"
+      }
+    ],
+    "delivery_mandates": [
+      {
+        "acceptance_criteria": "Business owners accept evidence against agreed milestones",
+        "branding": "co_branded",
+        "client": "Northstar sponsor (fictional)",
+        "commercial_ref": "urn:fictional:statement-of-work",
+        "company_id": "newco",
+        "decision_rights": "Lead adviser owns SMO decisions; client approves spend and cutover; partner owns agreed technical delivery",
+        "delivery_model": "sub_contract",
+        "delivery_partner": "Technical delivery partner (fictional)",
+        "display_brand": "Northstar Transformation",
+        "id": "embedded-delivery",
+        "name": "Embedded technical delivery (fictional)",
+        "owner": "Delivery director",
+        "prime_adviser": "Lead advisory firm (fictional)",
+        "reporting_cadence": "Weekly workstream pack and daily cutover reporting",
+        "workstream_ids": [
+          "enterprise",
+          "identity",
+          "cloud",
+          "security",
+          "integration",
+          "data"
+        ]
+      }
+    ],
+    "dependencies": {
+      "basis": "Reviewed dependency records; this is not automatic infrastructure discovery.",
+      "blocked_by_cycles": [],
+      "direction": "source depends on target; migrate prerequisites first",
+      "impacted": [],
+      "invalid_dependency_ids": [],
+      "migration_waves": [
+        [
+          "asset-identity"
+        ],
+        [
+          "asset-erp"
+        ]
+      ]
+    },
+    "due_diligence": [
+      {
+        "business_impact": "Day 1 access depends on seller support and licence rights",
+        "company_id": "seller",
+        "cost_item_ids": [
+          "separation-cost",
+          "tsa-cost"
+        ],
+        "evidence_ref": "urn:fictional:diligence",
+        "finding_status": "open",
+        "id": "shared-identity",
+        "name": "Seller identity dependency",
+        "owner": "Technology lead",
+        "recommendation": "Confirm TSA scope and consent; rehearse independent access before exit",
+        "severity": "high"
+      }
+    ],
+    "existing_commitments": [
+      {
+        "data": {
+          "confidence_percent": "80",
+          "effort_person_months": "3",
+          "evidence_ref": "urn:fictional:interviews",
+          "id": "opp-1",
+          "impact": "2",
+          "jtbd": "When changing systems, I want clear guidance so I can keep working.",
+          "moscow": "must",
+          "owner": "Product lead",
+          "reach": "800",
+          "reach_period": "2026-Q4",
+          "reach_population": "employees",
+          "status": "planned",
+          "target_release": "release-1",
+          "title": "Guided employee onboarding"
+        },
+        "id": "opp-1",
+        "kind": "opportunity",
+        "revision": 1
+      },
+      {
+        "data": {
+          "confidence_percent": "90",
+          "effort_person_months": "2",
+          "evidence_ref": "urn:fictional:interviews",
+          "id": "opp-2",
+          "impact": "3",
+          "jtbd": "When changing systems, I want clear guidance so I can keep working.",
+          "moscow": "should",
+          "owner": "Product lead",
+          "reach": "200",
+          "reach_period": "2026-Q4",
+          "reach_population": "employees",
+          "status": "planned",
+          "target_release": "release-1",
+          "title": "Unified readiness dashboard"
+        },
+        "id": "opp-2",
+        "kind": "opportunity",
+        "revision": 1
+      },
+      {
+        "data": {
+          "confidence_percent": "50",
+          "effort_person_months": "2",
+          "evidence_ref": "urn:fictional:interviews",
+          "id": "opp-3",
+          "impact": "1",
+          "jtbd": "When changing systems, I want clear guidance so I can keep working.",
+          "moscow": "could",
+          "owner": "Product lead",
+          "reach": "600",
+          "reach_period": "2026-Q4",
+          "reach_population": "employees",
+          "status": "planned",
+          "target_release": "release-1",
+          "title": "Self-service knowledge search"
+        },
+        "id": "opp-3",
+        "kind": "opportunity",
+        "revision": 1
+      },
+      {
+        "data": {
+          "changelog_ref": "urn:fictional:changes",
+          "gtm_ref": "urn:fictional:launch",
+          "id": "release-1",
+          "owner": "Product lead",
+          "rollback_ref": "urn:fictional:rollback",
+          "status": "testing",
+          "story_ids": [
+            "story-1"
+          ],
+          "target_date": "2026-10-01",
+          "title": "Readiness workspace release"
+        },
+        "id": "release-1",
+        "kind": "release",
+        "revision": 1
+      },
+      {
+        "data": {
+          "acceptance_criteria": "Every blocker links to a responsible owner and source",
+          "id": "prd-1",
+          "owner": "Product lead",
+          "problem": "Managers cannot find the latest blockers",
+          "requirements": "Display owners, evidence and pending decisions",
+          "research_ids": [
+            "research-1"
+          ],
+          "status": "draft",
+          "success_metrics": "Reduce time to assign unresolved blockers",
+          "title": "Transition readiness workspace",
+          "type": "prd"
+        },
+        "id": "prd-1",
+        "kind": "spec",
+        "revision": 1
+      },
+      {
+        "data": {
+          "capacity_points": 20,
+          "end_date": "2026-09-28",
+          "goal": "Make blockers and owners visible",
+          "id": "sprint-1",
+          "owner": "Product lead",
+          "start_date": "2026-09-15",
+          "status": "active",
+          "title": "Readiness workspace sprint"
+        },
+        "id": "sprint-1",
+        "kind": "sprint",
+        "revision": 1
+      },
+      {
+        "data": {
+          "acceptance_criteria": "Show only authorised project blockers, each with an owner",
+          "estimate_points": 8,
+          "id": "story-1",
+          "opportunity_id": "opp-2",
+          "owner": "Product lead",
+          "sprint": "sprint-1",
+          "status": "done",
+          "title": "View blockers by service owner"
+        },
+        "id": "story-1",
+        "kind": "story",
+        "revision": 1
+      },
+      {
+        "data": {
+          "critical": true,
+          "due_date": "2026-10-15",
+          "id": "task-1",
+          "owner": "People operations",
+          "status": "doing",
+          "title": "Reconcile parallel payroll results"
+        },
+        "id": "task-1",
+        "kind": "task",
+        "revision": 1
+      },
+      {
+        "data": {
+          "critical": true,
+          "evidence_ref": "urn:fictional:identity-review",
+          "id": "task-2",
+          "owner": "Workplace lead",
+          "status": "done",
+          "title": "Confirm identity inventory"
+        },
+        "id": "task-2",
+        "kind": "task",
+        "revision": 1
+      }
+    ],
+    "financial": {
+      "annual_recurring": {
+        "current": "300000.00",
+        "target": "192000.00",
+        "transition": "216000.00"
+      },
+      "annual_run_rate_difference": "108000.00",
+      "basis": "Entered estimates only, separate from the transaction ledger. 365 days/52 weeks/12 months/4 quarters per annual run-rate; excludes timing, tax, intercompany eliminations and inflation. Current and target states are compared, never added. Difference is not a verified saving. Missing states are null, not zero. Transition recurring costs need a duration before a total programme budget can be calculated.",
+      "coverage_attested": false,
+      "currency": "GBP",
+      "items": [
+        {
+          "annual_run_rate": "300000.00",
+          "basis": "estimated",
+          "company_id": "seller",
+          "evidence_ref": "urn:fictional:cost-assumptions",
+          "id": "current-run",
+          "one_off": null,
+          "state": "current"
+        },
+        {
+          "annual_run_rate": null,
+          "basis": "estimated",
+          "company_id": "newco",
+          "evidence_ref": "urn:fictional:cost-assumptions",
+          "id": "separation-cost",
+          "one_off": "100000.00",
+          "state": "transition"
+        },
+        {
+          "annual_run_rate": "192000.00",
+          "basis": "estimated",
+          "company_id": "newco",
+          "evidence_ref": "urn:fictional:cost-assumptions",
+          "id": "target-run",
+          "one_off": null,
+          "state": "target"
+        },
+        {
+          "annual_run_rate": "216000.00",
+          "basis": "estimated",
+          "company_id": "newco",
+          "evidence_ref": "urn:fictional:cost-assumptions",
+          "id": "tsa-cost",
+          "one_off": null,
+          "state": "transition"
+        }
+      ],
+      "missing_duration_ids": [],
+      "transition_one_off": "100000.00",
+      "transition_total": "154000.00"
+    },
+    "gaps": [
+      {
+        "blocking": true,
+        "code": "coverage",
+        "detail": "Confirm asset and service inventory for every scoped company",
+        "id": "gap-001",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ]
+      },
+      {
+        "blocking": true,
+        "code": "coverage",
+        "detail": "Confirm workforce inventory for every scoped company",
+        "id": "gap-002",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ]
+      },
+      {
+        "blocking": true,
+        "code": "coverage",
+        "detail": "Confirm current, target and transition cost coverage for every scoped company",
+        "id": "gap-003",
+        "owner": "Programme director",
+        "source_ids": [
+          "northstar-plan"
+        ]
+      },
+      {
+        "blocking": true,
+        "code": "project_risk",
+        "detail": "Review project-wide risk: Payroll cutover rehearsal is incomplete",
+        "id": "gap-004",
+        "owner": "Programme director",
+        "source_ids": [
+          "risk-1"
+        ]
+      },
+      {
+        "blocking": true,
+        "code": "transfer",
+        "detail": "Resolve unknown transfer rights for ERP environment",
+        "id": "gap-005",
+        "owner": "Programme director",
+        "source_ids": [
+          "asset-erp"
+        ]
+      },
+      {
+        "blocking": true,
+        "code": "transfer",
+        "detail": "Resolve unknown transfer rights for Identity tenant",
+        "id": "gap-006",
+        "owner": "Programme director",
+        "source_ids": [
+          "asset-identity"
+        ]
+      },
+      {
+        "blocking": true,
+        "code": "due_diligence",
+        "detail": "Day 1 access depends on seller support and licence rights",
+        "id": "gap-007",
+        "owner": "Programme director",
+        "source_ids": [
+          "shared-identity"
+        ]
+      },
+      {
+        "blocking": true,
+        "code": "tsa_consent",
+        "detail": "Confirm service and licence rights for Seller identity services",
+        "id": "gap-008",
+        "owner": "Programme director",
+        "source_ids": [
+          "identity-services"
+        ]
+      }
+    ],
+    "generator": "company_planning_rules_v1",
+    "objectives": [
+      {
+        "baseline": "10",
+        "company_id": "newco",
+        "direction": "decrease",
+        "evidence_ref": "urn:fictional:investment-thesis",
+        "id": "application-rationalisation",
+        "metric": "Applications in agreed comparable scope",
+        "moscow": "should",
+        "name": "Review application rationalisation opportunity",
+        "owner": "Technology lead",
+        "target": "8",
+        "target_date": "2027-01-08",
+        "unit": "applications"
+      }
+    ],
+    "phases": [
+      {
+        "end": "2026-09-30",
+        "id": "prepare",
+        "name": "Mobilise and prepare",
+        "start": "2026-09-16"
+      },
+      {
+        "end": "2026-10-01",
+        "id": "day_one",
+        "name": "Day 1 continuity",
+        "start": "2026-10-01"
+      },
+      {
+        "end": "2026-10-30",
+        "id": "stabilise",
+        "name": "Days 2\u201330",
+        "start": "2026-10-02"
+      },
+      {
+        "end": "2026-11-29",
+        "id": "transform",
+        "name": "Days 31\u201360",
+        "start": "2026-10-31"
+      },
+      {
+        "end": "2027-01-08",
+        "id": "optimise",
+        "name": "Days 61\u2013100",
+        "start": "2026-11-30"
+      }
+    ],
+    "product_readiness": {
+      "adoption": [
+        {
+          "activated_users": 142,
+          "activation_percent": "71.00",
+          "cohort": "Pilot employees \u00b7 September",
+          "eligible_users": 200,
+          "feature_adoption_percent": "60.50",
+          "feature_users": 121,
+          "id": "cohort-1",
+          "period_end": "2026-09-15",
+          "period_start": "2026-09-01",
+          "retained_users": 98,
+          "retention_percent_of_activated": "69.01",
+          "source_ref": "urn:fictional:analytics"
+        }
+      ],
+      "analytics_basis": "Imported aggregate counts for explicitly defined cohorts; no live analytics connector is configured.",
+      "competitors": [],
+      "priorities": {
+        "formula": "reach \u00d7 impact \u00d7 (confidence percent / 100) \u00f7 effort in person-months",
+        "groups": {
+          "2026-Q4 | employees": [
+            {
+              "confidence_percent": "80",
+              "effort_person_months": "3",
+              "evidence_ref": "urn:fictional:interviews",
+              "id": "opp-1",
+              "impact": "2",
+              "jtbd": "When changing systems, I want clear guidance so I can keep working.",
+              "moscow": "must",
+              "owner": "Product lead",
+              "rank": 1,
+              "reach": "800",
+              "reach_period": "2026-Q4",
+              "reach_population": "employees",
+              "rice_score": "426.67",
+              "status": "planned",
+              "target_release": "release-1",
+              "title": "Guided employee onboarding"
+            },
+            {
+              "confidence_percent": "90",
+              "effort_person_months": "2",
+              "evidence_ref": "urn:fictional:interviews",
+              "id": "opp-2",
+              "impact": "3",
+              "jtbd": "When changing systems, I want clear guidance so I can keep working.",
+              "moscow": "should",
+              "owner": "Product lead",
+              "rank": 2,
+              "reach": "200",
+              "reach_period": "2026-Q4",
+              "reach_population": "employees",
+              "rice_score": "270.00",
+              "status": "planned",
+              "target_release": "release-1",
+              "title": "Unified readiness dashboard"
+            },
+            {
+              "confidence_percent": "50",
+              "effort_person_months": "2",
+              "evidence_ref": "urn:fictional:interviews",
+              "id": "opp-3",
+              "impact": "1",
+              "jtbd": "When changing systems, I want clear guidance so I can keep working.",
+              "moscow": "could",
+              "owner": "Product lead",
+              "rank": 3,
+              "reach": "600",
+              "reach_period": "2026-Q4",
+              "reach_population": "employees",
+              "rice_score": "150.00",
+              "status": "planned",
+              "target_release": "release-1",
+              "title": "Self-service knowledge search"
+            }
+          ]
+        },
+        "notes": [
+          "Only compare reach for the same population and time period.",
+          "Confidence is an input judgement, not a model probability.",
+          "MoSCoW remains a separate commitment decision; RICE does not override must-have obligations."
+        ]
+      },
+      "releases": [
+        {
+          "blockers": [
+            {
+              "id": "story-1",
+              "reason": "No passed UAT evidence"
+            },
+            {
+              "id": "uat-1",
+              "reason": "Blocking UAT is unresolved"
+            }
+          ],
+          "publishes_software": false,
+          "release_id": "release-1",
+          "status": "blocked"
+        }
+      ],
+      "research_count": 1,
+      "sprints": [
+        {
+          "capacity_points": 20,
+          "completed_points": 8,
+          "end_date": "2026-09-28",
+          "goal": "Make blockers and owners visible",
+          "id": "sprint-1",
+          "over_capacity": false,
+          "owner": "Product lead",
+          "planned_points": 8,
+          "start_date": "2026-09-15",
+          "status": "active",
+          "title": "Readiness workspace sprint",
+          "unestimated_story_ids": []
+        }
+      ],
+      "story_count": 1
+    },
+    "schema_version": 1,
+    "scope": {
+      "company_ids": [
+        "seller",
+        "newco"
+      ],
+      "constraints": "Protect payroll and finance close. Review all company, workforce, contract and country-specific requirements.",
+      "costs_complete": false,
+      "day_one_date": "2026-10-01",
+      "deal_type": "carve_out",
+      "horizon_days": 100,
+      "id": "northstar-plan",
+      "inventory_complete": false,
+      "name": "Northstar company separation plan",
+      "owner": "Programme director",
+      "requirements_ref": "urn:fictional:scope-review",
+      "start_date": "2026-09-16",
+      "target_company_id": "newco",
+      "transition_budget": "180000",
+      "workforce_complete": false
+    },
+    "source_manifest": [
+      {
+        "id": "cohort-1",
+        "kind": "adoption",
+        "revision": 1,
+        "sha256": "d526664a6cbaf651b245115b37bc2eaf8ef7576c9097ab42b63958d2c8c91f67"
+      },
+      {
+        "id": "asset-erp",
+        "kind": "asset",
+        "revision": 1,
+        "sha256": "627fb966369d1756583c70d243f38d119f445cf6dceb42072ed1d0116b35e4f4"
+      },
+      {
+        "id": "asset-identity",
+        "kind": "asset",
+        "revision": 1,
+        "sha256": "303410e292c172a014465bafefa191ff3d6ae1c7985ee5a8633a3814d7f72acc"
+      },
+      {
+        "id": "erp-needs-identity",
+        "kind": "asset_dependency",
+        "revision": 1,
+        "sha256": "d6fdc67165077c309e6437930edeeaa29b637436e91a0e46c9e797dc441ed644"
+      },
+      {
+        "id": "pay-employees",
+        "kind": "business_service",
+        "revision": 1,
+        "sha256": "3b2456fb4a204b4b58050a4c4311c886968342b90626565e1b3894a48e68a2a7"
+      },
+      {
+        "id": "cloud-01",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "f6caf5cd4dc86b82d90fd4baa95768eac415f061e6e7bfc5272183813263fd1a"
+      },
+      {
+        "id": "cloud-02",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "262e5d56a18b49c8a1f848ef8fab422a1f0e14484fe626d1e3527b54e5060c86"
+      },
+      {
+        "id": "cloud-03",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "e3565456471fbf5117c627333b29e31b5ec1f1eae3d313f7f98848348a62b33a"
+      },
+      {
+        "id": "cloud-04",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "eab56048b09cd07d47ee399e9e206c949390360fa243836e58a4540410d6acea"
+      },
+      {
+        "id": "cloud-05",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "4ff17ad1ce288d9ab2328760140372fe05d7059e47e82f26ebff90517ba6c3ee"
+      },
+      {
+        "id": "cloud-06",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "2cdd8719d1729ca8a488c9ee698bba1147303a14f24fed5af144f534e5f3087b"
+      },
+      {
+        "id": "data-01",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "3bc86d8cc160b870edf056c4516f7e37bb717e5d22977f5838d6f3e9cba29731"
+      },
+      {
+        "id": "data-02",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "62a85186c6c9a49e4bb286bf8a45f2074b01f59916b9cdcf7694506dd7031393"
+      },
+      {
+        "id": "data-03",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "91b07e058e1cf5a6334ea654928ebecc72282dc84af30646b58b349cf728671c"
+      },
+      {
+        "id": "data-04",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "77e4794fe97ac8b74e8eb10dbc64a1469487a68d504892c7919b4f704db8732d"
+      },
+      {
+        "id": "data-05",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "7a41b22a1344c8198c9b596d2fd70f9ee23880878c38cc0255ce521ad9522b6e"
+      },
+      {
+        "id": "data-06",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "cf7ba071035797a8c3f0c86a21e6a6fa431e064affe394300acb820db0e16faa"
+      },
+      {
+        "id": "enterprise-01",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "0101930e044b614813a0c0234d11e4d22135b0b2c1f6675e22a3fac393ed7c57"
+      },
+      {
+        "id": "enterprise-02",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "7eb9f6197bb18130f5c7e910ce03cdd60cd63679c55e536d60caeed0363aa9b0"
+      },
+      {
+        "id": "enterprise-03",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "da9699d57d38bd97aad02825996eeaca02083ddd3bd35099010a37a1e7e60fb0"
+      },
+      {
+        "id": "enterprise-04",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "58ad8b7d657b257e57bb35119a45adf681c76516e359db171067b3da10023ce6"
+      },
+      {
+        "id": "enterprise-05",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "0944bfa9543478b9e56ec07069bd6299b8be92fb01ce615c47f2687ebff5ab3f"
+      },
+      {
+        "id": "enterprise-06",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "c847ae9399d5ae54e1c86416aea6b15dc0402cbd327f703686c9265bc3f6b496"
+      },
+      {
+        "id": "identity-01",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "107a18165cf179c78e6727916a1224c2ed2719af3116bf205df6766eb0099701"
+      },
+      {
+        "id": "identity-02",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "027d22df0e8b0e4dd6f7af3769330693c3bd7285fd642ed30f4b3045760fc59a"
+      },
+      {
+        "id": "identity-03",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "9065ff3a20b14b02c68ad58ddaf32fa08c656a7161c75f061fb333119e22718b"
+      },
+      {
+        "id": "identity-04",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "2aeccd5f7c466db566bd7ba7993c5a12417d8a9bfa094dc76669d972ccb1bc3e"
+      },
+      {
+        "id": "identity-05",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "980645e8d4764eb23024a3a891dea9573fe9479a1cc854a7286c0fb43686251f"
+      },
+      {
+        "id": "identity-06",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "3861f7b372c2d23316896c21e85e618d9546e9e57f0213ca51f6b5554a04ed12"
+      },
+      {
+        "id": "integration-01",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "f9a06432c87a5ab9b690b54154753af06f823d7a38e960b02a1756b05b8a750a"
+      },
+      {
+        "id": "integration-02",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "6a2356eed24c692174069fd78ba61527e9b38f0a9717d081c8cd12155cd4e0b4"
+      },
+      {
+        "id": "integration-03",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "2dfa1d7932efcdfc24c25a0d6e141650b8bbc2ba9a7e34e141a7ba85151483fa"
+      },
+      {
+        "id": "integration-04",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "eba554550fc480c36d7cdba4c4809e8be30ed48a9b9069d4e9ce89e3b4f13714"
+      },
+      {
+        "id": "integration-05",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "42f0764751e9bdeba0d53b96fdec93c25d8ba72bd23cc51106e6f53f5810dc4c"
+      },
+      {
+        "id": "integration-06",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "c604e8dc8808d6a5b29f9a8308481b079e9ba3e44d1b8bbf6bf7ab2d83063e29"
+      },
+      {
+        "id": "security-01",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "e94a8ce710fe950b576aedde130d6290e4493e8af3fe9d483a41c641b69ef3dd"
+      },
+      {
+        "id": "security-02",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "d5d177e7ca8796e12d55afbb704898c0332757566e984b2fa1f7c3e74abf82ec"
+      },
+      {
+        "id": "security-03",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "9cbd2cc59a140a7e7d874ba68f9232e2577e328b906fdfc8e94d7e8ab3bb70c1"
+      },
+      {
+        "id": "security-04",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "bd96608ef602b4fda4ac2acfc96c6403ac32cfbd41da711226b9de09af437bca"
+      },
+      {
+        "id": "security-05",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "c7a474852701b88cbed4493e26eb3c3f135ecfb299dce0f441c3ee049992fb42"
+      },
+      {
+        "id": "security-06",
+        "kind": "checkpoint",
+        "revision": 1,
+        "sha256": "297fce6ba6215c310a2a2b82150d55b2f1260a9e1712abffd0fb654d6a4e3d14"
+      },
+      {
+        "id": "newco",
+        "kind": "company",
+        "revision": 1,
+        "sha256": "09d4d65640928740669e87264210177b076fea3a13b3c3a38397955e1b92fcdd"
+      },
+      {
+        "id": "seller",
+        "kind": "company",
+        "revision": 1,
+        "sha256": "338775601b6d90f37f1800ecf8145d0f9b96406e48774cff1b0401abeeec5b50"
+      },
+      {
+        "id": "control-1",
+        "kind": "control",
+        "revision": 1,
+        "sha256": "0e259dc216b6781f6c8d447f14dfbd8923e0aa5d5a024e835af3249a845510dd"
+      },
+      {
+        "id": "current-run",
+        "kind": "cost_item",
+        "revision": 1,
+        "sha256": "f478ec0db2af115577099f830abd7dd14b138f9e85fbbdc19a254e307ff16fe5"
+      },
+      {
+        "id": "separation-cost",
+        "kind": "cost_item",
+        "revision": 1,
+        "sha256": "f40d4f32f85154478fc30dfc1ddd4c25a8786055c5a006dd6e4e5a5014559ab2"
+      },
+      {
+        "id": "target-run",
+        "kind": "cost_item",
+        "revision": 1,
+        "sha256": "14af44de01716b94e296b55f839b083cc178e7e58d394d30971ac88044848e1d"
+      },
+      {
+        "id": "tsa-cost",
+        "kind": "cost_item",
+        "revision": 1,
+        "sha256": "8197f76a3cba7cb5cef28e8cbad462d9cb2028d1ca1cef42222a9bbcb4c620c0"
+      },
+      {
+        "id": "target-operating-model",
+        "kind": "decision",
+        "revision": 1,
+        "sha256": "00b93384a6535a0ff850b2d8dffcb9e54b77f9eee7ba201d2f423665cfd1a577"
+      },
+      {
+        "id": "embedded-delivery",
+        "kind": "delivery_mandate",
+        "revision": 1,
+        "sha256": "84ba94a4d6bd18926b9f3b1836df13e8184d926cc18bc2ac7b7f74c252d908e0"
+      },
+      {
+        "id": "dep-1",
+        "kind": "dependency",
+        "revision": 1,
+        "sha256": "c967f5e06ae261f953ba0fdc7de4d84ddd67827ffec96f7a8a9f9f1638bb5523"
+      },
+      {
+        "id": "dep-2",
+        "kind": "dependency",
+        "revision": 1,
+        "sha256": "6418b278ff760bc7831be3742aba4545a2a5cb313faf62a2ecb619e5418c9940"
+      },
+      {
+        "id": "dep-3",
+        "kind": "dependency",
+        "revision": 1,
+        "sha256": "721280e85f496bd68b3d2fb50c407a460e5225c627aef9df8cbe5eab63af5806"
+      },
+      {
+        "id": "engagement-1",
+        "kind": "engagement",
+        "revision": 1,
+        "sha256": "407b5d8dfe2c42420620882aeccf0a20e53d8e3776ae08d95f4c0806b1a37c4f"
+      },
+      {
+        "id": "a1",
+        "kind": "ledger",
+        "revision": 1,
+        "sha256": "2b47ca75d311acc94e8d7eeacbd89eca5120b2659f91ad3ce2a306ca2f8a6260"
+      },
+      {
+        "id": "a2",
+        "kind": "ledger",
+        "revision": 1,
+        "sha256": "f1fa6a8364179b2e973d09b60a782becdef94e3b405aeb6b2a66cce8372519f4"
+      },
+      {
+        "id": "actual1",
+        "kind": "ledger",
+        "revision": 1,
+        "sha256": "e0ce4578666dede75a31efee90bad04f8da95bba6d3f1083c366949c69ade0f5"
+      },
+      {
+        "id": "b1",
+        "kind": "ledger",
+        "revision": 1,
+        "sha256": "3cab678e26140530be547c26d5f6198b12c388e0ed34d1108eeed58aaa4c3c6d"
+      },
+      {
+        "id": "base1",
+        "kind": "ledger",
+        "revision": 1,
+        "sha256": "d0dc2eda4cb5bb8200741386eded64265dd5a9b74e6dd0c6e698b85e133a424c"
+      },
+      {
+        "id": "f1",
+        "kind": "ledger",
+        "revision": 1,
+        "sha256": "48a0cb7cd5ce09c4680ae862df47b465216010df1d7f46052619a2fa85314853"
+      },
+      {
+        "id": "f2",
+        "kind": "ledger",
+        "revision": 1,
+        "sha256": "0d52a9466b2a79ec63b7a4db34b1662cfa1a7ad1d79d0a06f0ba3fe4fd2b031d"
+      },
+      {
+        "id": "application-rationalisation",
+        "kind": "objective",
+        "revision": 1,
+        "sha256": "8c9db148685199c5faeb255667b939b0ac5bbdead87a32fdcdacfc7aca7fc84a"
+      },
+      {
+        "id": "opp-1",
+        "kind": "opportunity",
+        "revision": 1,
+        "sha256": "3967bc527ba091833a932b0e62fad47f730f98baf2526eda906bfa0e5127c565"
+      },
+      {
+        "id": "opp-2",
+        "kind": "opportunity",
+        "revision": 1,
+        "sha256": "a396fd3d3aceda7cc04483ab1321b1e290e9983ff99ab592c62251d8222c936e"
+      },
+      {
+        "id": "opp-3",
+        "kind": "opportunity",
+        "revision": 1,
+        "sha256": "05841e88d18e933bd57f4bee813ebcd805a45aa7b8d9557e3e2e1eb33cb3314e"
+      },
+      {
+        "id": "northstar-plan",
+        "kind": "planning_scope",
+        "revision": 1,
+        "sha256": "33c55468d4322bfa6a0076aa75a0619580cd7c7e2f77ad0e45d7bcbde0f205dd"
+      },
+      {
+        "id": "release-1",
+        "kind": "release",
+        "revision": 1,
+        "sha256": "01826e944fc33c6110cec1110e84c85ed76c7700b307e722fbb14722e8356922"
+      },
+      {
+        "id": "research-1",
+        "kind": "research",
+        "revision": 1,
+        "sha256": "5a8ddbcb891e4b2512aa03ab4555dfdc6d6520069afd294374b2ba35eba6b4a7"
+      },
+      {
+        "id": "risk-1",
+        "kind": "risk",
+        "revision": 1,
+        "sha256": "2e24d8d4ecd5e910b7197632263075125c764e6e019267e2390ba73ed269b42e"
+      },
+      {
+        "id": "prd-1",
+        "kind": "spec",
+        "revision": 1,
+        "sha256": "6acb5db6bbc8b3036860910734b34baf868778105695454ad08d56d72110f30a"
+      },
+      {
+        "id": "sprint-1",
+        "kind": "sprint",
+        "revision": 1,
+        "sha256": "98621adcdab8ebc3c68d217fa35ecf1203eb3279683d1dcd38a81eb669c36531"
+      },
+      {
+        "id": "story-1",
+        "kind": "story",
+        "revision": 1,
+        "sha256": "fb47be52434a15c8931cd9d66bbe3a8a5b373f04266faea47517b8000fcf332f"
+      },
+      {
+        "id": "erp",
+        "kind": "system",
+        "revision": 1,
+        "sha256": "7acd054a1597c9397b36fc60c32a71bcf240528401f46003e084d55d6047fd8b"
+      },
+      {
+        "id": "identity",
+        "kind": "system",
+        "revision": 1,
+        "sha256": "908b0d1df8da5cc7aa326201caf13d0becb528bee6dbe6559a0deb5cce4bd991"
+      },
+      {
+        "id": "payroll",
+        "kind": "system",
+        "revision": 1,
+        "sha256": "1bb59ab079162375b1d073a10f15bbc6d953b73641f426b366c4153a96191bd1"
+      },
+      {
+        "id": "portal",
+        "kind": "system",
+        "revision": 1,
+        "sha256": "b20553d850b456b460025db280c2a0c18d7345e015eed0aa8e6eef1bc6dbeadc"
+      },
+      {
+        "id": "task-1",
+        "kind": "task",
+        "revision": 1,
+        "sha256": "ba18da4830859153c391e15fe9caf078f49aa866abf64d033da449d271dfdf80"
+      },
+      {
+        "id": "task-2",
+        "kind": "task",
+        "revision": 1,
+        "sha256": "cd0d7b91ad454b5653c9a74f3b54707da1e30617ad92a5e18330330cffb31bde"
+      },
+      {
+        "id": "shared-identity",
+        "kind": "tdd_finding",
+        "revision": 1,
+        "sha256": "3c4761614bf1d073022b4d6c43c86d73aba47aa2507f025aa817c6ec5f06f5a3"
+      },
+      {
+        "id": "tsa-identity",
+        "kind": "tsa",
+        "revision": 1,
+        "sha256": "567ce56b03db9627d6a42175e1ea2ec59f674ec7776374ca3f1586ddc60d0fb3"
+      },
+      {
+        "id": "identity-services",
+        "kind": "tsa_obligation",
+        "revision": 1,
+        "sha256": "e3833022282c2aafc9a03801cbb911e8bb76ff218dc9329b39a36e3f93710485"
+      },
+      {
+        "id": "uat-1",
+        "kind": "uat",
+        "revision": 1,
+        "sha256": "93d303bcb19051e37c1e8849fdc1e74696b48b9d324cacebb5f3a127367eb970"
+      },
+      {
+        "id": "operations-team",
+        "kind": "workforce",
+        "revision": 1,
+        "sha256": "a5a1ce065fd016c5285cedd9945cd979360f09bbe896cf4134fb9741df8a9427"
+      },
+      {
+        "id": "cloud",
+        "kind": "workstream",
+        "revision": 1,
+        "sha256": "29c6c7e442ae0f784c998a93f564878fa8abee9ff8c61b32a77f0d4e633d6de3"
+      },
+      {
+        "id": "data",
+        "kind": "workstream",
+        "revision": 1,
+        "sha256": "cfb81200b4cb9cc1c4ab4002888df675d29e0b4b079e788ab0d5cf316f0ef25b"
+      },
+      {
+        "id": "enterprise",
+        "kind": "workstream",
+        "revision": 1,
+        "sha256": "1cf6d08cb3a554e780b069d1b521124ec061dbc69f989a8adc1c18cf0d4e74a8"
+      },
+      {
+        "id": "identity",
+        "kind": "workstream",
+        "revision": 1,
+        "sha256": "5c80770650eada47213c1f662992cb272cd446f71f539d3973dc87beaf483701"
+      },
+      {
+        "id": "integration",
+        "kind": "workstream",
+        "revision": 1,
+        "sha256": "ef22f968ea24436a6d46226b291ae609c0567fb6698bbc7a81017f5a2c34d47b"
+      },
+      {
+        "id": "security",
+        "kind": "workstream",
+        "revision": 1,
+        "sha256": "dbe820442d4ea047612549c2f9254f8184656c98939dc1117cef88595ae0fa87"
+      }
+    ],
+    "technical_readiness": {
+      "as_of": "2026-09-16",
+      "checks": [
+        {
+          "detail": "At least one system must be recorded",
+          "evidence_ids": [
+            "erp",
+            "identity",
+            "payroll",
+            "portal"
+          ],
+          "id": "inventory",
+          "passed": true
+        },
+        {
+          "detail": "Each system needs an owner and reviewed evidence",
+          "evidence_ids": [],
+          "id": "inventory_review",
+          "passed": true
+        },
+        {
+          "detail": "No unresolved high or critical risks",
+          "evidence_ids": [
+            "risk-1"
+          ],
+          "id": "critical_risks",
+          "passed": false
+        },
+        {
+          "detail": "Critical tasks need completed status and test evidence",
+          "evidence_ids": [
+            "task-1"
+          ],
+          "id": "critical_tasks",
+          "passed": false
+        },
+        {
+          "detail": "At least one control and evidence for all recorded controls",
+          "evidence_ids": [],
+          "id": "controls",
+          "passed": true
+        },
+        {
+          "detail": "No unresolved dependency cycles or missing endpoints",
+          "evidence_ids": [],
+          "id": "dependencies",
+          "passed": true
+        },
+        {
+          "detail": "Risk assessment must be recorded, including a closed assessment if no risks were found",
+          "evidence_ids": [],
+          "id": "risk_review",
+          "passed": true
+        },
+        {
+          "detail": "All six scoped delivery workstreams need reviewed acceptance evidence",
+          "evidence_ids": [
+            "enterprise",
+            "identity",
+            "cloud",
+            "security",
+            "integration",
+            "data"
+          ],
+          "id": "workstream_acceptance",
+          "passed": false
+        }
+      ],
+      "dependencies": {
+        "basis": "Reviewed dependency records; this is not automatic infrastructure discovery.",
+        "blocked_by_cycles": [],
+        "direction": "source depends on target; migrate prerequisites first",
+        "impacted": [],
+        "invalid_dependency_ids": [],
+        "migration_waves": [
+          [
+            "identity"
+          ],
+          [
+            "erp",
+            "portal"
+          ],
+          [
+            "payroll"
+          ]
+        ]
+      },
+      "human_cutover_authorisation_required": true,
+      "limitations": "Readiness is based on supplied records. It does not prove completeness or live service health.",
+      "passed_checks": 5,
+      "status": "blocked",
+      "total_checks": 8,
+      "tsa_exposure": [
+        {
+          "currency": "GBP",
+          "days_to_exit": 75,
+          "id": "tsa-identity",
+          "monthly_cost": "18000",
+          "overdue": false
+        }
+      ]
+    },
+    "technical_workstreams": {
+      "assurance": "No automatic audit certification, finance close guarantee or production migration execution.",
+      "benefits": [],
+      "finance_reviewed_benefits": {},
+      "overall_status": "blocked",
+      "reconciliations": [],
+      "streams": [
+        {
+          "blockers": [
+            "Inventory legal entities, ledgers, modules, integrations and licensing",
+            "Approve separation rules for master data, transactions and history",
+            "Reconcile trial balance, AP/AR, payroll and open transactions",
+            "Rehearse period close and obtain finance-owner acceptance",
+            "Approve freeze window, backup, delta loads and rollback criteria",
+            "Complete post-cutover reconciliation and operational handover",
+            "Account or dataset reconciliation is missing or has exceptions"
+          ],
+          "id": "enterprise",
+          "name": "Enterprise systems and processes",
+          "owner": "demo-owner",
+          "platforms": "Oracle, SAP, Workday",
+          "status": "blocked",
+          "total_template_checks": 6
+        },
+        {
+          "blockers": [
+            "Map identities, groups, privileged roles, devices and application trust",
+            "Approve target tenant, identity matching, MFA and access policies",
+            "Test mailboxes, files, sharing, devices and application sign-in",
+            "Validate user mapping and revoked or orphaned access",
+            "Approve domain, mail routing and migration-wave procedures",
+            "Verify endpoint coverage, support handover and rollback evidence"
+          ],
+          "id": "identity",
+          "name": "Identity, endpoint and workplace",
+          "owner": "demo-owner",
+          "platforms": "Active Directory, Entra ID, Microsoft 365, endpoint management",
+          "status": "blocked",
+          "total_template_checks": 6
+        },
+        {
+          "blockers": [
+            "Map workloads, network routes, DNS, certificates and dependencies",
+            "Review landing zones, regional placement, network boundaries and quotas",
+            "Review infrastructure changes and security policies",
+            "Test restore, failover, capacity and agreed recovery objectives",
+            "Approve workload waves, routing changes and rollback conditions",
+            "Verify monitoring, cost ownership and decommissioning acceptance"
+          ],
+          "id": "cloud",
+          "name": "Cloud, infrastructure and networks",
+          "owner": "demo-owner",
+          "platforms": "AWS, Azure, GCP, OCI, data centres",
+          "status": "blocked",
+          "total_template_checks": 6
+        },
+        {
+          "blockers": [
+            "Confirm applicable frameworks, editions, scope and responsible assessors",
+            "Map controls to systems, owners, evidence and exceptions",
+            "Establish access, logging, vulnerability and incident-response baselines",
+            "Test control operation and resolve blocking findings",
+            "Review outstanding risk acceptances and evidence freshness",
+            "Assemble audit evidence and record independent assessor findings",
+            "Applicable framework controls require assessment"
+          ],
+          "id": "security",
+          "name": "Security and GCC control assurance",
+          "owner": "demo-owner",
+          "platforms": "ISO 27001, SOC 2, NCA, SAMA and applicable UAE requirements",
+          "status": "blocked",
+          "total_template_checks": 6
+        },
+        {
+          "blockers": [
+            "Inventory APIs, events, batch jobs, consumers and interface owners",
+            "Approve contracts, schema mappings, versioning and separation boundaries",
+            "Implement reviewed adapters and deployment procedures",
+            "Pass contract, regression, authentication and recovery tests",
+            "Approve routing switch, retry, replay and rollback procedures",
+            "Verify observability, support ownership and legacy retirement"
+          ],
+          "id": "integration",
+          "name": "Software development and integration",
+          "owner": "demo-owner",
+          "platforms": "Microservices, APIs, events, middleware and CI/CD",
+          "status": "blocked",
+          "total_template_checks": 6
+        },
+        {
+          "blockers": [
+            "Map data assets, lineage, stewards, reports and business definitions",
+            "Approve target pipelines, access rules and data-quality thresholds",
+            "Reconcile source-to-target datasets and critical report totals",
+            "Verify KPI definitions and finance benefit attribution",
+            "Approve report-switch procedures and finance reporting acceptance",
+            "Record lineage, retention, operational ownership and benefits evidence",
+            "Account or dataset reconciliation is missing or has exceptions"
+          ],
+          "id": "data",
+          "name": "Data, BI and governance",
+          "owner": "demo-owner",
+          "platforms": "Fabric, Databricks, Power BI and finance reporting",
+          "status": "blocked",
+          "total_template_checks": 6
+        }
+      ]
+    },
+    "tsa_obligations": [
+      {
+        "asset_ids": [
+          "asset-identity"
+        ],
+        "charging_basis": "GBP 18,000 monthly, subject to negotiated terms",
+        "company_id": "newco",
+        "consent_status": "negotiating",
+        "evidence_ref": "urn:fictional:tsa-draft",
+        "exit_roadmap": "Confirm rights, build target tenant, test users and recovery, reconcile permissions, approve exit",
+        "id": "identity-services",
+        "name": "Seller identity services",
+        "owner": "Workplace lead",
+        "provider_company_id": "seller",
+        "recipient_company_id": "newco",
+        "responsibilities": "Seller operates shared service; buyer owns target identity and acceptance",
+        "service_levels": "Define support hours, availability measurement and incident response in the agreement",
+        "service_scope": "Directory support and agreed authentication services",
+        "tsa_id": "tsa-identity"
+      }
+    ],
+    "workforce": [
+      {
+        "company_id": "seller",
+        "evidence_ref": "urn:fictional:workforce",
+        "fte": "8.5",
+        "headcount": 10,
+        "id": "operations-team",
+        "key_dependencies": "Two team leads cover payroll approvals",
+        "name": "Business operations team",
+        "owner": "People lead",
+        "skills": [
+          "Payroll",
+          "Service support",
+          "Finance operations"
+        ],
+        "target_company_id": "newco",
+        "transition_approach": "HR validates proposed coverage, required consultation and training before any employment decision"
+      }
+    ]
+  },
+  "stale": false
+}

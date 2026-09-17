@@ -1,0 +1,22 @@
+{
+  "entries": [
+    {
+      "id": "fictional-invoice-001-line-1",
+      "kind": "actual",
+      "category": "opex",
+      "amount": "100.00",
+      "currency": "GBP",
+      "period": "2026-09-01",
+      "source_ref": "urn:fictional:invoice:001"
+    },
+    {
+      "id": "fictional-forecast-001",
+      "kind": "forecast",
+      "category": "migration",
+      "amount": "5000.00",
+      "currency": "GBP",
+      "period": "2026-10-01",
+      "source_ref": "urn:fictional:remaining-forecast:001"
+    }
+  ]
+}
