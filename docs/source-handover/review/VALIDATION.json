@@ -1,0 +1,14 @@
+{
+  "site_build": "passed",
+  "site_typescript": "passed",
+  "deployment": "succeeded; private",
+  "site_commit": "99968879e9d1c02515660dd80746abc134902063",
+  "service_sections": 11,
+  "h1_count": 1,
+  "internal_anchor_targets": "passed",
+  "local_image_paths": "passed",
+  "archive_crc": "passed for 15 originals",
+  "host_tanstack_adapter": "not built against current host",
+  "browser_visual_qa": "not run",
+  "full_runtime_merge": "not implemented by this collection task"
+}

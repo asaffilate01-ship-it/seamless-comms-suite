@@ -1,0 +1,196 @@
+{
+  "collected_at": "2026-09-16",
+  "scope": "Relevant file metadata, not a complete chat export",
+  "files": [
+    {
+      "name": "Omniqora-Business360-Combined-v0.3.zip",
+      "library_file_id": "libfile_cbb9cba664288191a953f231346cc440",
+      "size_bytes": 347442,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Transformation-and-Product-AI(20260916-105200).zip",
+      "library_file_id": "libfile_d21622f32a78819182716c9f3b8621ac",
+      "size_bytes": 244030,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Transformation-and-Product-AI(3).zip",
+      "library_file_id": "libfile_6cfb6f90d2148191bdb063c019f3bb21",
+      "size_bytes": 191945,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Transformation-and-Product-AI(2).zip",
+      "library_file_id": "libfile_7ab34f5b49fc8191ae0a15999a88acdf",
+      "size_bytes": 127491,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Transformation-and-Product-AI(1).zip",
+      "library_file_id": "libfile_8ba0b8d8e6c88191a4d9fe7835a620b2",
+      "size_bytes": 191945,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Business360-Build-Brief.md",
+      "library_file_id": "libfile_7470e1ca7fa081918793bf28ca0c9458",
+      "size_bytes": 56121,
+      "version_id": "1"
+    },
+    {
+      "name": "Omniqora-Transformation-and-Product-AI.zip",
+      "library_file_id": "libfile_48a06ceb59bc819181c24b554579a86d",
+      "size_bytes": 244030,
+      "version_id": "2"
+    },
+    {
+      "name": "Omniqora-Enterprise-AI-Extension.zip",
+      "library_file_id": "libfile_ed20360b2d2c8191a98cdfd66af9689b",
+      "size_bytes": 26594,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-and-SaaS-File-Index.md",
+      "library_file_id": "libfile_28d5d5e1ef288191bff676a805a00a4b",
+      "size_bytes": 15715,
+      "version_id": "1"
+    },
+    {
+      "name": "Omniqora-Consolidated-AI-Pack.zip",
+      "library_file_id": "libfile_3015deb62d24819194d479f445400ed5",
+      "size_bytes": 6589148,
+      "version_id": "1"
+    },
+    {
+      "name": "Omniqora-Adviser-and-Learning-Extension.zip",
+      "library_file_id": "libfile_1cb9a9af92e881919dcf8e98320da9e5",
+      "size_bytes": 172019,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora_RRCI_Handover(1).zip",
+      "library_file_id": "libfile_527809d450d481919946922b4962f7f5",
+      "size_bytes": 150587,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora_RRCI_Handover.zip",
+      "library_file_id": "libfile_daaa050d22b08191903b650e2fcf7171",
+      "size_bytes": 150587,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Lawquo-Handover(1).md",
+      "library_file_id": "libfile_ce4bb82173688191919486474a3009d3",
+      "size_bytes": 4997,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Lawquo-Handover.md",
+      "library_file_id": "libfile_13353fb014e481918e7b30ec874da704",
+      "size_bytes": 4997,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-AI-Repo-Integration-Pack.zip",
+      "library_file_id": "libfile_f2a07fbd28bc8191a74ba1ddb595769c",
+      "size_bytes": 403662,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora AI & Intelligence.txt",
+      "library_file_id": "libfile_3248ae1788088191b66e617e3177b4c2",
+      "size_bytes": 515,
+      "version_id": "3"
+    },
+    {
+      "name": "OmniQora_Full_Suite_2026-08-22.zip",
+      "library_file_id": "libfile_f1a4d316aa248191bd78d2527c9b1b88",
+      "size_bytes": 2073572,
+      "version_id": "2"
+    },
+    {
+      "name": "Omniqora-Exchange.png",
+      "library_file_id": "libfile_d94d45412b388191bd4ca59657b94be6",
+      "size_bytes": 367342,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Flow.png",
+      "library_file_id": "libfile_9bdce73070c08191a0ec3a5a9f13249a",
+      "size_bytes": 1005510,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Agents.png",
+      "library_file_id": "libfile_031e53c3aac88191983a400f434aa5ff",
+      "size_bytes": 420262,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Voice.png",
+      "library_file_id": "libfile_7a0a3f9a22b8819189620595eb749b14",
+      "size_bytes": 409734,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Connect.png",
+      "library_file_id": "libfile_2b1fe58284b881918f9426ab896e0252",
+      "size_bytes": 484250,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora-Logo-Suite.zip",
+      "library_file_id": "libfile_7cfedd7295208191bdaeb1e705c72610",
+      "size_bytes": 2598097,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora One AI business system logo.png",
+      "library_file_id": "libfile_31a54c8a3e6c81918e4faeceec6fa0d5",
+      "size_bytes": 1021521,
+      "version_id": null
+    },
+    {
+      "name": "OmniQora_Full_Suite_Blueprint_2026-08-22.docx",
+      "library_file_id": "libfile_af474248f2dc8191ac016eab1c4cdba5",
+      "size_bytes": 514903,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora logo on transparent background.png",
+      "library_file_id": "libfile_6d4ff6681e9481918af8fbadbcaf302d",
+      "size_bytes": 1036515,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora wordmark capitalization correction.png",
+      "library_file_id": "libfile_2c72f8146a488191b8d370b82ee035e7",
+      "size_bytes": 1055153,
+      "version_id": null
+    },
+    {
+      "name": "Omniqora intelligent conversation logo.png",
+      "library_file_id": "libfile_19c5636552a881918a1aecbfcc49aa04",
+      "size_bytes": 480796,
+      "version_id": null
+    },
+    {
+      "name": "iTechLounge-Ecosystem-Core.zip",
+      "library_file_id": "libfile_58eb20a968fc81919e0abf04cbe50ab8",
+      "size_bytes": 42828,
+      "version_id": "2"
+    },
+    {
+      "name": "itechlounge-ai-core.zip",
+      "library_file_id": "libfile_6b269ed3875c8191b43406b877368bf8",
+      "size_bytes": 272419,
+      "version_id": "4"
+    }
+  ],
+  "site_commit": "99968879e9d1c02515660dd80746abc134902063",
+  "site_url": "https://omniqora-ai.amersaleem.chatgpt.site",
+  "site_route": "/website",
+  "site_audience": "owner-private"
+}

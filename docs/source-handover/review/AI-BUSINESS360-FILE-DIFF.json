@@ -1,0 +1,134 @@
+[
+  {
+    "path": "SOURCE-REGISTER.json",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "BUILD-PROMPT.md",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "PACKAGE-SHA256.json",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "START-HERE.md",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "verification/ui-results.json",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "verification/RESULTS.md",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "verification/transformation-tests.txt",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "docs/CAPABILITY-STATUS.md",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "docs/AI-LAYER-SETUP.md",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "docs/COMPANY-PLANNING.md",
+    "status": "modified in AI package; unchanged in Business360"
+  },
+  {
+    "path": "docs/INTEGRATION.md",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "examples/fictional-snapshot.json",
+    "status": "modified in AI package; unchanged in Business360"
+  },
+  {
+    "path": "examples/fictional-company-plan.json",
+    "status": "modified in AI package; unchanged in Business360"
+  },
+  {
+    "path": "verification/ui/README.md",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "verification/ui/backend.py",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "verification/ui/package.json",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "verification/ui/package-lock.json",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "verification/ui/dom-check.mjs",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "verification/ui/tsconfig.json",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "omniqora-update/src/modules/transformation/AIHubPanel.tsx",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "omniqora-update/src/modules/transformation/transformation.functions.ts",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "omniqora-update/src/modules/transformation/TransformationWorkspace.tsx",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "omniqora-update/services/transformation/README.md",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "omniqora-update/services/transformation/.env.example",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "omniqora-update/services/transformation/ai-config.example.json",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "omniqora-update/services/transformation/requirements-ai.txt",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "omniqora-update/services/transformation/tests/test_ai_layer.py",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "omniqora-update/services/transformation/transformation/ai_config.py",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "omniqora-update/services/transformation/transformation/ai_providers.py",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "omniqora-update/services/transformation/transformation/engine.py",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "omniqora-update/services/transformation/transformation/server.py",
+    "status": "requires reconciliation"
+  },
+  {
+    "path": "omniqora-update/services/transformation/transformation/ai_hub.py",
+    "status": "new in latest AI package"
+  },
+  {
+    "path": "omniqora-update/services/transformation/transformation/ai_connectors.py",
+    "status": "new in latest AI package"
+  }
+]
