@@ -208,7 +208,9 @@ function UnifiedHome() {
         <Hero />
         <Platform />
         <Services lang={lang} />
+        <Capabilities lang={lang} />
         <ProductPreview lang={lang} />
+
         <WaysToWork lang={lang} />
         <PricingSection lang={lang} onCta={() => scrollToSection("access")} />
         <Faq />
