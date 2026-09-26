@@ -40,3 +40,8 @@ var/
 *.db-*
 *.sqlite*
 .pytest_cache/
+
+# Environment secrets
+.env
+.env.*
+!.env.example

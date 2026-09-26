@@ -6,7 +6,7 @@ export class BridgeError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 const id = z.string().min(1).max(100).regex(/^[A-Za-z0-9_.:-]+$/);
-const contract = z.enum(['sparesgrid_question','sparesgrid_enquiry','lawquo_assessment','taxnuvia_matching','epos_report','business360_brief','generic_draft','event']);
+const contract = z.enum(['sparesgrid_question','sparesgrid_enquiry','lawquo_assessment','taxnuvia_matching','epos_report','business360_brief','generic_draft','event','communication_event']);
 export const bindingSchema = z.object({
   id, product: id, tenant: z.string().uuid(), project: z.string().uuid(), serviceUser: z.string().uuid(),
   externalTenant: id, allowedScopes: z.array(id).min(1).max(500),

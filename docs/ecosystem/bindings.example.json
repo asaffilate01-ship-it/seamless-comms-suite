@@ -6,13 +6,40 @@
     "project": "00000000-0000-4000-8000-000000000002",
     "serviceUser": "00000000-0000-4000-8000-000000000003",
     "externalTenant": "replace-with-source-tenant",
-    "allowedScopes": ["replace-with-source-tenant"],
+    "allowedScopes": [
+      "replace-with-source-tenant"
+    ],
     "secretEnv": "OQ_BRIDGE_SPARESGRID_A",
     "protocol": "bearer",
     "enabled": false,
     "expiresAt": "2026-09-16T00:00:00Z",
-    "contracts": ["sparesgrid_question", "sparesgrid_enquiry"],
+    "contracts": [
+      "sparesgrid_question",
+      "sparesgrid_enquiry"
+    ],
     "profile": "product",
     "dailyLimit": 50
+  },
+  {
+    "id": "courier-broker-main",
+    "product": "courier-broker",
+    "tenant": "00000000-0000-4000-8000-000000000011",
+    "project": "00000000-0000-4000-8000-000000000012",
+    "serviceUser": "00000000-0000-4000-8000-000000000013",
+    "externalTenant": "courier-broker-main",
+    "allowedScopes": [
+      "courier-broker-main",
+      "drivers",
+      "customers"
+    ],
+    "secretEnv": "OQ_BRIDGE_COURIER_BROKER",
+    "protocol": "bearer",
+    "enabled": false,
+    "expiresAt": "2027-12-31T23:59:59Z",
+    "contracts": [
+      "communication_event"
+    ],
+    "profile": "product",
+    "dailyLimit": 1000
   }
 ]
