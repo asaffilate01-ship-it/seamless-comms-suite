@@ -11,29 +11,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrCreateMyTenant } from "@/lib/tenant.functions";
 import {
-  getMyChannel,
+  listChannels,
   upsertChannel,
   listConversations,
   listMessages,
   sendMessage,
 } from "@/lib/whatsapp.functions";
 import { toast } from "sonner";
-import { CheckCircle2, Copy, Send, ShieldCheck, MessageCircle } from "lucide-react";
+import { Bot, CheckCircle2, Copy, MessageCircle, Plus, Send, ShieldCheck, Smartphone } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/whatsapp")({
   head: () => ({
     meta: [
-      { title: "WhatsApp Live — OmniQora" },
-      { name: "description", content: "Connect your WhatsApp Business number and handle live conversations." },
+      { title: "WhatsApp Connect — OmniQora" },
+      { name: "description", content: "Manage SaaS and tenant WhatsApp numbers, AI routing and live conversations." },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: WhatsAppPage,
 });
 
+type Channel = Awaited<ReturnType<typeof listChannels>>[number];
+
 type Conversation = {
   id: string;
   status: string;
+  channel_id: string | null;
   last_message_at: string;
   contact: { id: string; display_name: string | null; wa_id: string } | null;
 };
@@ -51,7 +54,8 @@ function WhatsAppPage() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
-  const [channel, setChannel] = useState<Awaited<ReturnType<typeof getMyChannel>> | null>(null);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [showSetup, setShowSetup] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -60,7 +64,7 @@ function WhatsAppPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const bootstrap = useServerFn(getOrCreateMyTenant);
-  const fetchChannel = useServerFn(getMyChannel);
+  const fetchChannels = useServerFn(listChannels);
   const fetchConvos = useServerFn(listConversations);
   const fetchMsgs = useServerFn(listMessages);
   const sendFn = useServerFn(sendMessage);
@@ -69,6 +73,12 @@ function WhatsAppPage() {
     () => (typeof window !== "undefined" ? `${window.location.origin}/api/public/whatsapp/webhook` : ""),
     [],
   );
+
+  const refreshChannels = async (id: string) => {
+    const rows = await fetchChannels({ data: { tenantId: id } });
+    setChannels(rows as Channel[]);
+    return rows;
+  };
 
   useEffect(() => {
     let cancel = false;
@@ -82,33 +92,32 @@ function WhatsAppPage() {
         const t = await bootstrap();
         if (cancel) return;
         setTenantId(t.tenantId);
-        const ch = await fetchChannel({ data: { tenantId: t.tenantId } });
+        const [chs, convs] = await Promise.all([
+          fetchChannels({ data: { tenantId: t.tenantId } }),
+          fetchConvos({ data: { tenantId: t.tenantId } }),
+        ]);
         if (cancel) return;
-        setChannel(ch);
-        const convs = (await fetchConvos({ data: { tenantId: t.tenantId } })) as Conversation[];
-        if (cancel) return;
-        setConversations(convs);
-        if (convs.length) setActiveId(convs[0].id);
+        setChannels(chs as Channel[]);
+        setConversations(convs as Conversation[]);
+        setShowSetup(chs.length === 0);
+        if (convs.length) setActiveId((convs as Conversation[])[0].id);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Load failed");
       } finally {
         if (!cancel) setReady(true);
       }
     })();
-    return () => {
-      cancel = true;
-    };
-  }, [bootstrap, fetchChannel, fetchConvos, navigate]);
+    return () => { cancel = true; };
+  }, [bootstrap, fetchChannels, fetchConvos, navigate]);
 
   useEffect(() => {
     if (!activeId) return;
     fetchMsgs({ data: { conversationId: activeId } }).then((m) => setMessages(m as Message[]));
   }, [activeId, fetchMsgs]);
 
-  // Realtime: new messages + conversation bumps
   useEffect(() => {
     if (!tenantId) return;
-    const channel = supabase
+    const realtime = supabase
       .channel(`tenant-${tenantId}`)
       .on(
         "postgres_changes",
@@ -122,13 +131,11 @@ function WhatsAppPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "conversations", filter: `tenant_id=eq.${tenantId}` },
         () => {
-          if (tenantId) fetchConvos({ data: { tenantId } }).then((c) => setConversations(c as Conversation[]));
+          fetchConvos({ data: { tenantId } }).then((c) => setConversations(c as Conversation[]));
         },
       )
       .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(realtime); };
   }, [tenantId, activeId, fetchConvos]);
 
   useEffect(() => {
@@ -155,27 +162,71 @@ function WhatsAppPage() {
 
   if (!ready) {
     return (
-      <AppShell title="WhatsApp Live" subtitle="Connecting to your workspace…">
+      <AppShell title="WhatsApp Connect" subtitle="Connecting to your workspace…">
         <Card className="p-8 text-sm text-muted-foreground">Loading…</Card>
       </AppShell>
     );
   }
 
-  const connected = channel?.status === "configured";
-
   return (
     <AppShell
-      title="WhatsApp Live"
-      subtitle={connected ? `Connected: ${channel?.display_phone ?? channel?.phone_number_id}` : "Connect your WhatsApp Business number to go live"}
+      title="WhatsApp Connect"
+      subtitle={channels.length ? `${channels.length} number${channels.length === 1 ? "" : "s"} connected across SaaS tenants and scopes` : "Connect your first WhatsApp Business number"}
       actions={
-        <Button variant="outline" size="sm" onClick={signOut}>
-          Sign out
-        </Button>
+        <div className="flex gap-2">
+          {channels.length > 0 && (
+            <Button size="sm" onClick={() => setShowSetup((v) => !v)}>
+              <Plus className="mr-1 h-4 w-4" /> Add number
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={signOut}>Sign out</Button>
+        </div>
       }
     >
-      {!connected && <ChannelSetup tenantId={tenantId!} webhookUrl={webhookUrl} onSaved={setChannel} />}
+      {channels.length > 0 && (
+        <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {channels.map((ch) => (
+            <Card key={ch.id} className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                    <Smartphone className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold">{ch.label ?? ch.display_phone ?? "WhatsApp"}</div>
+                    <div className="truncate font-mono text-xs text-muted-foreground">{ch.display_phone ?? ch.phone_number_id}</div>
+                  </div>
+                </div>
+                {ch.is_primary && <Badge>Primary</Badge>}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <Badge variant="outline">{ch.product_key}</Badge>
+                <Badge variant="outline">{ch.scope_kind}{ch.scope_id ? ` · ${ch.scope_id}` : ""}</Badge>
+                {ch.ai_enabled && <Badge variant="secondary"><Bot className="mr-1 h-3 w-3" />AI</Badge>}
+                {ch.human_handoff_enabled && <Badge variant="secondary">Human handoff</Badge>}
+              </div>
+              {ch.external_tenant_id && (
+                <div className="mt-2 truncate text-xs text-muted-foreground">Source tenant: {ch.external_tenant_id}</div>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {connected && (
+      {showSetup && tenantId && (
+        <div className="mb-4">
+          <ChannelSetup
+            tenantId={tenantId}
+            webhookUrl={webhookUrl}
+            onSaved={async () => {
+              await refreshChannels(tenantId);
+              setShowSetup(false);
+            }}
+          />
+        </div>
+      )}
+
+      {channels.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
           <Card className="flex max-h-[70vh] flex-col overflow-hidden">
             <div className="border-b border-border px-4 py-3 text-sm font-medium">
@@ -189,20 +240,21 @@ function WhatsAppPage() {
                   Waiting for the first inbound message.
                 </div>
               )}
-              {conversations.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveId(c.id)}
-                  className={`flex w-full flex-col items-start gap-0.5 border-b border-border px-4 py-3 text-left text-sm hover:bg-surface-2 ${
-                    activeId === c.id ? "bg-surface-2" : ""
-                  }`}
-                >
-                  <div className="font-medium">{c.contact?.display_name ?? c.contact?.wa_id ?? "Unknown"}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {c.contact?.wa_id} · {new Date(c.last_message_at).toLocaleString()}
-                  </div>
-                </button>
-              ))}
+              {conversations.map((c) => {
+                const channel = channels.find((x) => x.id === c.channel_id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setActiveId(c.id)}
+                    className={`flex w-full flex-col items-start gap-0.5 border-b border-border px-4 py-3 text-left text-sm hover:bg-surface-2 ${activeId === c.id ? "bg-surface-2" : ""}`}
+                  >
+                    <div className="font-medium">{c.contact?.display_name ?? c.contact?.wa_id ?? "Unknown"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {c.contact?.wa_id} · {channel?.label ?? channel?.display_phone ?? "WhatsApp"} · {new Date(c.last_message_at).toLocaleString()}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </Card>
 
@@ -216,11 +268,7 @@ function WhatsAppPage() {
               {messages.map((m) => (
                 <div
                   key={m.id}
-                  className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                    m.direction === "outbound"
-                      ? "ml-auto bg-primary text-primary-foreground"
-                      : "bg-card"
-                  }`}
+                  className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${m.direction === "outbound" ? "ml-auto bg-primary text-primary-foreground" : "bg-card"}`}
                 >
                   <div className="whitespace-pre-wrap">{m.body}</div>
                   <div className="mt-1 text-[10px] opacity-70">
@@ -237,7 +285,7 @@ function WhatsAppPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      send();
+                      void send();
                     }
                   }}
                   placeholder="Type a reply…"
@@ -262,15 +310,22 @@ function ChannelSetup({
 }: {
   tenantId: string;
   webhookUrl: string;
-  onSaved: (ch: Awaited<ReturnType<typeof getMyChannel>>) => void;
+  onSaved: () => void | Promise<void>;
 }) {
   const save = useServerFn(upsertChannel);
-  const refresh = useServerFn(getMyChannel);
+  const [label, setLabel] = useState("Main WhatsApp");
+  const [productKey, setProductKey] = useState("omniqora");
+  const [externalTenantId, setExternalTenantId] = useState("");
+  const [scopeKind, setScopeKind] = useState<"platform" | "tenant" | "location" | "department">("tenant");
+  const [scopeId, setScopeId] = useState("");
   const [phoneNumberId, setPhoneNumberId] = useState("");
   const [wabaId, setWabaId] = useState("");
   const [displayPhone, setDisplayPhone] = useState("");
   const [accessToken, setAccessToken] = useState("");
   const [appSecret, setAppSecret] = useState("");
+  const [isPrimary, setIsPrimary] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [humanHandoffEnabled, setHumanHandoffEnabled] = useState(true);
   const [verifyToken, setVerifyToken] = useState(() =>
     Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10),
   );
@@ -283,17 +338,26 @@ function ChannelSetup({
       await save({
         data: {
           tenantId,
+          label,
+          productKey,
+          externalTenantId: externalTenantId || null,
+          scopeKind,
+          scopeId: scopeId || null,
           phoneNumberId,
           wabaId: wabaId || null,
           displayPhone: displayPhone || null,
           accessToken,
           appSecret,
           verifyToken,
+          isPrimary,
+          aiEnabled,
+          humanHandoffEnabled,
+          inboundEnabled: true,
+          outboundEnabled: true,
         },
       });
-      toast.success("Channel saved");
-      const ch = await refresh({ data: { tenantId } });
-      onSaved(ch);
+      toast.success("WhatsApp number saved");
+      await onSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -310,88 +374,69 @@ function ChannelSetup({
     <Card className="p-6">
       <div className="mb-6 flex items-center gap-2">
         <ShieldCheck className="h-5 w-5 text-primary" />
-        <h2 className="font-display text-lg font-semibold">Connect WhatsApp Business</h2>
+        <div>
+          <h2 className="font-display text-lg font-semibold">Add WhatsApp Business number</h2>
+          <p className="text-sm text-muted-foreground">Map each number to a SaaS, source tenant and optional branch/department.</p>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <h3 className="text-sm font-semibold">1. Configure the Meta webhook</h3>
+          <h3 className="text-sm font-semibold">1. Meta webhook</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            In Meta Business → your WhatsApp App → Webhooks, subscribe the <em>messages</em> field with these values.
+            Subscribe the WhatsApp <em>messages</em> webhook using these values.
           </p>
           <div className="mt-4 space-y-3">
             <div>
               <Label className="text-xs">Callback URL</Label>
               <div className="mt-1 flex gap-2">
                 <Input readOnly value={webhookUrl} className="font-mono text-xs" />
-                <Button size="icon" variant="outline" onClick={() => copy(webhookUrl)} type="button">
-                  <Copy className="h-4 w-4" />
-                </Button>
+                <Button size="icon" variant="outline" onClick={() => copy(webhookUrl)} type="button"><Copy className="h-4 w-4" /></Button>
               </div>
             </div>
             <div>
               <Label className="text-xs">Verify token</Label>
               <div className="mt-1 flex gap-2">
-                <Input
-                  value={verifyToken}
-                  onChange={(e) => setVerifyToken(e.target.value)}
-                  className="font-mono text-xs"
-                />
-                <Button size="icon" variant="outline" onClick={() => copy(verifyToken)} type="button">
-                  <Copy className="h-4 w-4" />
-                </Button>
+                <Input value={verifyToken} onChange={(e) => setVerifyToken(e.target.value)} className="font-mono text-xs" />
+                <Button size="icon" variant="outline" onClick={() => copy(verifyToken)} type="button"><Copy className="h-4 w-4" /></Button>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Meta will echo this back on the verification GET request. Regenerate before saving if you prefer.
-              </p>
             </div>
           </div>
         </div>
 
         <form onSubmit={submit} className="space-y-3">
-          <h3 className="text-sm font-semibold">2. Enter your Meta credentials</h3>
-          <div>
-            <Label>Phone Number ID</Label>
-            <Input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} required />
-          </div>
-          <div>
-            <Label>WhatsApp Business Account ID (optional)</Label>
-            <Input value={wabaId} onChange={(e) => setWabaId(e.target.value)} />
-          </div>
-          <div>
-            <Label>Display phone number (optional)</Label>
-            <Input value={displayPhone} onChange={(e) => setDisplayPhone(e.target.value)} placeholder="+49 …" />
-          </div>
-          <div>
-            <Label>Permanent access token</Label>
-            <Input
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-              type="password"
-              required
-              placeholder="EAAG…"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Stored encrypted at rest. Only owners and admins of your workspace can read it.
-            </p>
-          </div>
-          <div>
-            <Label>App secret</Label>
-            <Input
-              value={appSecret}
-              onChange={(e) => setAppSecret(e.target.value)}
-              type="password"
-              required
-              minLength={20}
-              placeholder="Meta App → Settings → Basic → App Secret"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Required: every inbound webhook is verified with an HMAC-SHA256 signature.
-            </p>
+          <h3 className="text-sm font-semibold">2. Number and SaaS mapping</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div><Label>Label</Label><Input value={label} onChange={(e) => setLabel(e.target.value)} required /></div>
+            <div><Label>SaaS product key</Label><Input value={productKey} onChange={(e) => setProductKey(e.target.value.toLowerCase())} placeholder="courier-broker" required /></div>
+            <div><Label>Source tenant ID</Label><Input value={externalTenantId} onChange={(e) => setExternalTenantId(e.target.value)} placeholder="tenant-a" /></div>
+            <div>
+              <Label>Scope</Label>
+              <select value={scopeKind} onChange={(e) => setScopeKind(e.target.value as typeof scopeKind)} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                <option value="platform">Platform</option>
+                <option value="tenant">Tenant</option>
+                <option value="location">Location / branch</option>
+                <option value="department">Department</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2"><Label>Scope ID (optional)</Label><Input value={scopeId} onChange={(e) => setScopeId(e.target.value)} placeholder="luton / sales / branch-123" /></div>
           </div>
 
+          <div><Label>Phone Number ID</Label><Input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} required /></div>
+          <div><Label>WhatsApp Business Account ID</Label><Input value={wabaId} onChange={(e) => setWabaId(e.target.value)} /></div>
+          <div><Label>Display phone number</Label><Input value={displayPhone} onChange={(e) => setDisplayPhone(e.target.value)} placeholder="+44 …" /></div>
+          <div><Label>Permanent access token</Label><Input value={accessToken} onChange={(e) => setAccessToken(e.target.value)} type="password" required /></div>
+          <div><Label>App secret</Label><Input value={appSecret} onChange={(e) => setAppSecret(e.target.value)} type="password" required minLength={20} /></div>
+
+          <div className="grid gap-2 rounded-lg border border-border p-3 text-sm sm:grid-cols-3">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} />Primary for SaaS</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={aiEnabled} onChange={(e) => setAiEnabled(e.target.checked)} />AI enabled</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={humanHandoffEnabled} onChange={(e) => setHumanHandoffEnabled(e.target.checked)} />Human handoff</label>
+          </div>
+
+          <p className="text-xs text-muted-foreground">Credentials are kept server-side and are not included in browser configuration or SaaS add-on clients.</p>
           <Button type="submit" className="w-full" disabled={busy}>
-            <CheckCircle2 className="mr-1 h-4 w-4" /> {busy ? "Saving…" : "Save & activate channel"}
+            <CheckCircle2 className="mr-1 h-4 w-4" /> {busy ? "Saving…" : "Save & activate number"}
           </Button>
         </form>
       </div>
