@@ -109,10 +109,13 @@ FOR ALL USING (
   EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_vehicles.tenant_id AND tm.user_id = auth.uid())
 );
 
-CREATE POLICY automotive_evidence_member_access ON public.automotive_evidence
-FOR ALL USING (
+CREATE POLICY automotive_evidence_member_read ON public.automotive_evidence
+FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_evidence.tenant_id AND tm.user_id = auth.uid())
-) WITH CHECK (
+);
+
+CREATE POLICY automotive_evidence_member_insert ON public.automotive_evidence
+FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_evidence.tenant_id AND tm.user_id = auth.uid())
 );
 
@@ -126,6 +129,28 @@ FOR ALL USING (
 CREATE POLICY automotive_webhook_deliveries_admin_read ON public.automotive_webhook_deliveries
 FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_webhook_deliveries.tenant_id AND tm.user_id = auth.uid() AND tm.role IN ('owner','admin'))
+);
+
+CREATE TABLE IF NOT EXISTS public.automotive_inbound_events (
+  tenant_id uuid NOT NULL,
+  event_id uuid NOT NULL,
+  connection_id text NOT NULL,
+  product text NOT NULL CHECK (product IN ('zivvo','autohashi','sparesgrid')),
+  event_type text NOT NULL,
+  occurred_at timestamptz NOT NULL,
+  payload jsonb NOT NULL,
+  received_at timestamptz NOT NULL DEFAULT now(),
+  processed_at timestamptz,
+  status text NOT NULL DEFAULT 'received' CHECK (status IN ('received','processing','processed','failed')),
+  last_error text,
+  PRIMARY KEY (tenant_id, event_id)
+);
+
+ALTER TABLE public.automotive_inbound_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY automotive_inbound_events_admin_read ON public.automotive_inbound_events
+FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_inbound_events.tenant_id AND tm.user_id = auth.uid() AND tm.role IN ('owner','admin'))
 );
 
 COMMIT;
