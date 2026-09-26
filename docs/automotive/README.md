@@ -40,6 +40,12 @@ Location is intentionally excluded because vehicle storage/home location is not 
 
 ## API pattern
 
+Zivvo, Autohashi and SparesGrid can use the source-SaaS gateway:
+
+`POST /api/automotive/v1/gateway/:connectionId`
+
+Connections are server-configured with a fixed tenant, fixed product, independent bearer secret and explicit scopes. Supported v1 operations are `vehicle.create`, `vehicle.get`, `appraisal.create`, `passport.get` and `passport.snapshot`. Mutations require an idempotency key and are persisted in the API request ledger.
+
 Commands use synchronous authenticated APIs; state changes use signed webhooks.
 
 Recommended command surface:
@@ -119,4 +125,4 @@ Default UK seller/PX policy:
 
 ## Build status
 
-This module establishes shared contracts, product/add-on rules, webhook signing/verification and the integration architecture. Provider adapters (DVLA/MOT/provenance, Codeweavers, Japanese auction feeds, Dokuvera and parts data) still require credentials, provider-specific mapping and live contract tests before production activation.
+This module establishes shared contracts, product/add-on rules, tenant UI, vehicle registration, remote appraisal creation, passport snapshots, scoped source-SaaS APIs, webhook signing/verification, inbound idempotency, outbound retry/dead-letter delivery, provider-job records and the integration architecture. Provider adapters (DVLA/MOT/provenance, Codeweavers, Japanese auction feeds, Dokuvera and parts data) still require credentials, provider-specific mapping and live contract tests before production activation.
