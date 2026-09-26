@@ -26,7 +26,7 @@ export const automotiveAddon = z.enum([
 ]);
 export type AutomotiveAddon = z.infer<typeof automotiveAddon>;
 
-export const vehicleIdentitySchema = z.object({
+export const vehicleIdentityBaseSchema = z.object({
   vehicleId: z.string().uuid(),
   tenantId: z.string().uuid(),
   origin: z.enum(["uk", "japan", "other"]),
@@ -38,7 +38,9 @@ export const vehicleIdentitySchema = z.object({
   model: z.string().min(1).max(120),
   derivative: z.string().max(160).optional(),
   firstRegistrationDate: z.string().date().optional(),
-}).superRefine((value, ctx) => {
+});
+
+export const vehicleIdentitySchema = vehicleIdentityBaseSchema.superRefine((value, ctx) => {
   if (!value.vrm && !value.vin && !value.chassisNumber) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: "At least one vehicle identifier is required" });
   }
@@ -66,7 +68,9 @@ export const evidenceMediaSchema = z.object({
 export const appraisalRequestSchema = z.object({
   tenantId: z.string().uuid(),
   product: automotiveProduct,
-  vehicle: vehicleIdentitySchema.omit({ tenantId: true }),
+  vehicle: vehicleIdentityBaseSchema.omit({ tenantId: true }).superRefine((value, ctx) => {
+    if (!value.vrm && !value.vin && !value.chassisNumber) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "At least one vehicle identifier is required" });
+  }),
   requestedItems: z.array(z.string().min(1).max(120)).min(1).max(100),
   requireFreshCapture: z.boolean().default(true),
   allowLibraryUpload: z.boolean().default(false),
