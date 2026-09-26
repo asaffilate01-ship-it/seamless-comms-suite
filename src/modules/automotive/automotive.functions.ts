@@ -103,6 +103,7 @@ export const registerAutomotiveVehicle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
     tenantId: z.string().uuid(),
+    product: automotiveProduct,
     origin: z.enum(["uk", "japan", "other"]),
     vrm: z.string().trim().max(20).optional(),
     vin: z.string().trim().max(40).optional(),
@@ -140,7 +141,7 @@ export const registerAutomotiveVehicle = createServerFn({ method: "POST" })
       derivative: parsed.derivative ?? null,
     }).select("vehicle_id").single();
     if (error || !row) throw new Error("Unable to register vehicle");
-    await queueAutomotiveEvent({ tenantId: data.tenantId, product: "zivvo", type: "vehicle.created", subject: { vehicleId: row.vehicle_id as string }, data: { origin: parsed.origin } });
+    await queueAutomotiveEvent({ tenantId: data.tenantId, product: data.product, type: "vehicle.created", subject: { vehicleId: row.vehicle_id as string }, data: { origin: parsed.origin } });
     return { vehicleId: row.vehicle_id as string };
   });
 
