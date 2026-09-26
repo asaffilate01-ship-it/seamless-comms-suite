@@ -234,6 +234,26 @@ FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_webhook_deliveries.tenant_id AND tm.user_id = auth.uid() AND tm.role IN ('owner','admin'))
 );
 
+CREATE TABLE IF NOT EXISTS public.automotive_api_requests (
+  tenant_id uuid NOT NULL,
+  connection_id text NOT NULL,
+  idempotency_key text NOT NULL,
+  operation text NOT NULL,
+  status text NOT NULL CHECK (status IN ('processing','completed','failed')),
+  response_payload jsonb,
+  error_code text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz,
+  PRIMARY KEY (tenant_id, connection_id, idempotency_key)
+);
+
+ALTER TABLE public.automotive_api_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY automotive_api_requests_admin_read ON public.automotive_api_requests
+FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_api_requests.tenant_id AND tm.user_id = auth.uid() AND tm.role IN ('owner','admin'))
+);
+
 CREATE TABLE IF NOT EXISTS public.automotive_inbound_events (
   tenant_id uuid NOT NULL,
   event_id uuid NOT NULL,
