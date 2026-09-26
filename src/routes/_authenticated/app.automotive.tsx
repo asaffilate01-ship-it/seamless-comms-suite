@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { AppShell } from "@/components/app/shell";
 import { useTenant } from "@/hooks/useTenant";
-import { getAutomotiveOverview, registerAutomotiveVehicle, setAutomotiveAddon } from "@/modules/automotive/automotive.functions";
+import { createAutomotiveAppraisal, createVehiclePassportSnapshot, getAutomotiveOverview, registerAutomotiveVehicle, setAutomotiveAddon } from "@/modules/automotive/automotive.functions";
 
 export const Route = createFileRoute("/_authenticated/app/automotive")({
   component: Automotive,
@@ -17,6 +17,8 @@ function Automotive() {
   const load = useServerFn(getAutomotiveOverview);
   const toggle = useServerFn(setAutomotiveAddon);
   const register = useServerFn(registerAutomotiveVehicle);
+  const createAppraisal = useServerFn(createAutomotiveAppraisal);
+  const createPassport = useServerFn(createVehiclePassportSnapshot);
   const [product, setProduct] = useState<"zivvo"|"autohashi"|"sparesgrid">("zivvo");
   const [form, setForm] = useState({ origin:"uk", vrm:"", vin:"", chassisNumber:"", modelCode:"", make:"", model:"", derivative:"" });
 
@@ -31,6 +33,19 @@ function Automotive() {
     mutationFn: (input:{product:"zivvo"|"autohashi"|"sparesgrid";addon:any;enabled:boolean}) =>
       toggle({ data: { tenantId: tenantId!, ...input } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey:["automotive",tenantId] }),
+  });
+
+  const appraisal = useMutation({
+    mutationFn:(vehicleId:string)=>createAppraisal({data:{
+      tenantId:tenantId!,product,
+      vehicleId,
+      requestedItems:["front","front_left","front_right","driver_side","passenger_side","rear","rear_left","rear_right","wheel_front_left","wheel_front_right","wheel_rear_left","wheel_rear_right","dashboard","odometer","driver_seat","passenger_seat","rear_seats","centre_console","headlining","boot","engine_bay","vin_chassis","keys","service_history"],
+    }}),
+    onSuccess:()=>queryClient.invalidateQueries({queryKey:["automotive",tenantId]}),
+  });
+  const passport = useMutation({
+    mutationFn:(vehicleId:string)=>createPassport({data:{tenantId:tenantId!,product,vehicleId}}),
+    onSuccess:()=>queryClient.invalidateQueries({queryKey:["automotive",tenantId]}),
   });
 
   const addVehicle = useMutation({
@@ -101,7 +116,7 @@ function Automotive() {
 
       <section className="rounded-xl border bg-card p-6">
         <h2 className="text-xl font-semibold">Recent vehicles</h2>
-        <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b"><th className="py-2">Vehicle</th><th>Origin</th><th>VRM</th><th>VIN / chassis</th></tr></thead><tbody>{data?.vehicles.map((v:any)=><tr key={v.vehicle_id} className="border-b last:border-0"><td className="py-3">{v.make} {v.model} {v.derivative??""}</td><td>{v.origin}</td><td>{v.vrm??"—"}</td><td>{v.vin??v.chassis_number??"—"}</td></tr>)}</tbody></table></div>
+        <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b"><th className="py-2">Vehicle</th><th>Origin</th><th>VRM</th><th>VIN / chassis</th><th>Actions</th></tr></thead><tbody>{data?.vehicles.map((v:any)=><tr key={v.vehicle_id} className="border-b last:border-0"><td className="py-3">{v.make} {v.model} {v.derivative??""}</td><td>{v.origin}</td><td>{v.vrm??"—"}</td><td>{v.vin??v.chassis_number??"—"}</td><td className="space-x-2"><button className="rounded border px-2 py-1 text-xs disabled:opacity-50" disabled={appraisal.isPending} onClick={()=>appraisal.mutate(v.vehicle_id)}>Remote appraisal</button><button className="rounded border px-2 py-1 text-xs disabled:opacity-50" disabled={passport.isPending} onClick={()=>passport.mutate(v.vehicle_id)}>Passport snapshot</button></td></tr>)}</tbody></table></div>
         {!data?.vehicles.length&&<p className="mt-3 text-sm text-muted-foreground">No vehicles registered in this workspace yet.</p>}
       </section>
 
