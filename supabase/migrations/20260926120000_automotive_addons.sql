@@ -58,6 +58,83 @@ CREATE TABLE IF NOT EXISTS public.automotive_evidence (
   FOREIGN KEY (tenant_id, vehicle_id) REFERENCES public.automotive_vehicles(tenant_id, vehicle_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS public.automotive_appraisals (
+  tenant_id uuid NOT NULL,
+  appraisal_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  vehicle_id uuid NOT NULL,
+  product text NOT NULL CHECK (product IN ('zivvo','autohashi','sparesgrid')),
+  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','capture_requested','capturing','review','completed','expired','cancelled')),
+  requested_items text[] NOT NULL DEFAULT '{}',
+  require_fresh_capture boolean NOT NULL DEFAULT true,
+  allow_library_upload boolean NOT NULL DEFAULT false,
+  capture_geolocation boolean NOT NULL DEFAULT false CHECK (capture_geolocation = false),
+  expires_at timestamptz,
+  created_by uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz,
+  PRIMARY KEY (tenant_id, appraisal_id),
+  FOREIGN KEY (tenant_id, vehicle_id) REFERENCES public.automotive_vehicles(tenant_id, vehicle_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS public.automotive_passport_snapshots (
+  tenant_id uuid NOT NULL,
+  snapshot_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  vehicle_id uuid NOT NULL,
+  revision integer NOT NULL CHECK (revision > 0),
+  passport jsonb NOT NULL,
+  source_manifest jsonb NOT NULL DEFAULT '[]'::jsonb,
+  generated_at timestamptz NOT NULL DEFAULT now(),
+  generated_by uuid,
+  PRIMARY KEY (tenant_id, snapshot_id),
+  UNIQUE (tenant_id, vehicle_id, revision),
+  FOREIGN KEY (tenant_id, vehicle_id) REFERENCES public.automotive_vehicles(tenant_id, vehicle_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS public.automotive_provider_jobs (
+  tenant_id uuid NOT NULL,
+  job_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  vehicle_id uuid,
+  appraisal_id uuid,
+  provider text NOT NULL,
+  capability text NOT NULL,
+  external_job_id text,
+  idempotency_key text NOT NULL,
+  status text NOT NULL CHECK (status IN ('queued','submitted','processing','completed','failed','cancelled')),
+  request_payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  result_payload jsonb,
+  error_code text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz,
+  PRIMARY KEY (tenant_id, job_id),
+  UNIQUE (tenant_id, provider, idempotency_key),
+  FOREIGN KEY (tenant_id, vehicle_id) REFERENCES public.automotive_vehicles(tenant_id, vehicle_id) ON DELETE SET NULL,
+  FOREIGN KEY (tenant_id, appraisal_id) REFERENCES public.automotive_appraisals(tenant_id, appraisal_id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.automotive_status_history (
+  tenant_id uuid NOT NULL,
+  history_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  vehicle_id uuid,
+  appraisal_id uuid,
+  entity_type text NOT NULL,
+  entity_id text NOT NULL,
+  from_status text,
+  to_status text NOT NULL,
+  reason text,
+  actor_type text NOT NULL CHECK (actor_type IN ('user','system','provider','webhook')),
+  actor_id text,
+  occurred_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (tenant_id, history_id)
+);
+
+ALTER TABLE public.automotive_evidence
+  ADD CONSTRAINT automotive_evidence_appraisal_fk
+  FOREIGN KEY (tenant_id, appraisal_id)
+  REFERENCES public.automotive_appraisals(tenant_id, appraisal_id)
+  ON DELETE SET NULL;
+
 CREATE TABLE IF NOT EXISTS public.automotive_webhook_endpoints (
   tenant_id uuid NOT NULL,
   endpoint_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -94,6 +171,10 @@ CREATE TABLE IF NOT EXISTS public.automotive_webhook_deliveries (
 ALTER TABLE public.automotive_addon_entitlements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.automotive_vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.automotive_evidence ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automotive_appraisals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automotive_passport_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automotive_provider_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automotive_status_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.automotive_webhook_endpoints ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.automotive_webhook_deliveries ENABLE ROW LEVEL SECURITY;
 
@@ -117,6 +198,28 @@ FOR SELECT USING (
 CREATE POLICY automotive_evidence_member_insert ON public.automotive_evidence
 FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_evidence.tenant_id AND tm.user_id = auth.uid())
+);
+
+CREATE POLICY automotive_appraisals_member_access ON public.automotive_appraisals
+FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_appraisals.tenant_id AND tm.user_id = auth.uid())
+) WITH CHECK (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_appraisals.tenant_id AND tm.user_id = auth.uid())
+);
+
+CREATE POLICY automotive_passport_member_read ON public.automotive_passport_snapshots
+FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_passport_snapshots.tenant_id AND tm.user_id = auth.uid())
+);
+
+CREATE POLICY automotive_provider_jobs_member_read ON public.automotive_provider_jobs
+FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_provider_jobs.tenant_id AND tm.user_id = auth.uid())
+);
+
+CREATE POLICY automotive_status_history_member_read ON public.automotive_status_history
+FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_status_history.tenant_id AND tm.user_id = auth.uid())
 );
 
 CREATE POLICY automotive_webhooks_admin_access ON public.automotive_webhook_endpoints
