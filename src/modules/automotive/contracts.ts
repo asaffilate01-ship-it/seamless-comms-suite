@@ -103,6 +103,7 @@ export const automotiveEventType = z.enum([
   "quote.received",
   "compliance.pack.updated",
 ]);
+export type AutomotiveEventType = z.infer<typeof automotiveEventType>;
 
 export const automotiveWebhookEnvelopeSchema = z.object({
   id: z.string().uuid(),
