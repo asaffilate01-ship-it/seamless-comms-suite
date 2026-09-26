@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Json } from "@/integrations/supabase/types";
 import { BridgeError, bearerBinding, checkScope, permit, freshness, readBody, requestId } from "@/modules/ecosystem/bridge-core";
 import { connectManifest } from "./product-manifests";
 
@@ -140,9 +141,9 @@ export async function serveConnectEvent(request: Request) {
         source_event_id: sourceEventId,
         event_type: input.eventType,
         direction: "source_to_connect",
-        recipient: input.recipient ?? null,
-        message: input.message ?? null,
-        metadata: input.metadata,
+        recipient: (input.recipient ?? null) as Json,
+        message: (input.message ?? null) as Json,
+        metadata: input.metadata as Json,
         status: "queued",
       })
       .select("id")
