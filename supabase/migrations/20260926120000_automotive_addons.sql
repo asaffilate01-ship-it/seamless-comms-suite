@@ -91,6 +91,33 @@ CREATE TABLE IF NOT EXISTS public.automotive_passport_snapshots (
   FOREIGN KEY (tenant_id, vehicle_id) REFERENCES public.automotive_vehicles(tenant_id, vehicle_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS public.automotive_intelligence_runs (
+  tenant_id uuid NOT NULL,
+  run_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  vehicle_id uuid NOT NULL,
+  product text NOT NULL CHECK (product IN ('zivvo','autohashi','sparesgrid')),
+  origin text NOT NULL CHECK (origin IN ('uk','japan','other')),
+  status text NOT NULL CHECK (status IN ('queued','running','review','completed','failed','cancelled')),
+  plan jsonb NOT NULL,
+  scores jsonb,
+  summary jsonb,
+  created_by uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz,
+  PRIMARY KEY (tenant_id, run_id),
+  FOREIGN KEY (tenant_id, vehicle_id) REFERENCES public.automotive_vehicles(tenant_id, vehicle_id) ON DELETE CASCADE
+);
+
+ALTER TABLE public.automotive_intelligence_runs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY automotive_intelligence_runs_member_access ON public.automotive_intelligence_runs
+FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_intelligence_runs.tenant_id AND tm.user_id = auth.uid())
+) WITH CHECK (
+  EXISTS (SELECT 1 FROM public.tenant_members tm WHERE tm.tenant_id = automotive_intelligence_runs.tenant_id AND tm.user_id = auth.uid())
+);
+
 CREATE TABLE IF NOT EXISTS public.automotive_provider_jobs (
   tenant_id uuid NOT NULL,
   job_id uuid NOT NULL DEFAULT gen_random_uuid(),
