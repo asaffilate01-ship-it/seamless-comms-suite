@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
 
             const { data: channel } = await supabaseAdmin
               .from("whatsapp_channels")
-              .select("id, tenant_id, app_secret")
+              .select("id, tenant_id, app_secret, product_key, external_tenant_id, scope_id, ai_enabled, inbound_enabled")
               .eq("phone_number_id", phoneNumberId)
               .maybeSingle();
             if (!channel) continue;
@@ -106,8 +106,10 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
             }
 
             const tenantId = channel.tenant_id as string;
+            const inboundEnabled = channel.inbound_enabled !== false;
 
             for (const msg of v.messages ?? []) {
+              if (!inboundEnabled) continue;
               const waId = msg.from;
               const contactName = v.contacts?.find((c) => c.wa_id === waId)?.profile?.name ?? null;
 
@@ -171,6 +173,27 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
                 .from("conversations")
                 .update({ last_message_at: nowIso, last_inbound_at: nowIso })
                 .eq("id", convId);
+
+              // AI-enabled channels also emit an isolated Connect event. The source
+              // SaaS remains authoritative; this queue is only a communications/tool trigger.
+              if (channel.ai_enabled && channel.external_tenant_id) {
+                await supabaseAdmin.from("communication_events").upsert(
+                  {
+                    tenant_id: tenantId,
+                    product_key: channel.product_key || "omniqora",
+                    external_tenant_id: channel.external_tenant_id,
+                    scope_id: channel.scope_id || channel.external_tenant_id,
+                    source_event_id: msg.id,
+                    event_type: "whatsapp.inbound",
+                    direction: "connect_to_source",
+                    recipient: { phone: waId, name: contactName },
+                    message: { kind: "inbound", type: msg.type, body },
+                    metadata: { conversationId: convId, channelId: channel.id, waMessageId: msg.id },
+                    status: "queued",
+                  },
+                  { onConflict: "tenant_id,product_key,source_event_id", ignoreDuplicates: true },
+                );
+              }
             }
 
             for (const st of v.statuses ?? []) {
