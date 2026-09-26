@@ -6,6 +6,7 @@ import { automotiveAddon, automotiveProduct, vehicleIdentityBaseSchema } from ".
 import { addonAvailability } from "./entitlements";
 import { providerStatus } from "./provider-registry";
 import { queueAutomotiveEvent } from "./event-bus.server";
+import { intelligencePlan } from "./orchestrator";
 
 function serviceClient() {
   const url = process.env.SUPABASE_URL;
@@ -225,4 +226,51 @@ export const createVehiclePassportSnapshot = createServerFn({ method: "POST" })
     if(error||!row)throw new Error("Unable to create vehicle passport snapshot");
     await queueAutomotiveEvent({tenantId:data.tenantId,product:data.product,type:"vehicle.passport.updated",subject:{vehicleId:data.vehicleId},data:{revision,snapshotId:row.snapshot_id}});
     return {snapshotId:row.snapshot_id as string,revision};
+  });
+
+
+export const runVehicleIntelligence = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    tenantId:z.string().uuid(),
+    product:automotiveProduct,
+    vehicleId:z.string().uuid(),
+  }))
+  .handler(async({context,data})=>{
+    await tenantRole(context,data.tenantId);
+    const client=serviceClient();
+    const [{data:vehicle,error:vehicleError},{data:entitlements,error:entitlementError}]=await Promise.all([
+      client.from("automotive_vehicles").select("vehicle_id,origin").eq("tenant_id",data.tenantId).eq("vehicle_id",data.vehicleId).maybeSingle(),
+      client.from("automotive_addon_entitlements").select("addon,enabled").eq("tenant_id",data.tenantId).eq("product",data.product),
+    ]);
+    if(vehicleError||!vehicle)throw new Error("Vehicle not found");
+    if(entitlementError)throw new Error("Unable to read automotive entitlements");
+
+    const defaults=automotiveAddon.options.filter(addon=>addonAvailability(data.product,addon)==="core");
+    const enabled=new Set([
+      ...defaults,
+      ...(entitlements??[]).filter((x:any)=>x.enabled).map((x:any)=>x.addon),
+    ]);
+    const plan=intelligencePlan({product:data.product,origin:vehicle.origin as "uk"|"japan"|"other",enabledAddons:enabled});
+    const {data:run,error}=await client.from("automotive_intelligence_runs").insert({
+      tenant_id:data.tenantId,vehicle_id:data.vehicleId,product:data.product,origin:vehicle.origin,status:"queued",
+      plan,created_by:context.userId,
+    }).select("run_id").single();
+    if(error||!run)throw new Error("Unable to start vehicle intelligence");
+
+    const jobs=plan.filter(step=>step.providerCandidates.length).map(step=>({
+      tenant_id:data.tenantId,vehicle_id:data.vehicleId,provider:step.providerCandidates[0],
+      capability:step.capability,idempotency_key:`${run.run_id}:${step.id}`,status:"queued",
+      request_payload:{runId:run.run_id,stepId:step.id,providerCandidates:step.providerCandidates,dependsOn:step.dependsOn},
+    }));
+    if(jobs.length){
+      const {error:jobError}=await client.from("automotive_provider_jobs").insert(jobs);
+      if(jobError)throw new Error("Unable to queue intelligence provider jobs");
+    }
+
+    await queueAutomotiveEvent({tenantId:data.tenantId,product:data.product,type:"intelligence.run.created",subject:{vehicleId:data.vehicleId},data:{runId:run.run_id,steps:plan.map(s=>s.id)}});
+    for(const step of plan){
+      await queueAutomotiveEvent({tenantId:data.tenantId,product:data.product,type:"intelligence.step.queued",subject:{vehicleId:data.vehicleId},data:{runId:run.run_id,stepId:step.id,capability:step.capability,providerCandidates:step.providerCandidates}});
+    }
+    return {runId:run.run_id as string,plan};
   });
