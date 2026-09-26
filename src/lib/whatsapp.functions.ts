@@ -164,7 +164,20 @@ export const sendMessage = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
-    const { data: conv, error: convErr } = await supabase
+    // Authorise with the caller's RLS-scoped session first. Channel credentials
+    // are then loaded only with the server service role and never returned.
+    const { data: membership, error: membershipError } = await supabase
+      .from("tenant_members")
+      .select("role")
+      .eq("tenant_id", data.tenantId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (membershipError || !membership || !["owner", "admin", "agent"].includes(membership.role)) {
+      throw new Error("You do not have permission to send messages");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: conv, error: convErr } = await supabaseAdmin
       .from("conversations")
       .select("id, contact:contacts(wa_id), channel_id")
       .eq("id", data.conversationId)
@@ -177,25 +190,25 @@ export const sendMessage = createServerFn({ method: "POST" })
       | null = null;
 
     if (conv.channel_id) {
-      const { data: exact, error } = await supabase
+      const { data: exact, error } = await supabaseAdmin
         .from("whatsapp_channels")
         .select("id, phone_number_id, access_token, outbound_enabled")
         .eq("id", conv.channel_id)
         .eq("tenant_id", data.tenantId)
         .maybeSingle();
-      if (error) throw new Error(error.message);
+      if (error) throw new Error("WhatsApp channel unavailable");
       channel = exact;
     }
 
     if (!channel) {
-      const { data: fallback, error } = await supabase
+      const { data: fallback, error } = await supabaseAdmin
         .from("whatsapp_channels")
         .select("id, phone_number_id, access_token, outbound_enabled")
         .eq("tenant_id", data.tenantId)
         .eq("is_primary", true)
         .limit(1)
         .maybeSingle();
-      if (error) throw new Error(error.message);
+      if (error) throw new Error("WhatsApp channel unavailable");
       channel = fallback;
     }
 
@@ -203,7 +216,6 @@ export const sendMessage = createServerFn({ method: "POST" })
     if (!channel.outbound_enabled) throw new Error("Outbound messaging is disabled for this number");
 
     const waId = (conv.contact as unknown as { wa_id: string }).wa_id;
-
     const res = await fetch(`${graphBase()}/${channel.phone_number_id}/messages`, {
       method: "POST",
       headers: {
@@ -222,7 +234,7 @@ export const sendMessage = createServerFn({ method: "POST" })
     const waMessageId = payload.messages?.[0]?.id ?? null;
 
     const nowIso = new Date().toISOString();
-    await supabase.from("messages").insert({
+    await supabaseAdmin.from("messages").insert({
       tenant_id: data.tenantId,
       conversation_id: data.conversationId,
       direction: "outbound",
@@ -232,7 +244,7 @@ export const sendMessage = createServerFn({ method: "POST" })
       status: "sent",
       sent_by: userId,
     });
-    await supabase
+    await supabaseAdmin
       .from("conversations")
       .update({ last_message_at: nowIso })
       .eq("id", data.conversationId);
