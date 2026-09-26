@@ -106,6 +106,10 @@ export const automotiveEventType = z.enum([
   "part.request.created",
   "quote.received",
   "compliance.pack.updated",
+  "intelligence.run.created",
+  "intelligence.step.queued",
+  "intelligence.step.completed",
+  "intelligence.run.completed",
 ]);
 export type AutomotiveEventType = z.infer<typeof automotiveEventType>;
 
