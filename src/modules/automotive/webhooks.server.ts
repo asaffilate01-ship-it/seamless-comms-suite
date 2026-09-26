@@ -1,5 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { automotiveWebhookEnvelopeSchema, type AutomotiveProduct } from "./contracts";
+import { automotiveWebhookEnvelopeSchema, type AutomotiveEventType, type AutomotiveProduct } from "./contracts";
 
 const MAX_SKEW_SECONDS = 300;
 
@@ -40,7 +40,7 @@ export function verifyAutomotiveWebhook(
 }
 
 export function createAutomotiveEvent(input: {
-  type: Parameters<typeof automotiveWebhookEnvelopeSchema.parse>[0] extends infer _T ? string : never;
+  type: AutomotiveEventType;
   tenantId: string;
   product: AutomotiveProduct;
   subject?: Record<string, string | undefined>;
