@@ -4,6 +4,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { automotiveAddon, automotiveProduct, vehicleIdentitySchema } from "./contracts";
 import { addonAvailability } from "./entitlements";
+import { providerStatus } from "./provider-registry";
+import { queueAutomotiveEvent } from "./event-bus.server";
 
 function serviceClient() {
   const url = process.env.SUPABASE_URL;
@@ -60,6 +62,7 @@ export const getAutomotiveOverview = createServerFn({ method: "POST" })
 
     return {
       products,
+      providers: providerStatus(),
       vehicles: vehicles.data ?? [],
       evidence: evidence.data ?? [],
       inboundEvents: inbound.data ?? [],
@@ -135,5 +138,88 @@ export const registerAutomotiveVehicle = createServerFn({ method: "POST" })
       derivative: parsed.derivative ?? null,
     }).select("vehicle_id").single();
     if (error || !row) throw new Error("Unable to register vehicle");
+    await queueAutomotiveEvent({ tenantId: data.tenantId, product: "zivvo", type: "vehicle.created", subject: { vehicleId: row.vehicle_id as string }, data: { origin: parsed.origin } });
     return { vehicleId: row.vehicle_id as string };
+  });
+
+
+export const createAutomotiveAppraisal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    tenantId: z.string().uuid(),
+    product: automotiveProduct,
+    vehicleId: z.string().uuid(),
+    requestedItems: z.array(z.string().min(1).max(120)).min(1).max(100),
+    expiresAt: z.string().datetime().optional(),
+  }))
+  .handler(async ({ context, data }) => {
+    await tenantRole(context, data.tenantId);
+    const client = serviceClient();
+    const { data: vehicle, error: vehicleError } = await client
+      .from("automotive_vehicles").select("vehicle_id").eq("tenant_id",data.tenantId).eq("vehicle_id",data.vehicleId).maybeSingle();
+    if (vehicleError || !vehicle) throw new Error("Vehicle not found");
+
+    const { data: row, error } = await client.from("automotive_appraisals").insert({
+      tenant_id: data.tenantId,
+      vehicle_id: data.vehicleId,
+      product: data.product,
+      status: "capture_requested",
+      requested_items: data.requestedItems,
+      require_fresh_capture: true,
+      allow_library_upload: false,
+      capture_geolocation: false,
+      expires_at: data.expiresAt ?? new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+      created_by: context.userId,
+    }).select("appraisal_id").single();
+    if (error || !row) throw new Error("Unable to create appraisal");
+
+    await client.from("automotive_status_history").insert({
+      tenant_id:data.tenantId,vehicle_id:data.vehicleId,appraisal_id:row.appraisal_id,
+      entity_type:"appraisal",entity_id:row.appraisal_id,to_status:"capture_requested",
+      reason:"Remote appraisal created",actor_type:"user",actor_id:context.userId,
+    });
+
+    await queueAutomotiveEvent({
+      tenantId:data.tenantId,product:data.product,type:"appraisal.created",
+      subject:{vehicleId:data.vehicleId,appraisalId:row.appraisal_id},
+      data:{requestedItems:data.requestedItems,captureGeolocation:false,allowLibraryUpload:false},
+    });
+    await queueAutomotiveEvent({
+      tenantId:data.tenantId,product:data.product,type:"media.requested",
+      subject:{vehicleId:data.vehicleId,appraisalId:row.appraisal_id},
+      data:{requestedItems:data.requestedItems,captureGeolocation:false},
+    });
+    return { appraisalId: row.appraisal_id as string };
+  });
+
+export const createVehiclePassportSnapshot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ tenantId:z.string().uuid(), product:automotiveProduct, vehicleId:z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    await tenantRole(context,data.tenantId);
+    const client=serviceClient();
+    const [vehicle,evidence,appraisals,jobs] = await Promise.all([
+      client.from("automotive_vehicles").select("*").eq("tenant_id",data.tenantId).eq("vehicle_id",data.vehicleId).maybeSingle(),
+      client.from("automotive_evidence").select("evidence_id,kind,capture_item,sha256,received_at,provider_timestamp,source,location_captured").eq("tenant_id",data.tenantId).eq("vehicle_id",data.vehicleId).order("received_at",{ascending:true}),
+      client.from("automotive_appraisals").select("appraisal_id,status,product,created_at,completed_at").eq("tenant_id",data.tenantId).eq("vehicle_id",data.vehicleId).order("created_at",{ascending:true}),
+      client.from("automotive_provider_jobs").select("job_id,provider,capability,status,completed_at").eq("tenant_id",data.tenantId).eq("vehicle_id",data.vehicleId).order("created_at",{ascending:true}),
+    ]);
+    if(vehicle.error||!vehicle.data)throw new Error("Vehicle not found");
+    const {data:latest}=await client.from("automotive_passport_snapshots").select("revision").eq("tenant_id",data.tenantId).eq("vehicle_id",data.vehicleId).order("revision",{ascending:false}).limit(1).maybeSingle();
+    const revision=Number(latest?.revision??0)+1;
+    const passport={
+      schemaVersion:1,vehicle:vehicle.data,
+      evidence:evidence.data??[],appraisals:appraisals.data??[],providerJobs:jobs.data??[],
+      generatedAt:new Date().toISOString(),
+    };
+    const sourceManifest=[
+      ...(evidence.data??[]).map((x:any)=>({type:"evidence",id:x.evidence_id,hash:x.sha256})),
+      ...(jobs.data??[]).map((x:any)=>({type:"provider_job",id:x.job_id,status:x.status})),
+    ];
+    const {data:row,error}=await client.from("automotive_passport_snapshots").insert({
+      tenant_id:data.tenantId,vehicle_id:data.vehicleId,revision,passport,source_manifest:sourceManifest,generated_by:context.userId,
+    }).select("snapshot_id").single();
+    if(error||!row)throw new Error("Unable to create vehicle passport snapshot");
+    await queueAutomotiveEvent({tenantId:data.tenantId,product:data.product,type:"vehicle.passport.updated",subject:{vehicleId:data.vehicleId},data:{revision,snapshotId:row.snapshot_id}});
+    return {snapshotId:row.snapshot_id as string,revision};
   });
