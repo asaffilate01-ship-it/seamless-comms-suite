@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { automotiveAddon, automotiveProduct, vehicleIdentitySchema } from "./contracts";
+import { automotiveAddon, automotiveProduct, vehicleIdentityBaseSchema } from "./contracts";
 import { addonAvailability } from "./entitlements";
 import { providerStatus } from "./provider-registry";
 import { queueAutomotiveEvent } from "./event-bus.server";
@@ -114,7 +114,9 @@ export const registerAutomotiveVehicle = createServerFn({ method: "POST" })
   }))
   .handler(async ({ context, data }) => {
     await tenantRole(context, data.tenantId);
-    const parsed = vehicleIdentitySchema.omit({ vehicleId: true }).parse({
+    const parsed = vehicleIdentityBaseSchema.omit({ vehicleId: true }).superRefine((value, ctx) => {
+      if (!value.vrm && !value.vin && !value.chassisNumber) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "At least one vehicle identifier is required" });
+    }).parse({
       tenantId: data.tenantId,
       origin: data.origin,
       vrm: data.vrm || undefined,
