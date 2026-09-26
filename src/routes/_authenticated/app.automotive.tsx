@@ -51,6 +51,7 @@ function Automotive() {
   const addVehicle = useMutation({
     mutationFn: () => register({ data: {
       tenantId: tenantId!,
+      product,
       origin: form.origin as "uk"|"japan"|"other",
       vrm: form.vrm || undefined,
       vin: form.vin || undefined,
