@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { AppShell } from "@/components/app/shell";
 import { useTenant } from "@/hooks/useTenant";
-import { createAutomotiveAppraisal, createVehiclePassportSnapshot, getAutomotiveOverview, registerAutomotiveVehicle, setAutomotiveAddon } from "@/modules/automotive/automotive.functions";
+import { createAutomotiveAppraisal, createVehiclePassportSnapshot, getAutomotiveOverview, registerAutomotiveVehicle, runVehicleIntelligence, setAutomotiveAddon } from "@/modules/automotive/automotive.functions";
 
 export const Route = createFileRoute("/_authenticated/app/automotive")({
   component: Automotive,
@@ -19,6 +19,7 @@ function Automotive() {
   const register = useServerFn(registerAutomotiveVehicle);
   const createAppraisal = useServerFn(createAutomotiveAppraisal);
   const createPassport = useServerFn(createVehiclePassportSnapshot);
+  const runIntelligence = useServerFn(runVehicleIntelligence);
   const [product, setProduct] = useState<"zivvo"|"autohashi"|"sparesgrid">("zivvo");
   const [form, setForm] = useState({ origin:"uk", vrm:"", vin:"", chassisNumber:"", modelCode:"", make:"", model:"", derivative:"" });
 
@@ -45,6 +46,11 @@ function Automotive() {
   });
   const passport = useMutation({
     mutationFn:(vehicleId:string)=>createPassport({data:{tenantId:tenantId!,product,vehicleId}}),
+    onSuccess:()=>queryClient.invalidateQueries({queryKey:["automotive",tenantId]}),
+  });
+
+  const intelligence = useMutation({
+    mutationFn:(vehicleId:string)=>runIntelligence({data:{tenantId:tenantId!,product,vehicleId}}),
     onSuccess:()=>queryClient.invalidateQueries({queryKey:["automotive",tenantId]}),
   });
 
@@ -90,6 +96,8 @@ function Automotive() {
         </div>
       </section>
 
+      <section className="rounded-xl border bg-card p-6"><h2 className="text-xl font-semibold">Data source readiness</h2><p className="mt-1 text-sm text-muted-foreground">Omniqora stays provider-neutral. These show which authoritative or licensed data sources still need credentials or commercial access.</p><div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{data?.providers.map((p:any)=><article key={p.id} className="rounded-lg border p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-medium">{p.name}</h3><p className="text-xs text-muted-foreground">{p.region} · {p.access}</p></div><span className={`rounded-full px-2 py-1 text-xs ${p.configured?"bg-success/10 text-success":"bg-muted text-muted-foreground"}`}>{p.configured?"configured":"access required"}</span></div><p className="mt-2 text-xs text-muted-foreground">{p.capabilities.slice(0,4).join(", ")}{p.capabilities.length>4?"…":""}</p></article>)}</div></section>
+
       <section className="grid gap-6 xl:grid-cols-2">
         <div className="rounded-xl border bg-card p-6">
           <h2 className="text-xl font-semibold">Register vehicle identity</h2>
@@ -117,7 +125,7 @@ function Automotive() {
 
       <section className="rounded-xl border bg-card p-6">
         <h2 className="text-xl font-semibold">Recent vehicles</h2>
-        <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b"><th className="py-2">Vehicle</th><th>Origin</th><th>VRM</th><th>VIN / chassis</th><th>Actions</th></tr></thead><tbody>{data?.vehicles.map((v:any)=><tr key={v.vehicle_id} className="border-b last:border-0"><td className="py-3">{v.make} {v.model} {v.derivative??""}</td><td>{v.origin}</td><td>{v.vrm??"—"}</td><td>{v.vin??v.chassis_number??"—"}</td><td className="space-x-2"><button className="rounded border px-2 py-1 text-xs disabled:opacity-50" disabled={appraisal.isPending} onClick={()=>appraisal.mutate(v.vehicle_id)}>Remote appraisal</button><button className="rounded border px-2 py-1 text-xs disabled:opacity-50" disabled={passport.isPending} onClick={()=>passport.mutate(v.vehicle_id)}>Passport snapshot</button></td></tr>)}</tbody></table></div>
+        <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b"><th className="py-2">Vehicle</th><th>Origin</th><th>VRM</th><th>VIN / chassis</th><th>Actions</th></tr></thead><tbody>{data?.vehicles.map((v:any)=><tr key={v.vehicle_id} className="border-b last:border-0"><td className="py-3">{v.make} {v.model} {v.derivative??""}</td><td>{v.origin}</td><td>{v.vrm??"—"}</td><td>{v.vin??v.chassis_number??"—"}</td><td className="space-x-2"><button className="rounded border px-2 py-1 text-xs disabled:opacity-50" disabled={appraisal.isPending} onClick={()=>appraisal.mutate(v.vehicle_id)}>Remote appraisal</button><button className="rounded border px-2 py-1 text-xs disabled:opacity-50" disabled={passport.isPending} onClick={()=>passport.mutate(v.vehicle_id)}>Passport snapshot</button><button className="rounded bg-primary px-2 py-1 text-xs text-primary-foreground disabled:opacity-50" disabled={intelligence.isPending} onClick={()=>intelligence.mutate(v.vehicle_id)}>Run intelligence</button></td></tr>)}</tbody></table></div>
         {!data?.vehicles.length&&<p className="mt-3 text-sm text-muted-foreground">No vehicles registered in this workspace yet.</p>}
       </section>
 
