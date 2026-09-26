@@ -15,9 +15,9 @@
     "product": "zivvo",
     "repository": "asaffilate01-ship-it/autosouq",
     "source": "https://github.com/asaffilate01-ship-it/autosouq/pull/1",
-    "profile": "generic",
-    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
-    "status": "source-adapter-required"
+    "profile": "automotive",
+    "boundary": "UK marketplace/dealer source remains authoritative; Omniqora provides tenant-scoped automotive add-ons and reviewed intelligence.",
+    "status": "omniqora-addon-contract-implemented"
   },
   {
     "id": "bidlumo-3",
@@ -186,8 +186,8 @@
     "repository": "asaffilate01-ship-it/remix-of-remix-of-surveycam-app",
     "source": "https://github.com/asaffilate01-ship-it/remix-of-remix-of-surveycam-app/pull/3",
     "profile": "generic",
-    "boundary": "Workspace/project/document access; preserve originals and version provenance.",
-    "status": "source-adapter-required"
+    "boundary": "Evidence provider adapter preserves originals, hashes and timestamps. Automotive vehicle capture explicitly excludes precise geolocation.",
+    "status": "automotive-evidence-adapter-contract-implemented"
   },
   {
     "id": "ilmvero-20",
@@ -786,8 +786,8 @@
     "repository": null,
     "source": "appgprj_6aa9abd0be448191abbb0d000a7bb927",
     "profile": "automotive",
-    "boundary": "Only records selected by the source tenant and role; reviewed drafts, no inferred fitment.",
-    "status": "gateway-contract-implemented"
+    "boundary": "Parts source remains authoritative; Omniqora shares tenant-scoped vehicle identity and optional automotive intelligence without inferring unverified fitment.",
+    "status": "omniqora-addon-contract-implemented"
   },
   {
     "id": "business360",
@@ -808,5 +808,15 @@
     "profile": "hospitality",
     "boundary": "Branch and period scoped sales, refunds, costs and stock; no payment, refund or menu mutation. Source project identity needs confirmation.",
     "status": "source-adapter-required"
+  },
+  {
+    "id": "autohashi-automotive",
+    "name": "Autohashi JDM",
+    "product": "autohashi",
+    "repository": null,
+    "source": "https://github.com/asaffilate01-ship-it/seamless-comms-suite/pull/6",
+    "profile": "automotive",
+    "boundary": "Japan/JDM auction and import workflows. Shared vehicle identity does not expose tenant purchase prices, finance or seller data across products.",
+    "status": "omniqora-addon-contract-implemented"
   }
 ]
