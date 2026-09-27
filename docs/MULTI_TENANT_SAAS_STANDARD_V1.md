@@ -1,6 +1,6 @@
 # iTechLounge Multi-Tenant SaaS Standard v1
 
-Applies to DishBee, Zivvo, SparesGrid, Haccora and every platform that has a platform-owner/tenant relationship.
+Applies to DishBee, Zivvo, SparesGrid, Haccora, Care Academy, LessonAhead/driving instruction and every B2B platform that has a platform-owner/tenant relationship.
 
 ## Principle
 
@@ -130,7 +130,11 @@ AI agents operate only through approved tools, disclose uncertainty internally, 
 - Zivvo: dealer tenants; stock, listings, marketplace, leads, offers, provenance, storefronts and approved automotive add-ons.
 - SparesGrid: dismantler/salvage/parts tenants; vehicle intake, part inventory, locations, multichannel publication, orders, wanted parts, supplier/breaker workflows and optional tenant sites.
 - Haccora: food-business tenants; HACCP, compliance, premises, tasks, evidence, audits, suppliers and approved hospitality add-ons.
-- Other landlord/tenant SaaS: must define its tenant-owned resources, roles, plan limits, high-risk actions, evidence retention and cross-platform scopes before activation.
+- Care Academy: care-provider, training-centre and employer tenants; learners, staff, courses, cohorts, competencies, assessments, certificates, compliance evidence and regulator/employer reporting. Learners may belong to approved cohorts or employers without gaining access to another organisation's records.
+- LessonAhead/driving instruction: instructor, driving-school and franchise tenants; instructors, learners, lesson diaries, vehicles, availability, packages, payments, progress, test readiness and marketplace leads. Individual instructors and multi-instructor schools use the same isolation model with plan-based limits.
+- Professional directories and marketplaces (including TaxNuvia and Lawquo): professional/practice tenants; profiles, locations, staff, enquiries, cases/leads, subscriptions, verification and optional tenant sites, with confidential client data excluded from public directory records.
+- Health, beauty, events, education, property and other B2B SaaS products: organisation tenants with separately defined locations, staff, clients/customers, operational records, compliance evidence, billing and sector-specific restricted data.
+- Every other landlord/tenant B2B SaaS: must define its tenant-owned resources, roles, plan limits, high-risk actions, evidence retention and cross-platform scopes before activation.
 
 ## Lifecycle
 
