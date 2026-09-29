@@ -251,13 +251,13 @@ BEGIN
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO authenticated', t);
     EXECUTE format('GRANT ALL ON public.%I TO service_role', t);
 
-    EXECUTE format('DROP POLICY IF EXISTS %L ON public.%I', 'crm tenant read', t);
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'crm tenant read', t);
     EXECUTE format(
       'CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (public.is_tenant_member(tenant_id, auth.uid()))',
       'crm tenant read', t
     );
 
-    EXECUTE format('DROP POLICY IF EXISTS %L ON public.%I', 'crm tenant write', t);
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'crm tenant write', t);
     EXECUTE format(
       'CREATE POLICY %I ON public.%I FOR ALL TO authenticated USING (public.can_write(tenant_id, auth.uid())) WITH CHECK (public.can_write(tenant_id, auth.uid()))',
       'crm tenant write', t
