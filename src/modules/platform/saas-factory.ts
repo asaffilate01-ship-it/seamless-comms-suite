@@ -65,6 +65,7 @@ export type ProvisioningPlan = {
   productKey: string;
   regionPackKey: string;
   locale: string;
+  planKey?: string | null;
   modules: string[];
   steps: ProvisioningStep[];
   warnings: string[];
@@ -146,6 +147,7 @@ export function planTenantProvisioning(request: TenantProvisionRequest): Provisi
     productKey: product.key,
     regionPackKey: region.key,
     locale: request.locale,
+    planKey: request.planKey ?? null,
     modules,
     steps,
     warnings,
