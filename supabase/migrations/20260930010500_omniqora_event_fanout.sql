@@ -99,7 +99,7 @@ FOR EACH ROW EXECUTE FUNCTION public.fanout_platform_event();
 REVOKE EXECUTE ON FUNCTION public.fanout_platform_event() FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.fanout_platform_event() TO service_role;
 
-CREATE OR REPLACE FUNCTION public.claim_platform_module_events(_limit integer DEFAULT 20)
+CREATE OR REPLACE FUNCTION public.claim_platform_module_events(_limit integer DEFAULT 20,_modules text[] DEFAULT NULL)
 RETURNS SETOF jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -110,8 +110,9 @@ BEGIN
   WITH jobs AS (
     SELECT q.id
     FROM public.platform_module_event_queue q
-    WHERE (q.state='pending' AND q.next_attempt_at<=now())
-       OR (q.state='processing' AND q.locked_at<now()-interval '5 minutes')
+    WHERE ((q.state='pending' AND q.next_attempt_at<=now())
+       OR (q.state='processing' AND q.locked_at<now()-interval '5 minutes'))
+      AND (_modules IS NULL OR q.module_key=ANY(_modules))
     ORDER BY q.created_at
     LIMIT LEAST(GREATEST(_limit,1),100)
     FOR UPDATE SKIP LOCKED
@@ -157,9 +158,9 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.claim_platform_module_events(integer) FROM PUBLIC,anon,authenticated;
+REVOKE EXECUTE ON FUNCTION public.claim_platform_module_events(integer,text[]) FROM PUBLIC,anon,authenticated;
 REVOKE EXECUTE ON FUNCTION public.finish_platform_module_event(uuid,boolean,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.claim_platform_module_events(integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.claim_platform_module_events(integer,text[]) TO service_role;
 GRANT EXECUTE ON FUNCTION public.finish_platform_module_event(uuid,boolean,text) TO service_role;
 
 INSERT INTO public.platform_module_event_patterns(module_key,event_pattern) VALUES
