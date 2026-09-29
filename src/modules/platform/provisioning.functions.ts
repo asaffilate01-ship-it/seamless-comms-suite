@@ -57,11 +57,17 @@ async function requireProvisioner(context: any, productKey: string, regionKey: s
   const regions = Array.isArray(productOperator.region_keys) ? productOperator.region_keys : [];
   if (regions.length && !regions.includes(regionKey)) throw new Error("Landlord region scope refused");
 }
+async function requirePlanner(context: any, tenantId: string, productKey: string, regionKey: string) {
+  const db=context.supabase as any;
+  const { data: membership } = await db.from("tenant_members").select("role").eq("tenant_id",tenantId).eq("user_id",context.userId).maybeSingle();
+  if (membership && ["owner","admin"].includes(membership.role)) return;
+  await requireProvisioner(context, productKey, regionKey);
+}
 export const saveProvisioningRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof requestSchema>) => requestSchema.parse(input))
   .handler(async ({ context, data }) => {
-    await requireTenantAdmin(context, data.tenantId);
+    await requirePlanner(context, data.tenantId, data.productKey, data.regionPackKey);
     const db = context.supabase as any;
     const plan = await buildProvisioningPlanFromDatabase(db, data);
     const { data: run, error } = await db.from("platform_provisioning_runs").insert({
@@ -81,7 +87,6 @@ export const executeProvisioningRun = createServerFn({ method: "POST" })
   .inputValidator((input: { runId: string; tenantId: string }) =>
     z.object({ runId: z.string().uuid(), tenantId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    await requireTenantAdmin(context, data.tenantId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
     const { data: run, error: runError } = await admin
