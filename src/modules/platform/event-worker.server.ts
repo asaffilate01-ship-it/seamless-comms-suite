@@ -17,6 +17,8 @@ export class ModuleEventProcessorRegistry {
     return this;
   }
 
+  keys() { return [...this.processors.keys()]; }
+
   async process(job: ClaimedModuleEvent) {
     const processor = this.processors.get(job.moduleKey);
     if (!processor) throw new Error("No module event processor registered for " + job.moduleKey);
@@ -30,7 +32,9 @@ export async function runModuleEventBatch(
 ) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
-  const { data: claimed, error } = await db.rpc("claim_platform_module_events", { _limit: options.limit ?? 20 });
+  const modules = registry.keys();
+  if (!modules.length) return [];
+  const { data: claimed, error } = await db.rpc("claim_platform_module_events", { _limit: options.limit ?? 20, _modules: modules });
   if (error) throw new Error(error.message);
 
   const results: Array<{ queueId: string; ok: boolean; error?: string }> = [];
