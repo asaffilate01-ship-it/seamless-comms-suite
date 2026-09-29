@@ -91,11 +91,11 @@ export const getTenantIntegrationStatus = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!tenantProduct) throw new Error("Active tenant product not found");
 
-    const { data, error } = await db
+    const { data: bindings, error } = await db
       .from("tenant_integration_bindings")
       .select("id,module_key,provider,integration_kind,environment,external_account_ref,status,last_verified_at,created_at,updated_at")
       .eq("tenant_id", data.tenantId)
       .eq("tenant_product_id", tenantProduct.id);
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return bindings ?? [];
   });
