@@ -36,6 +36,27 @@ async function requireTenantAdmin(context: any, tenantId: string) {
   }
 }
 
+async function requireProvisioner(context: any, productKey: string, regionKey: string) {
+  const db = context.supabase as any;
+  const { data: platformOperator } = await db
+    .from("platform_operators")
+    .select("role,status")
+    .eq("user_id", context.userId)
+    .maybeSingle();
+  if (platformOperator?.status === "active" && ["platform_owner","platform_admin"].includes(platformOperator.role)) return;
+
+  const { data: productOperator } = await db
+    .from("product_operators")
+    .select("role,status,region_keys")
+    .eq("product_key", productKey)
+    .eq("user_id", context.userId)
+    .maybeSingle();
+  if (!productOperator || productOperator.status !== "active" || !["landlord_owner","landlord_admin"].includes(productOperator.role)) {
+    throw new Error("Platform or landlord admin approval is required");
+  }
+  const regions = Array.isArray(productOperator.region_keys) ? productOperator.region_keys : [];
+  if (regions.length && !regions.includes(regionKey)) throw new Error("Landlord region scope refused");
+}
 export const saveProvisioningRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof requestSchema>) => requestSchema.parse(input))
@@ -75,15 +96,16 @@ export const executeProvisioningRun = createServerFn({ method: "POST" })
     const admin = supabaseAdmin as any;
     const { data: run, error: runError } = await admin
       .from("platform_provisioning_runs")
-      .select("id,tenant_id,state")
+      .select("id,tenant_id,state,product_key,region_key")
       .eq("id", data.runId)
       .eq("tenant_id", data.tenantId)
       .single();
     if (runError || !run) throw new Error("Provisioning run not found");
     if (!["planned","approved"].includes(run.state)) throw new Error("Provisioning run is not executable");
+    await requireProvisioner(context, run.product_key, run.region_key);
 
     await admin.from("platform_provisioning_runs").update({ state: "approved" }).eq("id", data.runId);
-    const { data: tenantProductId, error } = await admin.rpc("apply_platform_provisioning_run", { _run: data.runId });
+    const { data: tenantProductId, error } = await admin.rpc("apply_platform_provisioning_run", { _run: data.runId, _actor: context.userId });
     if (error || !tenantProductId) throw new Error(error?.message ?? "Provisioning failed");
     return { runId: data.runId, tenantProductId };
   });
