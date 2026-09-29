@@ -1,0 +1,385 @@
+export type ProductKind =
+  | "platform"
+  | "shared_engine"
+  | "vertical_landlord"
+  | "product_variant"
+  | "standalone";
+
+export type ModuleKind =
+  | "core"
+  | "crm"
+  | "communications"
+  | "ai"
+  | "compliance"
+  | "geo"
+  | "dispatch"
+  | "marketplace"
+  | "payments"
+  | "journeys"
+  | "sales"
+  | "feedback"
+  | "analytics"
+  | "mobile"
+  | "documents";
+
+export type ProductDefinition = {
+  key: string;
+  name: string;
+  kind: ProductKind;
+  parentProductKey?: string | null;
+  industry?: string | null;
+  defaultModules: string[];
+  supportedRegions: string[];
+  supportedLocales: string[];
+  status: "active" | "incubating" | "migration_candidate" | "retired";
+};
+
+export type ModuleDefinition = {
+  key: string;
+  name: string;
+  kind: ModuleKind;
+  version: string;
+  description: string;
+  dependencies: string[];
+  capabilities: string[];
+  uiMode: "api_only" | "embedded" | "workspace" | "hybrid";
+  status: "active" | "preview" | "planned";
+};
+
+export type RegionPackDefinition = {
+  key: string;
+  country: string;
+  defaultLocale: string;
+  supportedLocales: string[];
+  currency: string;
+  timeZones: string[];
+  dataRegion?: string | null;
+  taxProfile?: string | null;
+  legalProfile?: string | null;
+  regulatoryPacks: string[];
+  providerPreferences?: Record<string, string[]>;
+};
+
+export type TenantProductBinding = {
+  tenantId: string;
+  productKey: string;
+  regionPackKey: string;
+  planKey?: string | null;
+  brandKey?: string | null;
+  enabledModules: string[];
+};
+
+export const PLATFORM_MODULE_KEYS = {
+  identity: "platform.identity",
+  tenant: "platform.tenant",
+  entitlements: "platform.entitlements",
+  provisioning: "platform.provisioning",
+  events: "platform.events",
+  audit: "platform.audit",
+  crm: "crm.core",
+  connect: "connect.core",
+  reception: "reception.core",
+  intelligence: "intelligence.core",
+  compliance: "compliance.core",
+  geo: "geo.core",
+  dispatch: "dispatch.core",
+  marketplace: "marketplace.core",
+  payments: "payments.core",
+  journeys: "journeys.core",
+  sales: "sales.core",
+  feedback: "feedback.core",
+  analytics: "analytics.core",
+  mobile: "mobile.core",
+} as const;
+
+export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
+  {
+    key: "omniqora",
+    name: "Omniqora",
+    kind: "platform",
+    industry: "platform",
+    defaultModules: [
+      PLATFORM_MODULE_KEYS.identity,
+      PLATFORM_MODULE_KEYS.tenant,
+      PLATFORM_MODULE_KEYS.entitlements,
+      PLATFORM_MODULE_KEYS.provisioning,
+      PLATFORM_MODULE_KEYS.events,
+      PLATFORM_MODULE_KEYS.audit,
+      PLATFORM_MODULE_KEYS.connect,
+      PLATFORM_MODULE_KEYS.intelligence,
+    ],
+    supportedRegions: ["GB", "DE", "AE", "SA", "US", "PK"],
+    supportedLocales: ["en-GB", "de-DE", "ar-SA", "ar-AE", "en-US", "ur-PK"],
+    status: "active",
+  },
+  {
+    key: "dishbee",
+    name: "Dishbee",
+    kind: "vertical_landlord",
+    industry: "hospitality",
+    defaultModules: ["connect.core", "crm.core", "feedback.core"],
+    supportedRegions: ["GB", "DE", "AE"],
+    supportedLocales: ["en-GB", "de-DE", "ar-AE"],
+    status: "active",
+  },
+  {
+    key: "haccora",
+    name: "Haccora",
+    kind: "vertical_landlord",
+    industry: "compliance",
+    defaultModules: ["connect.core", "crm.core", "compliance.core", "intelligence.core"],
+    supportedRegions: ["GB", "DE", "AE", "SA"],
+    supportedLocales: ["en-GB", "de-DE", "ar-SA", "ar-AE"],
+    status: "active",
+  },
+  {
+    key: "taxnuvia",
+    name: "TaxNuvia",
+    kind: "vertical_landlord",
+    industry: "professional_services",
+    defaultModules: ["crm.core", "sales.core", "connect.core", "intelligence.core"],
+    supportedRegions: ["GB", "US"],
+    supportedLocales: ["en-GB", "en-US"],
+    status: "active",
+  },
+  {
+    key: "xpertjobs",
+    name: "XpertJobs",
+    kind: "vertical_landlord",
+    industry: "recruitment",
+    defaultModules: ["crm.core", "sales.core", "connect.core", "intelligence.core"],
+    supportedRegions: ["GB", "DE"],
+    supportedLocales: ["en-GB", "de-DE"],
+    status: "active",
+  },
+  {
+    key: "fleetsora",
+    name: "Fleetora / FleetSora",
+    kind: "vertical_landlord",
+    industry: "fleet_logistics",
+    defaultModules: ["crm.core", "connect.core", "geo.core", "dispatch.core", "mobile.core"],
+    supportedRegions: ["GB", "DE", "AE"],
+    supportedLocales: ["en-GB", "de-DE", "ar-AE"],
+    status: "active",
+  },
+  {
+    key: "syndriva",
+    name: "Syndriva Marketplace Engine",
+    kind: "shared_engine",
+    industry: "marketplace",
+    defaultModules: ["marketplace.core", "crm.core", "connect.core", "payments.core", "analytics.core"],
+    supportedRegions: ["GB", "DE", "AE", "SA", "US", "PK"],
+    supportedLocales: ["en-GB", "de-DE", "ar-SA", "ar-AE", "en-US", "ur-PK"],
+    status: "incubating",
+  },
+  {
+    key: "affivon",
+    name: "Affivon",
+    kind: "vertical_landlord",
+    industry: "affiliate_commerce",
+    defaultModules: ["crm.core", "sales.core", "journeys.core", "connect.core", "analytics.core", "marketplace.core"],
+    supportedRegions: ["GB", "DE", "US", "AE"],
+    supportedLocales: ["en-GB", "de-DE", "en-US", "ar-AE"],
+    status: "migration_candidate",
+  },
+  {
+    key: "tendryva",
+    name: "Tendryva",
+    kind: "vertical_landlord",
+    industry: "tenders_procurement",
+    defaultModules: ["crm.core", "compliance.core", "intelligence.core", "connect.core", "sales.core", "documents.core"],
+    supportedRegions: ["GB", "DE", "AE", "SA"],
+    supportedLocales: ["en-GB", "de-DE", "ar-AE", "ar-SA"],
+    status: "migration_candidate",
+  },
+];
+
+export const OMNIQORA_MODULES: ModuleDefinition[] = [
+  {
+    key: "crm.core",
+    name: "Omniqora CRM",
+    kind: "crm",
+    version: "1.0.0-preview",
+    description: "Customer 360, companies, people, leads, opportunities, tasks and interaction timeline.",
+    dependencies: ["platform.tenant", "platform.entitlements", "platform.events", "platform.audit"],
+    capabilities: ["companies", "people", "leads", "opportunities", "pipelines", "tasks", "timeline"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "connect.core",
+    name: "Omniqora Connect",
+    kind: "communications",
+    version: "1.0.0-preview",
+    description: "WhatsApp, SMS, email, voice, push, number registry and provider-neutral communications.",
+    dependencies: ["platform.tenant", "platform.entitlements", "platform.events", "platform.audit"],
+    capabilities: ["whatsapp", "sms", "email", "voice", "push", "numbers", "masked_calls"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "intelligence.core",
+    name: "Omniqora Intelligence",
+    kind: "ai",
+    version: "1.0.0-preview",
+    description: "GenAI, RAG, GraphRAG, agents, approvals, AI governance and Business360.",
+    dependencies: ["platform.tenant", "platform.entitlements", "platform.audit"],
+    capabilities: ["genai", "rag", "graphrag", "agents", "approvals", "business360", "enterprise_ai"],
+    uiMode: "workspace",
+    status: "preview",
+  },
+  {
+    key: "compliance.core",
+    name: "Omniqora Compliance",
+    kind: "compliance",
+    version: "1.0.0-preview",
+    description: "AI-first regulatory applications, evidence, monitoring and versioned regulatory packs.",
+    dependencies: ["intelligence.core", "platform.audit"],
+    capabilities: ["applications", "requirements", "evidence", "reviews", "monitoring", "inspections"],
+    uiMode: "workspace",
+    status: "preview",
+  },
+  {
+    key: "geo.core",
+    name: "Omniqora Geo",
+    kind: "geo",
+    version: "1.0.0-planned",
+    description: "Provider-neutral geocoding, routes, ETA, optimisation, geofencing and tracking.",
+    dependencies: ["platform.tenant", "platform.entitlements"],
+    capabilities: ["geocode", "reverse", "distance", "eta", "routes", "optimise", "geofence", "live_track"],
+    uiMode: "api_only",
+    status: "planned",
+  },
+  {
+    key: "dispatch.core",
+    name: "Omniqora Dispatch",
+    kind: "dispatch",
+    version: "1.0.0-planned",
+    description: "Jobs, agents, shifts, fleets, capacity, dispatch, POD, wallets and performance.",
+    dependencies: ["geo.core", "connect.core", "platform.events"],
+    capabilities: ["jobs", "agents", "auto_dispatch", "manual_dispatch", "fleet", "pod", "wallet", "tracking"],
+    uiMode: "hybrid",
+    status: "planned",
+  },
+  {
+    key: "marketplace.core",
+    name: "Syndriva Marketplace",
+    kind: "marketplace",
+    version: "1.0.0-planned",
+    description: "Reusable vendor, listing, catalogue, inventory, order, booking, commission and payout core.",
+    dependencies: ["crm.core", "platform.events"],
+    capabilities: ["vendors", "listings", "catalogue", "inventory", "availability", "orders", "bookings", "commissions", "payouts", "reviews", "disputes"],
+    uiMode: "hybrid",
+    status: "planned",
+  },
+  {
+    key: "mobile.core",
+    name: "Omniqora Mobile Core",
+    kind: "mobile",
+    version: "1.0.0-planned",
+    description: "Shared native capabilities for tenant-branded apps and the universal Agent app.",
+    dependencies: ["platform.identity", "platform.entitlements", "connect.core"],
+    capabilities: ["push", "deep_links", "camera", "documents", "qr", "gps", "maps", "chat", "voice", "offline", "biometrics"],
+    uiMode: "embedded",
+    status: "planned",
+  },
+];
+
+export const OMNIQORA_REGION_PACKS: RegionPackDefinition[] = [
+  {
+    key: "GB",
+    country: "GB",
+    defaultLocale: "en-GB",
+    supportedLocales: ["en-GB"],
+    currency: "GBP",
+    timeZones: ["Europe/London"],
+    dataRegion: "UK",
+    taxProfile: "uk-vat",
+    legalProfile: "uk",
+    regulatoryPacks: ["fca", "cqc", "ofsted"],
+    providerPreferences: { telephony: ["twilio", "sip"], payments: ["adyen", "stripe", "sumup"] },
+  },
+  {
+    key: "DE",
+    country: "DE",
+    defaultLocale: "de-DE",
+    supportedLocales: ["de-DE", "en-GB"],
+    currency: "EUR",
+    timeZones: ["Europe/Berlin"],
+    dataRegion: "EU",
+    taxProfile: "de-ust",
+    legalProfile: "de",
+    regulatoryPacks: [],
+    providerPreferences: { telephony: ["twilio", "sip"], payments: ["adyen", "stripe"] },
+  },
+  {
+    key: "AE",
+    country: "AE",
+    defaultLocale: "en-GB",
+    supportedLocales: ["en-GB", "ar-AE"],
+    currency: "AED",
+    timeZones: ["Asia/Dubai"],
+    dataRegion: "UAE",
+    taxProfile: "ae-vat",
+    legalProfile: "ae",
+    regulatoryPacks: [],
+    providerPreferences: { telephony: ["sip", "twilio"], payments: ["adyen", "stripe"] },
+  },
+  {
+    key: "SA",
+    country: "SA",
+    defaultLocale: "ar-SA",
+    supportedLocales: ["ar-SA", "en-GB"],
+    currency: "SAR",
+    timeZones: ["Asia/Riyadh"],
+    dataRegion: "KSA",
+    taxProfile: "sa-vat",
+    legalProfile: "sa",
+    regulatoryPacks: ["aramco", "nca", "sama"],
+    providerPreferences: { telephony: ["sip", "twilio"], payments: ["adyen", "stripe"] },
+  },
+  {
+    key: "US",
+    country: "US",
+    defaultLocale: "en-US",
+    supportedLocales: ["en-US"],
+    currency: "USD",
+    timeZones: ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles"],
+    dataRegion: "US",
+    taxProfile: "us",
+    legalProfile: "us",
+    regulatoryPacks: [],
+    providerPreferences: { telephony: ["twilio", "telnyx"], payments: ["stripe", "adyen"] },
+  },
+  {
+    key: "PK",
+    country: "PK",
+    defaultLocale: "en-GB",
+    supportedLocales: ["en-GB", "ur-PK"],
+    currency: "PKR",
+    timeZones: ["Asia/Karachi"],
+    dataRegion: "PK",
+    taxProfile: "pk",
+    legalProfile: "pk",
+    regulatoryPacks: [],
+    providerPreferences: { telephony: ["sip"], payments: [] },
+  },
+];
+
+export function getProductDefinition(key: string) {
+  return OMNIQORA_PRODUCTS.find((product) => product.key === key) ?? null;
+}
+
+export function getModuleDefinition(key: string) {
+  return OMNIQORA_MODULES.find((module) => module.key === key) ?? null;
+}
+
+export function getRegionPack(key: string) {
+  return OMNIQORA_REGION_PACKS.find((region) => region.key === key) ?? null;
+}
+
+export function resolveProductModules(productKey: string, enabledModules: string[] = []) {
+  const product = getProductDefinition(productKey);
+  if (!product) return [];
+  return [...new Set([...product.defaultModules, ...enabledModules])];
+}
