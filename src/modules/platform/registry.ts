@@ -20,7 +20,10 @@ export type ModuleKind =
   | "feedback"
   | "analytics"
   | "mobile"
-  | "documents";
+  | "documents"
+  | "creative"
+  | "marketing"
+  | "financials";
 
 export type ProductDefinition = {
   key: string;
@@ -90,6 +93,9 @@ export const PLATFORM_MODULE_KEYS = {
   feedback: "feedback.core",
   analytics: "analytics.core",
   mobile: "mobile.core",
+  creative: "creative.core",
+  marketing: "marketing.core",
+  financials: "financials.core",
 } as const;
 
 export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
@@ -183,6 +189,16 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     status: "migration_candidate",
   },
   {
+    key: "voxentri",
+    name: "Voxentri Creative Studio",
+    kind: "shared_engine",
+    industry: "creative_studio",
+    defaultModules: ["creative.core", "marketing.core", "analytics.core", "intelligence.core"],
+    supportedRegions: ["GB", "DE", "AE", "SA", "US", "PK"],
+    supportedLocales: ["en-GB", "de-DE", "ar-SA", "ar-AE", "en-US", "ur-PK"],
+    status: "incubating",
+  },
+  {
     key: "tendryva",
     name: "Tendryva",
     kind: "vertical_landlord",
@@ -238,6 +254,83 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     capabilities: ["applications", "requirements", "evidence", "reviews", "monitoring", "inspections"],
     uiMode: "workspace",
     status: "preview",
+  },
+  {
+    key: "marketing.core",
+    name: "Omniqora Marketing",
+    kind: "marketing",
+    version: "1.0.0-planned",
+    description: "Campaigns, audiences, offers, channel orchestration, attribution and consent-aware marketing.",
+    dependencies: ["crm.core", "connect.core", "analytics.core", "creative.core"],
+    capabilities: ["audiences", "campaigns", "offers", "attribution", "channel_orchestration", "content_requests"],
+    uiMode: "hybrid",
+    status: "planned",
+  },
+  {
+    key: "sales.core",
+    name: "Omniqora Sales",
+    kind: "sales",
+    version: "1.0.0-planned",
+    description: "Sequences, callbacks, tasks, meetings, lead scoring and pipeline automation.",
+    dependencies: ["crm.core", "connect.core", "analytics.core"],
+    capabilities: ["sequences", "callbacks", "meetings", "lead_scoring", "pipeline_automation"],
+    uiMode: "hybrid",
+    status: "planned",
+  },
+  {
+    key: "journeys.core",
+    name: "Omniqora Journeys",
+    kind: "journeys",
+    version: "1.0.0-planned",
+    description: "Visual journeys, segmentation, RFM, delays, branches and outcomes.",
+    dependencies: ["crm.core", "connect.core", "platform.events"],
+    capabilities: ["journeys", "segments", "rfm", "delays", "branches", "outcomes"],
+    uiMode: "hybrid",
+    status: "planned",
+  },
+  {
+    key: "feedback.core",
+    name: "Omniqora Feedback",
+    kind: "feedback",
+    version: "1.0.0-planned",
+    description: "NPS, CSAT, CES, review requests, sentiment and recovery workflows.",
+    dependencies: ["crm.core", "connect.core"],
+    capabilities: ["nps", "csat", "ces", "reviews", "sentiment", "recovery"],
+    uiMode: "hybrid",
+    status: "planned",
+  },
+  {
+    key: "analytics.core",
+    name: "Omniqora Analytics & Metrics",
+    kind: "analytics",
+    version: "1.0.0-planned",
+    description: "Shared events, semantic metrics, funnels, cohorts, dashboards and warehouse integration.",
+    dependencies: ["platform.events"],
+    capabilities: ["events", "metrics", "semantic_layer", "funnels", "cohorts", "dashboards", "warehouse"],
+    uiMode: "workspace",
+    status: "planned",
+  },
+  {
+    key: "financials.core",
+    name: "Omniqora Financials",
+    kind: "financials",
+    version: "1.0.0-planned",
+    description: "Revenue, costs, margin, budgets, forecasts, unit economics, variance and benefit tracking.",
+    dependencies: ["analytics.core", "platform.audit"],
+    capabilities: ["revenue", "costs", "margin", "budgets", "forecast", "unit_economics", "variance", "benefits"],
+    uiMode: "workspace",
+    status: "planned",
+  },
+  {
+    key: "creative.core",
+    name: "Voxentri Creative Studio",
+    kind: "creative",
+    version: "1.0.0-planned",
+    description: "Portfolio-wide brand-aware creative production for web, social, advertising, print, video, audio and product assets.",
+    dependencies: ["platform.tenant", "platform.entitlements", "intelligence.core", "analytics.core"],
+    capabilities: ["brand_kits", "briefs", "copy", "images", "video", "audio", "social", "ads", "print", "web_assets", "localisation", "approvals", "asset_library", "campaign_variants"],
+    uiMode: "workspace",
+    status: "planned",
   },
   {
     key: "geo.core",
