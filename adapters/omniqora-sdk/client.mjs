@@ -83,6 +83,30 @@ export function createOmniqoraClient({
       }, idempotencyKey);
     },
 
+    async customerCreated({ eventId, idempotencyKey, customer, locationId }) {
+      return this.emit({ id:eventId,type:"customer.created",idempotencyKey,locationId,subject:{type:"customer",id:customer.customerRef},payload:customer,dataClassification:"confidential" });
+    },
+
+    async companyCreated({ eventId, idempotencyKey, company, locationId }) {
+      return this.emit({ id:eventId,type:"company.created",idempotencyKey,locationId,subject:{type:"company",id:company.companyRef},payload:company,dataClassification:"confidential" });
+    },
+
+    async leadCreated({ eventId, idempotencyKey, lead, locationId }) {
+      return this.emit({ id:eventId,type:"lead.created",idempotencyKey,locationId,subject:{type:"lead",id:lead.leadRef},payload:lead,dataClassification:"confidential" });
+    },
+
+    async orderCompleted({ eventId, idempotencyKey, order, locationId }) {
+      return this.emit({ id:eventId,type:"order.completed",idempotencyKey,locationId,subject:{type:"order",id:order.orderId},payload:order,dataClassification:"confidential" });
+    },
+
+    async bookingCompleted({ eventId, idempotencyKey, booking, locationId }) {
+      return this.emit({ id:eventId,type:"booking.completed",idempotencyKey,locationId,subject:{type:"booking",id:booking.bookingId},payload:booking,dataClassification:"confidential" });
+    },
+
+    async refundCompleted({ eventId, idempotencyKey, refund, locationId }) {
+      return this.emit({ id:eventId,type:"refund.completed",idempotencyKey,locationId,subject:{type:"refund",id:refund.refundId},payload:refund,dataClassification:"confidential" });
+    },
+
     async connectEvent({ scopeId, eventType, recipient, message, metadata = {}, idempotencyKey }) {
       if (!idempotencyKey) throw new Error("idempotencyKey is required");
       return request("/api/integrations/connect/events", {
