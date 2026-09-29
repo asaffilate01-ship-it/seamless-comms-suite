@@ -4,8 +4,7 @@ BEGIN;
 ALTER TABLE public.analytics_metric_points
   ADD COLUMN IF NOT EXISTS source_event_id text;
 CREATE UNIQUE INDEX IF NOT EXISTS analytics_metric_points_source_uq
-  ON public.analytics_metric_points(tenant_id,metric_key,source_event_id)
-  WHERE source_event_id IS NOT NULL;
+  ON public.analytics_metric_points(tenant_id,metric_key,source_event_id);
 
 INSERT INTO public.analytics_metric_definitions(metric_key,name,description,unit,aggregation,config,status) VALUES
  ('revenue.gross','Gross revenue','Gross revenue projected from canonical completed-order events.','money','sum','{"minor_units":true}'::jsonb,'active'),
