@@ -19,7 +19,7 @@ export async function buildProvisioningPlanFromDatabase(db:any,input:unknown){
  const regions=blueprint?.region_keys??[];const locales=blueprint?.locale_keys??regionRes.data.supported_locales??[];
  if(regions.length&&!regions.includes(request.regionPackKey))throw new Error("Product does not support the selected region");
  if(locales.length&&!locales.includes(request.locale))throw new Error("Product does not support the selected locale");
- const catalogue=new Map((modulesRes.data??[]).map((m:any)=>[m.module_key,m]));const resolved=new Set<string>();const visiting=new Set<string>();
+ const catalogue=new Map<string,{module_key:string;dependencies:string[];status:string}>((modulesRes.data??[]).map((m:any)=>[m.module_key,{module_key:m.module_key,dependencies:Array.isArray(m.dependencies)?m.dependencies:[],status:String(m.status)}]));const resolved=new Set<string>();const visiting=new Set<string>();
  function add(key:string){if(resolved.has(key))return;if(visiting.has(key))throw new Error("Circular module dependency: "+key);const mod=catalogue.get(key);if(!mod||mod.status==="retired")throw new Error("Unavailable module: "+key);visiting.add(key);for(const dep of mod.dependencies??[])add(dep);visiting.delete(key);resolved.add(key);}
  for(const key of [...defaults,...(request.requestedModules??[])])add(key);
  const steps:any[]=[{kind:"tenant_product",productKey:request.productKey,regionPackKey:request.regionPackKey,planKey:request.planKey??null},...[...resolved].map((moduleKey)=>({kind:"module",moduleKey}))];
