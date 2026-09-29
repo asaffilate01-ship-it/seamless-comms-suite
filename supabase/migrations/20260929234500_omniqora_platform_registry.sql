@@ -235,7 +235,8 @@ INSERT INTO public.platform_products(product_key,name,kind,industry,status) VALU
   ('fleetsora','Fleetora / FleetSora','vertical_landlord','fleet_logistics','active'),
   ('syndriva','Syndriva Marketplace Engine','shared_engine','marketplace','incubating'),
   ('affivon','Affivon','vertical_landlord','affiliate_commerce','migration_candidate'),
-  ('tendryva','Tendryva','vertical_landlord','tenders_procurement','migration_candidate')
+  ('tendryva','Tendryva','vertical_landlord','tenders_procurement','migration_candidate'),
+  ('voxentri','Voxentri Creative Studio','shared_engine','creative_studio','incubating')
 ON CONFLICT (product_key) DO UPDATE SET
   name=EXCLUDED.name, kind=EXCLUDED.kind, industry=EXCLUDED.industry, status=EXCLUDED.status;
 
@@ -261,7 +262,8 @@ INSERT INTO public.platform_modules(module_key,name,module_kind,version,status,u
   ('marketplace.core','Syndriva Marketplace','marketplace','1.0.0-planned','planned','hybrid',ARRAY['crm.core','platform.events'],ARRAY['vendors','listings','catalogue','inventory','availability','orders','bookings','commissions','payouts','reviews','disputes']),
   ('payments.core','Omniqora Payments','payments','1.0.0-planned','planned','api_only',ARRAY['platform.tenant','platform.entitlements','platform.audit'],ARRAY['checkout','subscriptions','billing','split_payments','payouts','refunds']),
   ('mobile.core','Omniqora Mobile Core','mobile','1.0.0-planned','planned','embedded',ARRAY['platform.identity','platform.entitlements','connect.core'],ARRAY['push','deep_links','camera','documents','qr','gps','maps','chat','voice','offline','biometrics']),
-  ('documents.core','Omniqora Documents','documents','1.0.0-planned','planned','hybrid',ARRAY['platform.tenant','platform.audit'],ARRAY['templates','versions','signatures','evidence_packs'])
+  ('documents.core','Omniqora Documents','documents','1.0.0-planned','planned','hybrid',ARRAY['platform.tenant','platform.audit'],ARRAY['templates','versions','signatures','evidence_packs']),
+  ('creative.core','Voxentri Creative Studio','creative','1.0.0-planned','planned','workspace',ARRAY['platform.tenant','platform.entitlements','intelligence.core','analytics.core'],ARRAY['brand_kits','briefs','copy','images','video','audio','social','ads','print','web_assets','localisation','approvals','asset_library','campaign_variants'])
 ON CONFLICT (module_key) DO UPDATE SET
   name=EXCLUDED.name,module_kind=EXCLUDED.module_kind,version=EXCLUDED.version,status=EXCLUDED.status,
   ui_mode=EXCLUDED.ui_mode,dependencies=EXCLUDED.dependencies,capabilities=EXCLUDED.capabilities;
