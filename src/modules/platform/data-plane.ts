@@ -50,7 +50,7 @@ export function selectDataPlane(
 
   const selected = candidates.find((plane) => plane.kind === "regional_postgres")
     ?? candidates.find((plane) => plane.kind === "shared_postgres")
-    ?? candidates[0];
+    ?? candidates[0]!;
 
   if (!selected) throw new Error("No eligible data plane");
   return selected;
