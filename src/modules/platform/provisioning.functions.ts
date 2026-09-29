@@ -106,6 +106,13 @@ export const executeProvisioningRun = createServerFn({ method: "POST" })
 
     await admin.from("platform_provisioning_runs").update({ state: "approved" }).eq("id", data.runId);
     const { data: tenantProductId, error } = await admin.rpc("apply_platform_provisioning_run", { _run: data.runId, _actor: context.userId });
-    if (error || !tenantProductId) throw new Error(error?.message ?? "Provisioning failed");
+    if (error || !tenantProductId) {
+      await admin.from("platform_provisioning_runs").update({
+        state: "failed",
+        error: error?.message ?? "Provisioning failed",
+        completed_at: new Date().toISOString(),
+      }).eq("id", data.runId);
+      throw new Error(error?.message ?? "Provisioning failed");
+    }
     return { runId: data.runId, tenantProductId };
   });
