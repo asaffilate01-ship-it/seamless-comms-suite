@@ -1,0 +1,29 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireModuleEntitlement } from "@/modules/platform/module-access";
+
+const scope=z.object({tenantId:z.string().uuid(),tenantProductId:z.string().uuid()});
+const stop=z.object({kind:z.enum(["pickup","dropoff","service","return"]),lat:z.number().min(-90).max(90),lng:z.number().min(-180).max(180),address:z.string().max(500).optional().nullable(),contactName:z.string().max(160).optional().nullable(),contactPhone:z.string().max(30).optional().nullable(),instructions:z.string().max(2000).optional().nullable(),windowStart:z.string().datetime().optional().nullable(),windowEnd:z.string().datetime().optional().nullable(),serviceSeconds:z.number().int().min(0).max(86400).default(0),metadata:z.record(z.string(),z.unknown()).default({})});
+const createSchema=scope.extend({productKey:z.string().min(1).max(80),locationId:z.string().uuid().optional().nullable(),jobType:z.string().min(1).max(120),priority:z.enum(["low","normal","high","urgent"]).default("normal"),requiredSkills:z.array(z.string().max(120)).max(50).default([]),requiredVehicleTypes:z.array(z.string().max(120)).max(50).default([]),capacityDemand:z.number().nonnegative().optional().nullable(),scheduledAt:z.string().datetime().optional().nullable(),externalRef:z.string().max(200).optional().nullable(),metadata:z.record(z.string(),z.unknown()).default({}),stops:z.array(stop).min(1).max(100)});
+
+export const listDispatchJobs=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof scope>)=>scope.parse(input)).handler(async({context,data})=>{
+ await requireModuleEntitlement(context,{...data,moduleKey:"dispatch.core"});const db=context.supabase as any;
+ const{data:jobs,error}=await db.from("dispatch_jobs").select("*").eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId).order("created_at",{ascending:false}).limit(500);if(error)throw new Error(error.message);
+ const ids=(jobs??[]).map((j:any)=>j.id);let stops:any[]=[];if(ids.length){const res=await db.from("dispatch_job_stops").select("*").eq("tenant_id",data.tenantId).in("job_id",ids).order("position");if(res.error)throw new Error(res.error.message);stops=res.data??[];}
+ return(jobs??[]).map((j:any)=>({...j,stops:stops.filter((s:any)=>s.job_id===j.id)}));
+});
+
+export const createDispatchJob=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof createSchema>)=>createSchema.parse(input)).handler(async({context,data})=>{
+ await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"dispatch.core"});const db=context.supabase as any;
+ const{data:id,error}=await db.rpc("create_dispatch_job",{_tenant:data.tenantId,_tenant_product:data.tenantProductId,_product_key:data.productKey,_location:data.locationId??null,_job_type:data.jobType,_priority:data.priority,_required_skills:data.requiredSkills,_required_vehicle_types:data.requiredVehicleTypes,_capacity:data.capacityDemand??null,_scheduled_at:data.scheduledAt??null,_external_ref:data.externalRef??null,_metadata:data.metadata,_stops:data.stops});
+ if(error||!id)throw new Error(error?.message??"Dispatch job could not be created");return{id};
+});
+
+const statusSchema=scope.extend({jobId:z.string().uuid(),status:z.enum(["unassigned","offered","assigned","accepted","en_route","arrived","in_progress","en_route_pickup","arrived_pickup","collected","en_route_dropoff","arrived_dropoff","completed","failed","cancelled"])});
+export const updateDispatchJobStatus=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof statusSchema>)=>statusSchema.parse(input)).handler(async({context,data})=>{await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"dispatch.core"});const db=context.supabase as any;const{error}=await db.rpc("update_dispatch_job_status",{_job:data.jobId,_status:data.status});if(error)throw new Error(error.message);return{ok:true};});
+
+const podSchema=scope.extend({jobId:z.string().uuid(),methods:z.array(z.enum(["photo","signature","pin","barcode","gps","note"])).min(1),evidenceRefs:z.array(z.string().max(1000)).max(50).default([]),recipientName:z.string().max(200).optional().nullable(),note:z.string().max(2000).optional().nullable()});
+export const recordDispatchPod=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof podSchema>)=>podSchema.parse(input)).handler(async({context,data})=>{await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"dispatch.core"});const db=context.supabase as any;const{data:id,error}=await db.rpc("record_dispatch_pod",{_job:data.jobId,_methods:data.methods,_evidence_refs:data.evidenceRefs,_recipient_name:data.recipientName??null,_note:data.note??null});if(error||!id)throw new Error(error?.message??"Proof could not be recorded");return{id};});
+
+export const listDispatchAgents=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof scope>)=>scope.parse(input)).handler(async({context,data})=>{await requireModuleEntitlement(context,{...data,moduleKey:"dispatch.core"});const db=context.supabase as any;const [agents,vehicles]=await Promise.all([db.from("dispatch_agents").select("*").eq("tenant_id",data.tenantId).order("display_name"),db.from("dispatch_vehicles").select("*").eq("tenant_id",data.tenantId).order("vehicle_type")]);if(agents.error)throw new Error(agents.error.message);if(vehicles.error)throw new Error(vehicles.error.message);return{agents:agents.data??[],vehicles:vehicles.data??[]};});
