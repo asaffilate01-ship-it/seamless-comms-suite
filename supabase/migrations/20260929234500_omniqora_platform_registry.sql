@@ -192,12 +192,12 @@ BEGIN
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO authenticated', t);
     EXECUTE format('GRANT ALL ON public.%I TO service_role', t);
-    EXECUTE format('DROP POLICY IF EXISTS %L ON public.%I', 'platform tenant read', t);
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'platform tenant read', t);
     EXECUTE format(
       'CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (public.is_tenant_member(tenant_id, auth.uid()))',
       'platform tenant read', t
     );
-    EXECUTE format('DROP POLICY IF EXISTS %L ON public.%I', 'platform tenant admin write', t);
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'platform tenant admin write', t);
     EXECUTE format(
       'CREATE POLICY %I ON public.%I FOR ALL TO authenticated USING (public.has_tenant_role(tenant_id, auth.uid(), ARRAY[''owner'',''admin'']::public.app_role[])) WITH CHECK (public.has_tenant_role(tenant_id, auth.uid(), ARRAY[''owner'',''admin'']::public.app_role[]))',
       'platform tenant admin write', t
