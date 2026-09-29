@@ -205,6 +205,11 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Integration binding metadata is admin-only even though secret values are stored outside the database.
+DROP POLICY IF EXISTS "platform tenant read" ON public.tenant_integration_bindings;
+CREATE POLICY "integration bindings admin read"
+ON public.tenant_integration_bindings FOR SELECT TO authenticated
+USING (public.has_tenant_role(tenant_id, auth.uid(), ARRAY['owner','admin']::public.app_role[]));
 CREATE OR REPLACE FUNCTION public.platform_touch_updated_at()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
