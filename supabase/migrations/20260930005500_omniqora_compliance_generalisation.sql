@@ -1,21 +1,29 @@
 -- Generalise the existing procurement-readiness engine into Omniqora Compliance.
--- Existing procurement assessments and Aramco packs remain compatible.
+-- Compatibility rule: legacy procurement tables keep their original column shape.
 BEGIN;
 
-ALTER TABLE public.procurement_packs
-  ADD COLUMN IF NOT EXISTS pack_type text NOT NULL DEFAULT 'procurement'
+CREATE TABLE IF NOT EXISTS public.compliance_pack_metadata (
+  pack_id text PRIMARY KEY REFERENCES public.procurement_packs(id) ON DELETE CASCADE,
+  pack_type text NOT NULL DEFAULT 'procurement'
     CHECK (pack_type IN ('procurement','regulatory_application','ongoing_compliance','certification','buyer_assurance','custom')),
-  ADD COLUMN IF NOT EXISTS authority text,
-  ADD COLUMN IF NOT EXISTS jurisdiction text,
-  ADD COLUMN IF NOT EXISTS effective_from date,
-  ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}'::jsonb;
+  authority text,
+  jurisdiction text,
+  effective_from date,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 
-ALTER TABLE public.procurement_assessments
-  ADD COLUMN IF NOT EXISTS authority text,
-  ADD COLUMN IF NOT EXISTS application_type text,
-  ADD COLUMN IF NOT EXISTS location_ref text,
-  ADD COLUMN IF NOT EXISTS service_types text[] NOT NULL DEFAULT '{}',
-  ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}'::jsonb;
+CREATE TABLE IF NOT EXISTS public.compliance_assessment_metadata (
+  assessment_id uuid PRIMARY KEY REFERENCES public.procurement_assessments(id) ON DELETE CASCADE,
+  authority text,
+  application_type text,
+  location_ref text,
+  service_types text[] NOT NULL DEFAULT '{}',
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 
 CREATE TABLE IF NOT EXISTS public.compliance_correspondence (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -34,8 +42,7 @@ CREATE TABLE IF NOT EXISTS public.compliance_correspondence (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS compliance_correspondence_due_idx
-  ON public.compliance_correspondence (workspace_id,status,due_at);
+CREATE INDEX IF NOT EXISTS compliance_correspondence_due_idx ON public.compliance_correspondence (workspace_id,status,due_at);
 
 CREATE TABLE IF NOT EXISTS public.compliance_inspections (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -54,8 +61,7 @@ CREATE TABLE IF NOT EXISTS public.compliance_inspections (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS compliance_inspections_schedule_idx
-  ON public.compliance_inspections (workspace_id,status,scheduled_at);
+CREATE INDEX IF NOT EXISTS compliance_inspections_schedule_idx ON public.compliance_inspections (workspace_id,status,scheduled_at);
 
 CREATE TABLE IF NOT EXISTS public.compliance_obligations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -73,8 +79,7 @@ CREATE TABLE IF NOT EXISTS public.compliance_obligations (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS compliance_obligations_due_idx
-  ON public.compliance_obligations (workspace_id,status,next_due_at);
+CREATE INDEX IF NOT EXISTS compliance_obligations_due_idx ON public.compliance_obligations (workspace_id,status,next_due_at);
 
 CREATE TABLE IF NOT EXISTS public.compliance_monitoring_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -91,32 +96,43 @@ CREATE TABLE IF NOT EXISTS public.compliance_monitoring_events (
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS compliance_monitoring_events_idx
-  ON public.compliance_monitoring_events (workspace_id,assessment_id,observed_at DESC);
+CREATE INDEX IF NOT EXISTS compliance_monitoring_events_idx ON public.compliance_monitoring_events (workspace_id,assessment_id,observed_at DESC);
 
-DO $$
-DECLARE t text;
-BEGIN
-  FOREACH t IN ARRAY ARRAY['compliance_correspondence','compliance_inspections','compliance_obligations','compliance_monitoring_events']
-  LOOP
-    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
-    EXECUTE format('REVOKE ALL ON public.%I FROM anon,authenticated', t);
-    EXECUTE format('GRANT SELECT ON public.%I TO authenticated', t);
-    EXECUTE format('GRANT ALL ON public.%I TO service_role', t);
-    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'compliance workspace read', t);
-    EXECUTE format(
-      'CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (public.procurement_can(workspace_id,''read''))',
-      'compliance workspace read', t
-    );
+ALTER TABLE public.compliance_pack_metadata ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.compliance_assessment_metadata ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON public.compliance_pack_metadata,public.compliance_assessment_metadata TO authenticated;
+GRANT ALL ON public.compliance_pack_metadata,public.compliance_assessment_metadata TO service_role;
+DROP POLICY IF EXISTS "compliance pack metadata read" ON public.compliance_pack_metadata;
+CREATE POLICY "compliance pack metadata read" ON public.compliance_pack_metadata FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "compliance assessment metadata read" ON public.compliance_assessment_metadata;
+CREATE POLICY "compliance assessment metadata read" ON public.compliance_assessment_metadata FOR SELECT TO authenticated
+USING (EXISTS (SELECT 1 FROM public.procurement_assessments a WHERE a.id=assessment_id AND public.procurement_can(a.workspace_id,'read')));
+
+DO $$ DECLARE t text; BEGIN
+  FOREACH t IN ARRAY ARRAY['compliance_correspondence','compliance_inspections','compliance_obligations','compliance_monitoring_events'] LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);
+    EXECUTE format('REVOKE ALL ON public.%I FROM anon,authenticated',t);
+    EXECUTE format('GRANT SELECT ON public.%I TO authenticated',t);
+    EXECUTE format('GRANT ALL ON public.%I TO service_role',t);
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I','compliance workspace read',t);
+    EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (public.procurement_can(workspace_id,''read''))','compliance workspace read',t);
   END LOOP;
 END $$;
 
 CREATE OR REPLACE VIEW public.compliance_packs
 WITH (security_invoker = true)
-AS SELECT * FROM public.procurement_packs;
+AS
+SELECT p.id,p.version,p.title,p.description,p.caution,p.source_checked_on,p.requirements,
+       COALESCE(m.pack_type,'procurement') AS pack_type,m.authority,m.jurisdiction,m.effective_from,COALESCE(m.metadata,'{}'::jsonb) AS metadata
+FROM public.procurement_packs p LEFT JOIN public.compliance_pack_metadata m ON m.pack_id=p.id;
+
 CREATE OR REPLACE VIEW public.compliance_assessments
 WITH (security_invoker = true)
-AS SELECT * FROM public.procurement_assessments;
+AS
+SELECT a.id,a.workspace_id,a.pack_id,a.pack_version,a.name,a.legal_entity,a.scope,a.buyer,a.country,a.created_by,a.created_at,
+       m.authority,m.application_type,m.location_ref,COALESCE(m.service_types,ARRAY[]::text[]) AS service_types,COALESCE(m.metadata,'{}'::jsonb) AS metadata
+FROM public.procurement_assessments a LEFT JOIN public.compliance_assessment_metadata m ON m.assessment_id=a.id;
+
 CREATE OR REPLACE VIEW public.compliance_requirements
 WITH (security_invoker = true)
 AS SELECT * FROM public.procurement_requirements;
@@ -124,37 +140,28 @@ GRANT SELECT ON public.compliance_packs,public.compliance_assessments,public.com
 GRANT ALL ON public.compliance_packs,public.compliance_assessments,public.compliance_requirements TO service_role;
 
 CREATE OR REPLACE FUNCTION public.create_compliance_assessment(
-  _workspace uuid,
-  _pack text,
-  _name text,
-  _entity text,
-  _scope text,
-  _authority text,
-  _country text,
-  _application_type text DEFAULT NULL,
-  _location_ref text DEFAULT NULL,
-  _service_types text[] DEFAULT ARRAY[]::text[]
+  _workspace uuid,_pack text,_name text,_entity text,_scope text,_authority text,_country text,
+  _application_type text DEFAULT NULL,_location_ref text DEFAULT NULL,_service_types text[] DEFAULT ARRAY[]::text[]
 )
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-DECLARE p public.procurement_packs; a uuid;
+DECLARE p public.procurement_packs; pm public.compliance_pack_metadata; a uuid;
 BEGIN
   IF NOT public.procurement_can(_workspace,'write') THEN RAISE EXCEPTION 'Compliance access denied'; END IF;
   SELECT * INTO STRICT p FROM public.procurement_packs WHERE id=_pack;
-  INSERT INTO public.procurement_assessments(
-    workspace_id,pack_id,pack_version,name,legal_entity,scope,buyer,country,created_by,
-    authority,application_type,location_ref,service_types
-  ) VALUES (
-    _workspace,p.id,p.version,btrim(_name),btrim(_entity),btrim(_scope),COALESCE(NULLIF(btrim(_authority),''),p.authority,p.title),btrim(_country),auth.uid(),
-    COALESCE(NULLIF(btrim(_authority),''),p.authority),NULLIF(btrim(_application_type),''),NULLIF(btrim(_location_ref),''),COALESCE(_service_types,ARRAY[]::text[])
-  ) RETURNING id INTO a;
+  SELECT * INTO pm FROM public.compliance_pack_metadata WHERE pack_id=_pack;
+  INSERT INTO public.procurement_assessments(workspace_id,pack_id,pack_version,name,legal_entity,scope,buyer,country,created_by)
+  VALUES(_workspace,p.id,p.version,btrim(_name),btrim(_entity),btrim(_scope),COALESCE(NULLIF(btrim(_authority),''),pm.authority,p.title),btrim(_country),auth.uid())
+  RETURNING id INTO a;
+  INSERT INTO public.compliance_assessment_metadata(assessment_id,authority,application_type,location_ref,service_types)
+  VALUES(a,COALESCE(NULLIF(btrim(_authority),''),pm.authority),NULLIF(btrim(_application_type),''),NULLIF(btrim(_location_ref),''),COALESCE(_service_types,ARRAY[]::text[]));
   INSERT INTO public.procurement_requirements(assessment_id,workspace_id,template)
     SELECT a,_workspace,value FROM jsonb_array_elements(p.requirements);
   INSERT INTO public.procurement_audit(assessment_id,workspace_id,actor,action,detail)
-    VALUES(a,_workspace,auth.uid(),'compliance.assessment.created',jsonb_build_object('pack',p.id,'version',p.version,'authority',COALESCE(_authority,p.authority)));
+    VALUES(a,_workspace,auth.uid(),'compliance.assessment.created',jsonb_build_object('pack',p.id,'version',p.version,'authority',COALESCE(NULLIF(btrim(_authority),''),pm.authority)));
   RETURN a;
 END;
 $$;
@@ -162,13 +169,10 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.create_compliance_assessment(uuid,text,text,text,text,text,text,text,text,text[]) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.create_compliance_assessment(uuid,text,text,text,text,text,text,text,text,text[]) TO authenticated;
 
-DO $$
-DECLARE t text;
-BEGIN
-  FOREACH t IN ARRAY ARRAY['compliance_correspondence','compliance_inspections','compliance_obligations']
-  LOOP
-    EXECUTE format('DROP TRIGGER IF EXISTS platform_touch_updated_at ON public.%I', t);
-    EXECUTE format('CREATE TRIGGER platform_touch_updated_at BEFORE UPDATE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.platform_touch_updated_at()', t);
+DO $$ DECLARE t text; BEGIN
+  FOREACH t IN ARRAY ARRAY['compliance_pack_metadata','compliance_assessment_metadata','compliance_correspondence','compliance_inspections','compliance_obligations'] LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS platform_touch_updated_at ON public.%I',t);
+    EXECUTE format('CREATE TRIGGER platform_touch_updated_at BEFORE UPDATE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.platform_touch_updated_at()',t);
   END LOOP;
 END $$;
 
