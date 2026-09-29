@@ -68,7 +68,7 @@ SET search_path = public
 AS $$
 DECLARE
   chosen public.connect_masking_numbers;
-  sid uuid;
+  sid uuid := gen_random_uuid();
 BEGIN
   IF _caller !~ '^\+[1-9][0-9]{6,14}$' OR _recipient !~ '^\+[1-9][0-9]{6,14}$' THEN
     RAISE EXCEPTION 'invalid_e164_number';
@@ -108,13 +108,13 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'no_masking_number_available'; END IF;
 
   INSERT INTO public.connect_masked_call_sessions(
-    tenant_id,tenant_product_id,location_id,provider,proxy_number,caller_hash,recipient_hash,
+    id,tenant_id,tenant_product_id,location_id,provider,proxy_number,caller_hash,recipient_hash,
     context_type,context_id,recording_policy,state,expires_at,metadata
   ) VALUES (
-    _tenant,_tenant_product,_location,_provider,chosen.phone_e164,
-    encode(digest(_caller,'sha256'),'hex'),encode(digest(_recipient,'sha256'),'hex'),
+    sid,_tenant,_tenant_product,_location,_provider,chosen.phone_e164,
+    md5(sid::text||':caller:'||_caller),md5(sid::text||':recipient:'||_recipient),
     _context_type,_context_id,_recording_policy,'reserved',_expires_at,COALESCE(_metadata,'{}'::jsonb)
-  ) RETURNING id INTO sid;
+  );
 
   INSERT INTO public.connect_masked_call_participants(session_id,tenant_id,side,phone_e164)
   VALUES(sid,_tenant,'caller',_caller),(sid,_tenant,'recipient',_recipient);
@@ -194,12 +194,6 @@ GRANT EXECUTE ON FUNCTION public.create_masked_call_session(uuid,uuid,uuid,text,
 GRANT EXECUTE ON FUNCTION public.resolve_masked_call_target(text,text,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.close_masked_call_session(uuid) TO service_role;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname='pgcrypto') THEN
-    RAISE EXCEPTION 'pgcrypto extension required for masked calling';
-  END IF;
-END $$;
 
 DO $$
 BEGIN
