@@ -25,7 +25,7 @@ export function assessTenantReadiness(input:IntegrationReadinessInput){
    if(!bindings.length){issues.push({code:"integration_missing",severity:requirement.required?"blocker":"warning",moduleKey,integrationKind:requirement.integrationKind,message:requirement.note});continue;}
    for(const binding of bindings){
     const plugin=pluginDefinition(binding.plugin_key??binding.provider)??pluginDefinition(requirement.integrationKind+"."+binding.provider);
-    const refs={...(binding.secret_ref?{default:binding.secret_ref}:{}),...(binding.secret_refs??{})};
+    const refs: Record<string,string>={...(binding.secret_ref?{default:binding.secret_ref}:{}),...(binding.secret_refs??{})};
     const missing=(plugin?.secretNames??[]).filter((name)=>!refs[name]&&!refs.default);
     if(missing.length)issues.push({code:"credentials_missing",severity:requirement.required?"blocker":"warning",moduleKey,integrationKind:requirement.integrationKind,message:"Configured provider is missing required credential references.",missingCredentialNames:missing});
     if(binding.status!=="active")issues.push({code:"integration_not_active",severity:requirement.required?"blocker":"warning",moduleKey,integrationKind:requirement.integrationKind,message:"Provider binding is configured but not active."});
