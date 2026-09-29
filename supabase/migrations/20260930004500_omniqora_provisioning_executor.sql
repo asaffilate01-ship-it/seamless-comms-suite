@@ -2,9 +2,10 @@
 BEGIN;
 
 ALTER TABLE public.platform_provisioning_runs
-  ADD COLUMN IF NOT EXISTS tenant_product_id uuid REFERENCES public.tenant_products(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS tenant_product_id uuid REFERENCES public.tenant_products(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS approved_by uuid REFERENCES auth.users(id) ON DELETE SET NULL;
 
-CREATE OR REPLACE FUNCTION public.apply_platform_provisioning_run(_run uuid)
+CREATE OR REPLACE FUNCTION public.apply_platform_provisioning_run(_run uuid, _actor uuid)
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -31,7 +32,7 @@ BEGIN
   END IF;
 
   UPDATE public.platform_provisioning_runs
-  SET state='running', started_at=COALESCE(started_at,now()), error=NULL, updated_at=now()
+  SET state='running', approved_by=_actor, started_at=COALESCE(started_at,now()), error=NULL, updated_at=now()
   WHERE id=_run;
 
   INSERT INTO public.tenant_products(
@@ -46,7 +47,7 @@ BEGIN
     COALESCE(r.plan->'settings','{}'::jsonb),
     NULL
   )
-  ON CONFLICT (tenant_id, product_key, COALESCE(brand_key,''))
+  ON CONFLICT (tenant_id, product_key, (COALESCE(brand_key,'')))
   DO UPDATE SET
     region_key=EXCLUDED.region_key,
     plan_key=EXCLUDED.plan_key,
@@ -64,7 +65,7 @@ BEGIN
       INSERT INTO public.tenant_module_entitlements(
         tenant_id, tenant_product_id, module_key, enabled, source
       ) VALUES (r.tenant_id,tp,s->>'moduleKey',true,'provisioning')
-      ON CONFLICT (tenant_id, COALESCE(tenant_product_id,'00000000-0000-0000-0000-000000000000'::uuid), module_key)
+      ON CONFLICT (tenant_id, (COALESCE(tenant_product_id,'00000000-0000-0000-0000-000000000000'::uuid)), module_key)
       DO UPDATE SET enabled=true, source='provisioning', updated_at=now();
 
     ELSIF step_kind = 'location' THEN
@@ -114,7 +115,7 @@ BEGIN
   WHERE id=_run;
 
   INSERT INTO public.audit_log(tenant_id,actor,action,entity,entity_id,payload)
-  VALUES(r.tenant_id,r.requested_by,'platform.provisioning.completed','tenant_product',tp::text,
+  VALUES(r.tenant_id,_actor,'platform.provisioning.completed','tenant_product',tp::text,
     jsonb_build_object('run_id',_run,'product_key',r.product_key,'region_key',r.region_key));
 
   RETURN tp;
@@ -126,7 +127,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.apply_platform_provisioning_run(uuid) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_platform_provisioning_run(uuid) TO service_role;
+REVOKE EXECUTE ON FUNCTION public.apply_platform_provisioning_run(uuid,uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_platform_provisioning_run(uuid,uuid) TO service_role;
 
 COMMIT;
