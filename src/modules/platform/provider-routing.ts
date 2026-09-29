@@ -31,7 +31,7 @@ export function chooseProvider(
     if (direct) return direct;
   }
 
-  return available[0];
+  return available[0]!;
 }
 
 export function pluginSupports(candidate: ProviderCandidate, capability: string): boolean {
