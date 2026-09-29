@@ -119,11 +119,6 @@ BEGIN
     jsonb_build_object('run_id',_run,'product_key',r.product_key,'region_key',r.region_key));
 
   RETURN tp;
-EXCEPTION WHEN OTHERS THEN
-  UPDATE public.platform_provisioning_runs
-  SET state='failed', error=SQLERRM, completed_at=now(), updated_at=now()
-  WHERE id=_run;
-  RAISE;
 END;
 $$;
 
