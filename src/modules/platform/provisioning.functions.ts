@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { planTenantProvisioning } from "./saas-factory";
+import { buildProvisioningPlanFromDatabase } from "./saas-factory.server";
 
 const requestSchema = z.object({
   tenantId: z.string().uuid(),
@@ -62,18 +62,8 @@ export const saveProvisioningRun = createServerFn({ method: "POST" })
   .inputValidator((input: z.input<typeof requestSchema>) => requestSchema.parse(input))
   .handler(async ({ context, data }) => {
     await requireTenantAdmin(context, data.tenantId);
-    const plan = planTenantProvisioning({
-      tenantId: data.tenantId,
-      productKey: data.productKey,
-      regionPackKey: data.regionPackKey,
-      locale: data.locale,
-      planKey: data.planKey,
-      requestedModules: data.requestedModules,
-      locations: data.locations,
-      domains: data.domains,
-    });
-
     const db = context.supabase as any;
+    const plan = await buildProvisioningPlanFromDatabase(db, data);
     const { data: run, error } = await db.from("platform_provisioning_runs").insert({
       tenant_id: data.tenantId,
       product_key: data.productKey,
