@@ -38,7 +38,8 @@ export type ModuleKind =
   | "search"
   | "accounting_ai"
   | "tax_intelligence"
-  | "childcare";
+  | "childcare"
+  | "branding";
 
 export type ProductDefinition = {
   key: string;
@@ -127,6 +128,7 @@ export const PLATFORM_MODULE_KEYS = {
   accountingAi: "accounting_ai.core",
   taxIntelligence: "tax_intelligence.core",
   childcare: "childcare.core",
+  whiteLabel: "branding.white_label",
 } as const;
 
 export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
@@ -678,6 +680,17 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     description: "Jobs, agents, shifts, fleets, capacity, dispatch, POD, wallets and performance.",
     dependencies: ["geo.core", "connect.core", "platform.events"],
     capabilities: ["jobs", "agents", "auto_dispatch", "manual_dispatch", "fleet", "pod", "wallet", "tracking"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "branding.white_label",
+    name: "Omniqora Full White Label",
+    kind: "branding",
+    version: "1.0.0-preview",
+    description: "Full tenant white-labeling: remove landlord branding and activate tenant-owned portal/email/communication identities.",
+    dependencies: ["platform.tenant","platform.audit"],
+    capabilities: ["remove_powered_by","custom_portals","custom_email_identity","custom_communications_branding","tenant_legal_identity"],
     uiMode: "hybrid",
     status: "preview",
   },
