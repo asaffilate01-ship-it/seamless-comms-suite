@@ -118,3 +118,78 @@ export const DISPATCH_EVENT_TYPES = {
   agentAvailabilityChanged: "dispatch.agent.availability_changed",
   podRecorded: "dispatch.pod.recorded",
 } as const;
+
+
+export type DispatchShift = {
+  id: string;
+  tenantId: string;
+  tenantProductId: string;
+  agentId: string;
+  startsAt: string;
+  endsAt: string;
+  clockedInAt?: string | null;
+  clockedOutAt?: string | null;
+  status: "scheduled" | "active" | "completed" | "missed" | "cancelled";
+  attendanceStatus: "expected" | "present" | "late" | "absent" | "excused";
+  breakMinutes: number;
+};
+
+export type DispatchWalletEntry = {
+  id: string;
+  agentId: string;
+  jobId?: string | null;
+  kind: "credit" | "debit" | "adjustment";
+  category: string;
+  amountMinor: number;
+  currency: string;
+  status: "pending" | "posted" | "reversed";
+  occurredAt: string;
+};
+
+export type VehicleMaintenanceRecord = {
+  id: string;
+  vehicleId: string;
+  maintenanceKind: string;
+  title: string;
+  dueAt?: string | null;
+  dueOdometer?: number | null;
+  completedAt?: string | null;
+  status: "scheduled" | "due" | "overdue" | "in_progress" | "completed" | "cancelled";
+  costMinor?: number | null;
+  currency?: string | null;
+};
+
+export type DriverBehaviourEvent = {
+  id: string;
+  agentId: string;
+  vehicleId?: string | null;
+  jobId?: string | null;
+  kind: "speeding" | "harsh_acceleration" | "harsh_braking" | "harsh_cornering" | "excessive_idle" | "route_deviation" | "other";
+  severity: "info" | "low" | "medium" | "high" | "critical";
+  value?: number | null;
+  threshold?: number | null;
+  point?: GeoPoint | null;
+  observedAt: string;
+};
+
+export type DispatchGeofence = {
+  id: string;
+  name: string;
+  kind: "circle" | "polygon";
+  shape: Record<string, unknown>;
+  active: boolean;
+  eventRules: Array<"enter" | "exit" | "dwell">;
+};
+
+export type FleetUtilisationDaily = {
+  day: string;
+  vehicleId: string;
+  availableMinutes: number;
+  assignedMinutes: number;
+  movingMinutes: number;
+  idleMinutes: number;
+  jobsAssigned: number;
+  jobsCompleted: number;
+  distanceMetres: number;
+  utilisationPct: number;
+};
