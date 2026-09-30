@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -133,6 +134,17 @@ export const queueAccountingExtraction=createServerFn({method:"POST"})
   await admin.from("accounting_intake_batches").update({status:"extracting"}).eq("id",data.batchId);
   await admin.from("accounting_intake_items").update({extraction_status:"queued"})
     .eq("batch_id",data.batchId).in("extraction_status",["not_started","failed","needs_review"]);
+  const{data:tp}=await admin.from("tenant_products").select("product_key").eq("id",data.tenantProductId).maybeSingle();
+  const eventId=randomUUID();
+  const{error:eventError}=await admin.from("platform_events").insert({
+    id:eventId,tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,
+    product_key:String(tp?.product_key??"unknown"),event_type:"accounting_ai.extraction.requested",
+    event_version:1,occurred_at:new Date().toISOString(),environment:"production",
+    subject_type:"accounting_extraction_run",subject_id:run.id,correlation_id:run.id,causation_id:null,
+    idempotency_key:"accounting-extraction:"+run.id,data_classification:"confidential",
+    payload:{practiceClientId:data.practiceClientId,batchId:data.batchId,extractionRunId:run.id}
+  });
+  if(eventError)throw new Error(eventError.message);
   return run;
 });
 
