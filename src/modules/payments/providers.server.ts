@@ -1,6 +1,6 @@
+import { PaymentProviderRegistry } from "./contracts";
 import type {
   PaymentProvider,
-  PaymentProviderRegistry,
   PaymentStatus,
   CreatePaymentIntentRequest,
   ProviderCaptureRequest,
@@ -248,15 +248,8 @@ function sumUpProvider():PaymentProvider{
 }
 
 export function createDefaultPaymentProviderRegistry(){
-  const registry:PaymentProviderRegistry=new (requireRegistry())();
-  return registry.register(stripeProvider()).register(adyenProvider()).register(sumUpProvider());
-}
-
-function requireRegistry(){
-  // Keeps this file server-only and avoids accidentally exporting a singleton with credentials.
-  return class extends (class {
-    private providers=new Map<string,PaymentProvider>();
-    register(provider:PaymentProvider){if(this.providers.has(provider.key))throw new Error("Payment provider already registered: "+provider.key);this.providers.set(provider.key,provider);return this;}
-    get(key:string){const p=this.providers.get(key);if(!p)throw new Error("Payment provider not installed: "+key);return p;}
-  }){};
+  return new PaymentProviderRegistry()
+    .register(stripeProvider())
+    .register(adyenProvider())
+    .register(sumUpProvider());
 }
