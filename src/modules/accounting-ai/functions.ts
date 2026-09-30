@@ -273,3 +273,133 @@ export const createAccountsPreparationRun=createServerFn({method:"POST"})
   if(error||!row)throw new Error(error?.message??"Accounts preparation run could not be created");
   return row;
 });
+
+
+export const queueAccountsPreparationRun=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:{tenantId:string;tenantProductId:string;practiceClientId:string;prepRunId:string})=>z.object({
+  tenantId:z.string().uuid(),tenantProductId:z.string().uuid(),practiceClientId:z.string().uuid(),prepRunId:z.string().uuid()
+}).parse(input))
+.handler(async({context,data})=>{
+  const access=await accountingAccess(context,{...data,moduleKey:"accounting_ai.core",allowClient:false});
+  if(!access.staff)throw new Error("Practice staff access required");
+  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+  const{data:run}=await admin.from("accounting_accounts_prep_runs")
+    .select("id,status,period_start,period_end,framework_key")
+    .eq("id",data.prepRunId).eq("tenant_id",data.tenantId).eq("practice_client_id",data.practiceClientId).maybeSingle();
+  if(!run||!["draft","review","failed"].includes(run.status))throw new Error("Accounts preparation run is not available to queue");
+  const{data:lockedAdjustments}=await admin.from("accounting_accounts_prep_adjustments")
+    .select("id").eq("prep_run_id",data.prepRunId).in("status",["approved","posted"]).limit(1);
+  if(lockedAdjustments?.length)throw new Error("Resolve or create a new accounts preparation run after approved/posted adjustments");
+  await admin.from("accounting_accounts_prep_runs").update({
+    status:"building",result:{},adjustment_count:0,review_notes:null,completed_at:null,model_run_id:null
+  }).eq("id",run.id);
+  const{data:tp}=await admin.from("tenant_products").select("product_key").eq("id",data.tenantProductId).maybeSingle();
+  const eventId=randomUUID();
+  const{error:eventError}=await admin.from("platform_events").insert({
+    id:eventId,tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,
+    product_key:String(tp?.product_key??"unknown"),event_type:"accounting_ai.accounts_prep.requested",
+    event_version:1,occurred_at:new Date().toISOString(),environment:"production",
+    subject_type:"accounts_prep_run",subject_id:run.id,correlation_id:run.id,causation_id:null,
+    idempotency_key:"accounts-prep:"+run.id+":"+eventId,data_classification:"confidential",
+    payload:{practiceClientId:data.practiceClientId,prepRunId:run.id}
+  });
+  if(eventError)throw new Error(eventError.message);
+  return{...run,status:"building"};
+});
+
+export const getAccountsPreparationRun=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:{tenantId:string;tenantProductId:string;practiceClientId:string;prepRunId:string})=>z.object({
+  tenantId:z.string().uuid(),tenantProductId:z.string().uuid(),practiceClientId:z.string().uuid(),prepRunId:z.string().uuid()
+}).parse(input))
+.handler(async({context,data})=>{
+  const access=await accountingAccess(context,{...data,moduleKey:"accounting_ai.core",allowClient:false});
+  if(!access.staff)throw new Error("Practice staff access required");
+  const db=context.supabase as any;
+  const[{data:run,error},{data:adjustments,error:adjustmentError}]=await Promise.all([
+    db.from("accounting_accounts_prep_runs").select("*").eq("id",data.prepRunId)
+      .eq("tenant_id",data.tenantId).eq("practice_client_id",data.practiceClientId).maybeSingle(),
+    db.from("accounting_accounts_prep_adjustments").select("*").eq("prep_run_id",data.prepRunId)
+      .eq("tenant_id",data.tenantId).eq("practice_client_id",data.practiceClientId)
+      .order("created_at",{ascending:true})
+  ]);
+  if(error||!run)throw new Error("Accounts preparation run not found");
+  if(adjustmentError)throw new Error(adjustmentError.message);
+  return{run,adjustments:adjustments??[]};
+});
+
+const prepAdjustmentReviewSchema=z.object({
+  tenantId:z.string().uuid(),tenantProductId:z.string().uuid(),practiceClientId:z.string().uuid(),
+  adjustmentId:z.string().uuid(),decision:z.enum(["approved","rejected"])
+});
+export const reviewAccountsPrepAdjustment=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof prepAdjustmentReviewSchema>)=>prepAdjustmentReviewSchema.parse(input))
+.handler(async({context,data})=>{
+  const access=await accountingAccess(context,{...data,moduleKey:"accounting_ai.core",allowClient:false});
+  if(!access.staff)throw new Error("Practice staff access required");
+  const db=context.supabase as any;
+  const{data:member}=await db.from("tenant_members").select("role").eq("tenant_id",data.tenantId)
+    .eq("user_id",context.userId).maybeSingle();
+  const{data:adjustment,error:lookupError}=await db.from("accounting_accounts_prep_adjustments")
+    .select("id,risk,status").eq("id",data.adjustmentId).eq("tenant_id",data.tenantId)
+    .eq("practice_client_id",data.practiceClientId).maybeSingle();
+  if(lookupError||!adjustment||adjustment.status!=="proposed")throw new Error("Proposed accounts adjustment not found");
+  if(data.decision==="approved"&&["high","specialist_review"].includes(adjustment.risk)&&!["owner","admin"].includes(String(member?.role??""))){
+    throw new Error("High-risk accounts adjustments require owner/admin review");
+  }
+  const{data:row,error}=await db.from("accounting_accounts_prep_adjustments").update({
+    status:data.decision,reviewed_by:context.userId,reviewed_at:new Date().toISOString()
+  }).eq("id",adjustment.id).select("*").single();
+  if(error||!row)throw new Error(error?.message??"Accounts adjustment could not be reviewed");
+  return row;
+});
+
+export const postAccountsPrepAdjustment=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:{tenantId:string;tenantProductId:string;practiceClientId:string;adjustmentId:string})=>z.object({
+  tenantId:z.string().uuid(),tenantProductId:z.string().uuid(),practiceClientId:z.string().uuid(),adjustmentId:z.string().uuid()
+}).parse(input))
+.handler(async({context,data})=>{
+  const access=await accountingAccess(context,{...data,moduleKey:"accounting_ai.core",allowClient:false});
+  if(!access.staff)throw new Error("Practice staff access required");
+  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+  const{data:adjustment}=await admin.from("accounting_accounts_prep_adjustments").select("id")
+    .eq("id",data.adjustmentId).eq("tenant_id",data.tenantId)
+    .eq("practice_client_id",data.practiceClientId).eq("status","approved").maybeSingle();
+  if(!adjustment)throw new Error("Approved accounts adjustment not found");
+  const{data:id,error}=await admin.rpc("post_accounts_prep_adjustment",{
+    _tenant:data.tenantId,_adjustment:data.adjustmentId,_actor:context.userId
+  });
+  if(error||!id)throw new Error(error?.message??"Accounts adjustment could not be posted");
+  return{journalId:id};
+});
+
+export const approveAccountsPreparationRun=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:{tenantId:string;tenantProductId:string;practiceClientId:string;prepRunId:string;reviewNotes?:string|null})=>z.object({
+  tenantId:z.string().uuid(),tenantProductId:z.string().uuid(),practiceClientId:z.string().uuid(),
+  prepRunId:z.string().uuid(),reviewNotes:z.string().max(10000).optional().nullable()
+}).parse(input))
+.handler(async({context,data})=>{
+  const access=await accountingAccess(context,{...data,moduleKey:"accounting_ai.core",allowClient:false});
+  if(!access.staff)throw new Error("Practice staff access required");
+  const db=context.supabase as any;
+  const{data:member}=await db.from("tenant_members").select("role").eq("tenant_id",data.tenantId)
+    .eq("user_id",context.userId).maybeSingle();
+  if(!member||!["owner","admin"].includes(member.role))throw new Error("Final accounts preparation approval requires owner/admin access");
+  const{data:run}=await db.from("accounting_accounts_prep_runs").select("id,status")
+    .eq("id",data.prepRunId).eq("tenant_id",data.tenantId).eq("practice_client_id",data.practiceClientId).maybeSingle();
+  if(!run||run.status!=="review")throw new Error("Accounts preparation run is not ready for approval");
+  const{data:unresolved,error:adjustmentError}=await db.from("accounting_accounts_prep_adjustments").select("id,status")
+    .eq("prep_run_id",data.prepRunId).in("status",["proposed","approved"]).limit(1);
+  if(adjustmentError)throw new Error(adjustmentError.message);
+  if(unresolved?.length)throw new Error("All accounts-prep adjustments must be rejected or posted before final approval");
+  const{data:row,error}=await db.from("accounting_accounts_prep_runs").update({
+    status:"approved",approved_by:context.userId,approved_at:new Date().toISOString(),
+    review_notes:data.reviewNotes??null
+  }).eq("id",run.id).select("*").single();
+  if(error||!row)throw new Error(error?.message??"Accounts preparation run could not be approved");
+  return row;
+});
