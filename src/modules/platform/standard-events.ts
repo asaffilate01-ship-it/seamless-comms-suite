@@ -84,6 +84,20 @@ export const inventoryMovementPayload=z.object({
   metadata:z.record(z.string(),z.unknown()).default({}),
 });
 
+export const notificationRequestedPayload=z.object({
+  notificationType:z.string().min(1).max(160),
+  title:z.string().min(1).max(240),
+  body:z.string().max(4000).optional().nullable(),
+  priority:z.enum(["low","normal","high","urgent"]).default("normal"),
+  recipientUserIds:z.array(z.string().uuid()).max(500).default([]),
+  recipientRoles:z.array(z.enum(["owner","admin","agent","viewer"])).max(4).default([]),
+  entityType:z.string().max(120).optional().nullable(),
+  entityId:z.string().max(240).optional().nullable(),
+  actionUrl:z.string().max(1000).optional().nullable(),
+  expiresAt:z.string().datetime().optional().nullable(),
+  metadata:z.record(z.string(),z.unknown()).default({}),
+});
+
 export const STANDARD_EVENT_PAYLOADS={
  "customer.created":customerPayload,
  "customer.updated":customerPayload,
@@ -96,6 +110,7 @@ export const STANDARD_EVENT_PAYLOADS={
  "epos.transaction.recorded":eposTransactionPayload,
  "inventory.movement.recorded":inventoryMovementPayload,
  "hospitality.waste.recorded":inventoryMovementPayload,
+ "notification.requested":notificationRequestedPayload,
 } as const;
 
 export type StandardEventType=keyof typeof STANDARD_EVENT_PAYLOADS;
