@@ -195,10 +195,10 @@ DELETE FROM public.product_module_defaults WHERE product_key='kindelo';
 INSERT INTO public.product_module_defaults(product_key,module_key,enabled_by_default)
 SELECT 'kindelo',m,true
 FROM unnest(ARRAY[
-  'crm.core','marketplace.core','childcare.core','bookings.core','payments.core','connect.core',
+  'crm.core','marketplace.core','bookings.core','payments.core','connect.core',
   'compliance.core','documents.core','forms.core','automation.core',
   'notifications.core','search.core','analytics.core','intelligence.core',
-  'mobile.core','support.core'
+  'geo.core','mobile.core','support.core'
 ]::text[]) m
 ON CONFLICT(product_key,module_key) DO UPDATE SET enabled_by_default=true;
 
@@ -206,7 +206,7 @@ INSERT INTO public.product_module_defaults(product_key,module_key,enabled_by_def
 SELECT 'kindelo',m,false
 FROM unnest(ARRAY[
   'reception.core','financials.core','marketing.core','sales.core','journeys.core',
-  'feedback.core','loyalty.core','creative.core','geo.core'
+  'feedback.core','loyalty.core','creative.core'
 ]::text[]) m
 ON CONFLICT(product_key,module_key) DO UPDATE SET enabled_by_default=false;
 
