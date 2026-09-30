@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/app/shell";
@@ -121,7 +121,7 @@ function GrowthWorkspace(){
   return <AppShell
     title="Growth & Customer Intelligence"
     subtitle="Marketing, RFM, sales engagement, visual journeys and feedback as reusable Omniqora engines."
-    actions={<ProductWorkspacePicker products={workspace.products} selectedId={workspace.selectedId} onChange={workspace.setSelectedId}/>}
+    actions={<div className="flex items-center gap-2"><ProductWorkspacePicker products={workspace.products} selectedId={workspace.selectedId} onChange={workspace.setSelectedId}/><Link to="/app/journey-builder"><Button size="sm" variant="outline">Journey Builder</Button></Link></div>}
   >
     {workspace.loading?<Loading/>:workspace.error?<ErrorCard message={workspace.error}/>:!selected?
       <Empty/>:
