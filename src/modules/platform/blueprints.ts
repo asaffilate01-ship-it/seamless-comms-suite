@@ -11,7 +11,8 @@ export type BlueprintKey =
   | "accounting_practice"
   | "us_tax"
   | "business_advisory"
-  | "compliance_service";
+  | "compliance_service"
+  | "childcare_marketplace";
 
 export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
   marketplace: {
@@ -171,6 +172,51 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     domainObjects: ["company","business_service","asset","workforce","cost","objective","dependency","finding","tsa","decision","plan","benefit"],
     workflows: ["discovery","diagnostic","audit","improvement","diligence","carve_out","merger","integration","day1","hundred_day","benefits_review"],
     mobileCapabilities: ["push","documents","camera","photos","biometrics"],
+  },
+  childcare_marketplace: {
+    productKey: "kinderstars",
+    industry: "childcare_agency_marketplace",
+    regions: ["GB","DE"],
+    locales: ["en-GB","de-DE"],
+    modules: [
+      "crm.core","marketplace.core","bookings.core","payments.core","connect.core","reception.core",
+      "compliance.core","documents.core","forms.core","automation.core","notifications.core","search.core",
+      "analytics.core","financials.core","marketing.core","journeys.core","feedback.core","loyalty.core",
+      "intelligence.core","mobile.core","support.core","creative.core"
+    ],
+    roles: [
+      "owner","admin","agency_manager","compliance_manager","placement_coordinator",
+      "finance","support","minder_manager","reviewer","viewer"
+    ],
+    navigation: [
+      "dashboard","parents","children","minders","marketplace","bookings","placements",
+      "attendance","funding","compliance","documents","messages","reception","payments",
+      "marketing","feedback","analytics","financials","settings"
+    ],
+    domainObjects: [
+      "agency","parent","guardian","child","minder","provider_profile","service_listing",
+      "availability","placement","booking","attendance","funding_case","funding_claim",
+      "safeguarding_case","training_record","qualification","compliance_check",
+      "document","invoice","payment","commission","payout","review","dispute"
+    ],
+    workflows: [
+      "parent_onboarding","child_onboarding","minder_onboarding","identity_and_compliance_checks",
+      "matching","placement","booking","attendance","funding_validation","funding_claim",
+      "payment_collection","provider_payout","incident","safeguarding","review_request",
+      "renewal","inspection_readiness","ongoing_compliance"
+    ],
+    mobileCapabilities: [
+      "push","deep_links","camera","photos","documents","qr","chat","voice",
+      "gps","offline","biometrics"
+    ],
+    metadata: {
+      marketplaceVendorType: "childminder_or_provider",
+      marketplaceBuyerType: "parent_or_guardian",
+      tenantType: "childcare_agency_operator",
+      clientUsersAreNotTenants: true,
+      providersAreNotTenantsByDefault: true,
+      countryVariants: ["kinderstars-gb","kinderstars-de"]
+    }
   },
   compliance_service: {
     productKey: "regulos",
