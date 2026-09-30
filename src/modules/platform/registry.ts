@@ -278,8 +278,8 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     status: "migration_candidate",
   },
   {
-    key: "kinderstars",
-    name: "KinderStars",
+    key: "kindelo",
+    name: "Kindelo",
     kind: "vertical_landlord",
     industry: "childcare_agency_marketplace",
     defaultModules: [
@@ -293,10 +293,10 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     status: "migration_candidate",
   },
   {
-    key: "kinderstars-gb",
-    name: "KinderStars UK",
+    key: "kindelo-gb",
+    name: "Kindelo UK",
     kind: "product_variant",
-    parentProductKey: "kinderstars",
+    parentProductKey: "kindelo",
     industry: "childcare_agency_marketplace",
     defaultModules: [],
     supportedRegions: ["GB"],
@@ -304,10 +304,10 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     status: "migration_candidate",
   },
   {
-    key: "kinderstars-de",
-    name: "KinderStars Germany",
+    key: "kindelo-de",
+    name: "Kindelo Germany",
     kind: "product_variant",
-    parentProductKey: "kinderstars",
+    parentProductKey: "kindelo",
     industry: "childcare_agency_marketplace",
     defaultModules: [],
     supportedRegions: ["DE"],
