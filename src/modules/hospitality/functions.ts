@@ -22,17 +22,17 @@ export const getHospitalityIntelligence=createServerFn({method:"POST"})
   if(data.locationId)q=q.eq("location_id",data.locationId);
   const{data:rows,error}=await q;if(error)throw new Error(error.message);
   const facts=rows??[];
-  const currencies=[...new Set(facts.map((r:any)=>r.currency))];
-  const singleCurrency=currencies.length===1?currencies[0]:null;
+  const currencies:string[]=[...new Set(facts.map((r:any)=>String(r.currency)))];
+  const singleCurrency:string|null=currencies.length===1?(currencies[0]??null):null;
   const sum=(key:string)=>facts.reduce((a:number,r:any)=>a+Number(r[key]??0),0);
   const gross=sum("gross_minor"),discounts=sum("discount_minor"),refunds=sum("refund_minor"),net=sum("net_minor");
   const cogsKnown=facts.every((r:any)=>r.cogs_minor!==null&&r.cogs_minor!==undefined);
   const cogs=cogsKnown?sum("cogs_minor"):null;
   const contribution=cogs===null?null:net-cogs;
-  const byChannel=Object.values(facts.reduce((acc:Record<string,any>,r:any)=>{
+  const byChannel=Object.values(facts.reduce((acc:Record<string,{channel:string;transactions:number;netMinor:number}>,r:any)=>{
     const key=r.channel||"unknown";const row=acc[key]??={channel:key,transactions:0,netMinor:0};
     row.transactions+=1;row.netMinor+=Number(r.net_minor??0);return acc;
-  },{}));
+  },{} as Record<string,{channel:string;transactions:number;netMinor:number}>));
   const{data:insights}=await db.from("hospitality_insights").select("*")
     .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
     .gte("period_start",data.start+"T00:00:00Z").lte("period_end",data.end+"T23:59:59Z")
