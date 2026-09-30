@@ -14,7 +14,7 @@ async function requireAdmin(context:any,tenantId:string){
 
 const begin=z.object({
  tenantId:z.string().uuid(),tenantProductId:z.string().uuid(),locationId:z.string().uuid().optional().nullable(),
- hostname,purpose:z.enum(["marketing","app","api","tracking","assets","auth","other"]),primary:z.boolean().default(false)
+ hostname,purpose:z.enum(["marketing","app","customer_portal","provider_portal","staff_portal","api","tracking","assets","auth","email","other"]),primary:z.boolean().default(false)
 });
 export const beginDomainVerification=createServerFn({method:"POST"})
 .middleware([requireSupabaseAuth])
