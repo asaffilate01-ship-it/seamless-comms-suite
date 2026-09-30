@@ -32,7 +32,10 @@ export type ModuleKind =
   | "bookings"
   | "loyalty"
   | "automation"
-  | "forms";
+  | "forms"
+  | "support"
+  | "notifications"
+  | "search";
 
 export type ProductDefinition = {
   key: string;
@@ -115,6 +118,9 @@ export const PLATFORM_MODULE_KEYS = {
   loyalty: "loyalty.core",
   automation: "automation.core",
   forms: "forms.core",
+  support: "support.core",
+  notifications: "notifications.core",
+  search: "search.core",
 } as const;
 
 export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
@@ -391,6 +397,39 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     status: "preview",
   },
   {
+    key: "support.core",
+    name: "Omniqora Support",
+    kind: "support",
+    version: "1.0.0-preview",
+    description: "Shared helpdesk using Omniqora cases plus queues, SLA tracking, escalation, knowledge and satisfaction.",
+    dependencies: ["crm.core","connect.core","notifications.core","platform.audit"],
+    capabilities: ["tickets","queues","sla","assignment","escalation","knowledge","satisfaction","ai_assist"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "notifications.core",
+    name: "Omniqora Notifications",
+    kind: "notifications",
+    version: "1.0.0-preview",
+    description: "Tenant-aware in-app notification centre with channel preferences, digests and Connect delivery requests.",
+    dependencies: ["platform.tenant","connect.core","platform.events"],
+    capabilities: ["inbox","preferences","in_app","email","sms","whatsapp","push","digest"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "search.core",
+    name: "Omniqora Search",
+    kind: "search",
+    version: "1.0.0-preview",
+    description: "Tenant-safe global full-text and filtered search across indexed shared/product entities.",
+    dependencies: ["platform.tenant","platform.events"],
+    capabilities: ["global","full_text","filters","semantic","recent"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
     key: "practice.core",
     name: "Omniqora Practice Operations",
     kind: "practice",
@@ -471,12 +510,12 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     key: "documents.core",
     name: "Omniqora Documents",
     kind: "documents",
-    version: "1.0.0-planned",
-    description: "Templates, versions, signatures and evidence/document packs.",
+    version: "1.0.0-preview",
+    description: "Shared document library, immutable versions, entity links, templates, generation, signatures and evidence packs.",
     dependencies: ["platform.tenant", "platform.audit"],
-    capabilities: ["templates", "versions", "signatures", "evidence_packs"],
+    capabilities: ["library","versions","links","templates","generation","signatures","evidence_packs","retention"],
     uiMode: "hybrid",
-    status: "planned",
+    status: "preview",
   },
   {
     key: "marketing.core",
