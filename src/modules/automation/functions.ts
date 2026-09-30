@@ -16,9 +16,27 @@ const workflow=scope.extend({
 });
 
 function validateGraph(nodes:z.infer<typeof node>[],edges:Array<{from:string;to:string}>){
- const ids=new Set(nodes.map(n=>n.id));if(ids.size!==nodes.length)throw new Error("Workflow node IDs must be unique");
+ const ids=new Set(nodes.map(n=>n.id));
+ if(ids.size!==nodes.length)throw new Error("Workflow node IDs must be unique");
  for(const edge of edges)if(!ids.has(edge.from)||!ids.has(edge.to))throw new Error("Workflow edge references an unknown node");
- if(!nodes.some(n=>n.kind==="trigger"))throw new Error("Workflow requires a trigger node");
+ const triggers=nodes.filter(n=>n.kind==="trigger");
+ if(triggers.length!==1)throw new Error("Workflow requires exactly one trigger node");
+
+ // Automation v1 is intentionally acyclic. Repetition belongs in schedules/events,
+ // not unbounded graph loops.
+ const adjacency=new Map<string,string[]>();
+ for(const id of ids)adjacency.set(id,[]);
+ for(const edge of edges)adjacency.get(edge.from)!.push(edge.to);
+ const visiting=new Set<string>();const visited=new Set<string>();
+ function visit(id:string){
+  if(visiting.has(id))throw new Error("Automation workflow cycles are not supported in v1");
+  if(visited.has(id))return;
+  visiting.add(id);
+  for(const next of adjacency.get(id)??[])visit(next);
+  visiting.delete(id);visited.add(id);
+ }
+ visit(triggers[0]!.id);
+ if(visited.size!==nodes.length)throw new Error("Every workflow node must be reachable from the trigger");
 }
 
 export const createAutomationWorkflow=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
