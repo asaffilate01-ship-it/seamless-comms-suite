@@ -57,6 +57,7 @@ export const DEFAULT_PLATFORM_NAVIGATION: NavigationItem[] = [
   { key: "creative", labelKey: "nav.creative", module: "creative.core", route: "/app/creative" },
   { key: "analytics", labelKey: "nav.analytics", module: "analytics.core", route: "/app/analytics" },
   { key: "financials", labelKey: "nav.financials", module: "financials.core", route: "/app/financials" },
+  { key: "branding", labelKey: "nav.branding", route: "/app/settings/branding" },
   { key: "settings", labelKey: "nav.settings", route: "/app/settings" },
 ];
 
