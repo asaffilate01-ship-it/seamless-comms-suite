@@ -44,12 +44,33 @@ export const listProductModuleCatalogue=createServerFn({method:"POST"})
 .inputValidator((input:z.input<typeof moduleCatalogueSchema>)=>moduleCatalogueSchema.parse(input))
 .handler(async({context,data})=>{
   const db=context.supabase as any;
-  const[{data:available,error:availableError},{data:modules,error:moduleError}]=await Promise.all([
-    db.from("product_module_defaults").select("module_key,enabled_by_default,config").eq("product_key",data.productKey),
+  const[{data:product,error:productError},{data:modules,error:moduleError}]=await Promise.all([
+    db.from("platform_products").select("product_key,parent_product_key,kind").eq("product_key",data.productKey).maybeSingle(),
     db.from("platform_modules").select("module_key,name,module_kind,version,status,ui_mode,dependencies,capabilities").neq("status","retired"),
   ]);
-  if(availableError)throw new Error(availableError.message);
+  if(productError||!product)throw new Error("Product not found");
   if(moduleError)throw new Error(moduleError.message);
+
+  const keys=[product.parent_product_key,data.productKey].filter(Boolean) as string[];
+  const{data:availability,error:availabilityError}=await db.from("product_module_defaults")
+    .select("product_key,module_key,enabled_by_default,config").in("product_key",keys);
+  if(availabilityError)throw new Error(availabilityError.message);
+
+  const byKey=new Map<string,any>();
+  for(const row of availability??[]){
+    const prior=byKey.get(row.module_key);
+    if(!prior||row.product_key===data.productKey){
+      byKey.set(row.module_key,{
+        module_key:row.module_key,
+        enabled_by_default:!!row.enabled_by_default,
+        config:row.config??{},
+        sourceProductKey:row.product_key,
+        inherited:row.product_key!==data.productKey,
+      });
+    }else if(prior&&row.enabled_by_default){
+      prior.enabled_by_default=true;
+    }
+  }
 
   const moduleByKey=new Map((modules??[]).map((row:any)=>[row.module_key,row]));
   let grants:any[]=[];
@@ -63,13 +84,13 @@ export const listProductModuleCatalogue=createServerFn({method:"POST"})
       .eq("tenant_id",tp.tenant_id).eq("user_id",context.userId).maybeSingle();
     const{data:platformOperator}=await db.from("platform_operators").select("role,status")
       .eq("user_id",context.userId).maybeSingle();
-    const{data:productOperator}=await db.from("product_operators").select("role,status,region_keys")
-      .eq("product_key",data.productKey).eq("user_id",context.userId).maybeSingle();
+    const{data:familyOperator,error:familyOperatorError}=await db.rpc("is_product_operator",{
+      _product:data.productKey,_user:context.userId,_roles:null,_region:tp.region_key
+    });
+    if(familyOperatorError)throw new Error(familyOperatorError.message);
 
     const platformAllowed=platformOperator?.status==="active";
-    const regions=Array.isArray(productOperator?.region_keys)?productOperator.region_keys:[];
-    const landlordAllowed=productOperator?.status==="active"&&(!regions.length||regions.includes(tp.region_key));
-    if(!membership&&!platformAllowed&&!landlordAllowed)throw new Error("Tenant/product access required");
+    if(!membership&&!platformAllowed&&familyOperator!==true)throw new Error("Tenant/product access required");
 
     const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
     const{data:grantRows,error:grantError}=await admin.from("tenant_module_entitlements")
@@ -80,7 +101,7 @@ export const listProductModuleCatalogue=createServerFn({method:"POST"})
   }
 
   const grantByKey=new Map(grants.map((row:any)=>[row.module_key,row]));
-  return(available??[]).map((row:any)=>{
+  return[...byKey.values()].map((row:any)=>{
     const module=moduleByKey.get(row.module_key) as Record<string,unknown>|undefined;
     if(!module)return null;
     return{
@@ -88,7 +109,9 @@ export const listProductModuleCatalogue=createServerFn({method:"POST"})
       available:true,
       defaultOn:!!row.enabled_by_default,
       defaultConfig:row.config??{},
+      inherited:!!row.inherited,
+      sourceProductKey:row.sourceProductKey,
       entitlement:grantByKey.get(row.module_key)??null,
     };
-  }).filter((row:any)=>row!==null);
+  }).filter((row:any)=>row!==null).sort((a:any,b:any)=>String(a.name).localeCompare(String(b.name)));
 });
