@@ -37,7 +37,8 @@ export type ModuleKind =
   | "notifications"
   | "search"
   | "accounting_ai"
-  | "tax_intelligence";
+  | "tax_intelligence"
+  | "childcare";
 
 export type ProductDefinition = {
   key: string;
@@ -125,6 +126,7 @@ export const PLATFORM_MODULE_KEYS = {
   search: "search.core",
   accountingAi: "accounting_ai.core",
   taxIntelligence: "tax_intelligence.core",
+  childcare: "childcare.core",
 } as const;
 
 export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
@@ -283,7 +285,7 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     kind: "vertical_landlord",
     industry: "childcare_agency_marketplace",
     defaultModules: [
-      "crm.core","marketplace.core","bookings.core","payments.core","connect.core",
+      "crm.core","marketplace.core","childcare.core","bookings.core","payments.core","connect.core",
       "compliance.core","documents.core","forms.core","automation.core",
       "notifications.core","search.core","analytics.core","intelligence.core",
       "mobile.core","support.core"
@@ -676,6 +678,17 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     description: "Jobs, agents, shifts, fleets, capacity, dispatch, POD, wallets and performance.",
     dependencies: ["geo.core", "connect.core", "platform.events"],
     capabilities: ["jobs", "agents", "auto_dispatch", "manual_dispatch", "fleet", "pod", "wallet", "tracking"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "childcare.core",
+    name: "Omniqora Childcare",
+    kind: "childcare",
+    version: "1.0.0-preview",
+    description: "Reusable childcare industry layer for children, guardians, providers, placements, attendance, funding and training.",
+    dependencies: ["crm.core","marketplace.core","bookings.core","documents.core","compliance.core","platform.audit"],
+    capabilities: ["children","guardians","providers","placements","attendance","funding","training","matching","safeguarding_bridge"],
     uiMode: "hybrid",
     status: "preview",
   },
