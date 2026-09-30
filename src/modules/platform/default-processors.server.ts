@@ -138,6 +138,54 @@ async function automationProcessor(job:ClaimedModuleEvent){
  }
 }
 
+
+async function notificationProcessor(job:ClaimedModuleEvent){
+ const type=String(job.event.event_type);
+ if(type!=="notification.requested")return;
+ const db=await admin();const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ const recipients=new Set<string>((p.recipientUserIds??[]).map(String));
+ if(Array.isArray(p.recipientRoles)&&p.recipientRoles.length){
+  const{data:members,error}=await db.from("tenant_members").select("user_id,role")
+   .eq("tenant_id",job.tenantId).in("role",p.recipientRoles);
+  if(error)throw new Error(error.message);
+  for(const member of members??[])recipients.add(String(member.user_id));
+ }
+ if(!recipients.size)return;
+ for(const userId of recipients){
+  const{error}=await db.from("user_notifications").upsert({
+   tenant_id:job.tenantId,user_id:userId,tenant_product_id:job.tenantProductId,
+   notification_type:p.notificationType,title:p.title,body:p.body??null,priority:p.priority,
+   entity_type:p.entityType??null,entity_id:p.entityId??null,action_url:p.actionUrl??null,
+   expires_at:p.expiresAt??null,metadata:p.metadata??{},source_event_id:job.event.id
+  },{onConflict:"tenant_id,user_id,source_event_id",ignoreDuplicates:true});
+  if(error)throw new Error(error.message);
+ }
+}
+
+async function searchProcessor(job:ClaimedModuleEvent){
+ const type=String(job.event.event_type);
+ if(!job.tenantProductId)return;
+ if(!["customer.created","customer.updated","company.created","company.updated","lead.created"].includes(type))return;
+ const db=await admin();const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ let entityType:string,entityId:string,title:string,body:string;
+ if(type.startsWith("customer.")){
+  entityType="customer";entityId=p.customerRef;title=p.displayName;
+  body=[p.email,p.phoneE164,p.firstName,p.lastName].filter(Boolean).join(" ");
+ }else if(type.startsWith("company.")){
+  entityType="company";entityId=p.companyRef;title=p.name;
+  body=[p.legalName,p.website,p.industry].filter(Boolean).join(" ");
+ }else{
+  entityType="lead";entityId=p.leadRef;title=p.title;
+  body=[p.source,p.customerRef,p.companyRef].filter(Boolean).join(" ");
+ }
+ const{error}=await db.from("platform_search_documents").upsert({
+  tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,product_key:sourceProduct(job),
+  entity_type:entityType,entity_id:entityId,title,body,keywords:[],locale:p.locale??null,
+  source_revision:job.event.id,metadata:{eventType:type},updated_at:new Date().toISOString()
+ },{onConflict:"tenant_id,product_key,entity_type,entity_id"});
+ if(error)throw new Error(error.message);
+}
+
 async function hospitalityProcessor(job:ClaimedModuleEvent){
  const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
  const tenantProductId=job.tenantProductId;
@@ -182,4 +230,4 @@ async function hospitalityProcessor(job:ClaimedModuleEvent){
  }
 }
 
-export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor).register("loyalty.core",loyaltyProcessor).register("automation.core",automationProcessor);}
+export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor).register("loyalty.core",loyaltyProcessor).register("automation.core",automationProcessor).register("notifications.core",notificationProcessor).register("search.core",searchProcessor);}
