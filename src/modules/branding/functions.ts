@@ -1,15 +1,42 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireModuleEntitlement } from "@/modules/platform/module-access";
 import { resolveTenantBranding } from "./runtime.server";
 
-async function requireAdmin(context:any,tenantId:string){
+async function requireBrandAdmin(context:any,tenantId:string,tenantProductId:string){
   const db=context.supabase as any;
   const{data:m}=await db.from("tenant_members").select("role")
     .eq("tenant_id",tenantId).eq("user_id",context.userId).maybeSingle();
-  if(!m||!["owner","admin"].includes(m.role))throw new Error("Tenant owner/admin access required");
-  return m.role as string;
+  if(m&&["owner","admin"].includes(m.role))return{db,kind:"tenant" as const,role:String(m.role)};
+
+  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+  const{data:tp}=await admin.from("tenant_products").select("id,product_key,region_key,status")
+    .eq("id",tenantProductId).eq("tenant_id",tenantId).maybeSingle();
+  if(!tp||tp.status!=="active")throw new Error("Active tenant product required");
+
+  const{data:p}=await db.from("platform_operators").select("role,status").eq("user_id",context.userId).maybeSingle();
+  if(p?.status==="active"&&["platform_owner","platform_admin"].includes(p.role)){
+    return{db:admin,kind:"operator" as const,role:String(p.role)};
+  }
+  const{data:o}=await db.from("product_operators").select("role,status,region_keys")
+    .eq("product_key",tp.product_key).eq("user_id",context.userId).maybeSingle();
+  const regions=Array.isArray(o?.region_keys)?o.region_keys:[];
+  if(!o||o.status!=="active"||!["landlord_owner","landlord_admin"].includes(o.role)
+    ||(regions.length&&!regions.includes(tp.region_key))){
+    throw new Error("Tenant or landlord admin access required");
+  }
+  return{db:admin,kind:"operator" as const,role:String(o.role)};
+}
+
+async function requireBrandModule(db:any,tenantId:string,tenantProductId:string,moduleKey:string){
+  const{data:grant}=await db.from("tenant_module_entitlements").select("enabled,starts_at,ends_at")
+    .eq("tenant_id",tenantId).eq("tenant_product_id",tenantProductId)
+    .eq("module_key",moduleKey).maybeSingle();
+  const now=Date.now();
+  if(!grant||!grant.enabled||(grant.starts_at&&Date.parse(grant.starts_at)>now)
+    ||(grant.ends_at&&Date.parse(grant.ends_at)<=now)){
+    throw new Error("Module entitlement required");
+  }
 }
 
 const httpsUrl=z.string().url().refine((value)=>value.startsWith("https://"),"HTTPS URL required");
@@ -133,16 +160,14 @@ export const saveTenantBranding=createServerFn({method:"POST"})
 .middleware([requireSupabaseAuth])
 .inputValidator((input:z.input<typeof brandSchema>)=>brandSchema.parse(input))
 .handler(async({context,data})=>{
-  await requireAdmin(context,data.tenantId);
-  const db=context.supabase as any;
+  const access=await requireBrandAdmin(context,data.tenantId,data.tenantProductId);
+  const db=access.db as any;
   const{data:tp}=await db.from("tenant_products").select("id,status")
     .eq("id",data.tenantProductId).eq("tenant_id",data.tenantId).maybeSingle();
   if(!tp||tp.status!=="active")throw new Error("Active tenant product required");
 
   if(data.brandingMode==="white_label"){
-    await requireModuleEntitlement(context,{
-      tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"branding.white_label"
-    });
+    await requireBrandModule(db,data.tenantId,data.tenantProductId,"branding.white_label");
   }
 
   const{data:existing}=await db.from("tenant_brand_profiles").select("id,revision")
@@ -210,8 +235,8 @@ export const saveTenantBrandSurface=createServerFn({method:"POST"})
 .middleware([requireSupabaseAuth])
 .inputValidator((input:z.input<typeof surfaceSchema>)=>surfaceSchema.parse(input))
 .handler(async({context,data})=>{
-  await requireAdmin(context,data.tenantId);
-  const db=context.supabase as any;
+  const access=await requireBrandAdmin(context,data.tenantId,data.tenantProductId);
+  const db=access.db as any;
   const{data:brand}=await db.from("tenant_brand_profiles").select("id")
     .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
     .eq("brand_key",data.brandKey).eq("status","active").maybeSingle();
@@ -273,9 +298,9 @@ export const saveTenantCommunicationIdentity=createServerFn({method:"POST"})
 .middleware([requireSupabaseAuth])
 .inputValidator((input:z.input<typeof commSchema>)=>commSchema.parse(input))
 .handler(async({context,data})=>{
-  await requireAdmin(context,data.tenantId);
+  const access=await requireBrandAdmin(context,data.tenantId,data.tenantProductId);
   validateIdentityValue(data.channel,data.identityValue);
-  const db=context.supabase as any;
+  const db=access.db as any;
   const{data:binding}=await db.from("tenant_integration_bindings")
     .select("id,status,integration_kind,tenant_product_id,location_id")
     .eq("id",data.providerBindingId).eq("tenant_id",data.tenantId).maybeSingle();
@@ -329,8 +354,8 @@ export const setTenantCommunicationIdentityActive=createServerFn({method:"POST"}
   active:z.boolean(),primary:z.boolean().default(false)
 }).parse(input))
 .handler(async({context,data})=>{
-  await requireAdmin(context,data.tenantId);
-  const db=context.supabase as any;
+  const access=await requireBrandAdmin(context,data.tenantId,data.tenantProductId);
+  const db=access.db as any;
   const{data:identity}=await db.from("tenant_communication_identities").select("*")
     .eq("id",data.identityId).eq("tenant_id",data.tenantId)
     .eq("tenant_product_id",data.tenantProductId).maybeSingle();
@@ -360,8 +385,8 @@ export const getTenantBrandingWorkspace=createServerFn({method:"POST"})
   tenantId:z.string().uuid(),tenantProductId:z.string().uuid()
 }).parse(input))
 .handler(async({context,data})=>{
-  await requireAdmin(context,data.tenantId);
-  const db=context.supabase as any;
+  const access=await requireBrandAdmin(context,data.tenantId,data.tenantProductId);
+  const db=access.db as any;
   const[brands,surfaces,domains,identities]=await Promise.all([
     db.from("tenant_brand_profiles").select("*").eq("tenant_id",data.tenantId)
       .eq("tenant_product_id",data.tenantProductId).order("brand_key"),
@@ -429,11 +454,9 @@ export const syncTenantBrandToVoxentri=createServerFn({method:"POST"})
   brandKey:z.string().regex(/^[a-z0-9][a-z0-9._-]{0,119}$/)
 }).parse(input))
 .handler(async({context,data})=>{
-  await requireAdmin(context,data.tenantId);
-  await requireModuleEntitlement(context,{
-    tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"creative.core"
-  });
-  const db=context.supabase as any;
+  const access=await requireBrandAdmin(context,data.tenantId,data.tenantProductId);
+  const db=access.db as any;
+  await requireBrandModule(db,data.tenantId,data.tenantProductId,"creative.core");
   const{data:brand}=await db.from("tenant_brand_profiles").select("*")
     .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
     .eq("brand_key",data.brandKey).eq("status","active").maybeSingle();
