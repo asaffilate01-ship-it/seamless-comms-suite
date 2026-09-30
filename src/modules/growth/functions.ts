@@ -28,3 +28,40 @@ export const listFeedbackSurveys=createServerFn({method:"POST"}).middleware([req
 
 const surveySchema=scope.extend({id:z.string().uuid().optional(),type:z.enum(["nps","csat","ces","custom"]),name:z.string().min(1).max(200),triggerEvent:z.string().max(160).optional().nullable(),channel:z.enum(["email","sms","whatsapp","web","app"]),status:z.enum(["draft","active","paused","archived"]).default("draft"),config:z.record(z.string(),z.unknown()).default({})});
 export const saveFeedbackSurvey=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof surveySchema>)=>surveySchema.parse(input)).handler(async({context,data})=>{await moduleScope(context,data,"feedback.core",true);const db=context.supabase as any;const values={tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,survey_type:data.type,name:data.name,trigger_event:data.triggerEvent??null,channel:data.channel,status:data.status,config:data.config};const q=data.id?db.from("feedback_surveys").update(values).eq("id",data.id).eq("tenant_id",data.tenantId):db.from("feedback_surveys").insert(values);const{data:row,error}=await q.select("*").single();if(error||!row)throw new Error(error?.message??"Survey could not be saved");return row;});
+
+export const listRfmProfiles=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>)=>scope.parse(input))
+.handler(async({context,data})=>{
+  await moduleScope(context,data,"journeys.core");
+  const db=context.supabase as any;
+  const{data:rows,error}=await db.from("customer_rfm")
+    .select("tenant_id,crm_person_id,recency_days,frequency,monetary_minor,currency,r_score,f_score,m_score,segments,calculated_at")
+    .eq("tenant_id",data.tenantId)
+    .order("monetary_minor",{ascending:false})
+    .limit(1000);
+  if(error)throw new Error(error.message);
+  return rows??[];
+});
+
+export const listFeedbackResponses=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>&{surveyId?:string|null})=>scope.extend({surveyId:z.string().uuid().optional().nullable()}).parse(input))
+.handler(async({context,data})=>{
+  await moduleScope(context,data,"feedback.core");
+  const db=context.supabase as any;
+  const surveyIds=(await db.from("feedback_surveys").select("id")
+    .eq("tenant_id",data.tenantId)
+    .eq("tenant_product_id",data.tenantProductId)).data?.map((row:any)=>row.id)??[];
+  if(!surveyIds.length)return[];
+  let query=db.from("feedback_responses")
+    .select("id,survey_id,crm_person_id,score,comment,sentiment,source_ref,metadata,received_at")
+    .eq("tenant_id",data.tenantId)
+    .in("survey_id",surveyIds)
+    .order("received_at",{ascending:false})
+    .limit(1000);
+  if(data.surveyId)query=query.eq("survey_id",data.surveyId);
+  const{data:rows,error}=await query;
+  if(error)throw new Error(error.message);
+  return rows??[];
+});
