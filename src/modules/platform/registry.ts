@@ -27,7 +27,8 @@ export type ModuleKind =
   | "ordering"
   | "hospitality"
   | "practice"
-  | "transformation";
+  | "transformation"
+  | "inventory";
 
 export type ProductDefinition = {
   key: string;
@@ -105,6 +106,7 @@ export const PLATFORM_MODULE_KEYS = {
   practice: "practice.core",
   business360: "business360.core",
   transactions: "transactions.core",
+  inventory: "inventory.core",
 } as const;
 
 export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
@@ -558,12 +560,23 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     status: "planned",
   },
   {
+    key: "inventory.core",
+    name: "Omniqora Inventory",
+    kind: "inventory",
+    version: "1.0.0-preview",
+    description: "Shared stock items, locations, balances, movements, reservations, transfers and low-stock signals.",
+    dependencies: ["platform.tenant","platform.events","platform.audit"],
+    capabilities: ["items","balances","movements","reservations","transfers","low_stock","valuation"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
     key: "marketplace.core",
     name: "Syndriva Marketplace",
     kind: "marketplace",
     version: "1.0.0-planned",
     description: "Reusable vendor, listing, catalogue, inventory, order, booking, commission and payout core.",
-    dependencies: ["crm.core", "platform.events"],
+    dependencies: ["crm.core", "inventory.core", "platform.events"],
     capabilities: ["vendors", "listings", "catalogue", "inventory", "availability", "orders", "bookings", "commissions", "payouts", "reviews", "disputes"],
     uiMode: "hybrid",
     status: "planned",
