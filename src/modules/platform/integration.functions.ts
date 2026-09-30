@@ -68,11 +68,11 @@ export const listTenantIntegrations=createServerFn({method:"POST"})
 .handler(async({context,data})=>{
   await requireTenantProductManager(context,data.tenantProductId);
   const db=context.supabase as any;
-  const{data,error}=await db.from("tenant_integration_bindings")
+  const{data:rows,error}=await db.from("tenant_integration_bindings")
     .select("id,module_key,provider,plugin_key,integration_kind,environment,external_account_ref,config,status,last_verified_at,location_id,secret_refs")
     .eq("tenant_product_id",data.tenantProductId).order("module_key");
   if(error)throw new Error(error.message);
-  return(data??[]).map((row:any)=>({...row,secret_refs:Object.fromEntries(Object.keys(row.secret_refs??{}).map((key)=>[key,"configured"]))}));
+  return(rows??[]).map((row:any)=>({...row,secret_refs:Object.fromEntries(Object.keys(row.secret_refs??{}).map((key)=>[key,"configured"]))}));
 });
 
 export const markIntegrationVerified=createServerFn({method:"POST"})
