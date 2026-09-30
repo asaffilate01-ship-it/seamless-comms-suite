@@ -21,10 +21,34 @@ export const createDispatchJob=createServerFn({method:"POST"}).middleware([requi
 });
 
 const statusSchema=scope.extend({jobId:z.string().uuid(),status:z.enum(["unassigned","offered","assigned","accepted","en_route","arrived","in_progress","en_route_pickup","arrived_pickup","collected","en_route_dropoff","arrived_dropoff","completed","failed","cancelled"])});
-export const updateDispatchJobStatus=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof statusSchema>)=>statusSchema.parse(input)).handler(async({context,data})=>{await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"dispatch.core"});const db=context.supabase as any;const{error}=await db.rpc("update_dispatch_job_status",{_job:data.jobId,_status:data.status});if(error)throw new Error(error.message);return{ok:true};});
+export const updateDispatchJobStatus=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof statusSchema>)=>statusSchema.parse(input)).handler(async({context,data})=>{
+ await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"dispatch.core"});
+ const db=context.supabase as any;const{error}=await db.rpc("update_dispatch_job_status",{_job:data.jobId,_status:data.status});if(error)throw new Error(error.message);
+ const{data:snapshot}=await db.from("tracking_snapshots").select("revision").eq("tenant_id",data.tenantId).eq("subject_type","dispatch_job").eq("subject_id",data.jobId).maybeSingle();
+ if(snapshot){
+  await db.from("tracking_snapshots").update({status:data.status,revision:(snapshot.revision??0)+1,updated_at:new Date().toISOString()})
+   .eq("tenant_id",data.tenantId).eq("subject_type","dispatch_job").eq("subject_id",data.jobId);
+ }else{
+  await db.from("tracking_snapshots").insert({tenant_id:data.tenantId,subject_type:"dispatch_job",subject_id:data.jobId,status:data.status,revision:1});
+ }
+ return{ok:true};
+});
 
 const podSchema=scope.extend({jobId:z.string().uuid(),methods:z.array(z.enum(["photo","signature","pin","barcode","gps","note"])).min(1),evidenceRefs:z.array(z.string().max(1000)).max(50).default([]),recipientName:z.string().max(200).optional().nullable(),note:z.string().max(2000).optional().nullable()});
-export const recordDispatchPod=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof podSchema>)=>podSchema.parse(input)).handler(async({context,data})=>{await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"dispatch.core"});const db=context.supabase as any;const{data:id,error}=await db.rpc("record_dispatch_pod",{_job:data.jobId,_methods:data.methods,_evidence_refs:data.evidenceRefs,_recipient_name:data.recipientName??null,_note:data.note??null});if(error||!id)throw new Error(error?.message??"Proof could not be recorded");return{id};});
+export const recordDispatchPod=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof podSchema>)=>podSchema.parse(input)).handler(async({context,data})=>{
+ await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"dispatch.core"});
+ const db=context.supabase as any;const{data:id,error}=await db.rpc("record_dispatch_pod",{_job:data.jobId,_methods:data.methods,_evidence_refs:data.evidenceRefs,_recipient_name:data.recipientName??null,_note:data.note??null});
+ if(error||!id)throw new Error(error?.message??"Proof could not be recorded");
+ const{data:snapshot}=await db.from("tracking_snapshots").select("revision,public_payload").eq("tenant_id",data.tenantId).eq("subject_type","dispatch_job").eq("subject_id",data.jobId).maybeSingle();
+ const payload={...(snapshot?.public_payload??{}),pod:true,ratingEnabled:true};
+ if(snapshot){
+  await db.from("tracking_snapshots").update({status:"completed",progress:100,public_payload:payload,revision:(snapshot.revision??0)+1,updated_at:new Date().toISOString()})
+   .eq("tenant_id",data.tenantId).eq("subject_type","dispatch_job").eq("subject_id",data.jobId);
+ }else{
+  await db.from("tracking_snapshots").insert({tenant_id:data.tenantId,subject_type:"dispatch_job",subject_id:data.jobId,status:"completed",progress:100,public_payload:payload,revision:1});
+ }
+ return{id};
+});
 
 export const listDispatchAgents=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof scope>)=>scope.parse(input)).handler(async({context,data})=>{await requireModuleEntitlement(context,{...data,moduleKey:"dispatch.core"});const db=context.supabase as any;const [agents,vehicles]=await Promise.all([db.from("dispatch_agents").select("*").eq("tenant_id",data.tenantId).order("display_name"),db.from("dispatch_vehicles").select("*").eq("tenant_id",data.tenantId).order("vehicle_type")]);if(agents.error)throw new Error(agents.error.message);if(vehicles.error)throw new Error(vehicles.error.message);return{agents:agents.data??[],vehicles:vehicles.data??[]};});
 
@@ -199,6 +223,21 @@ export const recordDispatchPosition=createServerFn({method:"POST"})
   await db.from("dispatch_agents").update({
     latitude:data.lat,longitude:data.lng,position_observed_at:data.observedAt
   }).eq("id",data.agentId).eq("tenant_id",data.tenantId);
+  if(data.jobId){
+    const[{data:job},{data:agent},{data:snapshot}]=await Promise.all([
+      db.from("dispatch_jobs").select("status,job_type").eq("id",data.jobId).eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId).maybeSingle(),
+      db.from("dispatch_agents").select("display_name").eq("id",data.agentId).eq("tenant_id",data.tenantId).maybeSingle(),
+      db.from("tracking_snapshots").select("revision,eta_at,progress,public_payload").eq("tenant_id",data.tenantId).eq("subject_type","dispatch_job").eq("subject_id",data.jobId).maybeSingle()
+    ]);
+    const publicPayload={...(snapshot?.public_payload??{}),driverName:agent?.display_name??undefined,jobType:job?.job_type??undefined};
+    const values={
+      tenant_id:data.tenantId,subject_type:"dispatch_job",subject_id:data.jobId,
+      status:job?.status??null,eta_at:snapshot?.eta_at??null,latitude:data.lat,longitude:data.lng,
+      heading:data.headingDegrees??null,progress:snapshot?.progress??null,public_payload:publicPayload,
+      revision:(snapshot?.revision??0)+1,updated_at:data.observedAt
+    };
+    await db.from("tracking_snapshots").upsert(values,{onConflict:"tenant_id,subject_type,subject_id"});
+  }
   return row;
 });
 
