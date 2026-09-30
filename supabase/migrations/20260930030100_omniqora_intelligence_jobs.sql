@@ -91,7 +91,7 @@ RETURNS SETOF jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path=public
-AS $$
+AS $claim$
 BEGIN
  RETURN QUERY
  WITH jobs AS(
@@ -121,7 +121,7 @@ BEGIN
   'input',j.input,'requirements',j.requirements,'attempts',j.attempts
  );
 END;
-$$;
+$claim$;
 REVOKE EXECUTE ON FUNCTION public.claim_intelligence_jobs_for_scope(uuid,uuid,integer,text[],text)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_intelligence_jobs_for_scope(uuid,uuid,integer,text[],text)
