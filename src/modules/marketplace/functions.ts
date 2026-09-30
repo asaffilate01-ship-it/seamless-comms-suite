@@ -373,3 +373,301 @@ export const listMyMarketplacePurchases=createServerFn({method:"POST"})
     ...o,items:(items.data??[]).filter((i:any)=>i.order_id===o.id)
   }));
 });
+
+
+const marketplaceBookingConfigSchema=scope.extend({
+  listingId:z.string().uuid(),
+  bookingServiceId:z.string().uuid(),
+  defaultResourceId:z.string().uuid().optional().nullable(),
+  allowedResourceIds:z.array(z.string().uuid()).max(200).default([]),
+  holdMinutes:z.number().int().min(1).max(120).default(15),
+  paymentMode:z.enum(["none","full","deposit","manual"]).default("none"),
+  depositMinor:z.number().int().nonnegative().optional().nullable(),
+  active:z.boolean().default(true),
+  metadata:z.record(z.string(),z.unknown()).default({})
+});
+export const configureMarketplaceBooking=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof marketplaceBookingConfigSchema>)=>marketplaceBookingConfigSchema.parse(input))
+.handler(async({context,data})=>{
+  await marketScope(context,data,true);
+  await requireModuleEntitlement(context,{...data,moduleKey:"bookings.core"});
+  if(["full","deposit"].includes(data.paymentMode)){
+    await requireModuleEntitlement(context,{...data,moduleKey:"payments.core"});
+  }
+  const db=context.supabase as any;
+  const[{data:listing},{data:service}]=await Promise.all([
+    db.from("marketplace_listings").select("id,vendor_id,currency,price_minor,status")
+      .eq("id",data.listingId).eq("tenant_id",data.tenantId).maybeSingle(),
+    db.from("booking_services").select("id,currency,price_minor,active")
+      .eq("id",data.bookingServiceId).eq("tenant_id",data.tenantId)
+      .eq("tenant_product_id",data.tenantProductId).eq("active",true).maybeSingle()
+  ]);
+  if(!listing||!service)throw new Error("Marketplace listing or booking service not found");
+  if(["full","deposit"].includes(data.paymentMode)){
+    if(listing.price_minor===null||listing.price_minor===undefined||!listing.currency){
+      throw new Error("Paid marketplace bookings require a listing price and currency");
+    }
+    if(service.currency&&service.currency!==listing.currency){
+      throw new Error("Marketplace listing and booking service currencies must match");
+    }
+    if(data.paymentMode==="deposit"){
+      if(data.depositMinor===null||data.depositMinor===undefined||data.depositMinor<=0){
+        throw new Error("Deposit amount is required for deposit bookings");
+      }
+      if(data.depositMinor>Number(listing.price_minor))throw new Error("Deposit cannot exceed listing price");
+    }
+  }
+  const resourceIds=[...new Set([
+    ...(data.defaultResourceId?[data.defaultResourceId]:[]),
+    ...data.allowedResourceIds
+  ])];
+  if(resourceIds.length){
+    const{data:resources,error}=await db.from("booking_resources").select("id")
+      .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+      .eq("active",true).in("id",resourceIds);
+    if(error)throw new Error(error.message);
+    if((resources??[]).length!==resourceIds.length)throw new Error("One or more booking resources are invalid");
+  }
+  if(data.defaultResourceId&&!resourceIds.includes(data.defaultResourceId)){
+    throw new Error("Default resource must be allowed");
+  }
+  const metadata={
+    ...data.metadata,
+    allowedResourceIds:resourceIds,
+    vendorId:listing.vendor_id
+  };
+  const{data:row,error}=await db.from("marketplace_booking_configs").upsert({
+    tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,listing_id:data.listingId,
+    booking_service_id:data.bookingServiceId,default_resource_id:data.defaultResourceId??null,
+    allow_customer_resource_choice:data.allowedResourceIds.length>0,
+    hold_minutes:data.holdMinutes,payment_mode:data.paymentMode,
+    deposit_minor:data.depositMinor??null,active:data.active,metadata
+  },{onConflict:"tenant_product_id,listing_id"}).select("*").single();
+  if(error||!row)throw new Error(error?.message??"Marketplace booking configuration could not be saved");
+  return row;
+});
+
+export const getCustomerMarketplaceBookingOptions=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>&{listingId:string})=>scope.extend({
+  listingId:z.string().uuid()
+}).parse(input))
+.handler(async({context,data})=>{
+  const access=await customerMarketplaceScope(context,data);
+  const admin=access.admin;
+  const{data:config}=await admin.from("marketplace_booking_configs").select("*")
+    .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .eq("listing_id",data.listingId).eq("active",true).maybeSingle();
+  if(!config)throw new Error("Marketplace listing is not configured for bookings");
+  const[{data:listing},{data:service}]=await Promise.all([
+    admin.from("marketplace_listings").select("id,vendor_id,title,description,currency,price_minor,attributes")
+      .eq("id",data.listingId).eq("tenant_id",data.tenantId).eq("status","active").maybeSingle(),
+    admin.from("booking_services").select("*").eq("id",config.booking_service_id)
+      .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+      .eq("active",true).maybeSingle()
+  ]);
+  if(!listing||!service)throw new Error("Bookable marketplace listing is unavailable");
+  const allowed=Array.isArray(config.metadata?.allowedResourceIds)
+    ?config.metadata.allowedResourceIds.map(String):[];
+  const resourceIds=config.allow_customer_resource_choice
+    ?allowed:(config.default_resource_id?[config.default_resource_id]:[]);
+  const resources=resourceIds.length
+    ?await admin.from("booking_resources").select("id,location_id,external_ref,name,resource_kind,capacity,skills,metadata")
+      .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+      .eq("active",true).in("id",resourceIds)
+    :{data:[],error:null};
+  if(resources.error)throw new Error(resources.error.message);
+  const rules=resourceIds.length
+    ?await admin.from("booking_availability_rules")
+      .select("id,resource_id,weekday,start_time,end_time,timezone,valid_from,valid_until,capacity")
+      .in("resource_id",resourceIds)
+    :{data:[],error:null};
+  if(rules.error)throw new Error(rules.error.message);
+  return{
+    listing,service,resources:resources.data??[],availabilityRules:rules.data??[],
+    bookingPolicy:{
+      holdMinutes:config.hold_minutes,paymentMode:config.payment_mode,
+      depositMinor:config.deposit_minor,allowCustomerResourceChoice:config.allow_customer_resource_choice,
+      defaultResourceId:config.default_resource_id
+    }
+  };
+});
+
+const customerBookingSchema=scope.extend({
+  listingId:z.string().uuid(),
+  resourceId:z.string().uuid().optional().nullable(),
+  startsAt:z.string().datetime(),
+  timezone:z.string().min(1).max(80),
+  partySize:z.number().int().min(1).max(100).default(1),
+  idempotencyKey:z.string().min(8).max(120),
+  metadata:z.record(z.string(),z.union([
+    z.string(),z.number(),z.boolean(),z.null(),
+    z.array(z.string().max(240))
+  ])).default({})
+});
+export const createCustomerMarketplaceBooking=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof customerBookingSchema>)=>customerBookingSchema.parse(input))
+.handler(async({context,data})=>{
+  const access=await customerMarketplaceScope(context,data);
+  const admin=access.admin;
+  const{data:config}=await admin.from("marketplace_booking_configs").select("*")
+    .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .eq("listing_id",data.listingId).eq("active",true).maybeSingle();
+  if(!config)throw new Error("Marketplace listing is not configured for bookings");
+  const[{data:listing},{data:service}]=await Promise.all([
+    admin.from("marketplace_listings").select("id,vendor_id,title,currency,price_minor,status")
+      .eq("id",data.listingId).eq("tenant_id",data.tenantId).eq("status","active").maybeSingle(),
+    admin.from("booking_services").select("id,duration_minutes,currency,price_minor,active")
+      .eq("id",config.booking_service_id).eq("tenant_id",data.tenantId)
+      .eq("tenant_product_id",data.tenantProductId).eq("active",true).maybeSingle()
+  ]);
+  if(!listing||!service)throw new Error("Bookable marketplace listing is unavailable");
+
+  const allowed=Array.isArray(config.metadata?.allowedResourceIds)
+    ?config.metadata.allowedResourceIds.map(String):[];
+  let resourceId:string|null=config.default_resource_id??null;
+  if(config.allow_customer_resource_choice){
+    if(!data.resourceId||!allowed.includes(data.resourceId))throw new Error("Choose an allowed booking resource");
+    resourceId=data.resourceId;
+  }else if(data.resourceId&&resourceId!==data.resourceId){
+    throw new Error("This listing does not allow choosing another resource");
+  }
+
+  let locationId:string|null=null;
+  if(resourceId){
+    const{data:resource}=await admin.from("booking_resources").select("id,location_id")
+      .eq("id",resourceId).eq("tenant_id",data.tenantId)
+      .eq("tenant_product_id",data.tenantProductId).eq("active",true).maybeSingle();
+    if(!resource)throw new Error("Booking resource is unavailable");
+    locationId=resource.location_id??null;
+  }
+
+  const startsAt=new Date(data.startsAt);
+  const endsAt=new Date(startsAt.getTime()+Number(service.duration_minutes)*60000);
+  if(!Number.isFinite(startsAt.getTime())||startsAt.getTime()<Date.now()-60000){
+    throw new Error("Booking start time must be valid and in the future");
+  }
+
+  const needsOnlinePayment=["full","deposit"].includes(config.payment_mode);
+  const bookingStatus=needsOnlinePayment?"hold":"confirmed";
+  const holdExpiresAt=needsOnlinePayment
+    ?new Date(Date.now()+Number(config.hold_minutes)*60000).toISOString():null;
+
+  const{data:bookingId,error:bookingError}=await admin.rpc("create_booking_slot",{
+    _tenant:data.tenantId,_tenant_product:data.tenantProductId,_service:service.id,
+    _resource:resourceId,_location:locationId,_customer_ref:access.buyerRef,
+    _starts_at:startsAt.toISOString(),_ends_at:endsAt.toISOString(),_timezone:data.timezone,
+    _party_size:data.partySize,_channel:"marketplace",
+    _idempotency_key:"marketplace-booking:"+data.idempotencyKey,
+    _status:bookingStatus,_hold_expires_at:holdExpiresAt,
+    _metadata:{
+      ...data.metadata,marketplaceListingId:listing.id,vendorId:listing.vendor_id,
+      customerPortalUserId:context.userId,crmPersonId:access.person.id,
+      paymentMode:config.payment_mode
+    }
+  });
+  if(bookingError||!bookingId)throw new Error(bookingError?.message??"Marketplace booking could not be created");
+
+  const{error:linkError}=await admin.from("marketplace_booking_links").upsert({
+    booking_id:bookingId,tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,
+    listing_id:listing.id,vendor_id:listing.vendor_id,buyer_ref:access.buyerRef
+  },{onConflict:"booking_id"});
+  if(linkError)throw new Error(linkError.message);
+
+  if(!needsOnlinePayment){
+    return{
+      bookingId,status:"confirmed",startsAt:startsAt.toISOString(),endsAt:endsAt.toISOString(),
+      payment:null
+    };
+  }
+
+  const{data:paymentGrant}=await admin.from("tenant_module_entitlements").select("enabled,starts_at,ends_at")
+    .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .eq("module_key","payments.core").eq("enabled",true).maybeSingle();
+  const now=Date.now();
+  if(!paymentGrant||!paymentGrant.enabled
+    ||(paymentGrant.starts_at&&Date.parse(paymentGrant.starts_at)>now)
+    ||(paymentGrant.ends_at&&Date.parse(paymentGrant.ends_at)<=now)){
+    throw new Error("Payments add-on is required for this booking");
+  }
+  const amountMinor=config.payment_mode==="deposit"
+    ?Number(config.deposit_minor??0):Number(listing.price_minor??0);
+  if(!Number.isInteger(amountMinor)||amountMinor<=0||!listing.currency){
+    throw new Error("Booking payment amount is not configured");
+  }
+
+  const[{createDefaultPaymentProviderRegistry},{createPaymentIntent}]=await Promise.all([
+    import("@/modules/payments/providers.server"),import("@/modules/payments/runtime.server")
+  ]);
+  const payment=await createPaymentIntent(createDefaultPaymentProviderRegistry(),{
+    tenantId:data.tenantId,tenantProductId:data.tenantProductId,regionKey:access.tp.region_key,
+    request:{
+      idempotencyKey:"marketplace-booking-payment:"+data.idempotencyKey,
+      amountMinor,currency:listing.currency,captureMode:"automatic",
+      customerRef:access.buyerRef,purpose:"Marketplace booking: "+listing.title,
+      contextType:"marketplace_booking",contextId:String(bookingId),
+      metadata:{listingId:listing.id,vendorId:listing.vendor_id,bookingId:String(bookingId)}
+    }
+  });
+
+  if(payment.provider.status==="captured"){
+    const{error:transitionError}=await admin.rpc("transition_booking",{
+      _booking:bookingId,_status:"confirmed",
+      _metadata:{paymentIntentId:payment.payment.id,paymentStatus:"captured"}
+    });
+    if(transitionError)throw new Error(transitionError.message);
+  }
+
+  return{
+    bookingId,
+    status:payment.provider.status==="captured"?"confirmed":"hold",
+    holdExpiresAt,
+    startsAt:startsAt.toISOString(),
+    endsAt:endsAt.toISOString(),
+    payment
+  };
+});
+
+export const listMyMarketplaceBookings=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>)=>scope.parse(input))
+.handler(async({context,data})=>{
+  const access=await customerMarketplaceScope(context,data);
+  const admin=access.admin;
+  const{data:links,error}=await admin.from("marketplace_booking_links").select("*")
+    .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .eq("buyer_ref",access.buyerRef).order("created_at",{ascending:false}).limit(500);
+  if(error)throw new Error(error.message);
+  const ids=(links??[]).map((x:any)=>x.booking_id);
+  if(!ids.length)return[];
+  const{data:bookings,error:bookingError}=await admin.from("bookings").select("*")
+    .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .in("id",ids).order("starts_at",{ascending:false});
+  if(bookingError)throw new Error(bookingError.message);
+  const linkById=new Map((links??[]).map((x:any)=>[x.booking_id,x]));
+  return(bookings??[]).map((booking:any)=>({...booking,marketplace:linkById.get(booking.id)}));
+});
+
+export const listMyMarketplaceVendorBookings=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>&{vendorId:string})=>scope.extend({
+  vendorId:z.string().uuid()
+}).parse(input))
+.handler(async({context,data})=>{
+  const access=await vendorPortalScope(context,data);
+  const admin=access.admin;
+  const{data:links,error}=await admin.from("marketplace_booking_links").select("*")
+    .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .eq("vendor_id",data.vendorId).order("created_at",{ascending:false}).limit(1000);
+  if(error)throw new Error(error.message);
+  const ids=(links??[]).map((x:any)=>x.booking_id);
+  if(!ids.length)return[];
+  const{data:bookings,error:bookingError}=await admin.from("bookings").select("*")
+    .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .in("id",ids).order("starts_at",{ascending:false});
+  if(bookingError)throw new Error(bookingError.message);
+  const linkById=new Map((links??[]).map((x:any)=>[x.booking_id,x]));
+  return(bookings??[]).map((booking:any)=>({...booking,marketplace:linkById.get(booking.id)}));
+});
