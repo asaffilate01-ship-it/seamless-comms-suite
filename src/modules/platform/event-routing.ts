@@ -27,6 +27,7 @@ export const MODULE_EVENT_MANIFESTS: ModuleEventManifest[] = [
   { moduleKey: "creative.core", consumes: ["marketing.campaign.*","creative.brief.*"], produces: ["creative.*"] },
   { moduleKey: "dispatch.core", consumes: ["order.ready","delivery.requested","service.job_requested","marketplace.order.accepted"], produces: ["dispatch.*"] },
   { moduleKey: "marketplace.core", consumes: ["payment.*","dispatch.job.*","feedback.*"], produces: ["marketplace.*"] },
+  { moduleKey: "bookings.core", consumes: ["payment.captured","payment.failed","payment.cancelled"], produces: ["booking.*"] },
   { moduleKey: "compliance.core", consumes: ["document.*","compliance.*","business360.*","regulatory.*"], produces: ["compliance.*"] },
   { moduleKey: "inventory.core", consumes: ["inventory.movement.*","hospitality.waste.*"], produces: ["inventory.*"] },
   { moduleKey: "ordering.core", consumes: ["reception.order.*","payment.*","catalogue.*"], produces: ["ordering.*","order.*"] },
