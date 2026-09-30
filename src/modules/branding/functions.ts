@@ -409,8 +409,7 @@ export const getMyEffectiveBranding=createServerFn({method:"POST"})
     if(vendorRows?.length){
       const ids=vendorRows.map((row:any)=>row.vendor_id);
       const{data:matched}=await admin.from("marketplace_vendors").select("id")
-        .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
-        .in("id",ids).limit(1);
+        .eq("tenant_id",data.tenantId).in("id",ids).limit(1);
       vendor=!!matched?.length;
     }
   }
