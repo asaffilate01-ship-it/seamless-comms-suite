@@ -64,7 +64,8 @@ export const listPlatformServiceCredentials=createServerFn({method:"POST"})
   const db=context.supabase as any;
   const{data:p}=await db.from("platform_operators").select("role,status").eq("user_id",context.userId).maybeSingle();
   const platform=!!(p?.status==="active"&&["platform_owner","platform_admin","platform_auditor"].includes(p.role));
-  const{data:rows,error}=await (await import("@/integrations/supabase/client.server")).supabaseAdmin
+  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+  const{data:rows,error}=await admin
     .from("platform_service_credentials").select("id,key_id,name,status,scopes,expires_at,last_used_at,created_at").order("created_at",{ascending:false}).limit(500);
   if(error)throw new Error(error.message);
   return(rows??[]).filter((row:any)=>{
