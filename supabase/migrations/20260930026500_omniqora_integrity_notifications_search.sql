@@ -11,8 +11,7 @@ DROP POLICY IF EXISTS "tenant module write" ON public.platform_document_versions
 ALTER TABLE public.user_notifications
   ADD COLUMN IF NOT EXISTS source_event_id text;
 CREATE UNIQUE INDEX IF NOT EXISTS user_notifications_event_user_uq
-  ON public.user_notifications(tenant_id,user_id,source_event_id)
-  WHERE source_event_id IS NOT NULL;
+  ON public.user_notifications(tenant_id,user_id,source_event_id);
 
 INSERT INTO public.platform_module_event_patterns(module_key,event_pattern) VALUES
  ('notifications.core','notification.requested'),
