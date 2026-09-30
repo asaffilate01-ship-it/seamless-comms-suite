@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -82,6 +83,17 @@ export const queueTaxResearch=createServerFn({method:"POST"})
   }).select("id,status,created_at,source_hierarchy").single();
   if(error||!run)throw new Error(error?.message??"Tax research could not be queued");
   await admin.from("tax_research_issues").update({status:"researching"}).eq("id",issue.id);
+  const{data:tp}=await admin.from("tenant_products").select("product_key").eq("id",data.tenantProductId).maybeSingle();
+  const eventId=randomUUID();
+  const{error:eventError}=await admin.from("platform_events").insert({
+    id:eventId,tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,
+    product_key:String(tp?.product_key??"unknown"),event_type:"tax_intelligence.research.requested",
+    event_version:1,occurred_at:new Date().toISOString(),environment:"production",
+    subject_type:"tax_research_run",subject_id:run.id,correlation_id:run.id,causation_id:null,
+    idempotency_key:"tax-research:"+run.id,data_classification:"confidential",
+    payload:{practiceClientId:data.practiceClientId,researchIssueId:issue.id,researchRunId:run.id,jurisdiction:issue.jurisdiction,taxType:issue.tax_type,periodKey:issue.period_key}
+  });
+  if(eventError)throw new Error(eventError.message);
   return run;
 });
 
