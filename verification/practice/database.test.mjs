@@ -1,0 +1,104 @@
+import assert from 'node:assert/strict';
+import {readFile,readdir} from 'node:fs/promises';
+import {PGlite} from '@electric-sql/pglite';
+const db=new PGlite();
+await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
+CREATE SCHEMA auth; GRANT USAGE ON SCHEMA auth TO authenticated;
+CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb);
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+CREATE PUBLICATION supabase_realtime;`);
+const dir=new URL('../../supabase/migrations/',import.meta.url);
+for(const name of (await readdir(dir)).filter(n=>n.endsWith('.sql')).sort()){
+ if(name.startsWith('20260816120554'))for(const id of ['18bafcd5-3e4c-4044-bb63-10325a0b7209','e66c0525-1787-4250-be26-79f849624521','890c71b1-cf6e-4b68-a56e-dd6050372481','97319fe5-82fd-44cd-b27d-6ae314ee368b'])await db.query('INSERT INTO auth.users(id,email) VALUES($1,$2)',[id,'fixture@example.invalid']);
+ try{await db.exec(await readFile(new URL(name,dir),'utf8'));}catch(e){console.error('Migration failed:',name,e.message);process.exit(1)}
+}
+console.log('All migrations applied to isolated PostgreSQL');
+
+
+const ids=Array.from({length:6},(_,i)=>`00000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`);
+const [owner,outsider,viewer,clientUser,clientViewer,agent]=ids;
+for(const id of ids)await db.query('INSERT INTO auth.users(id,email) VALUES($1,$2)',[id,'test@example.invalid']);
+const tenant=(await db.query("INSERT INTO tenants(name,slug) VALUES('Practice','practice-test') RETURNING id")).rows[0].id;
+const otherTenant=(await db.query("INSERT INTO tenants(name,slug) VALUES('Other','other-test') RETURNING id")).rows[0].id;
+for(const [id,role] of [[owner,'owner'],[viewer,'viewer'],[agent,'agent']])await db.query('INSERT INTO tenant_members(tenant_id,user_id,role) VALUES($1,$2,$3)',[tenant,id,role]);
+await db.query("INSERT INTO tenant_members(tenant_id,user_id,role) VALUES($1,$2,'owner')",[otherTenant,outsider]);
+const product=(await db.query("INSERT INTO tenant_products(tenant_id,product_key,region_key) VALUES($1,'taxcenda','GB') RETURNING id",[tenant])).rows[0].id;
+const secondProduct=(await db.query("INSERT INTO tenant_products(tenant_id,product_key,region_key) VALUES($1,'iq-practice-cloud','GB') RETURNING id",[tenant])).rows[0].id;
+for(const p of [product,secondProduct])await db.query("INSERT INTO tenant_module_entitlements(tenant_id,tenant_product_id,module_key) VALUES($1,$2,'practice.core')",[tenant,p]);
+const client=(await db.query("INSERT INTO practice_clients(tenant_id,tenant_product_id,legal_name,client_kind,country_code) VALUES($1,$2,'Client','company','GB') RETURNING id",[tenant,product])).rows[0].id;
+const otherClient=(await db.query("INSERT INTO practice_clients(tenant_id,tenant_product_id,legal_name,client_kind,country_code) VALUES($1,$2,'Other client','company','GB') RETURNING id",[tenant,secondProduct])).rows[0].id;
+for(const [id,role] of [[clientUser,'client_owner'],[clientViewer,'client_viewer']])await db.query("INSERT INTO practice_client_users(tenant_id,practice_client_id,user_id,portal_role,status) VALUES($1,$2,$3,$4,'active')",[tenant,client,id,role]);
+async function as(user,fn){await db.exec('BEGIN; SET LOCAL ROLE authenticated;');await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const r=await fn();await db.exec('COMMIT');return r;}catch(e){await db.exec('ROLLBACK');throw e;}}
+async function command(user,c,p=product){return (await as(user,()=>db.query('SELECT practice_workspace_command($1,$2,$3) result',[tenant,p,JSON.stringify(c)]))).rows[0].result;}
+async function portal(user,action='read',entity=null,response=null,c=client){return (await as(user,()=>db.query('SELECT practice_portal_workspace($1,$2,$3,$4) result',[c,action,entity,response]))).rows[0].result;}
+const service={key:'accounts',name:'Accounts',industry:'Accounting',currency:'GBP',baseMinor:10000,unitMinor:250,recurrence:'annual',phases:[{title:'Collect',budgetMinutes:20},{title:'Review',budgetMinutes:30}]};
+for(const user of [outsider,viewer,clientUser,agent])await assert.rejects(()=>command(user,{operation:'service.save',service}));
+const serviceId=(await command(owner,{operation:'service.save',service})).id;
+const create={operation:'job.create',clientId:client,serviceId,periodKey:'2026',internalDue:'2026-12-01T12:00:00Z',externalDue:'2027-01-01T12:00:00Z'};
+await assert.rejects(()=>command(owner,{...create,clientId:otherClient}),/outside workspace/);
+await assert.rejects(()=>command(owner,create,secondProduct),/outside workspace/);
+const job=(await command(owner,create)).id;
+assert.deepEqual(await command(owner,create),{id:job,existing:true});
+assert.equal((await db.query('SELECT count(*)::int n FROM practice_job_phases WHERE engagement_id=$1',[job])).rows[0].n,2);
+const phases=(await db.query('SELECT * FROM practice_job_phases WHERE engagement_id=$1 ORDER BY position',[job])).rows;
+await assert.rejects(()=>command(owner,{operation:'phase.complete',jobId:job,phaseId:phases[1].id,expectedVersion:1}),/earlier phases/);
+await assert.rejects(()=>command(owner,{operation:'job.status',jobId:job,status:'completed',expectedVersion:1}),/Complete phases/);
+const direct=await as(owner,()=>db.query("UPDATE practice_engagements SET status='completed' WHERE id=$1 RETURNING id",[job]));assert.equal(direct.rows.length,0);
+const request=(await command(owner,{operation:'request.create',jobId:job,title:'Bank statements',dueAt:null})).id;
+await assert.rejects(()=>command(owner,{operation:'phase.complete',jobId:job,phaseId:phases[0].id,expectedVersion:1}),/Outstanding/);
+await assert.rejects(()=>portal(outsider),/membership/);
+await assert.rejects(()=>portal(clientUser,'read',null,null,otherClient),/membership/);
+await assert.rejects(()=>portal(clientViewer,'respond',request,'Here are the records'),/read only/);
+await portal(clientUser,'respond',request,'Here are the records');
+await command(agent,{operation:'request.review',requestId:request,accepted:true});
+await command(owner,{operation:'phase.complete',jobId:job,phaseId:phases[0].id,expectedVersion:1});
+await assert.rejects(()=>command(owner,{operation:'phase.complete',jobId:job,phaseId:phases[1].id,expectedVersion:1}),/changed/);
+await command(owner,{operation:'phase.complete',jobId:job,phaseId:phases[1].id,expectedVersion:2});
+await assert.rejects(()=>command(owner,{operation:'job.assign',jobId:job,userId:outsider,expectedVersion:3}),/staff member/);
+await command(owner,{operation:'time.record',jobId:job,minutes:30,costRateMinor:3000,description:'Review'});
+await assert.rejects(()=>command(owner,{operation:'time.record',jobId:job,minutes:-1,costRateMinor:3000,description:'Invalid'}));
+await command(owner,{operation:'job.status',jobId:job,status:'completed',expectedVersion:3});
+await assert.rejects(()=>command(owner,{operation:'request.create',jobId:job,title:'Late request',dueAt:null}),/closed/);
+const proposal=(await command(owner,{operation:'proposal.create',clientId:client,serviceId,units:4,catchupMinor:5000,terms:'Test terms',expiresAt:'2099-01-01T12:00:00Z'})).id;
+assert.equal((await portal(clientUser)).proposals.length,0);
+await command(owner,{operation:'proposal.issue',proposalId:proposal});
+assert.equal((await portal(clientUser)).proposals[0].total_minor,16000);
+await assert.rejects(()=>portal(clientViewer,'accept',proposal),/read only/);
+await portal(clientUser,'accept',proposal);
+await assert.rejects(()=>portal(clientUser,'accept',proposal),/issued proposal/);
+const portalData=await portal(clientUser);
+assert.equal('time' in portalData,false);assert.equal('internal_due_at' in portalData.jobs[0],false);assert.equal('service_snapshot' in portalData.proposals[0],false);
+assert.equal((await as(outsider,()=>db.query('SELECT * FROM practice_proposals'))).rows.length,0);
+assert.equal((await as(clientUser,()=>db.query('SELECT * FROM practice_work_time'))).rows.length,0);
+await command(owner,{operation:'service.save',service:{...service,name:'Updated accounts'}});
+assert.equal((await db.query('SELECT template_snapshot FROM practice_engagements WHERE id=$1',[job])).rows[0].template_snapshot.name,'Accounts');
+
+const automation=(input)=>as(owner,()=>db.query('SELECT configure_practice_automation($1,$2,$3)',[tenant,product,JSON.stringify(input)]));
+await command(owner,{operation:'service.save',service:{...service,recurrence:'monthly'}});
+await automation({operation:'recurrence.save',clientId:client,serviceId,nextOn:'2025-01-31',internalDays:7,externalDays:14,enabled:true});
+await assert.rejects(()=>as(owner,()=>db.query('SELECT run_practice_automation(50)')),/permission denied/);
+await db.query('SELECT run_practice_automation(50)');
+assert.equal((await db.query("SELECT next_on::text FROM practice_recurring_work")).rows[0].next_on,'2025-02-28');
+await db.query('SELECT run_practice_automation(50)');
+assert.equal((await db.query("SELECT next_on::text FROM practice_recurring_work")).rows[0].next_on,'2025-03-31');
+await db.query('UPDATE practice_recurring_work SET enabled=false');
+const newJob=(await command(owner,{...create,periodKey:'2027'})).id;
+const chaseRequest=(await command(owner,{operation:'request.create',jobId:newJob,title:'Missing invoice',dueAt:'2020-01-01T00:00:00Z'})).id;
+await automation({operation:'request.chasing',requestId:chaseRequest,enabled:true});
+await db.query('SELECT run_practice_automation(50)');await db.query('SELECT run_practice_automation(50)');
+assert.equal((await db.query("SELECT count(*)::int n FROM platform_events WHERE event_type='practice.request.reminder_due'")).rows[0].n,1);
+assert.equal((await as(clientViewer,()=>db.query('SELECT practice_request_access($1,true) ok',[chaseRequest]))).rows[0].ok,false);
+assert.equal((await as(clientUser,()=>db.query('SELECT practice_request_access($1,true) ok',[chaseRequest]))).rows[0].ok,true);
+await db.query("INSERT INTO practice_request_files(request_id,storage_path,file_name,mime_type,size_bytes,sha256,uploaded_by) VALUES($1,'test-path','invoice.pdf','application/pdf',10,$2,$3)",[chaseRequest,'a'.repeat(64),clientUser]);
+assert.equal((await as(clientUser,()=>db.query('SELECT * FROM practice_request_files'))).rows.length,1);
+assert.equal((await as(outsider,()=>db.query('SELECT * FROM practice_request_files'))).rows.length,0);
+await portal(clientUser,'respond',chaseRequest,'Uploaded');
+await db.query("UPDATE practice_work_requests SET last_chased_at=now()-interval '4 days' WHERE id=$1",[chaseRequest]);
+await db.query('SELECT run_practice_automation(50)');
+assert.equal((await db.query("SELECT count(*)::int n FROM platform_events WHERE event_type='practice.request.reminder_due'")).rows[0].n,1);
+console.log('PASS: recurring month-end anchors, worker-only execution, reminder retry suppression, stop-on-response, private attachment access');
+await db.query("UPDATE tenant_module_entitlements SET ends_at=now()-interval '1 day' WHERE tenant_product_id=$1",[product]);
+await assert.rejects(()=>command(owner,create),/entitlement/);await assert.rejects(()=>portal(clientUser),/entitlement/);
+assert.equal((await as(owner,()=>db.query('SELECT * FROM practice_service_templates WHERE tenant_product_id=$1',[product]))).rows.length,0);
+console.log('PASS: tenant/product isolation, roles, portal isolation, expired grants, immutable proposals, version conflicts, phase gates, atomic jobs, idempotent periods and audit');
+await db.close();

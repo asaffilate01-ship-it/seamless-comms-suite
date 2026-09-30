@@ -35,6 +35,11 @@ export const createPracticeClient=createServerFn({method:"POST"})
   const access=await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"practice.core"});
   requireWritableTenantRole(access.role);
   const db=context.supabase as any;
+  for (const [table,id] of [["crm_companies",data.crmCompanyId],["crm_people",data.crmPersonId]] as const) {
+    if (!id) continue;
+    const {data:linked,error:linkedError}=await db.from(table).select("id").eq("id",id).eq("tenant_id",data.tenantId).maybeSingle();
+    if(linkedError||!linked)throw new Error("CRM record outside workspace");
+  }
   const{data:row,error}=await db.from("practice_clients").insert({
     tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,
     crm_person_id:data.crmPersonId??null,crm_company_id:data.crmCompanyId??null,

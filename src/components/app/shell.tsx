@@ -29,6 +29,8 @@ type NavItem = {
   badge?: string;
 };
 const nav: NavItem[] = [
+  { to: "/app/crm", labelKey: "", label: "CRM", icon: Users },
+  { to: "/app/practice", labelKey: "", label: "Practice & Work", icon: GitBranch },
   { to: "/app", labelKey: "app.nav.overview", icon: LayoutDashboard, exact: true },
   { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle, badge: "LIVE" },
   { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox, badge: "12" },
