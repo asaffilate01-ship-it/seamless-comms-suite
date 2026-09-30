@@ -72,6 +72,72 @@ async function inventoryProcessor(job:ClaimedModuleEvent){
  if(error)throw new Error(error.message);
 }
 
+
+function configuredEarnQuantity(rule:unknown,type:string,payload:any):number|null{
+ if(!rule||typeof rule!=="object"||Array.isArray(rule))return null;
+ const r=rule as Record<string,unknown>;
+ const events=Array.isArray(r.eventTypes)?r.eventTypes.map(String):[];
+ if(events.length&&!events.includes(type))return null;
+ const mode=String(r.mode??"");
+ if(mode==="fixed_per_event"){
+  const q=Number(r.quantity??0);return Number.isFinite(q)&&q>0?q:null;
+ }
+ if(mode==="per_minor_spend"){
+  if(type!=="order.completed")return null;
+  const denominator=Number(r.minorUnitsPerReward??0);
+  const units=Number(r.rewardUnits??1);
+  const basis=String(r.amountBasis??"gross");
+  const amount=Number(basis==="net"?(payload.amounts?.netMinor??payload.amounts?.grossMinor??0):(payload.amounts?.grossMinor??0));
+  if(!Number.isFinite(denominator)||denominator<=0||!Number.isFinite(units)||units<=0||!Number.isFinite(amount)||amount<=0)return null;
+  return Math.floor(amount/denominator)*units;
+ }
+ return null;
+}
+
+async function loyaltyProcessor(job:ClaimedModuleEvent){
+ const type=String(job.event.event_type);
+ if(!["order.completed","booking.completed"].includes(type))return;
+ if(!job.tenantProductId)return;
+ const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ const customerRef=typeof p.customerRef==="string"?p.customerRef:null;
+ if(!customerRef)return;
+ const db=await admin();
+ const{data:programmes,error}=await db.from("loyalty_programmes")
+  .select("id,earn_rule").eq("tenant_id",job.tenantId)
+  .eq("tenant_product_id",job.tenantProductId).eq("active",true);
+ if(error)throw new Error(error.message);
+ for(const programme of programmes??[]){
+  const quantity=configuredEarnQuantity(programme.earn_rule,type,p);
+  if(quantity===null||quantity<=0)continue;
+  const{error:ledgerError}=await db.rpc("apply_loyalty_entry",{
+   _tenant:job.tenantId,_programme:programme.id,_customer_ref:customerRef,_entry_type:"earn",
+   _quantity:quantity,_source_ref:"event:"+job.event.id+":programme:"+programme.id,
+   _reason:"Automatic earn from "+type,_occurred_at:occurred(job)
+  });
+  if(ledgerError)throw new Error(ledgerError.message);
+ }
+}
+
+async function automationProcessor(job:ClaimedModuleEvent){
+ if(!job.tenantProductId)return;
+ const db=await admin();const type=String(job.event.event_type);
+ const{data:workflows,error}=await db.from("automation_workflows")
+  .select("id,tenant_product_id,trigger_event,active_version")
+  .eq("tenant_id",job.tenantId).eq("status","active");
+ if(error)throw new Error(error.message);
+ for(const workflow of workflows??[]){
+  if(workflow.tenant_product_id&&workflow.tenant_product_id!==job.tenantProductId)continue;
+  const pattern=String(workflow.trigger_event);
+  const matches=pattern==="*"||(pattern.endsWith("*")&&type.startsWith(pattern.slice(0,-1)))||pattern===type;
+  if(!matches||!workflow.active_version)continue;
+  const{error:runError}=await db.from("automation_runs").upsert({
+   tenant_id:job.tenantId,workflow_id:workflow.id,workflow_version:workflow.active_version,
+   event_id:job.event.id,status:"queued",context:{event:job.event}
+  },{onConflict:"workflow_id,event_id",ignoreDuplicates:true});
+  if(runError)throw new Error(runError.message);
+ }
+}
+
 async function hospitalityProcessor(job:ClaimedModuleEvent){
  const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
  const tenantProductId=job.tenantProductId;
@@ -116,4 +182,4 @@ async function hospitalityProcessor(job:ClaimedModuleEvent){
  }
 }
 
-export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor);}
+export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor).register("loyalty.core",loyaltyProcessor).register("automation.core",automationProcessor);}
