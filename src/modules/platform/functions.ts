@@ -80,11 +80,15 @@ export const listProductModuleCatalogue=createServerFn({method:"POST"})
   }
 
   const grantByKey=new Map(grants.map((row:any)=>[row.module_key,row]));
-  return(available??[]).map((row:any)=>({
-    ...moduleByKey.get(row.module_key),
-    available:true,
-    defaultOn:!!row.enabled_by_default,
-    defaultConfig:row.config??{},
-    entitlement:grantByKey.get(row.module_key)??null,
-  })).filter((row:any)=>row.module_key);
+  return(available??[]).map((row:any)=>{
+    const module=moduleByKey.get(row.module_key) as Record<string,unknown>|undefined;
+    if(!module)return null;
+    return{
+      ...module,
+      available:true,
+      defaultOn:!!row.enabled_by_default,
+      defaultConfig:row.config??{},
+      entitlement:grantByKey.get(row.module_key)??null,
+    };
+  }).filter((row:any)=>row!==null);
 });
