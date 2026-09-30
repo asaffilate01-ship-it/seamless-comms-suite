@@ -35,6 +35,18 @@ export async function buildProvisioningPlanFromDatabase(db:any,input:unknown){
    ...(parentBlueprint?.module_keys??parentDefaults),
    ...(blueprint?.module_keys??variantDefaults)
  ].filter((key:string,index:number,all:string[])=>all.indexOf(key)===index);
+ const optional=[
+   ...(parentBlueprint?.optional_module_keys??[]),
+   ...(blueprint?.optional_module_keys??[])
+ ].filter((key:string,index:number,all:string[])=>all.indexOf(key)===index&&!defaults.includes(key));
+ const availabilityRows=(await db.from("product_module_defaults").select("product_key,module_key")
+   .in("product_key",[product.parent_product_key,request.productKey].filter(Boolean))).data??[];
+ const available=new Set<string>([
+   ...defaults,...optional,...availabilityRows.map((row:any)=>String(row.module_key))
+ ]);
+ for(const requested of request.requestedModules??[]){
+   if(available.size&&!available.has(requested))throw new Error("Module is not available for this product: "+requested);
+ }
  const regions=blueprint?.region_keys?.length?blueprint.region_keys:(parentBlueprint?.region_keys??[]);
  const locales=blueprint?.locale_keys?.length?blueprint.locale_keys:(parentBlueprint?.locale_keys??regionRes.data.supported_locales??[]);
  if(regions.length&&!regions.includes(request.regionPackKey))throw new Error("Product does not support the selected region");
