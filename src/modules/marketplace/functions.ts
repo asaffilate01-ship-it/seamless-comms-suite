@@ -113,8 +113,29 @@ export const listMyMarketplaceVendors=createServerFn({method:"GET"})
   if(!ids.length)return[];
   const{data:vendors,error:vendorError}=await admin.from("marketplace_vendors").select("*").in("id",ids);
   if(vendorError)throw new Error(vendorError.message);
+  const tenantIds=[...new Set((memberships??[]).map((m:any)=>m.tenant_id))];
+  const products=tenantIds.length
+    ?await admin.from("tenant_products").select("id,tenant_id,product_key,region_key,brand_key,status")
+      .in("tenant_id",tenantIds).eq("status","active")
+    :{data:[],error:null};
+  if(products.error)throw new Error(products.error.message);
+  const productIds=(products.data??[]).map((p:any)=>p.id);
+  const grants=productIds.length
+    ?await admin.from("tenant_module_entitlements")
+      .select("tenant_product_id,enabled,starts_at,ends_at")
+      .in("tenant_product_id",productIds).eq("module_key","marketplace.core").eq("enabled",true)
+    :{data:[],error:null};
+  if(grants.error)throw new Error(grants.error.message);
+  const now=Date.now();
+  const enabled=new Set((grants.data??[])
+    .filter((g:any)=>(!g.starts_at||Date.parse(g.starts_at)<=now)&&(!g.ends_at||Date.parse(g.ends_at)>now))
+    .map((g:any)=>g.tenant_product_id));
   const byId=new Map((vendors??[]).map((v:any)=>[v.id,v]));
-  return(memberships??[]).map((m:any)=>({...m,vendor:byId.get(m.vendor_id)??null})).filter((x:any)=>x.vendor);
+  return(memberships??[]).map((m:any)=>({
+    ...m,
+    vendor:byId.get(m.vendor_id)??null,
+    productScopes:(products.data??[]).filter((p:any)=>p.tenant_id===m.tenant_id&&enabled.has(p.id))
+  })).filter((x:any)=>x.vendor&&x.productScopes.length);
 });
 
 const myVendorWorkspaceSchema=scope.extend({vendorId:z.string().uuid()});
