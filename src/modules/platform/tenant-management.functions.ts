@@ -36,6 +36,50 @@ async function requireTenantProductManager(context:any,tenantProductId:string){
 
 const detailSchema=z.object({tenantProductId:z.string().uuid()});
 
+export const listManageableTenantProducts=createServerFn({method:"GET"})
+.middleware([requireSupabaseAuth])
+.handler(async({context})=>{
+  const db=context.supabase as any;
+  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+  const[{data:operatorRows,error:operatorError},{data:memberships,error:membershipError}]=await Promise.all([
+    db.rpc("list_operator_tenants",{_product:null}),
+    db.from("tenant_members").select("tenant_id,role").eq("user_id",context.userId)
+  ]);
+  if(operatorError)throw new Error(operatorError.message);
+  if(membershipError)throw new Error(membershipError.message);
+
+  const tenantIds=[...new Set((memberships??[])
+    .filter((m:any)=>["owner","admin"].includes(m.role))
+    .map((m:any)=>String(m.tenant_id)))];
+  let memberRows:any[]=[];
+  if(tenantIds.length){
+    const{data:products,error:productError}=await admin.from("tenant_products")
+      .select("id,tenant_id,product_key,region_key,plan_key,status,brand_key")
+      .in("tenant_id",tenantIds).order("product_key");
+    if(productError)throw new Error(productError.message);
+    const{data:tenants,error:tenantError}=await admin.from("tenants")
+      .select("id,name,slug").in("id",tenantIds);
+    if(tenantError)throw new Error(tenantError.message);
+    const tenantById=new Map((tenants??[]).map((t:any)=>[t.id,t]));
+    memberRows=(products??[]).map((p:any)=>{
+      const tenant=tenantById.get(p.tenant_id) as any;
+      return{
+        product_key:p.product_key,tenant_id:p.tenant_id,tenant_product_id:p.id,
+        region_key:p.region_key,plan_key:p.plan_key,status:p.status,brand_key:p.brand_key,
+        tenant_name:tenant?.name??"Tenant",tenant_slug:tenant?.slug??"",
+        access_kind:"tenant"
+      };
+    });
+  }
+
+  const byId=new Map<string,any>();
+  for(const row of(operatorRows??[]))byId.set(String(row.tenant_product_id),{...row,access_kind:"operator"});
+  for(const row of memberRows)if(!byId.has(String(row.tenant_product_id)))byId.set(String(row.tenant_product_id),row);
+  return[...byId.values()].sort((a,b)=>
+    String(a.tenant_name).localeCompare(String(b.tenant_name))||String(a.product_key).localeCompare(String(b.product_key))
+  );
+});
+
 export const getManagedTenantProductConfiguration=createServerFn({method:"POST"})
 .middleware([requireSupabaseAuth])
 .inputValidator((input:z.input<typeof detailSchema>)=>detailSchema.parse(input))
