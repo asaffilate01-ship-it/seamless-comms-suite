@@ -103,14 +103,21 @@ export const listClientAccountingQuestions=createServerFn({method:"POST"})
 }).parse(input))
 .handler(async({context,data})=>{
   const access=await clientAccountingAccess(context,data);
-  const db=context.supabase as any;
-  let q=db.from("accounting_review_items")
-    .select("id,proposal_id,issue_type,question,options,evidence_refs,status,answer,answered_at,created_at,proposal:accounting_staging_entries(id,practice_client_id,transaction_date,counterparty,description,gross_minor,currency,treatment,confidence)")
+  const admin=access.admin;
+  let q=admin.from("accounting_review_items")
+    .select("id,proposal_id,issue_type,question,options,evidence_refs,status,answer,answered_at,created_at")
     .eq("tenant_id",data.tenantId).in("audience",access.staff?["staff","client","both"]:["client","both"])
     .order("created_at",{ascending:true}).limit(1000);
   if(data.openOnly)q=q.in("status",["open","answered"]);
   const{data:rows,error}=await q;if(error)throw new Error(error.message);
-  return(rows??[]).filter((row:any)=>row.proposal?.practice_client_id===data.practiceClientId);
+  const proposalIds=[...new Set((rows??[]).map((row:any)=>row.proposal_id).filter(Boolean))];
+  if(!proposalIds.length)return[];
+  const{data:proposals,error:proposalError}=await admin.from("accounting_staging_entries")
+    .select("id,practice_client_id,transaction_date,counterparty,description,gross_minor,currency,treatment,confidence")
+    .in("id",proposalIds).eq("tenant_id",data.tenantId).eq("practice_client_id",data.practiceClientId);
+  if(proposalError)throw new Error(proposalError.message);
+  const byId=new Map((proposals??[]).map((p:any)=>[p.id,p]));
+  return(rows??[]).filter((row:any)=>byId.has(row.proposal_id)).map((row:any)=>({...row,proposal:byId.get(row.proposal_id)}));
 });
 
 export const answerClientAccountingQuestion=createServerFn({method:"POST"})
@@ -122,11 +129,13 @@ export const answerClientAccountingQuestion=createServerFn({method:"POST"})
 .handler(async({context,data})=>{
   const access=await clientAccountingAccess(context,data);
   if(access.staff)throw new Error("Practice staff should resolve accounting review items in the staff review workflow");
+  const{data:row}=await access.admin.from("accounting_review_items")
+    .select("id,proposal_id,audience,status").eq("id",data.reviewItemId).eq("tenant_id",data.tenantId).maybeSingle();
+  if(!row||!["client","both"].includes(row.audience)||row.status!=="open")throw new Error("Client accounting question not found");
+  const{data:proposal}=await access.admin.from("accounting_staging_entries").select("id,practice_client_id")
+    .eq("id",row.proposal_id).eq("tenant_id",data.tenantId).eq("practice_client_id",data.practiceClientId).maybeSingle();
+  if(!proposal)throw new Error("Client accounting question not found");
   const db=context.supabase as any;
-  const{data:row}=await db.from("accounting_review_items")
-    .select("id,proposal:accounting_staging_entries(practice_client_id)")
-    .eq("id",data.reviewItemId).eq("tenant_id",data.tenantId).maybeSingle();
-  if(!row||(row as any).proposal?.practice_client_id!==data.practiceClientId)throw new Error("Client accounting question not found");
   const{data:result,error}=await db.rpc("answer_accounting_review_item",{
     _review_item:data.reviewItemId,_answer:data.answer
   });
