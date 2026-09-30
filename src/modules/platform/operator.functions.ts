@@ -7,9 +7,12 @@ async function operatorCanManage(context:any,productKey:string,regionKey:string)
  const db=context.supabase as any;
  const{data:p}=await db.from("platform_operators").select("role,status").eq("user_id",context.userId).maybeSingle();
  if(p?.status==="active"&&["platform_owner","platform_admin"].includes(p.role))return true;
- const{data:o}=await db.from("product_operators").select("role,status,region_keys").eq("product_key",productKey).eq("user_id",context.userId).maybeSingle();
- if(!o||o.status!=="active"||!["landlord_owner","landlord_admin"].includes(o.role))return false;
- const regions=Array.isArray(o.region_keys)?o.region_keys:[];return !regions.length||regions.includes(regionKey);
+ const{data:allowed,error}=await db.rpc("is_product_operator",{
+  _product:productKey,_user:context.userId,
+  _roles:["landlord_owner","landlord_admin"],_region:regionKey
+ });
+ if(error)throw new Error(error.message);
+ return allowed===true;
 }
 
 export const getMyOperatorContext=createServerFn({method:"GET"}).middleware([requireSupabaseAuth]).handler(async({context})=>{
