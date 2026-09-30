@@ -24,6 +24,11 @@ ON CONFLICT(module_key) DO UPDATE SET
   capabilities=EXCLUDED.capabilities,
   updated_at=now();
 
+INSERT INTO public.product_module_defaults(product_key,module_key,enabled_by_default)
+SELECT 'kindelo','childcare.core',true
+WHERE EXISTS(SELECT 1 FROM public.platform_products WHERE product_key='kindelo')
+ON CONFLICT(product_key,module_key) DO UPDATE SET enabled_by_default=true;
+
 CREATE TABLE IF NOT EXISTS public.childcare_children(
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
