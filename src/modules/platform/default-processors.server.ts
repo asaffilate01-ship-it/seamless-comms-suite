@@ -35,7 +35,7 @@ async function financialProcessor(job:ClaimedModuleEvent){
 async function intelligenceProcessor(job:ClaimedModuleEvent){
  const db=await admin();const type=String(job.event.event_type);const p:any=job.event.payload??{};
  if(!job.tenantProductId)return;
- if(!["accounting_ai.extraction.requested","tax_intelligence.research.requested","intelligence.decision.requested"].includes(type))return;
+ if(!["accounting_ai.extraction.requested","accounting_ai.accounts_prep.requested","tax_intelligence.research.requested","intelligence.decision.requested"].includes(type))return;
 
  let jobType:string,subjectType:string,subjectId:string,requirements:Record<string,unknown>,input:Record<string,unknown>;
  if(type==="accounting_ai.extraction.requested"){
@@ -58,6 +58,49 @@ async function intelligenceProcessor(job:ClaimedModuleEvent){
    noApproval:true
   };
   input={...p,batch,items:items??[]};
+ }else if(type==="accounting_ai.accounts_prep.requested"){
+  const{data:run}=await db.from("accounting_accounts_prep_runs")
+   .select("id,practice_client_id,engagement_id,period_start,period_end,framework_key,opening_trial_balance_ref,prior_accounts_document_id,status")
+   .eq("id",p.prepRunId).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!run||run.status!=="building")return;
+  const[{data:trialBalance,error:tbError},{data:assets,error:assetError}]=await Promise.all([
+   db.rpc("accounting_trial_balance",{
+    _tenant:job.tenantId,_client:run.practice_client_id,_period_start:run.period_start,_period_end:run.period_end
+   }),
+   db.from("accounting_assets").select("id,asset_class,description,acquisition_date,cost_minor,currency,depreciation_method,useful_life_months,opening_accumulated_depreciation_minor,status")
+    .eq("tenant_id",job.tenantId).eq("practice_client_id",run.practice_client_id).in("status",["proposed","active"])
+  ]);
+  if(tbError)throw new Error(tbError.message);
+  if(assetError)throw new Error(assetError.message);
+  let priorAccounts:null|Record<string,unknown>=null;
+  if(run.prior_accounts_document_id){
+   const{data:doc}=await db.from("platform_documents").select("id,title,document_type,current_version,metadata")
+    .eq("id",run.prior_accounts_document_id).eq("tenant_id",job.tenantId).maybeSingle();
+   if(doc){
+    const{data:version}=await db.from("platform_document_versions")
+     .select("version,storage_ref,file_name,mime_type,size_bytes,sha256")
+     .eq("document_id",doc.id).eq("version",doc.current_version).maybeSingle();
+    priorAccounts={document:doc,version:version??null};
+   }
+  }
+  jobType="accounts_prep";subjectType="accounts_prep_run";subjectId=run.id;
+  requirements={
+   outputContract:"accounting_ai.accounts_prep.result",
+   evidenceRequired:true,
+   balancedAdjustmentsOnly:true,
+   noLedgerPosting:true,
+   noAccountsApproval:true,
+   comparePriorPeriod:true
+  };
+  input={
+   ...p,
+   run:{
+    id:run.id,practiceClientId:run.practice_client_id,engagementId:run.engagement_id,
+    periodStart:run.period_start,periodEnd:run.period_end,frameworkKey:run.framework_key,
+    openingTrialBalanceRef:run.opening_trial_balance_ref
+   },
+   trialBalance:trialBalance??[],assets:assets??[],priorAccounts
+  };
  }else if(type==="tax_intelligence.research.requested"){
   const{data:run}=await db.from("tax_research_runs")
    .select("id,research_issue_id,query,source_hierarchy,status")
@@ -85,7 +128,7 @@ async function intelligenceProcessor(job:ClaimedModuleEvent){
  const{error}=await db.from("intelligence_jobs").upsert({
   tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,job_type:jobType,
   subject_type:subjectType,subject_id:subjectId,source_event_id:job.event.id,
-  priority:jobType==="tax_research"?"high":"normal",status:"queued",
+  priority:["tax_research","accounts_prep"].includes(jobType)?"high":"normal",status:"queued",
   input,requirements,next_attempt_at:new Date().toISOString()
  },{onConflict:"tenant_id,job_type,source_event_id",ignoreDuplicates:true});
  if(error)throw new Error(error.message);
