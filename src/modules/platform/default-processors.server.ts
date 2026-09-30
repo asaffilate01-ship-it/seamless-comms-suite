@@ -134,6 +134,74 @@ async function intelligenceProcessor(job:ClaimedModuleEvent){
  if(error)throw new Error(error.message);
 }
 
+
+async function bookingPaymentProcessor(job:ClaimedModuleEvent){
+ const type=String(job.event.event_type);
+ if(!["payment.captured","payment.failed","payment.cancelled"].includes(type))return;
+ if(!job.tenantProductId)return;
+ const p:any=job.event.payload??{};
+ const paymentIntentId=typeof p.paymentIntentId==="string"?p.paymentIntentId:null;
+ if(!paymentIntentId)return;
+ const db=await admin();
+ const{data:payment,error:paymentError}=await db.from("payment_intents")
+  .select("id,tenant_id,tenant_product_id,context_type,context_id,status,metadata")
+  .eq("id",paymentIntentId).eq("tenant_id",job.tenantId)
+  .eq("tenant_product_id",job.tenantProductId).maybeSingle();
+ if(paymentError)throw new Error(paymentError.message);
+ if(!payment||payment.context_type!=="marketplace_booking"||!payment.context_id)return;
+
+ const{data:booking,error:bookingError}=await db.from("bookings")
+  .select("id,status,hold_expires_at,customer_ref")
+  .eq("id",payment.context_id).eq("tenant_id",job.tenantId)
+  .eq("tenant_product_id",job.tenantProductId).maybeSingle();
+ if(bookingError)throw new Error(bookingError.message);
+ if(!booking)return;
+
+ if(type==="payment.captured"){
+  if(booking.status==="confirmed")return;
+  if(booking.status!=="hold")return;
+  const expired=booking.hold_expires_at&&Date.parse(booking.hold_expires_at)<=Date.now();
+  if(expired){
+   const{error:expireError}=await db.rpc("transition_booking",{
+    _booking:booking.id,_status:"expired",
+    _metadata:{paymentIntentId:payment.id,paymentCapturedAfterHold:true}
+   });
+   if(expireError)throw new Error(expireError.message);
+   await db.from("payment_intents").update({
+    metadata:{...(payment.metadata??{}),requiresManualRefund:true,bookingId:booking.id}
+   }).eq("id",payment.id);
+   const{data:admins,error:adminError}=await db.from("tenant_members").select("user_id")
+    .eq("tenant_id",job.tenantId).in("role",["owner","admin"]);
+   if(adminError)throw new Error(adminError.message);
+   for(const member of admins??[]){
+    const{error:notifError}=await db.from("user_notifications").upsert({
+     tenant_id:job.tenantId,user_id:member.user_id,tenant_product_id:job.tenantProductId,
+     notification_type:"booking.payment_late",title:"Booking payment captured after slot hold expired",
+     body:"A marketplace booking could not be confirmed because its slot hold had already expired. Review/refund the payment.",
+     priority:"urgent",entity_type:"booking",entity_id:booking.id,metadata:{paymentIntentId:payment.id},
+     source_event_id:job.event.id
+    },{onConflict:"tenant_id,user_id,source_event_id",ignoreDuplicates:true});
+    if(notifError)throw new Error(notifError.message);
+   }
+   return;
+  }
+  const{error:confirmError}=await db.rpc("transition_booking",{
+   _booking:booking.id,_status:"confirmed",
+   _metadata:{paymentIntentId:payment.id,paymentStatus:"captured"}
+  });
+  if(confirmError)throw new Error(confirmError.message);
+  return;
+ }
+
+ if(booking.status==="hold"){
+  const{error:cancelError}=await db.rpc("transition_booking",{
+   _booking:booking.id,_status:"cancelled",
+   _metadata:{paymentIntentId:payment.id,paymentStatus:type.slice("payment.".length)}
+  });
+  if(cancelError)throw new Error(cancelError.message);
+ }
+}
+
 async function inventoryProcessor(job:ClaimedModuleEvent){
  const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
  if(type!=="inventory.movement.recorded"&&type!=="hospitality.waste.recorded")return;
@@ -333,4 +401,4 @@ async function hospitalityProcessor(job:ClaimedModuleEvent){
  }
 }
 
-export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("intelligence.core",intelligenceProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor).register("loyalty.core",loyaltyProcessor).register("automation.core",automationProcessor).register("notifications.core",notificationProcessor).register("search.core",searchProcessor);}
+export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("intelligence.core",intelligenceProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("bookings.core",bookingPaymentProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor).register("loyalty.core",loyaltyProcessor).register("automation.core",automationProcessor).register("notifications.core",notificationProcessor).register("search.core",searchProcessor);}
