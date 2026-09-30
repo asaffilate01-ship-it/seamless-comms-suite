@@ -20,9 +20,10 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB"],
     locales: ["en-GB"],
     modules: [
-      "crm.core","marketplace.core","payments.core","connect.core","marketing.core",
-      "sales.core","journeys.core","feedback.core","analytics.core","financials.core",
-      "creative.core","intelligence.core",
+      "crm.core","marketplace.core","inventory.core","bookings.core","loyalty.core",
+      "payments.core","connect.core","marketing.core","sales.core","journeys.core",
+      "feedback.core","analytics.core","financials.core","creative.core","intelligence.core",
+      "automation.core","forms.core",
     ],
     roles: ["owner","admin","vendor_admin","vendor_staff","support","finance","viewer"],
     navigation: ["dashboard","vendors","catalogue","orders","customers","messages","marketing","analytics","financials","settings"],
@@ -36,8 +37,9 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB"],
     locales: ["en-GB"],
     modules: [
-      "crm.core","connect.core","geo.core","dispatch.core","payments.core","feedback.core",
-      "analytics.core","financials.core","mobile.core","intelligence.core",
+      "crm.core","connect.core","geo.core","dispatch.core","inventory.core","bookings.core",
+      "payments.core","feedback.core","analytics.core","financials.core","mobile.core",
+      "intelligence.core","automation.core","forms.core",
     ],
     roles: ["owner","admin","dispatcher","agent","finance","support","viewer"],
     navigation: ["dashboard","jobs","dispatch","map","agents","fleet","customers","messages","analytics","financials","settings"],
@@ -51,8 +53,9 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB"],
     locales: ["en-GB"],
     modules: [
-      "crm.core","connect.core","sales.core","marketing.core","journeys.core","documents.core",
-      "analytics.core","financials.core","creative.core","intelligence.core",
+      "crm.core","practice.core","connect.core","sales.core","marketing.core","journeys.core",
+      "documents.core","bookings.core","forms.core","automation.core","analytics.core",
+      "financials.core","creative.core","intelligence.core",
     ],
     roles: ["owner","admin","professional","sales","support","finance","viewer"],
     navigation: ["dashboard","clients","leads","pipeline","work","documents","messages","marketing","analytics","financials","settings"],
@@ -66,8 +69,8 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB"],
     locales: ["en-GB"],
     modules: [
-      "crm.core","compliance.core","documents.core","connect.core","analytics.core",
-      "financials.core","intelligence.core","creative.core",
+      "crm.core","compliance.core","documents.core","connect.core","forms.core","automation.core",
+      "analytics.core","financials.core","intelligence.core","creative.core",
     ],
     roles: ["owner","admin","compliance_manager","reviewer","assessor","evidence_owner","viewer"],
     navigation: ["dashboard","applications","requirements","evidence","findings","actions","inspections","monitoring","documents","analytics","settings"],
@@ -81,8 +84,10 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB"],
     locales: ["en-GB"],
     modules: [
-      "crm.core","practice.core","ordering.core","hospitality.intelligence","connect.core","payments.core","marketing.core","journeys.core",
+      "crm.core","ordering.core","hospitality.intelligence","inventory.core","bookings.core",
+      "loyalty.core","connect.core","payments.core","marketing.core","journeys.core",
       "feedback.core","analytics.core","financials.core","creative.core","intelligence.core",
+      "automation.core","forms.core",
     ],
     roles: ["owner","admin","manager","staff","kitchen","finance","support","viewer"],
     navigation: ["dashboard","orders","customers","menu","operations","messages","marketing","feedback","analytics","financials","settings"],
@@ -96,8 +101,9 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB","DE","US","AE"],
     locales: ["en-GB","de-DE","en-US","ar-AE"],
     modules: [
-      "crm.core","marketplace.core","marketing.core","sales.core","journeys.core",
-      "analytics.core","financials.core","creative.core","connect.core","intelligence.core",
+      "crm.core","marketplace.core","inventory.core","loyalty.core","marketing.core","sales.core",
+      "journeys.core","analytics.core","financials.core","creative.core","connect.core",
+      "intelligence.core","automation.core","forms.core",
     ],
     roles: ["owner","admin","publisher","content","commercial","finance","viewer"],
     navigation: ["dashboard","sites","catalogue","offers","content","campaigns","partners","analytics","financials","creative","settings"],
@@ -111,8 +117,8 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB","DE","AE","SA"],
     locales: ["en-GB","de-DE","ar-AE","ar-SA"],
     modules: [
-      "crm.core","compliance.core","documents.core","sales.core","connect.core",
-      "analytics.core","financials.core","creative.core","intelligence.core",
+      "crm.core","compliance.core","documents.core","sales.core","connect.core","forms.core",
+      "automation.core","analytics.core","financials.core","creative.core","intelligence.core",
     ],
     roles: ["owner","admin","bid_manager","contributor","reviewer","finance","legal","viewer"],
     navigation: ["dashboard","opportunities","tenders","requirements","compliance","documents","workflows","contacts","analytics","financials","settings"],
@@ -126,8 +132,9 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB"],
     locales: ["en-GB"],
     modules: [
-      "crm.core","practice.core","documents.core","payments.core","connect.core",
-      "compliance.core","analytics.core","financials.core","intelligence.core","marketing.core","sales.core"
+      "crm.core","practice.core","documents.core","payments.core","connect.core","bookings.core",
+      "forms.core","automation.core","compliance.core","analytics.core","financials.core",
+      "intelligence.core","marketing.core","sales.core"
     ],
     roles: ["owner","admin","partner","manager","accountant","bookkeeper","payroll","tax","reviewer","compliance","finance","viewer"],
     navigation: ["dashboard","clients","engagements","deadlines","documents","accounts","tax","vat","payroll","aml","billing","messages","analytics","settings"],
@@ -141,8 +148,8 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["US"],
     locales: ["en-US"],
     modules: [
-      "crm.core","practice.core","documents.core","payments.core","connect.core",
-      "compliance.core","analytics.core","financials.core","intelligence.core"
+      "crm.core","practice.core","documents.core","payments.core","connect.core","bookings.core",
+      "forms.core","automation.core","compliance.core","analytics.core","financials.core","intelligence.core"
     ],
     roles: ["owner","admin","preparer","reviewer","compliance","support","finance","viewer"],
     navigation: ["dashboard","clients","engagements","documents","questions","review","filings","signatures","payments","messages","analytics","settings"],
@@ -156,8 +163,9 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB","DE","AE","SA","US","PK"],
     locales: ["en-GB","de-DE","ar-AE","ar-SA","en-US","ur-PK"],
     modules: [
-      "crm.core","business360.core","transactions.core","documents.core","analytics.core",
-      "financials.core","intelligence.core","compliance.core","connect.core","creative.core"
+      "crm.core","business360.core","transactions.core","documents.core","forms.core",
+      "automation.core","analytics.core","financials.core","intelligence.core","compliance.core",
+      "connect.core","creative.core"
     ],
     roles: ["owner","admin","adviser","analyst","reviewer","finance","technical","compliance","viewer"],
     navigation: ["dashboard","companies","discovery","audit","improvements","diligence","transactions","tsa","day1","workstreams","benefits","evidence","analytics","financials","settings"],
@@ -171,8 +179,8 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB","DE","AE","SA","US","PK"],
     locales: ["en-GB","de-DE","ar-AE","ar-SA","en-US","ur-PK"],
     modules: [
-      "crm.core","practice.core","compliance.core","documents.core","connect.core",
-      "analytics.core","financials.core","intelligence.core","creative.core"
+      "crm.core","practice.core","compliance.core","documents.core","forms.core",
+      "automation.core","connect.core","analytics.core","financials.core","intelligence.core","creative.core"
     ],
     roles: ["owner","admin","compliance_manager","consultant","reviewer","assessor","evidence_owner","client_admin","viewer"],
     navigation: ["dashboard","clients","applications","requirements","evidence","findings","actions","inspections","monitoring","correspondence","documents","analytics","settings"],
