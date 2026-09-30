@@ -27,15 +27,23 @@ export const upsertTenantBrandProfile=createServerFn({method:"POST"}).middleware
  await requireTenantAdmin(context,data.tenantId);const db=context.supabase as any;
  const{data:tp}=await db.from("tenant_products").select("id").eq("id",data.tenantProductId).eq("tenant_id",data.tenantId).maybeSingle();
  if(!tp)throw new Error("Tenant product not found");
- const{data:row,error}=await db.from("tenant_brand_profiles").upsert({
+ const{data:existing}=await db.from("tenant_brand_profiles").select("id,revision")
+  .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+  .eq("brand_key",data.brandKey).maybeSingle();
+ const values={
   tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,brand_key:data.brandKey,name:data.name,
   logo_url:data.logoUrl??null,icon_url:data.iconUrl??null,splash_url:data.splashUrl??null,
   primary_colour:data.primaryColour??null,secondary_colour:data.secondaryColour??null,accent_colour:data.accentColour??null,
   font_family:data.fontFamily??null,support_email:data.supportEmail??null,support_phone:data.supportPhone??null,
   app_name:data.appName??null,legal_name:data.legalName??null,website_url:data.websiteUrl??null,
-  locale:data.locale??null,terminology:data.terminology,theme:data.theme,status:"active"
- },{onConflict:"tenant_id,brand_key"}).select("*").single();
- if(error||!row)throw new Error(error?.message??"Brand profile could not be saved");return row;
+  locale:data.locale??null,terminology:data.terminology,theme:data.theme,status:"active",
+  revision:(existing?.revision??0)+1
+ };
+ const result=existing?.id
+  ?await db.from("tenant_brand_profiles").update(values).eq("id",existing.id).select("*").single()
+  :await db.from("tenant_brand_profiles").insert(values).select("*").single();
+ if(result.error||!result.data)throw new Error(result.error?.message??"Brand profile could not be saved");
+ return result.data;
 });
 
 const config=z.object({
