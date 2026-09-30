@@ -33,3 +33,58 @@ export const planTenantProduct=createServerFn({method:"POST"}).middleware([requi
    if(error||!membership||!["owner","admin"].includes(membership.role))throw new Error("Owner or admin tenant access is required");
    return buildProvisioningPlanFromDatabase(db,data);
  });
+
+const moduleCatalogueSchema=z.object({
+  productKey:z.string().min(1).max(80),
+  tenantProductId:z.string().uuid().optional().nullable(),
+});
+
+export const listProductModuleCatalogue=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof moduleCatalogueSchema>)=>moduleCatalogueSchema.parse(input))
+.handler(async({context,data})=>{
+  const db=context.supabase as any;
+  const[{data:available,error:availableError},{data:modules,error:moduleError}]=await Promise.all([
+    db.from("product_module_defaults").select("module_key,enabled_by_default,config").eq("product_key",data.productKey),
+    db.from("platform_modules").select("module_key,name,module_kind,version,status,ui_mode,dependencies,capabilities").neq("status","retired"),
+  ]);
+  if(availableError)throw new Error(availableError.message);
+  if(moduleError)throw new Error(moduleError.message);
+
+  const moduleByKey=new Map((modules??[]).map((row:any)=>[row.module_key,row]));
+  let grants:any[]=[];
+
+  if(data.tenantProductId){
+    const{data:tp,error:tpError}=await db.from("tenant_products")
+      .select("tenant_id,product_key,region_key").eq("id",data.tenantProductId).maybeSingle();
+    if(tpError||!tp||tp.product_key!==data.productKey)throw new Error("Tenant product not found");
+
+    const{data:membership}=await db.from("tenant_members").select("role")
+      .eq("tenant_id",tp.tenant_id).eq("user_id",context.userId).maybeSingle();
+    const{data:platformOperator}=await db.from("platform_operators").select("role,status")
+      .eq("user_id",context.userId).maybeSingle();
+    const{data:productOperator}=await db.from("product_operators").select("role,status,region_keys")
+      .eq("product_key",data.productKey).eq("user_id",context.userId).maybeSingle();
+
+    const platformAllowed=platformOperator?.status==="active";
+    const regions=Array.isArray(productOperator?.region_keys)?productOperator.region_keys:[];
+    const landlordAllowed=productOperator?.status==="active"&&(!regions.length||regions.includes(tp.region_key));
+    if(!membership&&!platformAllowed&&!landlordAllowed)throw new Error("Tenant/product access required");
+
+    const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+    const{data:grantRows,error:grantError}=await admin.from("tenant_module_entitlements")
+      .select("module_key,enabled,limits,config,starts_at,ends_at,source")
+      .eq("tenant_id",tp.tenant_id).eq("tenant_product_id",data.tenantProductId);
+    if(grantError)throw new Error(grantError.message);
+    grants=grantRows??[];
+  }
+
+  const grantByKey=new Map(grants.map((row:any)=>[row.module_key,row]));
+  return(available??[]).map((row:any)=>({
+    ...moduleByKey.get(row.module_key),
+    available:true,
+    defaultOn:!!row.enabled_by_default,
+    defaultConfig:row.config??{},
+    entitlement:grantByKey.get(row.module_key)??null,
+  })).filter((row:any)=>row.module_key);
+});
