@@ -7,7 +7,11 @@ export type BlueprintKey =
   | "compliance"
   | "hospitality"
   | "affiliate_commerce"
-  | "tenders_procurement";
+  | "tenders_procurement"
+  | "accounting_practice"
+  | "us_tax"
+  | "business_advisory"
+  | "compliance_service";
 
 export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
   marketplace: {
@@ -77,7 +81,7 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB"],
     locales: ["en-GB"],
     modules: [
-      "crm.core","connect.core","payments.core","marketing.core","journeys.core",
+      "crm.core","practice.core","ordering.core","hospitality.intelligence","connect.core","payments.core","marketing.core","journeys.core",
       "feedback.core","analytics.core","financials.core","creative.core","intelligence.core",
     ],
     roles: ["owner","admin","manager","staff","kitchen","finance","support","viewer"],
@@ -115,6 +119,66 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     domainObjects: ["tender","buyer","opportunity","qualification","requirement","response","document","deadline","review","submission","award"],
     workflows: ["opportunity_intake","bid_no_bid","qualification","response_drafting","review","approval","submission","award_handover"],
     mobileCapabilities: ["push","documents","camera","photos","biometrics"],
+  },
+  accounting_practice: {
+    productKey: "iq-practice-cloud",
+    industry: "uk_accountancy_practice",
+    regions: ["GB"],
+    locales: ["en-GB"],
+    modules: [
+      "crm.core","practice.core","documents.core","payments.core","connect.core",
+      "compliance.core","analytics.core","financials.core","intelligence.core","marketing.core","sales.core"
+    ],
+    roles: ["owner","admin","partner","manager","accountant","bookkeeper","payroll","tax","reviewer","compliance","finance","viewer"],
+    navigation: ["dashboard","clients","engagements","deadlines","documents","accounts","tax","vat","payroll","aml","billing","messages","analytics","settings"],
+    domainObjects: ["client","engagement","deadline","document_request","signature_request","submission","time_entry","invoice","task"],
+    workflows: ["client_onboarding","aml","document_collection","accounts","tax_return","vat_return","payroll","review","submission","billing","renewal"],
+    mobileCapabilities: ["push","documents","camera","photos","biometrics"],
+  },
+  us_tax: {
+    productKey: "taxcenda",
+    industry: "us_tax_practice",
+    regions: ["US"],
+    locales: ["en-US"],
+    modules: [
+      "crm.core","practice.core","documents.core","payments.core","connect.core",
+      "compliance.core","analytics.core","financials.core","intelligence.core"
+    ],
+    roles: ["owner","admin","preparer","reviewer","compliance","support","finance","viewer"],
+    navigation: ["dashboard","clients","engagements","documents","questions","review","filings","signatures","payments","messages","analytics","settings"],
+    domainObjects: ["tax_entity","engagement","document","clarification","filing","signature","payment","deadline"],
+    workflows: ["onboarding","document_collection","preparation","review","client_questions","signature","efile","acknowledgement","amendment"],
+    mobileCapabilities: ["push","documents","camera","photos","biometrics"],
+  },
+  business_advisory: {
+    productKey: "business360",
+    industry: "business_advisory_transformation",
+    regions: ["GB","DE","AE","SA","US","PK"],
+    locales: ["en-GB","de-DE","ar-AE","ar-SA","en-US","ur-PK"],
+    modules: [
+      "crm.core","business360.core","transactions.core","documents.core","analytics.core",
+      "financials.core","intelligence.core","compliance.core","connect.core","creative.core"
+    ],
+    roles: ["owner","admin","adviser","analyst","reviewer","finance","technical","compliance","viewer"],
+    navigation: ["dashboard","companies","discovery","audit","improvements","diligence","transactions","tsa","day1","workstreams","benefits","evidence","analytics","financials","settings"],
+    domainObjects: ["company","business_service","asset","workforce","cost","objective","dependency","finding","tsa","decision","plan","benefit"],
+    workflows: ["discovery","diagnostic","audit","improvement","diligence","carve_out","merger","integration","day1","hundred_day","benefits_review"],
+    mobileCapabilities: ["push","documents","camera","photos","biometrics"],
+  },
+  compliance_service: {
+    productKey: "regulos",
+    industry: "regulatory_compliance",
+    regions: ["GB","DE","AE","SA","US","PK"],
+    locales: ["en-GB","de-DE","ar-AE","ar-SA","en-US","ur-PK"],
+    modules: [
+      "crm.core","practice.core","compliance.core","documents.core","connect.core",
+      "analytics.core","financials.core","intelligence.core","creative.core"
+    ],
+    roles: ["owner","admin","compliance_manager","consultant","reviewer","assessor","evidence_owner","client_admin","viewer"],
+    navigation: ["dashboard","clients","applications","requirements","evidence","findings","actions","inspections","monitoring","correspondence","documents","analytics","settings"],
+    domainObjects: ["client","assessment","application","requirement","evidence","finding","remediation","inspection","obligation","correspondence","submission"],
+    workflows: ["client_onboarding","regulatory_application","evidence_collection","review","remediation","submission","inspection_readiness","ongoing_monitoring","renewal"],
+    mobileCapabilities: ["push","documents","camera","photos","qr","offline","biometrics"],
   },
 };
 
