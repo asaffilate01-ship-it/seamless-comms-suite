@@ -144,6 +144,14 @@ const providerProfileSchema=scope.extend({
   serviceAgeGroups:z.array(z.string().max(100)).max(50).default([]),
   maxChildren:z.number().int().positive().max(1000).optional().nullable(),
   languages:z.array(z.string().max(40)).max(50).default([]),
+  publicArea:z.string().max(240).optional().nullable(),
+  latitude:z.number().min(-90).max(90).optional().nullable(),
+  longitude:z.number().min(-180).max(180).optional().nullable(),
+  serviceRadiusKm:z.number().positive().max(500).default(10),
+  acceptsPrivateCare:z.boolean().default(true),
+  acceptsFundedCare:z.boolean().default(false),
+  minAgeMonths:z.number().int().nonnegative().max(300).optional().nullable(),
+  maxAgeMonths:z.number().int().nonnegative().max(300).optional().nullable(),
   status:z.enum(["draft","onboarding","review","active","suspended","closed"]).default("draft"),
   metadata:z.record(z.string(),z.unknown()).default({})
 });
@@ -152,6 +160,12 @@ export const saveChildcareProviderProfile=createServerFn({method:"POST"})
 .inputValidator((input:z.input<typeof providerProfileSchema>)=>providerProfileSchema.parse(input))
 .handler(async({context,data})=>{
   await staffScope(context,data);
+  if(data.minAgeMonths!==null&&data.minAgeMonths!==undefined&&data.maxAgeMonths!==null&&data.maxAgeMonths!==undefined&&data.maxAgeMonths<data.minAgeMonths){
+    throw new Error("Maximum age cannot be below minimum age");
+  }
+  if((data.latitude===null)!==(data.longitude===null) || (data.latitude===undefined)!==(data.longitude===undefined)){
+    throw new Error("Latitude and longitude must be supplied together");
+  }
   const db=context.supabase as any;
   const{data:vendor}=await db.from("marketplace_vendors").select("id,country_code,currency")
     .eq("id",data.vendorId).eq("tenant_id",data.tenantId).maybeSingle();
@@ -160,8 +174,11 @@ export const saveChildcareProviderProfile=createServerFn({method:"POST"})
     tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,vendor_id:data.vendorId,
     provider_type:data.providerType,regulator_ref:data.regulatorRef??null,
     registration_ref:data.registrationRef??null,service_age_groups:data.serviceAgeGroups,
-    max_children:data.maxChildren??null,languages:data.languages,status:data.status,
-    metadata:data.metadata
+    max_children:data.maxChildren??null,languages:data.languages,
+    public_area:data.publicArea??null,latitude:data.latitude??null,longitude:data.longitude??null,
+    service_radius_km:data.serviceRadiusKm,accepts_private_care:data.acceptsPrivateCare,
+    accepts_funded_care:data.acceptsFundedCare,min_age_months:data.minAgeMonths??null,
+    max_age_months:data.maxAgeMonths??null,status:data.status,metadata:data.metadata
   },{onConflict:"tenant_product_id,vendor_id"}).select("*").single();
   if(error||!row)throw new Error(error?.message??"Childcare provider profile could not be saved");
   return row;
@@ -447,6 +464,12 @@ const providerDetailsSchema=scope.extend({
   serviceAgeGroups:z.array(z.string().max(100)).max(50).default([]),
   maxChildren:z.number().int().positive().max(1000).optional().nullable(),
   languages:z.array(z.string().max(40)).max(50).default([]),
+  publicArea:z.string().max(240).optional().nullable(),
+  serviceRadiusKm:z.number().positive().max(500).default(10),
+  acceptsPrivateCare:z.boolean().default(true),
+  acceptsFundedCare:z.boolean().default(false),
+  minAgeMonths:z.number().int().nonnegative().max(300).optional().nullable(),
+  maxAgeMonths:z.number().int().nonnegative().max(300).optional().nullable(),
   metadata:z.record(z.string(),z.unknown()).default({})
 });
 export const updateMyChildcareProviderDetails=createServerFn({method:"POST"})
@@ -454,6 +477,9 @@ export const updateMyChildcareProviderDetails=createServerFn({method:"POST"})
 .inputValidator((input:z.input<typeof providerDetailsSchema>)=>providerDetailsSchema.parse(input))
 .handler(async({context,data})=>{
   const access=await providerScope(context,data,true);
+  if(data.minAgeMonths!==null&&data.minAgeMonths!==undefined&&data.maxAgeMonths!==null&&data.maxAgeMonths!==undefined&&data.maxAgeMonths<data.minAgeMonths){
+    throw new Error("Maximum age cannot be below minimum age");
+  }
   const{data:profile}=await access.admin.from("childcare_provider_profiles")
     .select("*").eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
     .eq("vendor_id",data.vendorId).maybeSingle();
@@ -464,7 +490,10 @@ export const updateMyChildcareProviderDetails=createServerFn({method:"POST"})
   };
   const{data:row,error}=await access.admin.from("childcare_provider_profiles").update({
     service_age_groups:data.serviceAgeGroups,max_children:data.maxChildren??null,
-    languages:data.languages,metadata
+    languages:data.languages,public_area:data.publicArea??profile.public_area??null,
+    service_radius_km:data.serviceRadiusKm,accepts_private_care:data.acceptsPrivateCare,
+    accepts_funded_care:data.acceptsFundedCare,min_age_months:data.minAgeMonths??null,
+    max_age_months:data.maxAgeMonths??null,metadata
   }).eq("id",profile.id).select("*").single();
   if(error||!row)throw new Error(error?.message??"Provider details could not be updated");
   return row;
@@ -580,4 +609,30 @@ export const verifyChildcareTraining=createServerFn({method:"POST"})
   }).eq("id",data.trainingId).eq("tenant_id",data.tenantId).select("*").single();
   if(error||!row)throw new Error(error?.message??"Training record could not be reviewed");
   return row;
+});
+
+
+const providerSearchSchema=scope.extend({
+  latitude:z.number().min(-90).max(90),
+  longitude:z.number().min(-180).max(180),
+  radiusKm:z.number().positive().max(500).default(25),
+  ageMonths:z.number().int().nonnegative().max(300).optional().nullable(),
+  funded:z.boolean().optional().nullable(),
+  language:z.string().max(40).optional().nullable(),
+  limit:z.number().int().min(1).max(200).default(50)
+});
+export const searchMyChildcareProviders=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof providerSearchSchema>)=>providerSearchSchema.parse(input))
+.handler(async({context,data})=>{
+  await parentScope(context,data);
+  const db=context.supabase as any;
+  const{data:rows,error}=await db.rpc("search_childcare_providers",{
+    _tenant:data.tenantId,_tenant_product:data.tenantProductId,
+    _latitude:data.latitude,_longitude:data.longitude,_radius_km:data.radiusKm,
+    _age_months:data.ageMonths??null,_funded:data.funded??null,
+    _language:data.language??null,_limit:data.limit
+  });
+  if(error)throw new Error(error.message);
+  return rows??[];
 });
