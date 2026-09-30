@@ -16,7 +16,7 @@ export type ModuleEventManifest = {
 };
 
 export const MODULE_EVENT_MANIFESTS: ModuleEventManifest[] = [
-  { moduleKey: "intelligence.core", consumes: ["accounting_ai.extraction.requested","tax_intelligence.research.requested","intelligence.*"], produces: ["intelligence.*"] },
+  { moduleKey: "intelligence.core", consumes: ["accounting_ai.extraction.requested","accounting_ai.accounts_prep.requested","tax_intelligence.research.requested","intelligence.*"], produces: ["intelligence.*"] },
   { moduleKey: "crm.core", consumes: ["customer.*","lead.*","order.*","booking.*","case.*","dispatch.job.*"], produces: ["crm.*"] },
   { moduleKey: "analytics.core", consumes: ["crm.*","order.*","booking.*","dispatch.*","marketing.*","sales.*","feedback.*","marketplace.*","financial.*"], produces: ["analytics.*"] },
   { moduleKey: "financials.core", consumes: ["order.completed","invoice.paid","refund.*","payment.*","marketplace.order.completed","marketplace.refund.*","dispatch.job.completed"], produces: ["financial.*"] },
