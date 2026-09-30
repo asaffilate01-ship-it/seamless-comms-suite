@@ -29,4 +29,49 @@ async function financialProcessor(job:ClaimedModuleEvent){
  if(!kind||amount===null||!currency)return;const day=occurred(job).slice(0,10);const{error}=await db.from("financial_actuals").upsert({tenant_id:job.tenantId,product_key:sourceProduct(job),period_start:day,period_end:day,category:kind,kind,amount_minor:amount,currency,source_ref:"event:"+job.event.id+":"+suffix,source_event_id:job.event.id,observed_at:occurred(job)},{onConflict:"tenant_id,source_ref"});if(error)throw new Error(error.message);
 }
 
-export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor);}
+
+async function hospitalityProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ const tenantProductId=job.tenantProductId;
+ const locationId=typeof job.event.location_id==="string"?job.event.location_id:null;
+ if(!tenantProductId)throw new Error("Hospitality event requires tenant product scope");
+ if((type==="epos.transaction.recorded"||type==="inventory.movement.recorded"||type==="hospitality.waste.recorded")&&!locationId)throw new Error("Hospitality event requires location scope");
+
+ if(type==="epos.transaction.recorded"){
+  const values={
+   tenant_id:job.tenantId,tenant_product_id:tenantProductId,location_id:locationId,
+   product_key:sourceProduct(job),source_transaction_ref:p.sourceTransactionRef,business_date:p.businessDate,
+   occurred_at:occurred(job),channel:p.channel,order_type:p.orderType??null,currency:p.amounts.currency,
+   gross_minor:p.amounts.grossMinor,discount_minor:p.amounts.discountMinor,refund_minor:p.amounts.refundMinor,
+   net_minor:p.amounts.netMinor,tax_minor:p.amounts.taxMinor??null,cogs_minor:p.amounts.cogsMinor??null,
+   item_count:p.itemCount,customer_ref:p.customerRef??null,metadata:p.metadata
+  };
+  const{data:fact,error}=await db.from("epos_transaction_facts").upsert(values,{onConflict:"tenant_id,product_key,source_transaction_ref"}).select("id").single();
+  if(error||!fact)throw new Error(error?.message??"EPOS transaction fact failed");
+  if(Array.isArray(p.items)){
+   for(const item of p.items){
+    const{error:itemError}=await db.from("epos_item_facts").upsert({
+     tenant_id:job.tenantId,transaction_id:fact.id,line_ref:item.lineRef,item_ref:item.itemRef,item_name:item.itemName,
+     category_ref:item.categoryRef??null,quantity:item.quantity,gross_minor:item.grossMinor,
+     discount_minor:item.discountMinor,refund_minor:item.refundMinor,net_minor:item.netMinor,
+     estimated_cogs_minor:item.estimatedCogsMinor??null,modifier_refs:item.modifierRefs
+    },{onConflict:"transaction_id,line_ref"});
+    if(itemError)throw new Error(itemError.message);
+   }
+  }
+  return;
+ }
+
+ if(type==="inventory.movement.recorded"||type==="hospitality.waste.recorded"){
+  const movementType=type==="hospitality.waste.recorded"?"waste":p.movementType;
+  const{error}=await db.from("inventory_movement_facts").upsert({
+   tenant_id:job.tenantId,tenant_product_id:tenantProductId,location_id:locationId,
+   item_ref:p.itemRef,movement_type:movementType,quantity:p.quantity,unit:p.unit??null,
+   cost_minor:p.costMinor??null,currency:p.currency??null,occurred_at:occurred(job),
+   source_ref:p.sourceRef
+  },{onConflict:"tenant_id,source_ref"});
+  if(error)throw new Error(error.message);
+ }
+}
+
+export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("hospitality.intelligence",hospitalityProcessor);}
