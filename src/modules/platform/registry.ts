@@ -208,6 +208,16 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     status: "migration_candidate",
   },
   {
+    key: "zoryn-rewards",
+    name: "Zoryn Rewards",
+    kind: "vertical_landlord",
+    industry: "loyalty_rewards",
+    defaultModules: ["crm.core","loyalty.core","connect.core","marketing.core","journeys.core","analytics.core","intelligence.core"],
+    supportedRegions: ["GB","DE","AE","SA","US","PK"],
+    supportedLocales: ["en-GB","de-DE","ar-SA","ar-AE","en-US","ur-PK"],
+    status: "migration_candidate",
+  },
+  {
     key: "voxentri",
     name: "Voxentri Creative Studio",
     kind: "shared_engine",
