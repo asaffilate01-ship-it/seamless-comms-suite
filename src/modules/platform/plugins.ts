@@ -10,6 +10,10 @@ export type PluginKind =
   | "identity"
   | "delivery"
   | "creative"
+  | "tax"
+  | "registry"
+  | "esign"
+  | "banking"
   | "custom";
 
 export type PluginScope = "platform" | "product" | "tenant" | "location";
@@ -164,6 +168,83 @@ export const BUILTIN_PLUGIN_DEFINITIONS: PluginDefinition[] = [
     version: "1",
     capabilities: ["copy", "images", "video", "audio", "localisation", "brand_assets"],
     secretNames: [],
+    status: "planned",
+  },
+  {
+    key: "tax.hmrc",
+    name: "HMRC API Adapter",
+    kind: "tax",
+    version: "1",
+    capabilities: ["oauth","obligations","submissions","receipts"],
+    supportedCountries: ["GB"],
+    secretNames: ["client_id","client_secret"],
+    publicConfigNames: ["redirect_uri"],
+    status: "planned",
+  },
+  {
+    key: "registry.companies-house",
+    name: "Companies House Adapter",
+    kind: "registry",
+    version: "1",
+    capabilities: ["company_lookup","filing_status","submissions"],
+    supportedCountries: ["GB"],
+    secretNames: ["api_key"],
+    status: "planned",
+  },
+  {
+    key: "tax.us-efile",
+    name: "US e-file Provider Adapter",
+    kind: "tax",
+    version: "1",
+    capabilities: ["submission","acknowledgement","rejection","receipt"],
+    supportedCountries: ["US"],
+    secretNames: ["provider_credential"],
+    publicConfigNames: ["provider_name"],
+    status: "planned",
+  },
+  {
+    key: "esign.provider",
+    name: "E-signature Provider",
+    kind: "esign",
+    version: "1",
+    capabilities: ["signature_request","status","evidence"],
+    secretNames: ["api_key"],
+    status: "planned",
+  },
+  {
+    key: "banking.open-banking",
+    name: "Open Banking / Bank Feed Adapter",
+    kind: "banking",
+    version: "1",
+    capabilities: ["accounts","transactions","balances","consent"],
+    secretNames: ["client_id","client_secret"],
+    status: "planned",
+  },
+  {
+    key: "accounting.xero",
+    name: "Xero Adapter",
+    kind: "accounting",
+    version: "1",
+    capabilities: ["contacts","invoices","payments","accounts","transactions"],
+    secretNames: ["client_id","client_secret"],
+    status: "planned",
+  },
+  {
+    key: "accounting.quickbooks",
+    name: "QuickBooks Adapter",
+    kind: "accounting",
+    version: "1",
+    capabilities: ["contacts","invoices","payments","accounts","transactions"],
+    secretNames: ["client_id","client_secret"],
+    status: "planned",
+  },
+  {
+    key: "accounting.sage",
+    name: "Sage Adapter",
+    kind: "accounting",
+    version: "1",
+    capabilities: ["contacts","invoices","payments","accounts","transactions"],
+    secretNames: ["client_id","client_secret"],
     status: "planned",
   },
 ];
