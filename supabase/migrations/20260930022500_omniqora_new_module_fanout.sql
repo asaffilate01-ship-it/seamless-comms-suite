@@ -35,7 +35,6 @@ INSERT INTO public.platform_module_event_patterns(module_key,event_pattern) VALU
 ON CONFLICT(module_key,event_pattern) DO UPDATE SET enabled=true;
 
 CREATE UNIQUE INDEX IF NOT EXISTS automation_runs_event_workflow_uq
-  ON public.automation_runs(workflow_id,event_id)
-  WHERE event_id IS NOT NULL;
+  ON public.automation_runs(workflow_id,event_id);
 
 COMMIT;
