@@ -73,20 +73,29 @@ export const getHospitalityIntelligence=createServerFn({method:"POST"})
     .order("created_at",{ascending:false}).limit(100);
   if(insightError)throw new Error(insightError.message);
 
-  const insights=(Array.isArray(insightRows)?insightRows:[]).map((row:any)=>({
-    id:String(row.id),
-    locationId:row.location_id?String(row.location_id):null,
-    periodStart:String(row.period_start),
-    periodEnd:String(row.period_end),
-    kind:String(row.insight_kind),
-    title:String(row.title),
-    summary:String(row.summary),
-    evidenceRefs:Array.isArray(row.evidence_refs)?row.evidence_refs.map((v:unknown)=>String(v)):[],
-    metrics:(row.metrics&&typeof row.metrics==="object")?row.metrics as Record<string,unknown>:{},
-    modelRunId:row.model_run_id?String(row.model_run_id):null,
-    status:String(row.status),
-    createdAt:String(row.created_at),
-  }));
+  const insights=(Array.isArray(insightRows)?insightRows:[]).map((row:any)=>{
+    const evidenceRefs:string[]=Array.isArray(row.evidence_refs)?row.evidence_refs.map((v:unknown)=>String(v)):[];
+    const metrics:Record<string,string|number|boolean|null>={};
+    if(row.metrics&&typeof row.metrics==="object"&&!Array.isArray(row.metrics)){
+      for(const [key,value] of Object.entries(row.metrics as Record<string,unknown>)){
+        if(value===null||typeof value==="string"||typeof value==="number"||typeof value==="boolean")metrics[key]=value;
+      }
+    }
+    return{
+      id:String(row.id),
+      locationId:row.location_id?String(row.location_id):null,
+      periodStart:String(row.period_start),
+      periodEnd:String(row.period_end),
+      kind:String(row.insight_kind),
+      title:String(row.title),
+      summary:String(row.summary),
+      evidenceRefs,
+      metrics,
+      modelRunId:row.model_run_id?String(row.model_run_id):null,
+      status:String(row.status),
+      createdAt:String(row.created_at),
+    };
+  });
 
   return{
     period:{start:data.start,end:data.end},
