@@ -61,11 +61,11 @@ INSERT INTO public.platform_product_blueprints(
     'crm.core','marketplace.core','childcare.core','bookings.core','payments.core','connect.core',
     'compliance.core','documents.core','forms.core','automation.core',
     'notifications.core','search.core','analytics.core','intelligence.core',
-    'mobile.core','support.core'
+    'geo.core','mobile.core','support.core'
   ],
   ARRAY[
     'reception.core','financials.core','marketing.core','sales.core','journeys.core',
-    'feedback.core','loyalty.core','creative.core','geo.core'
+    'feedback.core','loyalty.core','creative.core'
   ],
   ARRAY[
     'owner','admin','agency_manager','compliance_manager','placement_coordinator',
