@@ -23,7 +23,11 @@ export type ModuleKind =
   | "documents"
   | "creative"
   | "marketing"
-  | "financials";
+  | "financials"
+  | "ordering"
+  | "hospitality"
+  | "practice"
+  | "transformation";
 
 export type ProductDefinition = {
   key: string;
@@ -96,6 +100,11 @@ export const PLATFORM_MODULE_KEYS = {
   creative: "creative.core",
   marketing: "marketing.core",
   financials: "financials.core",
+  ordering: "ordering.core",
+  hospitality: "hospitality.intelligence",
+  practice: "practice.core",
+  business360: "business360.core",
+  transactions: "transactions.core",
 } as const;
 
 export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
@@ -197,6 +206,36 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     supportedRegions: ["GB", "DE", "AE", "SA", "US", "PK"],
     supportedLocales: ["en-GB", "de-DE", "ar-SA", "ar-AE", "en-US", "ur-PK"],
     status: "incubating",
+  },
+  {
+    key: "taxcenda",
+    name: "TaxCenda",
+    kind: "vertical_landlord",
+    industry: "us_tax_practice",
+    defaultModules: ["crm.core","practice.core","documents.core","payments.core","connect.core","analytics.core","financials.core","intelligence.core","compliance.core"],
+    supportedRegions: ["US"],
+    supportedLocales: ["en-US"],
+    status: "migration_candidate",
+  },
+  {
+    key: "iq-practice-cloud",
+    name: "IQ Practice Cloud",
+    kind: "vertical_landlord",
+    industry: "uk_accountancy_practice",
+    defaultModules: ["crm.core","practice.core","documents.core","payments.core","connect.core","analytics.core","financials.core","intelligence.core","compliance.core"],
+    supportedRegions: ["GB"],
+    supportedLocales: ["en-GB"],
+    status: "migration_candidate",
+  },
+  {
+    key: "regulos",
+    name: "RegulaOS / Compliance-as-a-Service",
+    kind: "vertical_landlord",
+    industry: "regulatory_compliance",
+    defaultModules: ["crm.core","compliance.core","documents.core","connect.core","analytics.core","financials.core","intelligence.core","practice.core"],
+    supportedRegions: ["GB","DE","AE","SA","US","PK"],
+    supportedLocales: ["en-GB","de-DE","ar-SA","ar-AE","en-US","ur-PK"],
+    status: "migration_candidate",
   },
   {
     key: "tendryva",
@@ -318,6 +357,61 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     description: "AI-first regulatory applications, evidence, monitoring and versioned regulatory packs.",
     dependencies: ["intelligence.core", "platform.audit"],
     capabilities: ["applications", "requirements", "evidence", "reviews", "monitoring", "inspections"],
+    uiMode: "workspace",
+    status: "preview",
+  },
+  {
+    key: "practice.core",
+    name: "Omniqora Practice Operations",
+    kind: "practice",
+    version: "1.0.0-preview",
+    description: "Shared professional-practice operations: clients, engagements, deadlines, document requests, e-sign, portal, time/WIP and generic submissions.",
+    dependencies: ["crm.core","documents.core","payments.core","connect.core","platform.audit"],
+    capabilities: ["clients","engagements","deadlines","document_requests","signatures","client_portal","time_wip","fees","submissions"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "ordering.core",
+    name: "Omniqora Ordering",
+    kind: "ordering",
+    version: "1.0.0-preview",
+    description: "Direct ordering, WhatsApp/phone order intents, source catalogue validation and authoritative source handoff.",
+    dependencies: ["crm.core","connect.core","payments.core","platform.events"],
+    capabilities: ["catalogue","cart","direct_orders","whatsapp_orders","phone_orders","source_handoff","tracking"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "hospitality.intelligence",
+    name: "Omniqora EPOS & Hospitality Intelligence",
+    kind: "hospitality",
+    version: "1.0.0-preview",
+    description: "Normalized EPOS facts, menu engineering, margin/discount/refund/waste analysis, demand forecasting and AI insights.",
+    dependencies: ["ordering.core","analytics.core","financials.core","intelligence.core","platform.events"],
+    capabilities: ["epos_intelligence","menu_engineering","margin_analysis","discount_leakage","refund_analysis","waste","inventory","demand_forecast","dayparts","ai_insights"],
+    uiMode: "workspace",
+    status: "preview",
+  },
+  {
+    key: "business360.core",
+    name: "Omniqora Business360",
+    kind: "transformation",
+    version: "1.0.0-preview",
+    description: "Business discovery, audit/assessment, improvement planning, benefits tracking and continuous monitoring.",
+    dependencies: ["intelligence.core","documents.core","analytics.core","financials.core","platform.audit"],
+    capabilities: ["discovery","business_audit","assessment","improvement_plan","benefits","monitoring","evidence"],
+    uiMode: "workspace",
+    status: "preview",
+  },
+  {
+    key: "transactions.core",
+    name: "Omniqora Transactions & Transformation",
+    kind: "transformation",
+    version: "1.0.0-preview",
+    description: "M&A, acquisition, merger, carve-out, separation, TSA, Day-1, 100-day and integration-management planning.",
+    dependencies: ["business360.core","intelligence.core","documents.core","analytics.core","financials.core","platform.audit"],
+    capabilities: ["m_and_a","acquisition","merger","carve_out","separation","tsa","day1","hundred_day","imo","diligence","benefits"],
     uiMode: "workspace",
     status: "preview",
   },
