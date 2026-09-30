@@ -28,7 +28,11 @@ export type ModuleKind =
   | "hospitality"
   | "practice"
   | "transformation"
-  | "inventory";
+  | "inventory"
+  | "bookings"
+  | "loyalty"
+  | "automation"
+  | "forms";
 
 export type ProductDefinition = {
   key: string;
@@ -107,6 +111,10 @@ export const PLATFORM_MODULE_KEYS = {
   business360: "business360.core",
   transactions: "transactions.core",
   inventory: "inventory.core",
+  bookings: "bookings.core",
+  loyalty: "loyalty.core",
+  automation: "automation.core",
+  forms: "forms.core",
 } as const;
 
 export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
@@ -558,6 +566,50 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     capabilities: ["jobs", "agents", "auto_dispatch", "manual_dispatch", "fleet", "pod", "wallet", "tracking"],
     uiMode: "hybrid",
     status: "planned",
+  },
+  {
+    key: "bookings.core",
+    name: "Omniqora Bookings & Scheduling",
+    kind: "bookings",
+    version: "1.0.0-preview",
+    description: "Reusable services, resources, availability, holds and bookings for appointments, tables, lessons, care and field service.",
+    dependencies: ["crm.core","platform.events","platform.audit"],
+    capabilities: ["services","resources","availability","holds","appointments","capacity","reminders","waitlist"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "loyalty.core",
+    name: "Omniqora Loyalty & Rewards",
+    kind: "loyalty",
+    version: "1.0.0-preview",
+    description: "Shared programmes, accounts, points/stamps/credit ledger, tiers, rewards, vouchers and referrals.",
+    dependencies: ["crm.core","platform.events","platform.audit"],
+    capabilities: ["programmes","accounts","ledger","tiers","rewards","vouchers","referrals","personalisation"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "automation.core",
+    name: "Omniqora Automation",
+    kind: "automation",
+    version: "1.0.0-preview",
+    description: "Generic trigger-condition-action-delay-branch-approval workflow definitions and durable runs.",
+    dependencies: ["platform.events","platform.audit"],
+    capabilities: ["builder","event_triggers","conditions","ai_decisions","actions","delays","approvals","schedules","runs"],
+    uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "forms.core",
+    name: "Omniqora Forms",
+    kind: "forms",
+    version: "1.0.0-preview",
+    description: "Versioned schema-driven forms, conditional fields, files/signatures, submissions, review and localisation.",
+    dependencies: ["platform.tenant","documents.core","platform.audit"],
+    capabilities: ["builder","versions","conditional","files","signatures","submissions","review","localisation"],
+    uiMode: "hybrid",
+    status: "preview",
   },
   {
     key: "inventory.core",
