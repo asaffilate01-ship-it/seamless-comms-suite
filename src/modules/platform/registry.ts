@@ -288,7 +288,7 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
       "crm.core","marketplace.core","childcare.core","bookings.core","payments.core","connect.core",
       "compliance.core","documents.core","forms.core","automation.core",
       "notifications.core","search.core","analytics.core","intelligence.core",
-      "mobile.core","support.core"
+      "geo.core","mobile.core","support.core"
     ],
     supportedRegions: ["GB","DE"],
     supportedLocales: ["en-GB","de-DE"],
