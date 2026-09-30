@@ -30,6 +30,48 @@ async function financialProcessor(job:ClaimedModuleEvent){
 }
 
 
+
+async function inventoryProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ if(type!=="inventory.movement.recorded"&&type!=="hospitality.waste.recorded")return;
+ if(!job.tenantProductId)throw new Error("Inventory event requires tenant product scope");
+ const locationId=typeof job.event.location_id==="string"?job.event.location_id:null;
+ if(!locationId)throw new Error("Inventory event requires tenant location scope");
+ const movementType=type==="hospitality.waste.recorded"?"waste":p.movementType;
+ const mappedType=movementType==="purchase"?"receipt":movementType;
+ const{data:itemExisting}=await db.from("inventory_items").select("id").eq("tenant_id",job.tenantId)
+  .eq("product_key",sourceProduct(job)).eq("external_ref",p.itemRef).maybeSingle();
+ let itemId=itemExisting?.id??null;
+ if(!itemId){
+  const itemName=typeof p.metadata?.itemName==="string"?p.metadata.itemName:p.itemRef;
+  const{data:item,error}=await db.from("inventory_items").insert({
+   tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,product_key:sourceProduct(job),
+   external_ref:p.itemRef,sku:typeof p.metadata?.sku==="string"?p.metadata.sku:null,
+   name:itemName,unit:p.unit??"each",track_stock:true,metadata:p.metadata??{}
+  }).select("id").single();
+  if(error||!item)throw new Error(error?.message??"Inventory item could not be projected");
+  itemId=item.id;
+ }
+ const{data:locExisting}=await db.from("inventory_stock_locations").select("id").eq("tenant_id",job.tenantId)
+  .eq("tenant_product_id",job.tenantProductId).eq("location_id",locationId).eq("location_kind","store").maybeSingle();
+ let stockLocationId=locExisting?.id??null;
+ if(!stockLocationId){
+  const{data:tenantLocation}=await db.from("tenant_locations").select("name").eq("id",locationId).eq("tenant_id",job.tenantId).maybeSingle();
+  const{data:stockLocation,error}=await db.from("inventory_stock_locations").insert({
+   tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,location_id:locationId,
+   external_ref:"tenant-location:"+locationId,name:tenantLocation?.name??"Location stock",location_kind:"store"
+  }).select("id").single();
+  if(error||!stockLocation)throw new Error(error?.message??"Stock location could not be projected");
+  stockLocationId=stockLocation.id;
+ }
+ const{error}=await db.rpc("record_inventory_movement",{
+  _tenant:job.tenantId,_item:itemId,_location:stockLocationId,_type:mappedType,_quantity:p.quantity,
+  _source_ref:p.sourceRef,_occurred_at:occurred(job),_unit_cost_minor:p.costMinor??null,
+  _currency:p.currency??null,_metadata:p.metadata??{}
+ });
+ if(error)throw new Error(error.message);
+}
+
 async function hospitalityProcessor(job:ClaimedModuleEvent){
  const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
  const tenantProductId=job.tenantProductId;
@@ -74,4 +116,4 @@ async function hospitalityProcessor(job:ClaimedModuleEvent){
  }
 }
 
-export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("hospitality.intelligence",hospitalityProcessor);}
+export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor);}
