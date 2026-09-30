@@ -22,3 +22,77 @@ const{data:result,error}=await db.rpc("create_platform_product_draft",{
 });if(error||!result)throw new Error(error?.message??"Product draft could not be created");return result;});
 
 export const publishSaasProduct=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:{productKey:string;version:number})=>z.object({productKey:z.string().min(1).max(80),version:z.number().int().positive()}).parse(input)).handler(async({context,data})=>{const db=context.supabase as any;const{error}=await db.rpc("publish_platform_product_blueprint",{_product_key:data.productKey,_version:data.version});if(error)throw new Error(error.message);return{ok:true};});
+
+export const getEffectiveSaasBlueprint=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:{productKey:string})=>z.object({
+  productKey:z.string().min(1).max(80)
+}).parse(input))
+.handler(async({context,data})=>{
+  const db=context.supabase as any;
+  const{data:product,error:productError}=await db.from("platform_products")
+    .select("*").eq("product_key",data.productKey).neq("status","retired").maybeSingle();
+  if(productError||!product)throw new Error("Product not found");
+  const{data:child,error:childError}=await db.from("active_platform_product_blueprints")
+    .select("*").eq("product_key",data.productKey).maybeSingle();
+  if(childError)throw new Error(childError.message);
+
+  let parent:any=null;
+  let parentBlueprint:any=null;
+  if(product.parent_product_key){
+    const parentProduct=await db.from("platform_products").select("*")
+      .eq("product_key",product.parent_product_key).neq("status","retired").maybeSingle();
+    if(parentProduct.error||!parentProduct.data)throw new Error("Parent landlord product not found");
+    parent=parentProduct.data;
+    const pb=await db.from("active_platform_product_blueprints").select("*")
+      .eq("product_key",product.parent_product_key).maybeSingle();
+    if(pb.error)throw new Error(pb.error.message);
+    parentBlueprint=pb.data;
+  }
+
+  const nonEmpty=(value:any)=>Array.isArray(value)&&value.length>0;
+  const unique=(values:any[])=>[...new Set(values.map(String))];
+  const childNav=Array.isArray(child?.navigation)?child.navigation:[];
+  const parentNav=Array.isArray(parentBlueprint?.navigation)?parentBlueprint.navigation:[];
+  const defaultModules=unique([
+    ...(parentBlueprint?.module_keys??[]),
+    ...(child?.module_keys??[])
+  ]);
+  const optionalModules=unique([
+    ...(parentBlueprint?.optional_module_keys??[]),
+    ...(child?.optional_module_keys??[])
+  ]).filter((key)=>!defaultModules.includes(key));
+
+  const effective={
+    productKey:data.productKey,
+    parentProductKey:product.parent_product_key??null,
+    industry:child?.industry??parentBlueprint?.industry??product.industry,
+    regions:nonEmpty(child?.region_keys)?child.region_keys:(parentBlueprint?.region_keys??[]),
+    locales:nonEmpty(child?.locale_keys)?child.locale_keys:(parentBlueprint?.locale_keys??[]),
+    modules:defaultModules,
+    optionalModules,
+    roles:nonEmpty(child?.roles)?child.roles:(parentBlueprint?.roles??[]),
+    navigation:childNav.length?childNav:parentNav,
+    domainObjects:nonEmpty(child?.domain_objects)?child.domain_objects:(parentBlueprint?.domain_objects??[]),
+    workflows:nonEmpty(child?.workflows)?child.workflows:(parentBlueprint?.workflows??[]),
+    mobileCapabilities:nonEmpty(child?.mobile_capabilities)
+      ?child.mobile_capabilities:(parentBlueprint?.mobile_capabilities??[]),
+    uiSchema:{
+      ...(parentBlueprint?.ui_schema??{}),
+      ...(child?.ui_schema??{}),
+      terminology:{
+        ...(parentBlueprint?.ui_schema?.terminology??{}),
+        ...(child?.ui_schema?.terminology??{})
+      }
+    },
+    metadata:{
+      ...(parentBlueprint?.metadata??{}),
+      ...(child?.metadata??{}),
+      familyRoot:product.parent_product_key??product.product_key
+    },
+    blueprintVersion:child?.version??parentBlueprint?.version??null,
+    parentBlueprintVersion:parentBlueprint?.version??null
+  };
+
+  return{product,parent,effective};
+});
