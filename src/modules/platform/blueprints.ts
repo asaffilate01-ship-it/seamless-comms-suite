@@ -174,7 +174,7 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     mobileCapabilities: ["push","documents","camera","photos","biometrics"],
   },
   childcare_marketplace: {
-    productKey: "kinderstars",
+    productKey: "kindelo",
     industry: "childcare_agency_marketplace",
     regions: ["GB","DE"],
     locales: ["en-GB","de-DE"],
@@ -219,7 +219,7 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
       tenantType: "childcare_agency_operator",
       clientUsersAreNotTenants: true,
       providersAreNotTenantsByDefault: true,
-      countryVariants: ["kinderstars-gb","kinderstars-de"]
+      countryVariants: ["kindelo-gb","kindelo-de"]
     }
   },
   compliance_service: {
