@@ -158,7 +158,7 @@ function adyenProvider():PaymentProvider{
       const{body:result}=await jsonRequest(base+"/payments/"+encodeURIComponent(providerRef)+"/captures",{
         method:"POST",headers:adyenHeaders(apiKey,request.idempotencyKey),body:JSON.stringify(body)
       });
-      return{providerRef:String(result.pspReference??providerRef),status:"pending",metadata:{captureReference:result.reference??null}};
+      return{providerRef,status:"pending",metadata:{capturePspReference:result.pspReference??null,captureReference:result.reference??null}};
     },
     async refund(providerRef,request,credentials,config){
       const apiKey=credentials.api_key;if(!apiKey)throw new Error("Adyen API key is not configured");
