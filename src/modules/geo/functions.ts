@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireModuleEntitlement } from "@/modules/platform/module-access";
-import { tenantGeocode,tenantReverseGeocode,tenantRoute } from "./runtime.server";
+import { tenantGeocode,tenantReverseGeocode,tenantRoute,tenantOptimise } from "./runtime.server";
 
 const scope=z.object({tenantId:z.string().uuid(),tenantProductId:z.string().uuid()});
 async function region(context:any,data:z.infer<typeof scope>){await requireModuleEntitlement(context,{...data,moduleKey:"geo.core"});const db=context.supabase as any;const{data:tp,error}=await db.from("tenant_products").select("region_key").eq("id",data.tenantProductId).eq("tenant_id",data.tenantId).eq("status","active").single();if(error||!tp)throw new Error("Tenant product scope not found");return tp.region_key as string;}
@@ -15,3 +15,27 @@ export const reverseGeocode=createServerFn({method:"POST"}).middleware([requireS
 
 const routeSchema=scope.extend({origin:point,destination:point,waypoints:z.array(point).max(23).optional(),mode:z.enum(["driving","walking","cycling","truck"]),departAt:z.string().datetime().optional().nullable(),avoid:z.array(z.enum(["tolls","motorways","ferries"])).max(3).optional()});
 export const calculateRoute=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator((input:z.input<typeof routeSchema>)=>routeSchema.parse(input)).handler(async({context,data})=>tenantRoute({tenantId:data.tenantId,tenantProductId:data.tenantProductId,regionKey:await region(context,data),request:{tenantId:data.tenantId,origin:data.origin,destination:data.destination,waypoints:data.waypoints,mode:data.mode,departAt:data.departAt,avoid:data.avoid}}));
+
+const optimisationSchema=scope.extend({
+  vehicles:z.array(z.object({
+    id:z.string().min(1).max(120),start:point,end:point.optional().nullable(),
+    capacity:z.number().nonnegative().optional().nullable(),
+    shiftStart:z.string().datetime().optional().nullable(),shiftEnd:z.string().datetime().optional().nullable(),
+    skills:z.array(z.string().max(120)).max(100).optional()
+  })).min(1).max(50),
+  stops:z.array(z.object({
+    id:z.string().min(1).max(120),point,serviceSeconds:z.number().int().nonnegative().optional(),
+    windowStart:z.string().datetime().optional().nullable(),windowEnd:z.string().datetime().optional().nullable(),
+    demand:z.number().nonnegative().optional()
+  })).max(500),
+  objective:z.enum(["distance","duration","cost","balanced"]).default("balanced")
+});
+export const optimiseRoutes=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof optimisationSchema>)=>optimisationSchema.parse(input))
+.handler(async({context,data})=>tenantOptimise({
+  tenantId:data.tenantId,tenantProductId:data.tenantProductId,regionKey:await region(context,data),
+  request:{
+    tenantId:data.tenantId,vehicles:data.vehicles,stops:data.stops,objective:data.objective
+  }
+}));
