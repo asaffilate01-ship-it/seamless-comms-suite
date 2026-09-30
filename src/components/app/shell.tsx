@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3,
   Handshake, Settings, Search, Bell, Plus, MessageCircle, ShieldCheck,
-  Menu, LogOut, Factory, Store, TrendingUp, Truck,
+  Menu, LogOut, Factory, Store, TrendingUp, Truck, Rocket,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ type NavItem = {
 const nav: NavItem[] = [
   { to: "/app", labelKey: "app.nav.overview", icon: LayoutDashboard, exact: true },
   { to: "/app/platform-control", labelKey: "", label: "Platform Control", icon: Factory },
+  { to: "/app/tenant-launch", labelKey: "", label: "Tenant Launch", icon: Rocket },
   { to: "/app/marketplace", labelKey: "", label: "Marketplace", icon: Store },
   { to: "/app/growth", labelKey: "", label: "Growth & Journeys", icon: TrendingUp },
   { to: "/app/operations", labelKey: "", label: "Dispatch & Operations", icon: Truck },
