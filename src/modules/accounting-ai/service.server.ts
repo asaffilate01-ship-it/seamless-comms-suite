@@ -49,6 +49,18 @@ const taxPosition=z.object({
   risk:z.enum(["low","medium","high","specialist_review"])
 });
 
+const accountsPrepAdjustment=z.object({
+  title:z.string().min(2).max(500),
+  description:z.string().min(2).max(8000),
+  reason:z.string().min(2).max(8000),
+  journalDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  currency:z.string().regex(/^[A-Z]{3}$/),
+  journalLines:z.array(journalLine).min(2).max(100),
+  evidenceRefs:z.array(z.string().max(500)).max(500).default([]),
+  confidence:z.number().min(0).max(1),
+  risk:z.enum(["low","normal","high","specialist_review"]).default("normal")
+});
+
 const requestSchema=z.discriminatedUnion("operation",[
   serviceScope.extend({
     operation:z.literal("extraction.result"),practiceClientId:z.string().uuid(),batchId:z.string().uuid(),
@@ -58,6 +70,14 @@ const requestSchema=z.discriminatedUnion("operation",[
   serviceScope.extend({
     operation:z.literal("extraction.failed"),practiceClientId:z.string().uuid(),batchId:z.string().uuid(),
     extractionRunId:z.string().uuid(),error:z.string().min(1).max(2000)
+  }),
+  serviceScope.extend({
+    operation:z.literal("accounts_prep.result"),practiceClientId:z.string().uuid(),prepRunId:z.string().uuid(),
+    modelRunId:z.string().max(240).optional().nullable(),
+    result:z.record(z.string(),z.unknown()).default({}),
+    outputDocumentRefs:z.array(z.string().max(500)).max(100).default([]),
+    reviewNotes:z.string().max(12000).optional().nullable(),
+    adjustments:z.array(accountsPrepAdjustment).max(500)
   }),
   serviceScope.extend({
     operation:z.literal("tax.research.result"),practiceClientId:z.string().uuid(),researchRunId:z.string().uuid(),
@@ -125,7 +145,10 @@ export async function serveAccountingAiService(request:Request){
     const{db,credential}=await authenticate(request);
 
     const capability=input.operation==="tax.research.result"
-      ?"tax_intelligence.research.write":"accounting_ai.extract.write";
+      ?"tax_intelligence.research.write"
+      :input.operation==="accounts_prep.result"
+        ?"accounting_ai.accounts_prep.write"
+        :"accounting_ai.extract.write";
     authoriseServiceScope(credential,{
       tenantId:input.tenantId,productKey:input.productKey,tenantProductId:input.tenantProductId,capability
     });
@@ -215,6 +238,53 @@ export async function serveAccountingAiService(request:Request){
       await db.from("accounting_intake_batches").update({status:"review"}).eq("id",input.batchId);
       await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
       return reply({created,reviewRequired,status:"review"},202);
+    }
+
+    if(input.operation==="accounts_prep.result"){
+      await assertClientService(db,input,"accounting_ai.core");
+      const{data:run}=await db.from("accounting_accounts_prep_runs")
+        .select("id,status,period_start,period_end,practice_client_id")
+        .eq("id",input.prepRunId).eq("tenant_id",input.tenantId)
+        .eq("practice_client_id",input.practiceClientId).maybeSingle();
+      if(!run)return reply({error:"Accounts preparation run not found"},404);
+      if(run.status!=="building")return reply({error:"Accounts preparation run is not awaiting an AI result"},409);
+
+      const{data:locked}=await db.from("accounting_accounts_prep_adjustments").select("id")
+        .eq("prep_run_id",run.id).in("status",["approved","posted"]).limit(1);
+      if(locked?.length)return reply({error:"Accounts preparation run already has locked adjustments"},409);
+
+      for(const adjustment of input.adjustments){
+        const debit=adjustment.journalLines.reduce((sum,line)=>sum+line.debitMinor,0);
+        const credit=adjustment.journalLines.reduce((sum,line)=>sum+line.creditMinor,0);
+        if(debit<=0||debit!==credit)return reply({error:"Every accounts-prep adjustment must contain balanced journal lines"},422);
+        if(adjustment.journalDate<run.period_start||adjustment.journalDate>run.period_end){
+          return reply({error:"Accounts-prep adjustment date must fall within the preparation period"},422);
+        }
+      }
+
+      await db.from("accounting_accounts_prep_adjustments").delete()
+        .eq("prep_run_id",run.id).in("status",["proposed","rejected"]);
+      if(input.adjustments.length){
+        const rows=input.adjustments.map((adjustment)=>({
+          tenant_id:input.tenantId,prep_run_id:run.id,practice_client_id:input.practiceClientId,
+          title:adjustment.title,description:adjustment.description,reason:adjustment.reason,
+          journal_date:adjustment.journalDate,currency:adjustment.currency,
+          proposed_journal_lines:adjustment.journalLines,evidence_refs:adjustment.evidenceRefs,
+          confidence:adjustment.confidence,risk:adjustment.risk,status:"proposed",
+          model_run_id:input.modelRunId??null
+        }));
+        const{error:adjustmentError}=await db.from("accounting_accounts_prep_adjustments").insert(rows);
+        if(adjustmentError)throw new Error(adjustmentError.message);
+      }
+
+      const{error:updateError}=await db.from("accounting_accounts_prep_runs").update({
+        status:"review",result:input.result,adjustment_count:input.adjustments.length,
+        output_document_refs:input.outputDocumentRefs,review_notes:input.reviewNotes??null,
+        model_run_id:input.modelRunId??null,completed_at:new Date().toISOString()
+      }).eq("id",run.id);
+      if(updateError)throw new Error(updateError.message);
+      await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+      return reply({status:"review",adjustments:input.adjustments.length},202);
     }
 
     await assertClientService(db,input,"tax_intelligence.core");
