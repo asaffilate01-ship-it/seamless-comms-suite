@@ -8,6 +8,7 @@ import {
 } from "@/modules/platform/module-access";
 
 const scope=z.object({tenantId:z.string().uuid(),tenantProductId:z.string().uuid()});
+const paymentMeta=z.record(z.string(),z.union([z.string(),z.number(),z.boolean(),z.null()]));
 
 async function paymentContext(context:any,data:z.infer<typeof scope>,adminOnly=false){
   const access=await requireModuleEntitlement(context,{...data,moduleKey:"payments.core"});
@@ -24,7 +25,7 @@ const createSchema=scope.extend({
   captureMode:z.enum(["automatic","manual"]).default("automatic"),
   customerRef:z.string().max(200).optional().nullable(),purpose:z.string().min(1).max(500),
   contextType:z.string().max(120).optional().nullable(),contextId:z.string().max(240).optional().nullable(),
-  idempotencyKey:z.string().min(8).max(160),metadata:z.record(z.string(),z.unknown()).default({})
+  idempotencyKey:z.string().min(8).max(160),metadata:paymentMeta.default({})
 });
 
 export const createTenantPaymentIntent=createServerFn({method:"POST"})
