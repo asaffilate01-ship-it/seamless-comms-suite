@@ -10,6 +10,29 @@ async function requireTenantAdmin(context:any,tenantId:string){
  return m.role as string;
 }
 
+async function requireTenantOrLandlordAdmin(context:any,tenantId:string,tenantProductId:string){
+ const db=context.supabase as any;
+ const{data:m}=await db.from("tenant_members").select("role").eq("tenant_id",tenantId).eq("user_id",context.userId).maybeSingle();
+ if(m&&["owner","admin"].includes(m.role))return{kind:"tenant" as const,role:String(m.role)};
+
+ const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+ const{data:tp}=await admin.from("tenant_products").select("id,product_key,region_key")
+  .eq("id",tenantProductId).eq("tenant_id",tenantId).maybeSingle();
+ if(!tp)throw new Error("Tenant product not found");
+
+ const{data:p}=await db.from("platform_operators").select("role,status").eq("user_id",context.userId).maybeSingle();
+ if(p?.status==="active"&&["platform_owner","platform_admin"].includes(p.role)){
+  return{kind:"operator" as const,role:String(p.role),admin,tp};
+ }
+ const{data:o}=await db.from("product_operators").select("role,status,region_keys")
+  .eq("product_key",tp.product_key).eq("user_id",context.userId).maybeSingle();
+ const regions=Array.isArray(o?.region_keys)?o.region_keys:[];
+ if(!o||o.status!=="active"||!["landlord_owner","landlord_admin"].includes(o.role)||(regions.length&&!regions.includes(tp.region_key))){
+  throw new Error("Tenant or landlord admin access required");
+ }
+ return{kind:"operator" as const,role:String(o.role),admin,tp};
+}
+
 const brand=z.object({
  tenantId:z.string().uuid(),tenantProductId:z.string().uuid(),brandKey:z.string().min(1).max(120),
  name:z.string().min(1).max(200),logoUrl:z.string().url().optional().nullable(),iconUrl:z.string().url().optional().nullable(),
@@ -24,7 +47,8 @@ const brand=z.object({
 export const upsertTenantBrandProfile=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:z.input<typeof brand>)=>brand.parse(i))
 .handler(async({context,data})=>{
- await requireTenantAdmin(context,data.tenantId);const db=context.supabase as any;
+ const access=await requireTenantOrLandlordAdmin(context,data.tenantId,data.tenantProductId);
+ const db=(access.kind==="operator"?access.admin:context.supabase) as any;
  const{data:tp}=await db.from("tenant_products").select("id").eq("id",data.tenantProductId).eq("tenant_id",data.tenantId).maybeSingle();
  if(!tp)throw new Error("Tenant product not found");
  const{data:existing}=await db.from("tenant_brand_profiles").select("id,revision")
@@ -53,12 +77,13 @@ const config=z.object({
 export const setTenantRuntimeConfig=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:z.input<typeof config>)=>config.parse(i))
 .handler(async({context,data})=>{
- await requireTenantAdmin(context,data.tenantId);const db=context.supabase as any;
+ const access=await requireTenantOrLandlordAdmin(context,data.tenantId,data.tenantProductId);
+ const db=(access.kind==="operator"?access.admin:context.supabase) as any;
  const{data:existing}=await db.from("tenant_runtime_config").select("id,revision")
   .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
   .eq("location_id",data.locationId??null).eq("config_key",data.configKey).maybeSingle();
  const values={tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,location_id:data.locationId??null,
-  config_key:data.configKey,value:data.value,enabled:data.enabled,source:"tenant",revision:(existing?.revision??0)+1};
+  config_key:data.configKey,value:data.value,enabled:data.enabled,source:access.kind==="tenant"?"tenant":"operator",revision:(existing?.revision??0)+1};
  const result=existing?.id
   ? await db.from("tenant_runtime_config").update(values).eq("id",existing.id).select("*").single()
   : await db.from("tenant_runtime_config").insert(values).select("*").single();
