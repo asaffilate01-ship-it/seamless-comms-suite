@@ -179,10 +179,14 @@ export const SAAS_BLUEPRINTS: Record<BlueprintKey, ProductBlueprint> = {
     regions: ["GB","DE"],
     locales: ["en-GB","de-DE"],
     modules: [
-      "crm.core","marketplace.core","bookings.core","payments.core","connect.core","reception.core",
-      "compliance.core","documents.core","forms.core","automation.core","notifications.core","search.core",
-      "analytics.core","financials.core","marketing.core","journeys.core","feedback.core","loyalty.core",
-      "intelligence.core","mobile.core","support.core","creative.core"
+      "crm.core","marketplace.core","bookings.core","payments.core","connect.core",
+      "compliance.core","documents.core","forms.core","automation.core",
+      "notifications.core","search.core","analytics.core","intelligence.core",
+      "mobile.core","support.core"
+    ],
+    optionalModules: [
+      "reception.core","financials.core","marketing.core","sales.core","journeys.core",
+      "feedback.core","loyalty.core","creative.core","geo.core"
     ],
     roles: [
       "owner","admin","agency_manager","compliance_manager","placement_coordinator",
