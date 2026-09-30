@@ -83,6 +83,50 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.claim_intelligence_jobs(integer,text[],text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_intelligence_jobs(integer,text[],text) TO service_role;
 
+
+CREATE OR REPLACE FUNCTION public.claim_intelligence_jobs_for_scope(
+ _tenant uuid,_tenant_product uuid,_limit integer DEFAULT 10,_job_types text[] DEFAULT NULL,_worker_key text DEFAULT NULL
+)
+RETURNS SETOF jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $
+BEGIN
+ RETURN QUERY
+ WITH jobs AS(
+  SELECT j.id
+  FROM public.intelligence_jobs j
+  WHERE j.tenant_id=_tenant
+    AND j.tenant_product_id=_tenant_product
+    AND (
+      (j.status='queued' AND j.next_attempt_at<=now())
+      OR (j.status='processing' AND j.locked_at<now()-interval '10 minutes')
+    )
+    AND (_job_types IS NULL OR j.job_type=ANY(_job_types))
+  ORDER BY
+   CASE j.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
+   j.created_at
+  LIMIT LEAST(GREATEST(_limit,1),50)
+  FOR UPDATE SKIP LOCKED
+ )
+ UPDATE public.intelligence_jobs j
+ SET status='processing',attempts=j.attempts+1,locked_at=now(),started_at=COALESCE(j.started_at,now()),
+     worker_key_id=_worker_key,updated_at=now()
+ FROM jobs x
+ WHERE j.id=x.id
+ RETURNING jsonb_build_object(
+  'id',j.id,'tenantId',j.tenant_id,'tenantProductId',j.tenant_product_id,'jobType',j.job_type,
+  'subjectType',j.subject_type,'subjectId',j.subject_id,'priority',j.priority,
+  'input',j.input,'requirements',j.requirements,'attempts',j.attempts
+ );
+END;
+$;
+REVOKE EXECUTE ON FUNCTION public.claim_intelligence_jobs_for_scope(uuid,uuid,integer,text[],text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_intelligence_jobs_for_scope(uuid,uuid,integer,text[],text)
+ TO service_role;
+
 CREATE OR REPLACE FUNCTION public.finish_intelligence_job(
  _job uuid,_success boolean,_result_ref text DEFAULT NULL,_provider_key text DEFAULT NULL,
  _model text DEFAULT NULL,_error text DEFAULT NULL
