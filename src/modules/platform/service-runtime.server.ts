@@ -84,8 +84,16 @@ export async function servePlatformRuntime(request:Request){
       const runtimeConfig=Object.fromEntries((runtimeRows??[])
         .filter((row:any)=>!row.location_id||!input.locationId||row.location_id===input.locationId)
         .map((row:any)=>[row.config_key,row.value]));
+      const{resolveTenantBranding}=await import("@/modules/branding/runtime.server");
+      const effectiveBranding=await resolveTenantBranding(db,{
+        tenantId:input.tenantId,tenantProductId:tp.id,brandKey:tp.brand_key??"default",
+        locationId:input.locationId??null,surface:null
+      });
       await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
-      return reply({tenantProduct:tp,modules:modules??[],region:region??null,locations:locations??[],brands:brands??[],runtimeConfig,domains:domains??[]});
+      return reply({
+        tenantProduct:tp,modules:modules??[],region:region??null,locations:locations??[],
+        brands:brands??[],effectiveBranding,runtimeConfig,domains:domains??[]
+      });
     }
 
     if(input.operation==="entitlement.check"){
