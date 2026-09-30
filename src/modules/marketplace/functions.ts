@@ -262,3 +262,114 @@ export const transitionMyMarketplaceOrder=createServerFn({method:"POST"})
   if(error)throw new Error(error.message);
   return{ok:true};
 });
+
+
+async function customerMarketplaceScope(context:any,input:{
+  tenantId:string;tenantProductId:string;
+}){
+  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+  const now=Date.now();
+  const[{data:tp},{data:grant},{data:portal}]=await Promise.all([
+    admin.from("tenant_products").select("id,status,product_key,region_key").eq("id",input.tenantProductId)
+      .eq("tenant_id",input.tenantId).maybeSingle(),
+    admin.from("tenant_module_entitlements").select("enabled,starts_at,ends_at")
+      .eq("tenant_id",input.tenantId).eq("tenant_product_id",input.tenantProductId)
+      .eq("module_key","marketplace.core").eq("enabled",true).maybeSingle(),
+    admin.from("customer_portal_users").select("id,crm_person_id,role,status")
+      .eq("tenant_id",input.tenantId).eq("tenant_product_id",input.tenantProductId)
+      .eq("user_id",context.userId).eq("status","active").maybeSingle()
+  ]);
+  if(!tp||tp.status!=="active")throw new Error("Active marketplace product required");
+  if(!grant||!grant.enabled||(grant.starts_at&&Date.parse(grant.starts_at)>now)||(grant.ends_at&&Date.parse(grant.ends_at)<=now)){
+    throw new Error("Marketplace entitlement required");
+  }
+  if(!portal)throw new Error("Customer portal access required");
+  const{data:person}=await admin.from("crm_people").select("id,display_name,email,phone_e164")
+    .eq("id",portal.crm_person_id).eq("tenant_id",input.tenantId).maybeSingle();
+  if(!person)throw new Error("CRM customer not found");
+  return{admin,tp,portal,person,buyerRef:String(person.id)};
+}
+
+const customerCatalogueSchema=scope.extend({
+  vendorId:z.string().uuid().optional().nullable(),
+  categoryKey:z.string().max(120).optional().nullable()
+});
+export const getCustomerMarketplaceCatalogue=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof customerCatalogueSchema>)=>customerCatalogueSchema.parse(input))
+.handler(async({context,data})=>{
+  const access=await customerMarketplaceScope(context,data);
+  const admin=access.admin;
+  let vq=admin.from("marketplace_vendors").select("id,name,country_code,currency,metadata")
+    .eq("tenant_id",data.tenantId).eq("status","active").order("name").limit(1000);
+  if(data.vendorId)vq=vq.eq("id",data.vendorId);
+  const{data:vendors,error:vendorError}=await vq;
+  if(vendorError)throw new Error(vendorError.message);
+  const vendorIds=(vendors??[]).map((v:any)=>v.id);
+  if(!vendorIds.length)return{vendors:[],listings:[],availability:[]};
+  let lq=admin.from("marketplace_listings").select("*")
+    .eq("tenant_id",data.tenantId).eq("status","active").in("vendor_id",vendorIds)
+    .order("updated_at",{ascending:false}).limit(2000);
+  if(data.categoryKey)lq=lq.contains("category_keys",[data.categoryKey]);
+  const{data:listings,error:listingError}=await lq;
+  if(listingError)throw new Error(listingError.message);
+  const listingIds=(listings??[]).map((l:any)=>l.id);
+  const availability=listingIds.length
+    ?await admin.from("marketplace_availability")
+      .select("id,listing_id,starts_at,ends_at,capacity,available,metadata")
+      .eq("tenant_id",data.tenantId).in("listing_id",listingIds).eq("available",true)
+      .gte("ends_at",new Date().toISOString()).order("starts_at",{ascending:true}).limit(5000)
+    :{data:[],error:null};
+  if(availability.error)throw new Error(availability.error.message);
+  return{vendors:vendors??[],listings:listings??[],availability:availability.data??[]};
+});
+
+const customerOrderSchema=scope.extend({
+  vendorId:z.string().uuid(),
+  items:z.array(z.object({
+    listingId:z.string().uuid(),quantity:z.number().positive(),
+    metadata:z.record(z.string(),z.unknown()).default({})
+  })).min(1).max(100),
+  metadata:z.record(z.string(),z.unknown()).default({})
+});
+export const createCustomerMarketplaceOrder=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof customerOrderSchema>)=>customerOrderSchema.parse(input))
+.handler(async({context,data})=>{
+  const access=await customerMarketplaceScope(context,data);
+  const admin=access.admin;
+  const{data:vendor}=await admin.from("marketplace_vendors").select("id,status")
+    .eq("id",data.vendorId).eq("tenant_id",data.tenantId).eq("status","active").maybeSingle();
+  if(!vendor)throw new Error("Marketplace provider is not available");
+  const metadata={
+    ...data.metadata,
+    customerPortalUserId:context.userId,
+    crmPersonId:access.person.id
+  };
+  const{data:id,error}=await admin.rpc("create_marketplace_order",{
+    _tenant:data.tenantId,_tenant_product:data.tenantProductId,_buyer_ref:access.buyerRef,
+    _vendor:data.vendorId,_items:data.items,_metadata:metadata
+  });
+  if(error||!id)throw new Error(error?.message??"Marketplace order could not be created");
+  return{id};
+});
+
+export const listMyMarketplacePurchases=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>)=>scope.parse(input))
+.handler(async({context,data})=>{
+  const access=await customerMarketplaceScope(context,data);
+  const admin=access.admin;
+  const{data:orders,error}=await admin.from("marketplace_orders").select("*")
+    .eq("tenant_id",data.tenantId).eq("buyer_ref",access.buyerRef)
+    .order("created_at",{ascending:false}).limit(500);
+  if(error)throw new Error(error.message);
+  const ids=(orders??[]).map((o:any)=>o.id);
+  const items=ids.length
+    ?await admin.from("marketplace_order_items").select("*").eq("tenant_id",data.tenantId).in("order_id",ids)
+    :{data:[],error:null};
+  if(items.error)throw new Error(items.error.message);
+  return(orders??[]).map((o:any)=>({
+    ...o,items:(items.data??[]).filter((i:any)=>i.order_id===o.id)
+  }));
+});
