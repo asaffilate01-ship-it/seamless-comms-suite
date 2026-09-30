@@ -671,3 +671,19 @@ export const listMyMarketplaceVendorBookings=createServerFn({method:"POST"})
   const linkById=new Map((links??[]).map((x:any)=>[x.booking_id,x]));
   return(bookings??[]).map((booking:any)=>({...booking,marketplace:linkById.get(booking.id)}));
 });
+
+
+export const getMarketplaceGovernance=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>)=>scope.parse(input))
+.handler(async({context,data})=>{
+  await marketScope(context,data);
+  const db=context.supabase as any;
+  const[commissions,reviews,disputes]=await Promise.all([
+    db.from("marketplace_commissions").select("*").eq("tenant_id",data.tenantId).order("created_at",{ascending:false}).limit(500),
+    db.from("marketplace_reviews").select("*").eq("tenant_id",data.tenantId).order("created_at",{ascending:false}).limit(500),
+    db.from("marketplace_disputes").select("*").eq("tenant_id",data.tenantId).order("created_at",{ascending:false}).limit(500),
+  ]);
+  for(const result of[commissions,reviews,disputes])if(result.error)throw new Error(result.error.message);
+  return{commissions:commissions.data??[],reviews:reviews.data??[],disputes:disputes.data??[]};
+});
