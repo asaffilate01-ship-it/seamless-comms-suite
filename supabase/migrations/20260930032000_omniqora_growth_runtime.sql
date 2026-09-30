@@ -245,4 +245,71 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.recalculate_product_rfm(uuid,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.recalculate_product_rfm(uuid,uuid) TO authenticated,service_role;
 
+
+CREATE OR REPLACE FUNCTION public.submit_public_feedback(
+  _token_hash text,_score numeric,_comment text
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  req public.feedback_requests;
+  survey public.feedback_surveys;
+  response_id uuid;
+  sentiment_value text;
+BEGIN
+  SELECT * INTO req
+  FROM public.feedback_requests
+  WHERE token_hash=_token_hash
+  FOR UPDATE;
+
+  IF NOT FOUND OR req.expires_at<=now() OR req.delivery_status IN ('responded','cancelled','failed') THEN
+    RAISE EXCEPTION 'Feedback request is invalid or expired';
+  END IF;
+
+  SELECT * INTO survey FROM public.feedback_surveys WHERE id=req.survey_id;
+  IF NOT FOUND OR survey.status<>'active' THEN
+    RAISE EXCEPTION 'Feedback survey is unavailable';
+  END IF;
+
+  IF survey.survey_type='nps' AND (_score<0 OR _score>10) THEN
+    RAISE EXCEPTION 'NPS score must be between 0 and 10';
+  ELSIF survey.survey_type='csat' AND (_score<1 OR _score>5) THEN
+    RAISE EXCEPTION 'CSAT score must be between 1 and 5';
+  ELSIF survey.survey_type='ces' AND (_score<1 OR _score>7) THEN
+    RAISE EXCEPTION 'CES score must be between 1 and 7';
+  ELSIF survey.survey_type='custom' AND (_score<0 OR _score>10) THEN
+    RAISE EXCEPTION 'Custom survey score must be between 0 and 10';
+  END IF;
+
+  sentiment_value:=CASE
+    WHEN survey.survey_type='nps' AND _score>=9 THEN 'positive'
+    WHEN survey.survey_type='nps' AND _score<=6 THEN 'negative'
+    WHEN survey.survey_type='csat' AND _score>=4 THEN 'positive'
+    WHEN survey.survey_type='csat' AND _score<=2 THEN 'negative'
+    WHEN survey.survey_type='ces' AND _score>=5 THEN 'positive'
+    WHEN survey.survey_type='ces' AND _score<=3 THEN 'negative'
+    ELSE 'neutral'
+  END;
+
+  INSERT INTO public.feedback_responses(
+    tenant_id,survey_id,crm_person_id,score,comment,sentiment,source_ref,metadata,received_at
+  ) VALUES (
+    req.tenant_id,req.survey_id,req.crm_person_id,_score,NULLIF(btrim(_comment),''),
+    sentiment_value,'feedback-request:'||req.id::text,
+    jsonb_build_object('feedbackRequestId',req.id,'tenantProductId',req.tenant_product_id),now()
+  ) RETURNING id INTO response_id;
+
+  UPDATE public.feedback_requests
+  SET delivery_status='responded',responded_at=now()
+  WHERE id=req.id;
+
+  RETURN response_id;
+END;
+$$;
+REVOKE EXECUTE ON FUNCTION public.submit_public_feedback(text,numeric,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.submit_public_feedback(text,numeric,text) TO anon,authenticated,service_role;
+
 COMMIT;
