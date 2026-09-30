@@ -283,10 +283,10 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     kind: "vertical_landlord",
     industry: "childcare_agency_marketplace",
     defaultModules: [
-      "crm.core","marketplace.core","bookings.core","payments.core","connect.core","reception.core",
-      "compliance.core","documents.core","forms.core","automation.core","notifications.core","search.core",
-      "analytics.core","financials.core","marketing.core","journeys.core","feedback.core","loyalty.core",
-      "intelligence.core","mobile.core","support.core","creative.core"
+      "crm.core","marketplace.core","bookings.core","payments.core","connect.core",
+      "compliance.core","documents.core","forms.core","automation.core",
+      "notifications.core","search.core","analytics.core","intelligence.core",
+      "mobile.core","support.core"
     ],
     supportedRegions: ["GB","DE"],
     supportedLocales: ["en-GB","de-DE"],
