@@ -23,6 +23,7 @@ export type ProductBlueprint = {
   regions: string[];
   locales: string[];
   modules: string[];
+  optionalModules?: string[];
   roles: string[];
   navigation: string[];
   domainObjects: string[];
@@ -160,6 +161,8 @@ export function validateBlueprint(blueprint: ProductBlueprint) {
   for (const regionKey of blueprint.regions) {
     if (!getRegionPack(regionKey)) throw new Error(`Unknown region pack: ${regionKey}`);
   }
-  moduleClosure(blueprint.modules);
+  moduleClosure([...(blueprint.modules??[]),...(blueprint.optionalModules??[])]);
+  const overlap=(blueprint.optionalModules??[]).filter((key)=>blueprint.modules.includes(key));
+  if(overlap.length)throw new Error("Modules cannot be both default and optional: "+overlap.join(", "));
   return blueprint;
 }
