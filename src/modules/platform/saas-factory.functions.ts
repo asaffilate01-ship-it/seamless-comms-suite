@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const blueprint=z.object({regions:z.array(z.string().min(2).max(16)).min(1),locales:z.array(z.string().min(2).max(20)).min(1),modules:z.array(z.string().min(1).max(160)).max(100).default([]),roles:z.array(z.string().min(1).max(120)).max(100).default([]),navigation:z.array(z.unknown()).default([]),domainObjects:z.array(z.string().max(160)).max(200).default([]),workflows:z.array(z.string().max(160)).max(200).default([]),mobileCapabilities:z.array(z.string().max(160)).max(100).default([]),uiSchema:z.record(z.string(),z.unknown()).default({}),metadata:z.record(z.string(),z.unknown()).default({})});
+const blueprint=z.object({regions:z.array(z.string().min(2).max(16)).min(1),locales:z.array(z.string().min(2).max(20)).min(1),modules:z.array(z.string().min(1).max(160)).max(100).default([]),optionalModules:z.array(z.string().min(1).max(160)).max(100).default([]),roles:z.array(z.string().min(1).max(120)).max(100).default([]),navigation:z.array(z.unknown()).default([]),domainObjects:z.array(z.string().max(160)).max(200).default([]),workflows:z.array(z.string().max(160)).max(200).default([]),mobileCapabilities:z.array(z.string().max(160)).max(100).default([]),uiSchema:z.record(z.string(),z.unknown()).default({}),metadata:z.record(z.string(),z.unknown()).default({})});
 const create=z.object({
   productKey:z.string().regex(/^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/),
   name:z.string().min(2).max(160),
