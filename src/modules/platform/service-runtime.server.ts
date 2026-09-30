@@ -67,16 +67,25 @@ export async function servePlatformRuntime(request:Request){
     if(tpError||!tp||tp.status!=="active")return reply({error:"Active tenant product required"},403);
 
     if(input.operation==="context.get"){
-      const[{data:modules},{data:region},{data:locations}]=await Promise.all([
+      const[{data:modules},{data:region},{data:locations},{data:brands},{data:runtimeRows},{data:domains}]=await Promise.all([
         db.from("tenant_module_entitlements").select("module_key,enabled,limits,config,starts_at,ends_at")
           .eq("tenant_id",input.tenantId).eq("tenant_product_id",tp.id).eq("enabled",true),
         db.from("platform_region_packs").select("region_key,country_code,default_locale,supported_locales,currency,time_zones,data_region,tax_profile,legal_profile,regulatory_packs,provider_preferences")
           .eq("region_key",tp.region_key).maybeSingle(),
         db.from("tenant_locations").select("id,location_key,name,country_code,locale,time_zone,currency,status")
           .eq("tenant_id",input.tenantId).eq("tenant_product_id",tp.id).eq("status","active"),
+        db.from("tenant_brand_profiles").select("brand_key,name,logo_url,icon_url,splash_url,primary_colour,secondary_colour,accent_colour,font_family,support_email,support_phone,app_name,legal_name,website_url,locale,terminology,theme,status")
+          .eq("tenant_id",input.tenantId).eq("tenant_product_id",tp.id).eq("status","active"),
+        db.from("tenant_runtime_config").select("config_key,value,enabled,location_id,revision")
+          .eq("tenant_id",input.tenantId).eq("tenant_product_id",tp.id).eq("enabled",true),
+        db.from("tenant_domains").select("hostname,purpose,verification_status,is_primary,location_id")
+          .eq("tenant_id",input.tenantId).eq("tenant_product_id",tp.id),
       ]);
+      const runtimeConfig=Object.fromEntries((runtimeRows??[])
+        .filter((row:any)=>!row.location_id||!input.locationId||row.location_id===input.locationId)
+        .map((row:any)=>[row.config_key,row.value]));
       await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
-      return reply({tenantProduct:tp,modules:modules??[],region:region??null,locations:locations??[]});
+      return reply({tenantProduct:tp,modules:modules??[],region:region??null,locations:locations??[],brands:brands??[],runtimeConfig,domains:domains??[]});
     }
 
     if(input.operation==="entitlement.check"){
