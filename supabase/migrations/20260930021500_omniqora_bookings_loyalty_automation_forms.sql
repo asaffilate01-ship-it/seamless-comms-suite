@@ -372,16 +372,17 @@ AS $$
 DECLARE acc public.loyalty_accounts; ledger_id uuid; delta numeric;
 BEGIN
  IF _quantity<=0 AND _entry_type<>'adjust' THEN RAISE EXCEPTION 'invalid_loyalty_quantity'; END IF;
+ -- Serialize first-account creation and balance mutation for this programme/customer pair.
+ PERFORM pg_advisory_xact_lock(hashtextextended(_programme::text||':'||_customer_ref,0));
  SELECT id INTO ledger_id FROM public.loyalty_ledger WHERE tenant_id=_tenant AND source_ref=_source_ref;
  IF ledger_id IS NOT NULL THEN RETURN ledger_id; END IF;
- SELECT * INTO acc FROM public.loyalty_accounts WHERE tenant_id=_tenant AND programme_id=_programme AND customer_ref=_customer_ref FOR UPDATE;
+ SELECT * INTO acc FROM public.loyalty_accounts
+  WHERE tenant_id=_tenant AND programme_id=_programme AND customer_ref=_customer_ref
+  FOR UPDATE;
  IF NOT FOUND THEN
-  INSERT INTO public.loyalty_accounts(tenant_id,programme_id,customer_ref) VALUES(_tenant,_programme,_customer_ref)
+  INSERT INTO public.loyalty_accounts(tenant_id,programme_id,customer_ref)
+  VALUES(_tenant,_programme,_customer_ref)
   RETURNING * INTO acc;
-  PERFORM pg_advisory_xact_lock(hashtextextended(acc.id::text,0));
- ELSE
-  PERFORM pg_advisory_xact_lock(hashtextextended(acc.id::text,0));
-  SELECT * INTO acc FROM public.loyalty_accounts WHERE id=acc.id FOR UPDATE;
  END IF;
  delta:=CASE
   WHEN _entry_type='earn' THEN abs(_quantity)
