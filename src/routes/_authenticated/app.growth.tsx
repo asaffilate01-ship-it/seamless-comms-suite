@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/app/shell";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { ProductWorkspacePicker, useProductWorkspace } from "@/hooks/useProductWorkspace";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +15,9 @@ import {
   listMarketingWorkspace,
   listRfmProfiles,
   listSalesSequences,
+  listJourneyEnrolments,
+  listSalesSequenceEnrolments,
+  recalculateRfmProfiles,
 } from "@/modules/growth/functions";
 import { Activity, GitBranch, HeartHandshake, Megaphone, Target, UsersRound } from "lucide-react";
 
@@ -26,6 +31,7 @@ export const Route=createFileRoute("/_authenticated/app/growth")({
 });
 
 function GrowthWorkspace(){
+  const queryClient=useQueryClient();
   const workspace=useProductWorkspace();
   const selected=workspace.selected;
   const scope=selected?{tenantId:selected.tenant_id,tenantProductId:selected.id}:null;
@@ -37,6 +43,9 @@ function GrowthWorkspace(){
   const rfmFn=useServerFn(listRfmProfiles);
   const surveysFn=useServerFn(listFeedbackSurveys);
   const responsesFn=useServerFn(listFeedbackResponses);
+  const journeyEnrolmentsFn=useServerFn(listJourneyEnrolments);
+  const salesEnrolmentsFn=useServerFn(listSalesSequenceEnrolments);
+  const recalcRfmFn=useServerFn(recalculateRfmProfiles);
 
   const marketing=useQuery({
     queryKey:["growth-marketing",selected?.id],
@@ -74,6 +83,29 @@ function GrowthWorkspace(){
     queryFn:()=>responsesFn({data:{...scope!,surveyId:null}}),
     retry:false,
   });
+  const journeyEnrolments=useQuery({
+    queryKey:["growth-journey-enrolments",selected?.id],
+    enabled:!!scope&&has("journeys.core"),
+    queryFn:()=>journeyEnrolmentsFn({data:scope!}),
+    retry:false,
+  });
+  const salesEnrolments=useQuery({
+    queryKey:["growth-sales-enrolments",selected?.id],
+    enabled:!!scope&&has("sales.core"),
+    queryFn:()=>salesEnrolmentsFn({data:scope!}),
+    retry:false,
+  });
+
+  async function recalculateRfm(){
+    if(!scope)return;
+    try{
+      const result=await recalcRfmFn({data:scope});
+      await queryClient.invalidateQueries({queryKey:["growth-rfm",selected?.id]});
+      toast.success(`Recalculated ${result.profiles} RFM profile(s)`);
+    }catch(error){
+      toast.error(error instanceof Error?error.message:"RFM recalculation failed");
+    }
+  }
 
   const profiles=(rfm.data??[]) as any[];
   const segmentCounts=new Map<string,number>();
@@ -81,6 +113,8 @@ function GrowthWorkspace(){
     for(const segment of profile.segments??[])segmentCounts.set(String(segment),(segmentCounts.get(String(segment))??0)+1);
   }
   const feedbackRows=(responses.data??[]) as any[];
+  const journeyRuns=(journeyEnrolments.data??[]) as any[];
+  const salesRuns=(salesEnrolments.data??[]) as any[];
   const scored=feedbackRows.filter((row)=>typeof row.score==="number");
   const averageScore=scored.length?scored.reduce((sum,row)=>sum+Number(row.score),0)/scored.length:null;
 
@@ -95,8 +129,8 @@ function GrowthWorkspace(){
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <Metric icon={UsersRound} label="RFM profiles" value={profiles.length}/>
           <Metric icon={Megaphone} label="Campaigns" value={(marketing.data?.campaigns??[]).length}/>
-          <Metric icon={Target} label="Sales sequences" value={(sales.data??[]).length}/>
-          <Metric icon={GitBranch} label="Journeys" value={(journeys.data??[]).length}/>
+          <Metric icon={Target} label="Sales sequences" value={`${(sales.data??[]).length} / ${salesRuns.filter((row)=>["active","waiting"].includes(row.status)).length} active`}/>
+          <Metric icon={GitBranch} label="Journeys" value={`${(journeys.data??[]).length} / ${journeyRuns.filter((row)=>["active","waiting"].includes(row.status)).length} active`}/>
           <Metric icon={HeartHandshake} label="Surveys" value={(surveys.data??[]).length}/>
           <Metric icon={Activity} label="Avg feedback" value={averageScore===null?"—":averageScore.toFixed(1)}/>
         </div>
@@ -114,7 +148,10 @@ function GrowthWorkspace(){
             {!has("journeys.core")?<ModuleOff name="Journeys / RFM" moduleKey="journeys.core"/>:
             <div className="grid gap-4 lg:grid-cols-3">
               <Card className="lg:col-span-2"><CardContent className="p-0">
-                <SectionHeader title="Customer value profiles" subtitle="Recency, frequency, monetary value and calculated segments."/>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+                  <div><h3 className="font-semibold">Customer value profiles</h3><p className="text-xs text-muted-foreground">Product-scoped recency, frequency, monetary value and calculated segments.</p></div>
+                  <Button size="sm" variant="outline" onClick={recalculateRfm}>Recalculate RFM</Button>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -150,6 +187,7 @@ function GrowthWorkspace(){
             <EntityGrid rows={(journeys.data??[]) as any[]} empty="No journeys yet." render={(row)=><>
               <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">{row.name}</h3><p className="text-xs text-muted-foreground">{(row.nodes??[]).length} nodes · {(row.edges??[]).length} edges</p></div><Badge variant="outline">{row.status}</Badge></div>
               <p className="mt-4 text-xs text-muted-foreground">Trigger → conditions → AI decisions → actions → delays → branches → outcomes.</p>
+              <div className="mt-3 text-xs font-medium">{journeyRuns.filter((run)=>run.journey_id===row.id&&["active","waiting"].includes(run.status)).length} active enrolment(s)</div>
             </>}/>}
           </TabsContent>
 
@@ -158,6 +196,7 @@ function GrowthWorkspace(){
             <EntityGrid rows={(sales.data??[]) as any[]} empty="No sales sequences yet." render={(row)=><>
               <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">{row.name}</h3><p className="text-xs text-muted-foreground">{(row.steps??[]).length} steps</p></div><Badge variant="outline">{row.status}</Badge></div>
               <div className="mt-4 flex flex-wrap gap-1.5">{(row.steps??[]).slice(0,6).map((step:any,index:number)=><Badge key={index} variant="secondary">{step.kind??"step"}</Badge>)}</div>
+              <div className="mt-3 text-xs font-medium">{salesRuns.filter((run)=>run.sequence_id===row.id&&["active","waiting"].includes(run.status)).length} active enrolment(s)</div>
             </>}/>}
           </TabsContent>
 
