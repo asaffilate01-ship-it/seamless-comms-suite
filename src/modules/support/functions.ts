@@ -33,23 +33,16 @@ export const createSupportTicket=createServerFn({method:"POST"}).middleware([req
 .inputValidator((i:z.input<typeof ticketSchema>)=>ticketSchema.parse(i))
 .handler(async({context,data})=>{
  const access=await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"support.core"});
- requireWritableTenantRole(access.role);const db=context.supabase as any;
- let firstDue:string|null=null,resolutionDue:string|null=null;
- const{data:sla}=await db.from("support_sla_policies").select("first_response_minutes,resolution_minutes")
-  .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId).eq("priority",data.priority).eq("active",true).limit(1).maybeSingle();
- if(sla){firstDue=new Date(Date.now()+Number(sla.first_response_minutes)*60000).toISOString();resolutionDue=new Date(Date.now()+Number(sla.resolution_minutes)*60000).toISOString();}
- const{data:ticket,error}=await db.from("cases").insert({
-  tenant_id:data.tenantId,conversation_id:data.conversationId??null,title:data.title,status:"new",
-  priority:data.priority,assignee:context.userId
- }).select("id").single();
- if(error||!ticket)throw new Error(error?.message??"Support ticket could not be created");
- const{error:metaError}=await db.from("support_ticket_metadata").insert({
-  case_id:ticket.id,tenant_id:data.tenantId,tenant_product_id:data.tenantProductId,queue_id:data.queueId??null,
-  category:data.category??null,channel:data.channel,customer_ref:data.customerRef??null,
-  first_response_due_at:firstDue,resolution_due_at:resolutionDue,tags:data.tags,
-  source_product_key:data.sourceProductKey??null,external_ref:data.externalRef??null
+ requireWritableTenantRole(access.role);
+ const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+ const{data:id,error}=await admin.rpc("create_support_ticket",{
+  _tenant:data.tenantId,_tenant_product:data.tenantProductId,_title:data.title,_priority:data.priority,
+  _conversation:data.conversationId??null,_queue:data.queueId??null,_category:data.category??null,
+  _channel:data.channel,_customer_ref:data.customerRef??null,_source_product:data.sourceProductKey??null,
+  _external_ref:data.externalRef??null,_tags:data.tags,_assignee:context.userId
  });
- if(metaError)throw new Error(metaError.message);return{id:ticket.id};
+ if(error||!id)throw new Error(error?.message??"Support ticket could not be created");
+ return{id};
 });
 
 export const listSupportTickets=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
