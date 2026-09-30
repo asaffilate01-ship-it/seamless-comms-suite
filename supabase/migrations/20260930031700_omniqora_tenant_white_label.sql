@@ -47,6 +47,14 @@ ALTER TABLE public.tenant_brand_profiles
   ADD COLUMN IF NOT EXISTS powered_by_label text,
   ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1 CHECK(revision>0);
 
+ALTER TABLE public.tenant_brand_profiles
+  DROP CONSTRAINT IF EXISTS tenant_brand_profiles_tenant_id_brand_key_key;
+CREATE UNIQUE INDEX IF NOT EXISTS tenant_brand_profiles_product_brand_uq
+  ON public.tenant_brand_profiles(
+    tenant_id,
+    COALESCE(tenant_product_id,'00000000-0000-0000-0000-000000000000'::uuid),
+    brand_key
+  );
 DROP INDEX IF EXISTS tenant_brand_profiles_scope_idx;
 CREATE INDEX IF NOT EXISTS tenant_brand_profiles_scope_idx
   ON public.tenant_brand_profiles(tenant_id,tenant_product_id,status,brand_key);
