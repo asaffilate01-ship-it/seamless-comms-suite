@@ -308,9 +308,10 @@ CREATE TABLE IF NOT EXISTS public.tax_knowledge_sources(
  content_hash text,
  supersedes_source_id uuid REFERENCES public.tax_knowledge_sources(id) ON DELETE SET NULL,
  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
- created_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(jurisdiction,source_url,COALESCE(content_hash,''))
+ created_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS tax_knowledge_sources_source_uq
+ ON public.tax_knowledge_sources(jurisdiction,source_url,COALESCE(content_hash,''));
 CREATE INDEX IF NOT EXISTS tax_knowledge_sources_lookup_idx
  ON public.tax_knowledge_sources(jurisdiction,authority_level,effective_from,effective_until,checked_at DESC);
 
@@ -392,7 +393,15 @@ CREATE POLICY "accounting intake client read" ON public.accounting_intake_batche
  USING(public.has_practice_client_access(practice_client_id,auth.uid()));
 DROP POLICY IF EXISTS "accounting intake client create" ON public.accounting_intake_batches;
 CREATE POLICY "accounting intake client create" ON public.accounting_intake_batches FOR INSERT TO authenticated
- WITH CHECK(public.has_practice_client_access(practice_client_id,auth.uid()) AND status IN ('draft','uploaded'));
+ WITH CHECK(
+  status IN ('draft','uploaded')
+  AND public.has_practice_client_access(practice_client_id,auth.uid())
+  AND EXISTS(
+    SELECT 1 FROM public.practice_clients c
+    WHERE c.id=practice_client_id AND c.tenant_id=accounting_intake_batches.tenant_id
+      AND c.tenant_product_id=accounting_intake_batches.tenant_product_id
+  )
+ );
 DROP POLICY IF EXISTS "accounting intake staff update" ON public.accounting_intake_batches;
 CREATE POLICY "accounting intake staff update" ON public.accounting_intake_batches FOR UPDATE TO authenticated
  USING(public.can_write(tenant_id,auth.uid())) WITH CHECK(public.can_write(tenant_id,auth.uid()));
@@ -408,13 +417,17 @@ DROP POLICY IF EXISTS "accounting item client read" ON public.accounting_intake_
 CREATE POLICY "accounting item client read" ON public.accounting_intake_items FOR SELECT TO authenticated
  USING(EXISTS(
   SELECT 1 FROM public.accounting_intake_batches b
-  WHERE b.id=batch_id AND b.tenant_id=tenant_id AND public.has_practice_client_access(b.practice_client_id,auth.uid())
+  WHERE b.id=accounting_intake_items.batch_id
+    AND b.tenant_id=accounting_intake_items.tenant_id
+    AND public.has_practice_client_access(b.practice_client_id,auth.uid())
  ));
 DROP POLICY IF EXISTS "accounting item client create" ON public.accounting_intake_items;
 CREATE POLICY "accounting item client create" ON public.accounting_intake_items FOR INSERT TO authenticated
  WITH CHECK(EXISTS(
   SELECT 1 FROM public.accounting_intake_batches b
-  WHERE b.id=batch_id AND b.tenant_id=tenant_id AND public.has_practice_client_access(b.practice_client_id,auth.uid())
+  WHERE b.id=accounting_intake_items.batch_id
+    AND b.tenant_id=accounting_intake_items.tenant_id
+    AND public.has_practice_client_access(b.practice_client_id,auth.uid())
  ));
 DROP POLICY IF EXISTS "accounting item staff update" ON public.accounting_intake_items;
 CREATE POLICY "accounting item staff update" ON public.accounting_intake_items FOR UPDATE TO authenticated
@@ -541,11 +554,16 @@ RETURNS TABLE(
  period_debit_minor bigint,period_credit_minor bigint,
  closing_debit_minor bigint,closing_credit_minor bigint
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path=public
 AS $$
+BEGIN
+ IF auth.uid() IS NOT NULL AND NOT public.is_tenant_member(_tenant,auth.uid()) THEN
+  RAISE EXCEPTION 'tenant_access_denied';
+ END IF;
+ RETURN QUERY
  WITH activity AS(
   SELECT a.id,a.code,a.name,a.account_type,
    COALESCE(sum(CASE WHEN j.journal_date<_period_start THEN l.debit_minor ELSE 0 END),0)::bigint od,
@@ -558,11 +576,12 @@ AS $$
   WHERE a.tenant_id=_tenant AND a.practice_client_id=_client AND a.active=true
   GROUP BY a.id,a.code,a.name,a.account_type
  )
- SELECT code,name,account_type,
+ SELECT code,name,activity.account_type,
   GREATEST(od-oc,0),GREATEST(oc-od,0),pd,pc,
   GREATEST((od+pd)-(oc+pc),0),GREATEST((oc+pc)-(od+pd),0)
  FROM activity
  ORDER BY code;
+END;
 $$;
 REVOKE EXECUTE ON FUNCTION public.accounting_trial_balance(uuid,uuid,date,date) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.accounting_trial_balance(uuid,uuid,date,date) TO authenticated,service_role;
