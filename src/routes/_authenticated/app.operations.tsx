@@ -1,15 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/app/shell";
 import { ProductWorkspacePicker, useProductWorkspace } from "@/hooks/useProductWorkspace";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { getDispatchFleetWorkspace, listDispatchAgents, listDispatchJobs } from "@/modules/dispatch/functions";
 import { listMobileAppProfiles } from "@/modules/mobile/functions";
 import { getTenantIntegrationStatus } from "@/modules/platform/tenant-context.functions";
+import { createPublicTrackingLink, listPublicTrackingLinks, revokePublicTrackingLink } from "@/modules/platform/tracking.functions";
 import {
   Activity, Clock3, Gauge, MapPinned, Navigation, Route as RouteIcon,
   ShieldCheck, Smartphone, Truck, UserRoundCheck, WalletCards, Wrench,
@@ -25,6 +29,7 @@ export const Route=createFileRoute("/_authenticated/app/operations")({
 });
 
 function OperationsWorkspace(){
+  const queryClient=useQueryClient();
   const workspace=useProductWorkspace();
   const selected=workspace.selected;
   const scope=selected?{tenantId:selected.tenant_id,tenantProductId:selected.id}:null;
@@ -38,6 +43,9 @@ function OperationsWorkspace(){
   const fleetFn=useServerFn(getDispatchFleetWorkspace);
   const mobileFn=useServerFn(listMobileAppProfiles);
   const integrationFn=useServerFn(getTenantIntegrationStatus);
+  const listTrackingFn=useServerFn(listPublicTrackingLinks);
+  const createTrackingFn=useServerFn(createPublicTrackingLink);
+  const revokeTrackingFn=useServerFn(revokePublicTrackingLink);
 
   const jobs=useQuery({
     queryKey:["dispatch-jobs",selected?.id],
@@ -69,6 +77,46 @@ function OperationsWorkspace(){
     queryFn:()=>integrationFn({data:{tenantId:selected!.tenant_id,productKey:selected!.product_key}}),
     retry:false,
   });
+  const trackingLinks=useQuery({
+    queryKey:["public-tracking-links",selected?.id],
+    enabled:!!scope&&(geoEnabled||dispatchEnabled),
+    queryFn:()=>listTrackingFn({data:scope!}),
+    retry:false,
+  });
+  const[trackingJobId,setTrackingJobId]=useState("");
+  const[lastTrackingPath,setLastTrackingPath]=useState("");
+  const[trackingBusy,setTrackingBusy]=useState(false);
+
+  useEffect(()=>{
+    const jobs=(jobs.data??[]) as any[];
+    if(jobs.length&&!jobs.some((row)=>row.id===trackingJobId))setTrackingJobId(jobs[0].id);
+    if(!jobs.length&&trackingJobId)setTrackingJobId("");
+  },[jobs.data,trackingJobId]);
+
+  async function createTracking(){
+    if(!scope||!trackingJobId)return;
+    try{
+      setTrackingBusy(true);
+      const result=await createTrackingFn({data:{
+        ...scope,subjectType:"dispatch_job",subjectId:trackingJobId,expiresInHours:72,
+        publicFields:["status","etaAt","latitude","longitude","heading","progress","driverName","vehicle","nextStop","pod","ratingEnabled"]
+      }});
+      setLastTrackingPath(result.path);
+      await queryClient.invalidateQueries({queryKey:["public-tracking-links",selected?.id]});
+      if(navigator.clipboard)await navigator.clipboard.writeText(window.location.origin+result.path);
+      toast.success("Tracking link created"+(navigator.clipboard?" and copied":""));
+    }catch(error){toast.error(error instanceof Error?error.message:"Tracking link could not be created");}
+    finally{setTrackingBusy(false);}
+  }
+
+  async function revokeTracking(tokenId:string){
+    if(!scope)return;
+    try{
+      await revokeTrackingFn({data:{...scope,tokenId}});
+      await queryClient.invalidateQueries({queryKey:["public-tracking-links",selected?.id]});
+      toast.success("Tracking link revoked");
+    }catch(error){toast.error(error instanceof Error?error.message:"Tracking link could not be revoked");}
+  }
 
   const jobRows=(jobs.data??[]) as any[];
   const agentRows=(resources.data?.agents??[]) as any[];
@@ -177,11 +225,30 @@ function OperationsWorkspace(){
 
           <TabsContent value="tracking">
             {!geoEnabled&&!dispatchEnabled?<ModuleOff name="Geo & tracking" moduleKey="geo.core"/>:
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <Capability icon={Navigation} title="Geo abstraction" enabled={geoEnabled} body="Geocode, reverse geocode, route, ETA and provider switching."/>
-              <Capability icon={MapPinned} title="Geofencing" enabled={dispatchEnabled} body={`${geofences.length} configured · ${(fleet.data?.geofenceEvents??[]).length} recent events`}/>
-              <Capability icon={Activity} title="Historical tracks" enabled={dispatchEnabled} body={`${positions.length} recent positions retained in the operations view`}/>
-              <Capability icon={Clock3} title="Idle monitoring" enabled={dispatchEnabled} body={`${idle.length} recent idle periods`}/>
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Capability icon={Navigation} title="Geo abstraction" enabled={geoEnabled} body="Geocode, reverse geocode, route, ETA, optimisation and provider switching."/>
+                <Capability icon={MapPinned} title="Geofencing" enabled={dispatchEnabled} body={String(geofences.length)+" configured · "+String((fleet.data?.geofenceEvents??[]).length)+" recent events"}/>
+                <Capability icon={Activity} title="Historical tracks" enabled={dispatchEnabled} body={String(positions.length)+" recent positions retained in the operations view"}/>
+                <Capability icon={Clock3} title="Idle monitoring" enabled={dispatchEnabled} body={String(idle.length)+" recent idle periods"}/>
+              </div>
+              <div className="grid gap-4 xl:grid-cols-[.75fr_1.25fr]">
+                <Card><CardContent className="p-5">
+                  <h3 className="font-semibold">Customer tracking link</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">Create a signed, expiring, no-login link. It works on the platform host or a verified tenant tracking domain.</p>
+                  <div className="mt-4 space-y-3">
+                    <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={trackingJobId} onChange={(e)=>setTrackingJobId(e.target.value)}>
+                      {jobRows.map((job)=><option key={job.id} value={job.id}>{(job.external_ref||String(job.id).slice(0,8))+" · "+job.job_type+" · "+job.status}</option>)}
+                    </select>
+                    <Button onClick={createTracking} disabled={!trackingJobId||trackingBusy}>Create 72-hour tracking link</Button>
+                    {lastTrackingPath&&<div className="rounded-lg border border-dashed p-3 text-xs"><div className="font-medium">New link</div><a href={lastTrackingPath} target="_blank" rel="noreferrer" className="mt-1 block break-all text-primary underline">{window.location.origin+lastTrackingPath}</a><div className="mt-1 text-muted-foreground">The raw token is only returned at creation; the stored database value is a hash.</div></div>}
+                  </div>
+                </CardContent></Card>
+                <Card><CardContent className="p-0">
+                  <Header title="Tracking links" subtitle="Existing tokens can be audited or revoked, but their raw token cannot be recovered."/>
+                  <div className="divide-y">{((trackingLinks.data??[]) as any[]).slice(0,40).map((link)=><div key={link.id} className="flex flex-wrap items-center justify-between gap-3 p-4"><div><div className="font-medium">{link.subject_type+" · "+String(link.subject_id).slice(0,12)}</div><div className="text-xs text-muted-foreground">{(link.public_fields??[]).length+" public field(s) · expires "+new Date(link.expires_at).toLocaleString()}</div></div><div className="flex items-center gap-2"><Badge variant="outline">{link.revoked_at?"revoked":new Date(link.expires_at).getTime()<Date.now()?"expired":"active"}</Badge>{!link.revoked_at&&new Date(link.expires_at).getTime()>=Date.now()&&<Button size="sm" variant="outline" onClick={()=>revokeTracking(link.id)}>Revoke</Button>}</div></div>)}{!((trackingLinks.data??[]) as any[]).length&&<p className="p-5 text-sm text-muted-foreground">No tracking links have been created yet.</p>}</div>
+                </CardContent></Card>
+              </div>
             </div>}
           </TabsContent>
 
