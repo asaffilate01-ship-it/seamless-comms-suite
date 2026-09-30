@@ -13,7 +13,7 @@ import { OMNIQORA_MODULES, OMNIQORA_PRODUCTS } from "@/modules/platform/registry
 import { createManagedTenant, createTenantInvitation } from "@/modules/platform/operator.functions";
 import { getEffectiveSaasBlueprint } from "@/modules/platform/saas-factory.functions";
 import { executeProvisioningRun, saveProvisioningRun } from "@/modules/platform/provisioning.functions";
-import { upsertTenantBrandProfile } from "@/modules/platform/launch.functions";
+import { saveTenantBranding } from "@/modules/branding/functions";
 import { ArrowRight, CheckCircle2, Factory, Globe2, Layers3, Palette, UserPlus } from "lucide-react";
 
 export const Route=createFileRoute("/_authenticated/app/tenant-launch")({
@@ -49,6 +49,10 @@ function TenantLaunch(){
   const [logoUrl,setLogoUrl]=useState("");
   const [primaryColour,setPrimaryColour]=useState("");
   const [supportEmail,setSupportEmail]=useState("");
+  const [websiteUrl,setWebsiteUrl]=useState("");
+  const [facebookUrl,setFacebookUrl]=useState("");
+  const [instagramUrl,setInstagramUrl]=useState("");
+  const [linkedinUrl,setLinkedinUrl]=useState("");
   const [ownerEmail,setOwnerEmail]=useState("");
   const [inviteToken,setInviteToken]=useState("");
   const [busy,setBusy]=useState<string|null>(null);
@@ -57,7 +61,7 @@ function TenantLaunch(){
   const getBlueprint=useServerFn(getEffectiveSaasBlueprint);
   const planProvisioning=useServerFn(saveProvisioningRun);
   const executeProvisioning=useServerFn(executeProvisioningRun);
-  const saveBrand=useServerFn(upsertTenantBrandProfile);
+  const saveBrand=useServerFn(saveTenantBranding);
   const inviteOwner=useServerFn(createTenantInvitation);
 
   const blueprint=useQuery({
@@ -126,10 +130,18 @@ function TenantLaunch(){
     if(!created||!provisioned)return;
     try{
       setBusy("brand");
+      const whiteLabel=Array.isArray(plannedRun?.plan?.modules)&&plannedRun!.plan.modules.includes("branding.white_label");
       await saveBrand({data:{
         tenantId:created.id,tenantProductId:provisioned.tenantProductId,brandKey:brandKey||"default",
-        name:brandName||created.name,logoUrl:logoUrl||null,primaryColour:primaryColour||null,
-        supportEmail:supportEmail||null,locale,terminology:{},theme:{}
+        brandingMode:whiteLabel?"white_label":"co_branded",
+        name:brandName||created.name,appName:brandName||created.name,legalName:brandName||created.name,
+        logoUrl:logoUrl||null,websiteUrl:websiteUrl||null,primaryColour:primaryColour||null,
+        supportEmail:supportEmail||null,locale,poweredByLabel:whiteLabel?null:"Powered by Omniqora",
+        terminology:{},theme:{},socialLinks:{
+          facebook:facebookUrl||null,instagram:instagramUrl||null,linkedin:linkedinUrl||null
+        },legalDetails:{registeredAddress:{}},seo:{},brandVoice:{},contactDetails:{
+          publicEmail:supportEmail||null,address:{}
+        }
       }});
       toast.success("Brand profile saved");
     }catch(e){toast.error(e instanceof Error?e.message:"Brand profile could not be saved");}
@@ -216,8 +228,13 @@ function TenantLaunch(){
               <Field label="Logo URL"><Input type="url" value={logoUrl} onChange={(e)=>setLogoUrl(e.target.value)} disabled={!provisioned}/></Field>
               <Field label="Primary colour"><Input value={primaryColour} onChange={(e)=>setPrimaryColour(e.target.value)} placeholder="#123456" disabled={!provisioned}/></Field>
               <Field label="Support email"><Input type="email" value={supportEmail} onChange={(e)=>setSupportEmail(e.target.value)} disabled={!provisioned}/></Field>
+              <Field label="Website URL"><Input type="url" value={websiteUrl} onChange={(e)=>setWebsiteUrl(e.target.value)} placeholder="https://example.com" disabled={!provisioned}/></Field>
+              <Field label="Facebook URL"><Input type="url" value={facebookUrl} onChange={(e)=>setFacebookUrl(e.target.value)} disabled={!provisioned}/></Field>
+              <Field label="Instagram URL"><Input type="url" value={instagramUrl} onChange={(e)=>setInstagramUrl(e.target.value)} disabled={!provisioned}/></Field>
+              <Field label="LinkedIn URL"><Input type="url" value={linkedinUrl} onChange={(e)=>setLinkedinUrl(e.target.value)} disabled={!provisioned}/></Field>
             </div>
-            <Button type="submit" disabled={!provisioned||busy==="brand"}>Save brand profile</Button>
+            <p className="text-xs text-muted-foreground">Verified sender email/WhatsApp/SMS/voice identities are configured after the relevant domain/provider binding is verified.</p>
+            <Button type="submit" disabled={!provisioned||busy==="brand"}>Save full brand profile</Button>
           </form>
         </CardContent></Card>
 
