@@ -27,6 +27,11 @@ export const MODULE_EVENT_MANIFESTS: ModuleEventManifest[] = [
   { moduleKey: "dispatch.core", consumes: ["order.ready","delivery.requested","service.job_requested","marketplace.order.accepted"], produces: ["dispatch.*"] },
   { moduleKey: "marketplace.core", consumes: ["payment.*","dispatch.job.*","feedback.*"], produces: ["marketplace.*"] },
   { moduleKey: "compliance.core", consumes: ["document.*","compliance.*","business360.*","regulatory.*"], produces: ["compliance.*"] },
+  { moduleKey: "ordering.core", consumes: ["reception.order.*","payment.*","catalogue.*"], produces: ["ordering.*","order.*"] },
+  { moduleKey: "hospitality.intelligence", consumes: ["epos.*","inventory.*","hospitality.waste.*","order.*","refund.*"], produces: ["hospitality.*"] },
+  { moduleKey: "practice.core", consumes: ["crm.*","document.*","signature.*","payment.*","compliance.*"], produces: ["practice.*"] },
+  { moduleKey: "business360.core", consumes: ["crm.*","financial.*","analytics.*","document.*","compliance.*"], produces: ["business360.*"] },
+  { moduleKey: "transactions.core", consumes: ["business360.*","financial.*","document.*","compliance.*"], produces: ["transaction.*"] },
 ];
 
 export function modulesForEvent(eventType: string): string[] {
