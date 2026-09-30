@@ -1,6 +1,14 @@
 -- Main-host Omniqora AI Reception.
 BEGIN;
 
+INSERT INTO public.platform_modules(module_key,name,module_kind,version,status,ui_mode,dependencies,capabilities) VALUES
+ ('reception.core','Omniqora Reception','communications','1.0.0-preview','preview','hybrid',
+  ARRAY['connect.core','crm.core','intelligence.core'],
+  ARRAY['intake','caller_lookup','handoff','order_request','booking_request'])
+ON CONFLICT(module_key) DO UPDATE SET
+ name=EXCLUDED.name,module_kind=EXCLUDED.module_kind,version=EXCLUDED.version,status=EXCLUDED.status,
+ ui_mode=EXCLUDED.ui_mode,dependencies=EXCLUDED.dependencies,capabilities=EXCLUDED.capabilities,updated_at=now();
+
 CREATE TABLE IF NOT EXISTS public.reception_settings(
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
