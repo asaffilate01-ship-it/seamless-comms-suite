@@ -58,7 +58,7 @@ INSERT INTO public.platform_product_blueprints(
   'kindelo',1,'active','childcare_agency_marketplace',
   ARRAY['GB','DE'],ARRAY['en-GB','de-DE'],
   ARRAY[
-    'crm.core','marketplace.core','bookings.core','payments.core','connect.core',
+    'crm.core','marketplace.core','childcare.core','bookings.core','payments.core','connect.core',
     'compliance.core','documents.core','forms.core','automation.core',
     'notifications.core','search.core','analytics.core','intelligence.core',
     'mobile.core','support.core'
@@ -195,7 +195,7 @@ DELETE FROM public.product_module_defaults WHERE product_key='kindelo';
 INSERT INTO public.product_module_defaults(product_key,module_key,enabled_by_default)
 SELECT 'kindelo',m,true
 FROM unnest(ARRAY[
-  'crm.core','marketplace.core','bookings.core','payments.core','connect.core',
+  'crm.core','marketplace.core','childcare.core','bookings.core','payments.core','connect.core',
   'compliance.core','documents.core','forms.core','automation.core',
   'notifications.core','search.core','analytics.core','intelligence.core',
   'mobile.core','support.core'
