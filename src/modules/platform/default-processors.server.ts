@@ -31,6 +31,66 @@ async function financialProcessor(job:ClaimedModuleEvent){
 
 
 
+
+async function intelligenceProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);const p:any=job.event.payload??{};
+ if(!job.tenantProductId)return;
+ if(!["accounting_ai.extraction.requested","tax_intelligence.research.requested","intelligence.decision.requested"].includes(type))return;
+
+ let jobType:string,subjectType:string,subjectId:string,requirements:Record<string,unknown>,input:Record<string,unknown>;
+ if(type==="accounting_ai.extraction.requested"){
+  const{data:run}=await db.from("accounting_extraction_runs").select("id,batch_id,status")
+   .eq("id",p.extractionRunId).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!run)return;
+  const{data:batch}=await db.from("accounting_intake_batches")
+   .select("id,practice_client_id,phase,source,period_start,period_end")
+   .eq("id",run.batch_id).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!batch)return;
+  const{data:items}=await db.from("accounting_intake_items")
+   .select("id,document_id,source_type,original_reference,extraction_status")
+   .eq("batch_id",batch.id).eq("tenant_id",job.tenantId);
+  jobType="accounting_extraction";subjectType="accounting_extraction_run";subjectId=run.id;
+  requirements={
+   outputContract:"accounting_ai.extraction.result",
+   evidenceRequired:true,
+   capabilities:["document_extraction","vision"],
+   noLedgerPosting:true,
+   noApproval:true
+  };
+  input={...p,batch,items:items??[]};
+ }else if(type==="tax_intelligence.research.requested"){
+  const{data:run}=await db.from("tax_research_runs")
+   .select("id,research_issue_id,query,source_hierarchy,status")
+   .eq("id",p.researchRunId).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!run)return;
+  const{data:issue}=await db.from("tax_research_issues")
+   .select("id,jurisdiction,tax_type,period_key,issue,factual_basis,fact_evidence_refs")
+   .eq("id",run.research_issue_id).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!issue)return;
+  jobType="tax_research";subjectType="tax_research_run";subjectId=run.id;
+  requirements={
+   outputContract:"tax.research.result",
+   authoritativeSourcesRequired:true,
+   sourceHierarchy:run.source_hierarchy??[],
+   contraryAuthorityRequired:true,
+   noTaxPositionApproval:true
+  };
+  input={...p,query:run.query,issue};
+ }else{
+  jobType="decision";subjectType="automation_action";subjectId=String(p.automationActionId??job.event.id);
+  requirements={outputContract:"intelligence.decision.result",noSideEffects:true};
+  input=p;
+ }
+
+ const{error}=await db.from("intelligence_jobs").upsert({
+  tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,job_type:jobType,
+  subject_type:subjectType,subject_id:subjectId,source_event_id:job.event.id,
+  priority:jobType==="tax_research"?"high":"normal",status:"queued",
+  input,requirements,next_attempt_at:new Date().toISOString()
+ },{onConflict:"tenant_id,job_type,source_event_id",ignoreDuplicates:true});
+ if(error)throw new Error(error.message);
+}
+
 async function inventoryProcessor(job:ClaimedModuleEvent){
  const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
  if(type!=="inventory.movement.recorded"&&type!=="hospitality.waste.recorded")return;
@@ -230,4 +290,4 @@ async function hospitalityProcessor(job:ClaimedModuleEvent){
  }
 }
 
-export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor).register("loyalty.core",loyaltyProcessor).register("automation.core",automationProcessor).register("notifications.core",notificationProcessor).register("search.core",searchProcessor);}
+export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("intelligence.core",intelligenceProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor).register("loyalty.core",loyaltyProcessor).register("automation.core",automationProcessor).register("notifications.core",notificationProcessor).register("search.core",searchProcessor);}
