@@ -1,14 +1,17 @@
+export type PaymentJson = null | boolean | number | string | PaymentJson[] | { [key:string]: PaymentJson };
+export type PaymentJsonObject = { [key:string]: PaymentJson };
+
 export type PaymentStatus="created"|"requires_action"|"pending"|"authorised"|"captured"|"failed"|"cancelled"|"partially_refunded"|"refunded";
 
 export type CreatePaymentIntentRequest={
   idempotencyKey:string;amountMinor:number;currency:string;captureMode:"automatic"|"manual";
   customerRef?:string|null;purpose:string;contextType?:string|null;contextId?:string|null;
-  metadata?:Record<string,unknown>;
+  metadata?:PaymentJsonObject;
 };
 
 export type ProviderPaymentIntent={
   providerRef:string;status:PaymentStatus;clientSecret?:string|null;redirectUrl?:string|null;
-  metadata?:Record<string,unknown>;
+  metadata?:PaymentJsonObject;
 };
 
 export type ProviderCaptureRequest={
@@ -21,7 +24,7 @@ export type ProviderRefundRequest={
 
 export type ProviderRefund={
   providerRef:string;status:"pending"|"succeeded"|"failed"|"cancelled";
-  metadata?:Record<string,unknown>;
+  metadata?:PaymentJsonObject;
 };
 
 export interface PaymentProvider {
