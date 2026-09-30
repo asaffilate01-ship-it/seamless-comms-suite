@@ -208,6 +208,16 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     status: "incubating",
   },
   {
+    key: "business360",
+    name: "Business360",
+    kind: "vertical_landlord",
+    industry: "business_advisory_transformation",
+    defaultModules: ["crm.core","business360.core","transactions.core","documents.core","analytics.core","financials.core","intelligence.core","compliance.core","connect.core"],
+    supportedRegions: ["GB","DE","AE","SA","US","PK"],
+    supportedLocales: ["en-GB","de-DE","ar-SA","ar-AE","en-US","ur-PK"],
+    status: "incubating",
+  },
+  {
     key: "taxcenda",
     name: "TaxCenda",
     kind: "vertical_landlord",
