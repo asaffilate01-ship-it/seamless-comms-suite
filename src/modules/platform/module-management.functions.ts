@@ -4,14 +4,35 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function operatorCanManage(context:any,tenantProductId:string){
   const db=context.supabase as any;
-  const{data:tp}=await db.from("tenant_products").select("tenant_id,product_key,region_key").eq("id",tenantProductId).maybeSingle();
+  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+  const{data:tp}=await admin.from("tenant_products").select("tenant_id,product_key,region_key").eq("id",tenantProductId).maybeSingle();
   if(!tp)throw new Error("Tenant product not found");
   const{data:p}=await db.from("platform_operators").select("role,status").eq("user_id",context.userId).maybeSingle();
-  if(p?.status==="active"&&["platform_owner","platform_admin"].includes(p.role))return tp;
-  const{data:o}=await db.from("product_operators").select("role,status,region_keys").eq("product_key",tp.product_key).eq("user_id",context.userId).maybeSingle();
-  const regions=Array.isArray(o?.region_keys)?o.region_keys:[];
-  if(!o||o.status!=="active"||!["landlord_owner","landlord_admin"].includes(o.role)||(regions.length&&!regions.includes(tp.region_key)))throw new Error("Platform or landlord admin access required");
-  return tp;
+  if(p?.status==="active"&&["platform_owner","platform_admin"].includes(p.role))return{...tp,admin};
+  const{data:allowed,error}=await db.rpc("is_product_operator",{
+    _product:tp.product_key,_user:context.userId,_roles:["landlord_owner","landlord_admin"],_region:tp.region_key
+  });
+  if(error)throw new Error(error.message);
+  if(allowed!==true)throw new Error("Platform or landlord admin access required");
+  return{...tp,admin};
+}
+
+async function writeEntitlement(admin:any,input:{
+  tenantId:string;tenantProductId:string;moduleKey:string;enabled:boolean;
+  limits?:Record<string,unknown>;config?:Record<string,unknown>;source:string;
+}){
+  const{data:existing,error:readError}=await admin.from("tenant_module_entitlements").select("id")
+    .eq("tenant_id",input.tenantId).eq("tenant_product_id",input.tenantProductId)
+    .eq("module_key",input.moduleKey).maybeSingle();
+  if(readError)throw new Error(readError.message);
+  const values={
+    tenant_id:input.tenantId,tenant_product_id:input.tenantProductId,module_key:input.moduleKey,
+    enabled:input.enabled,limits:input.limits??{},config:input.config??{},source:input.source
+  };
+  const result=existing?.id
+    ?await admin.from("tenant_module_entitlements").update(values).eq("id",existing.id)
+    :await admin.from("tenant_module_entitlements").insert(values);
+  if(result.error)throw new Error(result.error.message);
 }
 
 export const requestTenantModule=createServerFn({method:"POST"})
@@ -42,16 +63,15 @@ export const decideTenantModuleRequest=createServerFn({method:"POST"})
   const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
   const{data:req}=await admin.from("tenant_module_requests").select("*").eq("id",data.requestId).eq("status","requested").maybeSingle();
   if(!req)throw new Error("Open module request not found");
-  await operatorCanManage(context,req.tenant_product_id);
+  const access=await operatorCanManage(context,req.tenant_product_id);
   await admin.from("tenant_module_requests").update({
     status:data.decision,decided_by:context.userId,decided_at:new Date().toISOString(),decision_note:data.note??null
   }).eq("id",req.id);
   if(data.decision==="approved"){
-    const{error}=await admin.from("tenant_module_entitlements").upsert({
-      tenant_id:req.tenant_id,tenant_product_id:req.tenant_product_id,module_key:req.module_key,
+    await writeEntitlement(access.admin,{
+      tenantId:req.tenant_id,tenantProductId:req.tenant_product_id,moduleKey:req.module_key,
       enabled:true,source:"manual_addon"
-    },{onConflict:"tenant_id,tenant_product_id,module_key"});
-    if(error)throw new Error(error.message);
+    });
     await admin.from("tenant_module_requests").update({status:"completed"}).eq("id",req.id);
   }
   return{ok:true,status:data.decision==="approved"?"completed":"rejected"};
@@ -65,12 +85,11 @@ export const setTenantModuleEntitlement=createServerFn({method:"POST"})
 }).parse(i))
 .handler(async({context,data})=>{
   const tp=await operatorCanManage(context,data.tenantProductId);
-  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
-  const{error}=await admin.from("tenant_module_entitlements").upsert({
-    tenant_id:tp.tenant_id,tenant_product_id:data.tenantProductId,module_key:data.moduleKey,
-    enabled:data.enabled,limits:data.limits??{},config:data.config??{},source:"operator"
-  },{onConflict:"tenant_id,tenant_product_id,module_key"});
-  if(error)throw new Error(error.message);
+  const admin=tp.admin;
+  await writeEntitlement(admin,{
+    tenantId:tp.tenant_id,tenantProductId:data.tenantProductId,moduleKey:data.moduleKey,
+    enabled:data.enabled,limits:data.limits,config:data.config,source:"operator"
+  });
   await admin.from("audit_log").insert({
     tenant_id:tp.tenant_id,actor:context.userId,
     action:data.enabled?"platform.module.enabled":"platform.module.disabled",
