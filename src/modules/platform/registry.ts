@@ -35,7 +35,9 @@ export type ModuleKind =
   | "forms"
   | "support"
   | "notifications"
-  | "search";
+  | "search"
+  | "accounting_ai"
+  | "tax_intelligence";
 
 export type ProductDefinition = {
   key: string;
@@ -121,6 +123,8 @@ export const PLATFORM_MODULE_KEYS = {
   support: "support.core",
   notifications: "notifications.core",
   search: "search.core",
+  accountingAi: "accounting_ai.core",
+  taxIntelligence: "tax_intelligence.core",
 } as const;
 
 export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
@@ -427,6 +431,28 @@ export const OMNIQORA_MODULES: ModuleDefinition[] = [
     dependencies: ["platform.tenant","platform.events"],
     capabilities: ["global","full_text","filters","semantic","recent"],
     uiMode: "hybrid",
+    status: "preview",
+  },
+  {
+    key: "accounting_ai.core",
+    name: "Omniqora AI Bookkeeping & Accounts Prep",
+    kind: "accounting_ai",
+    version: "1.0.0-preview",
+    description: "Opening/ongoing file intake, extraction, bookkeeping classification, review queue, double-entry ledger, trial balance, assets and accounts-preparation packs.",
+    dependencies: ["practice.core","documents.core","intelligence.core","forms.core","automation.core","platform.audit"],
+    capabilities: ["intake","extraction","classification","review_queue","nominal_ledger","journals","trial_balance","assets","accounts_prep","bank_matching","duplicate_detection"],
+    uiMode: "workspace",
+    status: "preview",
+  },
+  {
+    key: "tax_intelligence.core",
+    name: "Omniqora Tax Intelligence",
+    kind: "tax_intelligence",
+    version: "1.0.0-preview",
+    description: "Grounded tax research, legislation/case-law retrieval, relief search and reviewed tax-position proposals using current authoritative sources.",
+    dependencies: ["accounting_ai.core","intelligence.core","documents.core","platform.audit"],
+    capabilities: ["research","legislation","case_law","official_guidance","positions","relief_search","planning","review","change_monitoring"],
+    uiMode: "workspace",
     status: "preview",
   },
   {
