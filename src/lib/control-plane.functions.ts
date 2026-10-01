@@ -15,7 +15,7 @@ export type JsonValue =
 
 export type ControlPlaneCatalogue = {
   isPlatformAdmin: boolean;
-  products: Array<{ product_key: string; name: string; description?: string | null; category: string; deployment_mode: string; status: string }>;
+  products: Array<{ product_key: string; name: string; description?: string | null; category: string; deployment_mode: string; status: string; product_role?: string; parent_product_key?: string | null }>;
   services: Array<{ service_key: string; name: string; description?: string | null; family: string; owner_product_key?: string | null; provisioning_mode: string; status: string }>;
   dependencies: Array<{ service_key: string; depends_on_service_key: string; required: boolean }>;
   blueprints: Array<{ blueprint_key: string; name: string; description?: string | null; country_code?: string | null; category: string }>;
@@ -41,6 +41,8 @@ export type TenantControlPlane = {
   products: Array<{ product_key: string; status: string; external_tenant_id?: string | null; base_url?: string | null; plan_key?: string | null; config?: JsonValue }>;
   services: Array<{ service_key: string; status: string; source: string; valid_until?: string | null; config?: JsonValue }>;
   branding: JsonValue | null;
+  brands: Array<{ id: string; product_key?: string | null; name: string; slug: string; logo_url?: string | null; theme?: JsonValue; is_primary: boolean }>;
+  locations: Array<{ id: string; brand_id?: string | null; name: string; code: string; timezone: string; address?: JsonValue; status: string }>;
   domains: Array<{ id: string; product_key?: string | null; domain: string; verification_status: string; ssl_status: string; is_primary: boolean }>;
   connections: Array<{ id: string; product_key: string; external_tenant_id: string; base_url?: string | null; status: string; capabilities?: string[]; credential_suffix?: string | null; credential_expires_at?: string | null }>;
   provisioning: Array<{ id: string; target_kind: string; target_key: string; action: string; status: string; attempts: number; last_error?: string | null; created_at: string }>;
@@ -231,4 +233,72 @@ export const upsertTenantDomain = createServerFn({ method: "POST" })
     } as never);
     if (response.error) throw new Error(response.error.message);
     return { domainId: response.data as unknown as string };
+  });
+
+
+export const bootstrapDishbeePilot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const response = await context.supabase.rpc("platform_bootstrap_dishbee_pilot" as never);
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as {
+      organisationId: string;
+      organisationSlug: string;
+      landlordProductKey: string;
+      tenants: Array<{ tenantId: string; tenantName: string; tenantSlug: string; blueprint: string }>;
+    };
+  });
+
+const brandSchema = z.object({
+  tenantId: uuid,
+  productKey: z.string().min(2).max(80).nullish(),
+  name: z.string().trim().min(1).max(160),
+  slug: z.string().trim().regex(/^[a-z0-9-]{1,100}$/),
+  primary: z.boolean().default(false),
+  logoUrl: z.string().trim().max(1000).nullish(),
+  theme: z.record(z.string(), z.unknown()).default({}),
+});
+
+export const upsertTenantBrand = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof brandSchema>) => brandSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc("platform_upsert_tenant_brand" as never, {
+      _tenant: data.tenantId,
+      _product: data.productKey ?? null,
+      _name: data.name,
+      _slug: data.slug,
+      _primary: data.primary,
+      _logo_url: data.logoUrl ?? null,
+      _theme: data.theme,
+    } as never);
+    if (response.error) throw new Error(response.error.message);
+    return { brandId: response.data as unknown as string };
+  });
+
+const locationSchema = z.object({
+  tenantId: uuid,
+  brandId: uuid.nullish(),
+  name: z.string().trim().min(1).max(200),
+  code: z.string().trim().regex(/^[a-z0-9-]{1,100}$/),
+  timezone: z.string().trim().min(1).max(80).default("Europe/London"),
+  address: z.record(z.string(), z.unknown()).default({}),
+  status: z.enum(["active", "inactive", "opening", "closed"]).default("active"),
+});
+
+export const upsertTenantLocation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof locationSchema>) => locationSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc("platform_upsert_tenant_location" as never, {
+      _tenant: data.tenantId,
+      _brand: data.brandId ?? null,
+      _name: data.name,
+      _code: data.code,
+      _timezone: data.timezone,
+      _address: data.address,
+      _status: data.status,
+    } as never);
+    if (response.error) throw new Error(response.error.message);
+    return { locationId: response.data as unknown as string };
   });
