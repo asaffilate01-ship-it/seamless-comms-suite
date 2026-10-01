@@ -90,6 +90,21 @@ export const setTenantRuntimeConfig=createServerFn({method:"POST"}).middleware([
  if(result.error||!result.data)throw new Error(result.error?.message??"Runtime config could not be saved");return result.data;
 });
 
+export const listTenantRuntimeConfig=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:{tenantId:string;tenantProductId:string})=>z.object({
+ tenantId:z.string().uuid(),tenantProductId:z.string().uuid()
+}).parse(i))
+.handler(async({context,data})=>{
+ const access=await requireTenantOrLandlordAdmin(context,data.tenantId,data.tenantProductId);
+ const db=(access.kind==="operator"?access.admin:context.supabase) as any;
+ const{data:rows,error}=await db.from("tenant_runtime_config")
+  .select("id,location_id,config_key,value,enabled,source,revision,updated_at")
+  .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+  .order("config_key");
+ if(error)throw new Error(error.message);
+ return rows??[];
+});
+
 const tracking=z.object({
  tenantId:z.string().uuid(),tenantProductId:z.string().uuid(),subjectType:z.string().min(1).max(80),
  subjectId:z.string().min(1).max(200),publicFields:z.array(z.string().min(1).max(120)).max(100),
