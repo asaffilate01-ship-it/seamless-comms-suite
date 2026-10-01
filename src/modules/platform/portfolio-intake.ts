@@ -107,8 +107,8 @@ const EXACT:Record<string,Partial<PortfolioIntakeRow>>={
   "LAWQUO":{targetRole:"landlord",targetProductKey:"lawquo",familyKey:"lawquo",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
   "VERIS LAW":{targetRole:"merge_source",targetProductKey:"lawquo",targetParentKey:"lawquo",familyKey:"lawquo",migrationAction:"merge_into_canonical",migrationWave:3,confidence:"high"},
   "ACCOUNTANCY":{targetRole:"landlord",targetProductKey:"iq-practice-cloud",familyKey:"accounting_practice",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
-  "FORMATION GENIE":{targetRole:"landlord",targetProductKey:"formationgenie",familyKey:"accounting_practice",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
-  "TAXCENDA":{targetRole:"landlord",targetProductKey:"taxcenda",familyKey:"accounting_practice",migrationAction:"migrate_landlord",migrationWave:2,confidence:"medium"},
+  "FORMATION GENIE":{targetRole:"landlord",targetProductKey:"formationgenie",familyKey:"formationgenie",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
+  "TAXCENDA":{targetRole:"landlord",targetProductKey:"taxcenda",familyKey:"taxcenda",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
   "TAXLOUNGE":{targetRole:"tenant",targetProductKey:"iq-practice-cloud",targetParentKey:"iq-practice-cloud",familyKey:"accounting_practice",migrationAction:"tenantise",migrationWave:2,confidence:"medium"},
   "ACCOUNTS AI":{targetRole:"shared_addon",targetProductKey:"accounting_ai",familyKey:"accounting_practice",migrationAction:"extract_to_omniqora",migrationWave:0,buildInOmniqora:true,confidence:"high"},
   "COURIER CONNECT":{targetRole:"landlord",targetProductKey:"courier-connect-hub",familyKey:"courier_connect",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
@@ -117,13 +117,8 @@ const EXACT:Record<string,Partial<PortfolioIntakeRow>>={
   "MOTORESQ":{targetRole:"landlord",targetProductKey:"all-road-aid",familyKey:"motoresq",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
   "SPARESGRID":{targetRole:"landlord",targetProductKey:"sparesgrid",familyKey:"sparesgrid",migrationAction:"decide_repo_or_build",migrationWave:1,buildInOmniqora:true,confidence:"medium"},
   "SPARESGRID 2":{targetRole:"merge_source",targetProductKey:"sparesgrid",targetParentKey:"sparesgrid",familyKey:"sparesgrid",migrationAction:"merge_site_into_sparesgrid",migrationWave:1,buildInOmniqora:true,confidence:"medium"},
-  "REGULOS":{targetRole:"landlord",targetProductKey:"regulos",familyKey:"regulos",migrationAction:"decide_repo_or_build",migrationWave:2,buildInOmniqora:true,confidence:"medium"},
-  "AFFIVON":{targetRole:"landlord",targetProductKey:"affivon",familyKey:"affivon",migrationAction:"decide_repo_or_build",migrationWave:2,buildInOmniqora:true,confidence:"medium"},
-  "TENDRYVA":{targetRole:"landlord",targetProductKey:"tendryva",familyKey:"tendryva",migrationAction:"decide_repo_or_build",migrationWave:2,buildInOmniqora:true,confidence:"medium"},
-  "VEYUMO":{targetRole:"landlord",targetProductKey:"veyumo",familyKey:"veyumo",migrationAction:"decide_repo_or_build",migrationWave:2,buildInOmniqora:true,confidence:"medium"},
   "FASTREMIT":{targetRole:"landlord",targetProductKey:"fastremit",familyKey:"fastremit",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
-  "AHLNIKKAH":{targetRole:"landlord",targetProductKey:"ahl-nikkah",familyKey:"ahl-nikkah",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
-  "LESSONAHEAD":{targetRole:"landlord",targetProductKey:"lessonahead",familyKey:"lessonahead",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
+  "AHLNIKKAH":{targetRole:"landlord",targetProductKey:"ahlnikkah",familyKey:"ahlnikkah",migrationAction:"migrate_marketplace_landlord",migrationWave:2,confidence:"high"},
   "VOXENTRI":{targetRole:"shared_engine",targetProductKey:"voxentri",familyKey:"omniqora",migrationAction:"integrate_shared_engine",migrationWave:0,confidence:"high"},
   "LEADSCOUT":{targetRole:"shared_addon",targetProductKey:"omniqora-sales",targetParentKey:"omniqora",familyKey:"omniqora",migrationAction:"extract_to_omniqora",migrationWave:0,confidence:"high"},
   "DOKUVERA":{targetRole:"shared_engine",targetProductKey:"omniqora-documents",targetParentKey:"omniqora",familyKey:"omniqora",migrationAction:"integrate_shared_engine",migrationWave:1,confidence:"medium"},
@@ -204,7 +199,7 @@ export type KnownRepoAudit={
 };
 
 export const KNOWN_FAMILY_REPO_AUDITS:Record<string,{canonical:string;rationale:string;candidates:KnownRepoAudit[]}>={
-  education:{
+  education_platform:{
     canonical:"asaffilate01-ship-it/ascent-education-cloud",
     rationale:"Ascent Education Cloud is the strongest current education source: 609 files, 179 route/page files, 194 Supabase files, 120 migrations and 69 functions. EduCloud and TrainDirekt are substantial but smaller; Virtual Lab is a focused add-on. Later README-only commits do not outweigh the deeper implemented surface.",
     candidates:[
