@@ -10,13 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { useTenant } from "@/hooks/useTenant";
 import { getDashboard } from "@/lib/app.functions";
 import { toast } from "sonner";
+import { useTx, useI18nSafe } from "@/lib/i18n";
 import { MessageCircle, FolderOpen, Users, ShieldAlert, ArrowRight, Bot } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
     meta: [
-      { title: "Übersicht — OmniQora" },
-      { name: "description", content: "Live-Kennzahlen zu Gesprächen, Fällen und Automatisierung." },
+      { title: "Overview — OmniQora" },
+      { name: "description", content: "Live metrics for conversations, cases and automation." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -30,12 +31,14 @@ function Overview() {
   const [dash, setDash] = useState<Dash | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchDash = useServerFn(getDashboard);
+  const tx = useTx();
+  const lang = useI18nSafe()?.lang ?? "en";
 
   useEffect(() => {
     if (!tenantId) return;
     fetchDash({ data: { tenantId } })
       .then((d) => setDash(d as Dash))
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Laden fehlgeschlagen"))
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : tx("Laden fehlgeschlagen", "Failed to load")))
       .finally(() => setLoading(false));
   }, [tenantId, fetchDash]);
 
@@ -43,20 +46,20 @@ function Overview() {
   const max = Math.max(1, ...(dash?.volume ?? []).map((d) => d.inbound + d.outbound));
 
   const kpis = [
-    { icon: MessageCircle, label: "Offene Gespräche", value: dash?.openConversations ?? 0 },
-    { icon: FolderOpen, label: "Aktive Fälle", value: dash?.activeCases ?? 0 },
-    { icon: Users, label: "Kontakte", value: dash?.contacts ?? 0 },
-    { icon: ShieldAlert, label: "Eskaliert", value: dash?.escalated ?? 0 },
+    { icon: MessageCircle, label: tx("Offene Gespräche", "Open conversations"), value: dash?.openConversations ?? 0 },
+    { icon: FolderOpen, label: tx("Aktive Fälle", "Active cases"), value: dash?.activeCases ?? 0 },
+    { icon: Users, label: tx("Kontakte", "Contacts"), value: dash?.contacts ?? 0 },
+    { icon: ShieldAlert, label: tx("Eskaliert", "Escalated"), value: dash?.escalated ?? 0 },
   ];
 
   return (
     <AppShell
-      title="Übersicht"
-      subtitle={name ? `${name} · Rolle: ${role}` : "Live-Daten aus deinem Workspace"}
+      title={tx("Übersicht", "Overview")}
+      subtitle={name ? `${name} · ${tx("Rolle", "Role")}: ${role}` : tx("Live-Daten aus deinem Workspace", "Live data from your workspace")}
       actions={
         <Link to="/app/inbox">
           <Button size="sm">
-            Postfach öffnen
+            {tx("Postfach öffnen", "Open inbox")}
             <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
           </Button>
         </Link>
@@ -91,8 +94,8 @@ function Overview() {
             <Card className="lg:col-span-2">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display text-lg font-semibold">Nachrichtenvolumen · 7 Tage</h3>
-                  <Badge variant="secondary">{dash?.messages7d ?? 0} Nachrichten</Badge>
+                  <h3 className="font-display text-lg font-semibold">{tx("Nachrichtenvolumen · 7 Tage", "Message volume · 7 days")}</h3>
+                  <Badge variant="secondary">{dash?.messages7d ?? 0} {tx("Nachrichten", "messages")}</Badge>
                 </div>
                 <div className="mt-6 flex h-56 items-stretch gap-3">
                   {(dash?.volume ?? []).map((d) => (
@@ -108,7 +111,7 @@ function Overview() {
                         />
                       </div>
                       <span className="text-[11px] text-muted-foreground">
-                        {new Date(d.day).toLocaleDateString("de-DE", { weekday: "short" })}
+                        {new Date(d.day).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { weekday: "short" })}
                       </span>
                     </div>
                   ))}
@@ -116,11 +119,11 @@ function Overview() {
                 <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-primary" />
-                    Eingehend
+                    {tx("Eingehend", "Inbound")}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-info" />
-                    Ausgehend
+                    {tx("Ausgehend", "Outbound")}
                   </span>
                 </div>
               </CardContent>
@@ -131,27 +134,27 @@ function Overview() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <Bot className="h-4 w-4 text-primary" />
-                    <h3 className="font-display text-base font-semibold">Automatisierungsgrad</h3>
+                    <h3 className="font-display text-base font-semibold">{tx("Automatisierungsgrad", "Automation rate")}</h3>
                   </div>
                   <div className="mt-3 font-display text-3xl font-semibold">{dash?.automationRate ?? 0}%</div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Anteil ausgehender Nachrichten ohne manuelles Zutun (letzte 7 Tage).
+                    {tx("Anteil ausgehender Nachrichten ohne manuelles Zutun (letzte 7 Tage).", "Share of outbound messages sent without manual input (last 7 days).")}
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="space-y-2 p-6 text-sm">
-                  <h3 className="font-display text-base font-semibold">Heute</h3>
+                  <h3 className="font-display text-base font-semibold">{tx("Heute", "Today")}</h3>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Geschlossene Fälle</span>
+                    <span className="text-muted-foreground">{tx("Geschlossene Fälle", "Closed cases")}</span>
                     <span className="font-medium">{dash?.closedToday ?? 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dringende Fälle</span>
+                    <span className="text-muted-foreground">{tx("Dringende Fälle", "Urgent cases")}</span>
                     <span className="font-medium">{dash?.urgent ?? 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Gespräche mit Kundenantwort</span>
+                    <span className="text-muted-foreground">{tx("Gespräche mit Kundenantwort", "Awaiting reply")}</span>
                     <span className="font-medium">{dash?.awaitingReply ?? 0}</span>
                   </div>
                 </CardContent>
@@ -162,14 +165,13 @@ function Overview() {
           {(dash?.messages7d ?? 0) === 0 && (
             <Card className="mt-6 border-dashed">
               <CardContent className="p-6">
-                <h3 className="font-display text-lg font-semibold">Kanal verbinden</h3>
+                <h3 className="font-display text-lg font-semibold">{tx("Kanal verbinden", "Connect a channel")}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Verbinde deine WhatsApp-Business-Nummer, damit Gespräche, Kontakte und Fälle automatisch
-                  entstehen.
+                  {tx("Verbinde einen Kanal, damit Gespräche, Kontakte und Fälle automatisch entstehen.", "Connect a channel so conversations, contacts and cases are created automatically.")}
                 </p>
                 <Link to="/app/whatsapp">
                   <Button size="sm" className="mt-4">
-                    Zur Kanal-Einrichtung
+                    {tx("Zur Kanal-Einrichtung", "Set up channels")}
                   </Button>
                 </Link>
               </CardContent>
@@ -177,7 +179,7 @@ function Overview() {
           )}
         </>
       )}
-      {!busy && (role === "owner" || role === "admin") && <PortfolioServices source="omniqora" placement="dashboard" country="DE" locale="de" />}
+      {!busy && (role === "owner" || role === "admin") && <PortfolioServices source="omniqora" placement="dashboard" country={lang === "de" ? "DE" : "GB"} locale={lang} />}
     </AppShell>
   );
 }
