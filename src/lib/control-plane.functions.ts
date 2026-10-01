@@ -34,7 +34,7 @@ export type TenantControlPlane = {
   services: Array<{ service_key: string; status: string; source: string; valid_until?: string | null; config?: Record<string, unknown> }>;
   branding: Record<string, unknown> | null;
   domains: Array<{ id: string; product_key?: string | null; domain: string; verification_status: string; ssl_status: string; is_primary: boolean }>;
-  connections: Array<{ id: string; product_key: string; external_tenant_id: string; base_url?: string | null; status: string; capabilities?: string[] }>;
+  connections: Array<{ id: string; product_key: string; external_tenant_id: string; base_url?: string | null; status: string; capabilities?: string[]; credential_suffix?: string | null; credential_expires_at?: string | null }>;
   provisioning: Array<{ id: string; target_kind: string; target_key: string; action: string; status: string; attempts: number; last_error?: string | null; created_at: string }>;
 };
 
@@ -137,6 +137,23 @@ export const linkTenantProduct = createServerFn({ method: "POST" })
     } as never);
     if (response.error) throw new Error(response.error.message);
     return { connectionId: response.data as unknown as string };
+  });
+
+const rotateCredentialSchema = z.object({
+  connectionId: uuid,
+  validDays: z.number().int().min(1).max(730).default(365),
+});
+
+export const rotateProductCredential = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof rotateCredentialSchema>) => rotateCredentialSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc("platform_rotate_product_credential" as never, {
+      _connection: data.connectionId,
+      _valid_days: data.validDays,
+    } as never);
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as { connectionId: string; token: string; suffix: string; expiresAt: string };
   });
 
 const brandingSchema = z.object({
