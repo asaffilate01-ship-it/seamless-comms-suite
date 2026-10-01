@@ -41,7 +41,7 @@ function Analytics() {
 
   if (tenantLoading || loading) {
     return (
-      <AppShell title={tx(tx("Analysen", "Analytics"), "Analytics")} subtitle={tx(tx("Wird geladen…", "Loading…"), "Loading…")}>
+      <AppShell title={tx("Analysen", "Analytics")} subtitle={tx("Wird geladen…", "Loading…")}>
         <Skeleton className="h-72 w-full rounded-xl" />
       </AppShell>
     );
@@ -54,7 +54,7 @@ function Analytics() {
   const responseRatio = inbound ? Math.min(100, Math.round((outbound / inbound) * 100)) : 0;
 
   return (
-    <AppShell title={tx(tx("Analysen", "Analytics"), "Analytics")} subtitle={tx(tx("Live-Kennzahlen der letzten 7 Tage aus deinem Workspace", "Live metrics from the last 7 days in your workspace"), "Live metrics from the last 7 days in your workspace")}>
+    <AppShell title={tx("Analysen", "Analytics")} subtitle={tx("Live-Kennzahlen der letzten 7 Tage aus deinem Workspace", "Live metrics from the last 7 days in your workspace")}>
       <div className="grid gap-4 md:grid-cols-4">
         {[
           [tx("Aktive Fälle", "Active cases"), dash?.activeCases ?? 0],
