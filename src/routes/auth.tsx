@@ -28,7 +28,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/app/whatsapp" });
+      if (data.session) navigate({ to: "/app" });
     });
   }, [navigate]);
 
@@ -40,7 +40,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/app/whatsapp` },
+          options: { emailRedirectTo: `${window.location.origin}/app` },
         });
         if (error) throw error;
         toast.success("Account created. Signing you in…");
@@ -48,7 +48,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      navigate({ to: "/app/whatsapp" });
+      navigate({ to: "/app" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Auth failed");
     } finally {
@@ -61,7 +61,7 @@ function AuthPage() {
       redirect_uri: window.location.origin,
     });
     if (res.error) toast.error(res.error.message ?? "Google sign-in failed");
-    else if (!res.redirected) navigate({ to: "/app/whatsapp" });
+    else if (!res.redirected) navigate({ to: "/app" });
   };
 
   return (
@@ -72,7 +72,7 @@ function AuthPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {mode === "signin"
-            ? "Sign in to manage WhatsApp conversations."
+            ? "Sign in to your OmniQora workspace."
             : "One workspace per company. You can invite teammates later."}
         </p>
 
