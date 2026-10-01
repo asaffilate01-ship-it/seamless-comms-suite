@@ -91,5 +91,39 @@ await business('a','stranger','admin',async()=>{
 });
 await business('a','owner-a','owner',()=>db.query("DELETE FROM members WHERE \"user\"='viewer'"));
 await business('a','viewer','member',async()=>assert.equal((await db.query('SELECT * FROM ai_runs')).rows.length,0));checks++;
+
+// Universal SaaS Factory: platform-admin activation resolves bundle dependencies,
+// tenant users stay isolated, and Assurance workspaces require active entitlements.
+await db.query('INSERT INTO public.omniqora_platform_admins(user_id) VALUES($1)',[A]);
+await host(A,()=>db.query(
+  "SELECT public.omniqora_set_service($1,'omniqora.compliance-as-a-service',true,'{}'::jsonb)",
+  [ta.id],
+));
+const caasServices=(await host(A,()=>db.query(
+  "SELECT service_key FROM public.omniqora_tenant_services WHERE tenant_id=$1 AND status='active'",
+  [ta.id],
+))).rows.map(x=>x.service_key);
+for(const key of [
+  'omniqora.compliance-as-a-service','omniqora.compliance-intelligence','omniqora.rrci',
+  'omniqora.policy-packs','omniqora.audit-evidence','omniqora.intelligent-ai-suite','omniqora.powerbi'
+]) assert(caasServices.includes(key),key+' dependency should be active');
+checks++;
+await host(B,async()=>assert.equal(
+  (await db.query("SELECT * FROM public.omniqora_tenant_services WHERE tenant_id=$1",[ta.id])).rows.length,0
+));checks++;
+const caasWorkspace=(await host(A,()=>db.query(
+  "SELECT public.omniqora_create_workspace($1,'omniqora.compliance-as-a-service','compliance','compliance-as-a-service','Alpha managed compliance','GB') id",
+  [ta.id],
+))).rows[0].id;
+assert((await host(A,()=>db.query(
+  "SELECT * FROM public.omniqora_workstreams WHERE workspace_id=$1",[caasWorkspace]
+))).rows.length>=8);checks++;
+await host(B,async()=>assert.equal(
+  (await db.query("SELECT * FROM public.omniqora_workspaces WHERE id=$1",[caasWorkspace])).rows.length,0
+));checks++;
+await assert.rejects(()=>host(A,()=>db.query(
+  "SELECT public.omniqora_set_service($1,'omniqora.knowledge-rag',false,'{}'::jsonb)",[ta.id]
+)),/service_required_by/);checks++;
+
 await db.close();
 console.log(`${checks} PostgreSQL policy/integration checks passed (PGlite, disposable fixtures).`);
