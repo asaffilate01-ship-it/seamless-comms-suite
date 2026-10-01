@@ -13,6 +13,7 @@ import { useTenant, canWrite } from "@/hooks/useTenant";
 import { listConversations, listMessages, sendMessage } from "@/lib/whatsapp.functions";
 import { createCase } from "@/lib/app.functions";
 import { toast } from "sonner";
+import { useTx, useI18nSafe } from "@/lib/i18n";
 import { Send, Lock, MessageCircle, Loader2, FolderPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/app/inbox")({
   head: () => ({
     meta: [
       { title: "Inbox — OmniQora" },
-      { name: "description", content: "Alle WhatsApp-Gespräche in einem geteilten Team-Postfach." },
+      { name: "description", content: "All conversations in one shared team inbox." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -47,7 +48,7 @@ const initials = (name: string) =>
   name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
 function time(iso: string) {
-  return new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
 }
 
 function Inbox() {
@@ -65,6 +66,8 @@ function Inbox() {
   const fetchMsgs = useServerFn(listMessages);
   const sendFn = useServerFn(sendMessage);
   const createCaseFn = useServerFn(createCase);
+  const tx = useTx();
+  const loc = (useI18nSafe()?.lang ?? "en") === "de" ? "de-DE" : "en-GB";
 
   useEffect(() => {
     if (!tenantId) return;
@@ -76,7 +79,7 @@ function Inbox() {
         setConversations(list);
         setActiveId((cur) => cur ?? list[0]?.id ?? null);
       })
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Laden fehlgeschlagen"))
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : tx("Laden fehlgeschlagen", "Failed to load")))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
@@ -134,7 +137,7 @@ function Inbox() {
       await sendFn({ data: { tenantId, conversationId: activeId, text: draft.trim() } });
       setDraft("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Senden fehlgeschlagen");
+      toast.error(e instanceof Error ? e.message : tx("Senden fehlgeschlagen", "Sending failed"));
     } finally {
       setSending(false);
     }
@@ -151,9 +154,9 @@ function Inbox() {
           priority: "normal",
         },
       });
-      toast.success("Fall erstellt");
+      toast.success(tx("Fall erstellt", "Case created"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fall konnte nicht erstellt werden");
+      toast.error(e instanceof Error ? e.message : tx("Fall konnte nicht erstellt werden", "Could not create case"));
     }
   }
 
@@ -162,12 +165,12 @@ function Inbox() {
   return (
     <AppShell
       title="Inbox"
-      subtitle={`${conversations.filter((c) => c.status === "open").length} offen · ${conversations.length} Gespräche insgesamt`}
+      subtitle={`${conversations.filter((c) => c.status === "open").length} ${tx("offen", "open")} · ${conversations.length} ${tx("Gespräche insgesamt", "conversations total")}`}
       actions={
         selected && writable ? (
           <Button size="sm" variant="outline" onClick={handleCreateCase}>
             <FolderPlus className="mr-1.5 h-3.5 w-3.5" />
-            Fall anlegen
+            {tx("Fall anlegen", "Create case")}
           </Button>
         ) : null
       }
@@ -182,10 +185,9 @@ function Inbox() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 p-14 text-center">
             <MessageCircle className="h-8 w-8 text-muted-foreground" />
-            <h3 className="font-display text-lg font-semibold">Noch keine Gespräche</h3>
+            <h3 className="font-display text-lg font-semibold">{tx("Noch keine Gespräche", "No conversations yet")}</h3>
             <p className="max-w-md text-sm text-muted-foreground">
-              Verbinde deine WhatsApp-Business-Nummer unter WhatsApp → Kanal. Eingehende Nachrichten
-              erscheinen hier automatisch in Echtzeit.
+              {tx("Verbinde einen Kanal in den Einstellungen. Eingehende Nachrichten erscheinen hier automatisch in Echtzeit.", "Connect a channel in settings. Incoming messages appear here automatically in real time.")}
             </p>
           </CardContent>
         </Card>
@@ -196,13 +198,13 @@ function Inbox() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Suchen…"
+                placeholder={tx("Suchen…", "Search…")}
                 className="h-9"
               />
             </div>
             <div className="flex-1 overflow-y-auto">
               {filtered.map((c) => {
-                const name = c.contact?.display_name ?? c.contact?.wa_id ?? "Unbekannt";
+                const name = c.contact?.display_name ?? c.contact?.wa_id ?? tx("Unbekannt", "Unknown");
                 const active = c.id === activeId;
                 return (
                   <button
@@ -284,7 +286,7 @@ function Inbox() {
                     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") void handleSend();
                   }}
                   disabled={!writable}
-                  placeholder={writable ? "Antwort schreiben… (Cmd+↵ senden)" : "Nur Leserechte"}
+                  placeholder={writable ? tx("Antwort schreiben… (Cmd+↵ senden)", "Write a reply… (Cmd+↵ to send)") : tx("Nur Leserechte", "Read-only access")}
                   className="w-full resize-none rounded-t-lg bg-transparent px-3 py-2 text-sm outline-none disabled:opacity-60"
                   rows={2}
                 />
@@ -295,13 +297,13 @@ function Inbox() {
                     ) : (
                       <Send className="mr-1.5 h-3.5 w-3.5" />
                     )}
-                    Senden
+                    {tx("Senden", "Send")}
                   </Button>
                 </div>
               </div>
               <p className="mt-2 text-[11px] text-muted-foreground">
                 <Lock className="mr-1 inline h-3 w-3" />
-                Sensible Dokumente werden über kurzlebige Portal-Links erfasst, nicht als Chat-Anhang.
+                {tx("Sensible Dokumente werden über kurzlebige Portal-Links erfasst, nicht als Chat-Anhang.", "Sensitive documents are collected via short-lived portal links, not chat attachments.")}
               </p>
             </div>
           </Card>
@@ -312,7 +314,7 @@ function Inbox() {
                 <h4 className="text-xs uppercase tracking-wide text-muted-foreground">Kontakt</h4>
                 <div className="mt-2 rounded-lg border border-border p-3 text-sm">
                   <div className="font-semibold">
-                    {selected?.contact?.display_name ?? "Unbekannt"}
+                    {selected?.contact?.display_name ?? tx("Unbekannt", "Unknown")}
                   </div>
                   <div className="font-mono text-xs text-muted-foreground">+{selected?.contact?.wa_id}</div>
                   <div className="mt-2">
@@ -321,27 +323,27 @@ function Inbox() {
                 </div>
               </div>
               <div>
-                <h4 className="text-xs uppercase tracking-wide text-muted-foreground">Gespräch</h4>
+                <h4 className="text-xs uppercase tracking-wide text-muted-foreground">{tx("Gespräch", "Conversation")}</h4>
                 <div className="mt-2 space-y-1.5 rounded-lg border border-border p-3 text-xs text-muted-foreground">
                   <div>
                     Status: <span className="capitalize text-foreground">{selected?.status}</span>
                   </div>
                   <div>
-                    Letzte Nachricht:{" "}
+                    {tx("Letzte Nachricht", "Last message")}:{" "}
                     <span className="text-foreground">
-                      {selected ? new Date(selected.last_message_at).toLocaleString("de-DE") : "—"}
+                      {selected ? new Date(selected.last_message_at).toLocaleString(loc) : "—"}
                     </span>
                   </div>
                   <div>
-                    Nachrichten: <span className="text-foreground">{messages.length}</span>
+                    {tx("Nachrichten", "Messages")}: <span className="text-foreground">{messages.length}</span>
                   </div>
                 </div>
               </div>
               <div>
-                <h4 className="text-xs uppercase tracking-wide text-muted-foreground">Rolle</h4>
+                <h4 className="text-xs uppercase tracking-wide text-muted-foreground">{tx("Rolle", "Role")}</h4>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Angemeldet als <span className="font-medium capitalize text-foreground">{role ?? "—"}</span>.{" "}
-                  {writable ? "Antworten erlaubt." : "Nur Lesezugriff."}
+                  {tx("Angemeldet als", "Signed in as")} <span className="font-medium capitalize text-foreground">{role ?? "—"}</span>.{" "}
+                  {writable ? tx("Antworten erlaubt.", "Replies allowed.") : tx("Nur Lesezugriff.", "Read-only access.")}
                 </p>
               </div>
             </CardContent>
