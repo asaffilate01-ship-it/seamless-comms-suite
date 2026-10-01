@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { portfolioIntakeRows } from "./portfolio-intake";
+import { KNOWN_FAMILY_REPO_AUDITS, portfolioIntakeRows } from "./portfolio-intake";
 
 async function requirePlatformAdmin(context:any,write=false){
   const db=context.supabase as any;
@@ -71,11 +71,50 @@ export const syncPortfolioIntake=createServerFn({method:"POST"})
     }
     synced++;
   }
+  for(const[familyKey,decision]of Object.entries(KNOWN_FAMILY_REPO_AUDITS)){
+    const{data:familyAssets,error:familyAssetError}=await admin.from("portfolio_migration_assets")
+      .select("id,intake_name,source_repo_url").eq("target_family_key",familyKey);
+    if(familyAssetError)throw new Error(familyAssetError.message);
+    const canonicalCandidate=decision.candidates.find((candidate)=>candidate.repositoryFullName===decision.canonical);
+    const canonicalAsset=(familyAssets??[]).find((asset:any)=>
+      canonicalCandidate&&String(asset.source_repo_url??"").includes(canonicalCandidate.repositoryFullName)
+    )??(familyAssets??[])[0]??null;
+    const{error:familyError}=await admin.from("portfolio_product_families").update({
+      canonical_asset_id:canonicalAsset?.id??null,
+      canonical_repo_url:canonicalCandidate?.repoUrl??null,
+      decision_status:"decided",rationale:decision.rationale,
+      metadata:{repoAudit:"initial GitHub family audit"}
+    }).eq("family_key",familyKey);
+    if(familyError)throw new Error(familyError.message);
+
+    for(const asset of familyAssets??[]){
+      for(const candidate of decision.candidates){
+        const{data:existing}=await admin.from("portfolio_repo_candidates").select("id")
+          .eq("asset_id",asset.id).eq("repository_full_name",candidate.repositoryFullName).maybeSingle();
+        const values={
+          asset_id:asset.id,repository_full_name:candidate.repositoryFullName,repo_url:candidate.repoUrl,
+          candidate_kind:candidate.repositoryFullName===decision.canonical?"canonical":"merge_source",
+          accessible:true,archived:false,default_branch:"main",
+          latest_commit_sha:candidate.latestCommitSha,latest_commit_at:candidate.latestCommitAt,
+          file_count:candidate.fileCount,src_file_count:candidate.srcFileCount,route_count:candidate.routeCount,
+          supabase_file_count:candidate.supabaseFileCount,migration_count:candidate.migrationCount,
+          function_count:candidate.functionCount,test_count:candidate.testCount,
+          completeness_score:candidate.completenessScore,audit_notes:candidate.auditNotes,
+          is_canonical:candidate.repositoryFullName===decision.canonical,
+          audited_at:new Date().toISOString(),metadata:{familyKey}
+        };
+        const repoResult=existing?.id
+          ?await admin.from("portfolio_repo_candidates").update(values).eq("id",existing.id)
+          :await admin.from("portfolio_repo_candidates").insert(values);
+        if(repoResult.error)throw new Error(repoResult.error.message);
+      }
+    }
+  }
   await admin.from("audit_log").insert({
     actor:context.userId,action:"platform.portfolio.intake_synced",entity:"portfolio_migration_assets",
-    entity_id:"saas-intake",payload:{rows:synced}
+    entity_id:"saas-intake",payload:{rows:synced,familyAudits:Object.keys(KNOWN_FAMILY_REPO_AUDITS)}
   });
-  return{synced};
+  return{synced,familyAudits:Object.keys(KNOWN_FAMILY_REPO_AUDITS)};
 });
 
 const listSchema=z.object({
