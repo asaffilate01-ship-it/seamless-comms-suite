@@ -1,0 +1,2876 @@
+[
+  {
+    "sourceRow": 1,
+    "name": "BRITPLAY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/welly-wonders-hub.git",
+    "liveUrl": "https://welly-wonders-hub.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "BRITPLAY",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 2,
+    "name": "BIDRIVE",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/ridefairuk.git",
+    "liveUrl": "https://ridefairuk.lovable.app",
+    "linksTo": "route optimisation, driver tracking, whatsapp, call masking, voip",
+    "proposedRole": "Product / Vertical on Mobility",
+    "architectureRole": "vertical_product",
+    "parentLandlord": "OMNIQORA DISPATCH + GEO",
+    "migrationStructure": "Ride/mobility product consuming shared route/tracking/comms.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 3,
+    "name": "VIAZENO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/transfer-compare.git",
+    "liveUrl": "https://transfer-compare.lovable.app",
+    "linksTo": "route optimisation, driver tracking, whatsapp, call masking, voip",
+    "proposedRole": "Product / Vertical on Mobility",
+    "architectureRole": "vertical_product",
+    "parentLandlord": "OMNIQORA DISPATCH + GEO",
+    "migrationStructure": "Transfer/mobility product consuming shared route/tracking/comms.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 4,
+    "name": "UNIPATHWAY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/ascent-education-cloud.git",
+    "liveUrl": "https://ascent-education-cloud.lovable.app",
+    "linksTo": "whatsapp and check others, ai",
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "UNIPATHWAY",
+    "migrationStructure": "Education/pathway landlord; consume shared education services.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 5,
+    "name": "HACCORA UK",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/haccora-connect.git",
+    "liveUrl": "https://hacccora-chums.lovable.app",
+    "linksTo": "dishbee, others, have UK and Germany Merge or become tenants of another saas?",
+    "proposedRole": "Regional Edition",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "HACCORA",
+    "migrationStructure": "Merge product core; UK becomes region/configuration, with UK legal/compliance packs.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional",
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 6,
+    "name": "COURIER CONNECT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/courier-connect-hub.git",
+    "liveUrl": "https://shipment-spark-os.lovable.app",
+    "linksTo": "check",
+    "proposedRole": "Product / Vertical on Dispatch",
+    "architectureRole": "vertical_product",
+    "parentLandlord": "OMNIQORA DISPATCH",
+    "migrationStructure": "Keep courier workflows but extract generic dispatch/fleet core.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 7,
+    "name": "OMNIQORA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/seamless-comms-suite.git",
+    "liveUrl": "https://omniqora.itechlounge.co.uk",
+    "linksTo": "CORE - everything",
+    "proposedRole": "Platform Landlord",
+    "architectureRole": "platform_landlord",
+    "parentLandlord": "OMNIQORA PLATFORM",
+    "migrationStructure": "Top-level control plane and shared services for all SaaS products.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 8,
+    "name": "AUTOHASHI",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/nazli.git",
+    "liveUrl": "https://nazli.lovable.app",
+    "linksTo": "ZIVVO etc",
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "AUTOHASHI",
+    "migrationStructure": "Automotive marketplace/operations landlord; integrate Zivvo/SparesGrid where appropriate.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "marketplace"
+    ]
+  },
+  {
+    "sourceRow": 9,
+    "name": "CAFE1 ST ALBANS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/cafe1-connect-dash.git",
+    "liveUrl": "https://cafe1stalbans.co.uk",
+    "linksTo": "THIS SHOULD BE TENANT OF DISHBEE",
+    "proposedRole": "Tenant",
+    "architectureRole": "tenant",
+    "parentLandlord": "DISHBEE",
+    "migrationStructure": "Cafe/restaurant tenant; retain its customer-facing domain but no independent core.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 10,
+    "name": "TAXNUVIA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/your-accountant-finder.git",
+    "liveUrl": "https://taxnuvia.co.uk",
+    "linksTo": "LOTS",
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "TAXNUVIA",
+    "migrationStructure": "Tax/accountant marketplace landlord; consume shared CRM/sales/connect later.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "marketplace"
+    ]
+  },
+  {
+    "sourceRow": 11,
+    "name": "VERIS LAW",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/law-remix.git",
+    "liveUrl": "https://evolve-gather-zone.lovable.app/",
+    "linksTo": "NEED TO CHECK MAY NOT BE VALID",
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "VERIS LAW",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 12,
+    "name": "TAXCENDA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/usataxlounge.git",
+    "liveUrl": "https://usa.taxlounge.co.uk",
+    "linksTo": "CHECK",
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "TAXCENDA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 13,
+    "name": "DULCIS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-show-373.git",
+    "liveUrl": "https://pixel-perfect-show-373.lovable.app",
+    "linksTo": "TENANT OF MERQANO",
+    "proposedRole": "Tenant / Brand",
+    "architectureRole": "tenant",
+    "parentLandlord": "MERQANO",
+    "migrationStructure": "Commerce brand/merchant tenant.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 14,
+    "name": "DOKUVERA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/remix-of-remix-of-surveycam-app.git",
+    "liveUrl": "https://dokuvera.co.uk",
+    "linksTo": "MOST",
+    "proposedRole": "Shared Product / Document SaaS",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA DOCUMENT SERVICES",
+    "migrationStructure": "Likely reusable document/workflow capability; keep vertical UI if needed.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared"
+    ]
+  },
+  {
+    "sourceRow": 15,
+    "name": "MOTORESQ",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/all-road-aid.git",
+    "liveUrl": "https://all-road-aid.lovable.app",
+    "linksTo": "CHECK",
+    "proposedRole": "Product / Vertical on Dispatch",
+    "architectureRole": "vertical_product",
+    "parentLandlord": "OMNIQORA DISPATCH",
+    "migrationStructure": "Roadside/recovery vertical consuming shared dispatch, geo, agent app.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 16,
+    "name": "LEADSCOUT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/leadlens-discovery.git",
+    "liveUrl": "https://leadlens-discovery.lovable.app",
+    "linksTo": "CHECK",
+    "proposedRole": "Shared Add-on / Sales",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA SALES",
+    "migrationStructure": "Lead discovery should become a Sales/CRM module.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared"
+    ]
+  },
+  {
+    "sourceRow": 17,
+    "name": "HACCORA GERMANY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/haccora.git",
+    "liveUrl": "https://gastro-guide-germany.lovable.app",
+    "linksTo": "have uk and germany merge?",
+    "proposedRole": "Regional Edition",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "HACCORA",
+    "migrationStructure": "Merge product core; Germany becomes region/configuration, with DE legal/compliance packs.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional",
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 18,
+    "name": "XPERTJOBS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/xpertjobs.git",
+    "liveUrl": "https://xpertjobs.lovable.app",
+    "linksTo": "have UK and Germany Merge or become tenants of another saas?",
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "XPERTJOBS",
+    "migrationStructure": "Recruitment/job platform landlord; StellenXpert should consume same core.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 19,
+    "name": "CRAFTVARO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/jobflow-tradehub.git",
+    "liveUrl": "https://jobflow-tradehub.lovable.app",
+    "linksTo": "have UK and Germany Merge or become tenants of another saas?",
+    "proposedRole": "Tenant / Candidate",
+    "architectureRole": "tenant",
+    "parentLandlord": "Needs confirmation",
+    "migrationStructure": "Supplied notes indicate tenant relationship; confirm parent in repo audit.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 20,
+    "name": "MERQANO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/bakery-web-bloom.git",
+    "liveUrl": "https://bakery-web-bloom.lovable.app",
+    "linksTo": "LANDLORD of dulcis, maison creme, meyzaar, zarvane - but not setup like that fix this",
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "MERQANO",
+    "migrationStructure": "Commerce/brand landlord for owned and external merchant brands.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 21,
+    "name": "ORVILO A",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/launchpad-ai-87.git",
+    "liveUrl": "https://launchpad-ai-87.lovable.app",
+    "linksTo": "MERGE THE TWO ORVILOS CHECK BOTH REPOS B IS MAIN I THINK",
+    "proposedRole": "Merge Candidate",
+    "architectureRole": "merge_candidate",
+    "parentLandlord": "ORVILO",
+    "migrationStructure": "Merge into one Orvilo core after comparing both repos.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 22,
+    "name": "ORVILO B",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/webtemplates.git",
+    "liveUrl": "https://craft-ai-sites-07.lovable.app",
+    "linksTo": "MERGE THE TWO ORVILOS CHECK BOTH REPOS B IS MAIN I THINK",
+    "proposedRole": "Primary Merge Candidate",
+    "architectureRole": "merge_candidate",
+    "parentLandlord": "ORVILO",
+    "migrationStructure": "Likely primary Orvilo core per supplied note; verify before migration.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 23,
+    "name": "EVENTPLANR UK",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/eventplanr2.git",
+    "liveUrl": "https://eventplanr.co.uk",
+    "linksTo": "how can we position this",
+    "proposedRole": "Regional Edition",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "EVENTPLANR",
+    "migrationStructure": "One landlord core with locale/country configuration.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 24,
+    "name": "ZIVVO GERMANY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/zivvo.git",
+    "liveUrl": "https://motive-market-pro.lovable.app",
+    "linksTo": "look at this",
+    "proposedRole": "Product / Regional Automotive",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "AUTO / MARKETPLACE LAYER",
+    "migrationStructure": "Avoid separate generic infrastructure; use shared automotive/marketplace services.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "marketplace",
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 25,
+    "name": "KINDERSTARS UK",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/kinderstars-childcare-saas.git",
+    "liveUrl": "https://kinderstars.co.uk",
+    "linksTo": "UK AND GERMANY?",
+    "proposedRole": "Regional Edition",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "KINDERSTARS",
+    "migrationStructure": "One product core; country policy/funding/compliance packs.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 26,
+    "name": "STEMCOACH",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/stemcoach.git",
+    "liveUrl": "https://stemcoach.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "STEMCOACH",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 27,
+    "name": "ACCOUNTANCY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/practicecraft-hub.git",
+    "liveUrl": "https://practicecraft-hub.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "ACCOUNTANCY",
+    "migrationStructure": "Practice management landlord; integrate with TaxNuvia rather than duplicate CRM/billing.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 28,
+    "name": "CAFE1 LUTON",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/cafe-1-luton.git",
+    "liveUrl": "https://cafe1luton.co.uk",
+    "linksTo": "tenat of dishbee",
+    "proposedRole": "Tenant",
+    "architectureRole": "tenant",
+    "parentLandlord": "DISHBEE",
+    "migrationStructure": "Cafe/restaurant tenant; locations can sit under one Cafe 1 organisation tenant.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 29,
+    "name": "UNIPATHWAY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/ascent-education-cloud.git",
+    "liveUrl": "https://ascent-education-cloud.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "UNIPATHWAY",
+    "migrationStructure": "Education/pathway landlord; consume shared education services.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 30,
+    "name": "ZORYN",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/zoryn-nexus.git",
+    "liveUrl": "https://nexus-loyalty-connect.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Shared Add-on / Loyalty",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA ENGAGE",
+    "migrationStructure": "Loyalty engine candidate.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared"
+    ]
+  },
+  {
+    "sourceRow": 31,
+    "name": "QATNOV",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/remix-of-uzbekistan-delivery-hub.git",
+    "liveUrl": "https://silk-route-logistics.lovable.app",
+    "linksTo": "CAN THIS BE PART OF FLEETORA (TENNAT)",
+    "proposedRole": "Tenant / Regional Operator",
+    "architectureRole": "tenant",
+    "parentLandlord": "FLEETORA",
+    "migrationStructure": "Use Fleetora dispatch/logistics landlord; Qatnov becomes configured operator/tenant.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant",
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 32,
+    "name": "CRICLUME",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/app-teaser.git",
+    "liveUrl": "https://app-teaser.lovable.app",
+    "linksTo": "check",
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "CRICLUME",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 33,
+    "name": "NEARCURA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/nearcura-care-connect.git",
+    "liveUrl": "https://nearcura-care-connect.lovable.app",
+    "linksTo": "check",
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "NEARCURA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 34,
+    "name": "SAATHERA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/welfare.git",
+    "liveUrl": "https://welfare.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "SAATHERA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 35,
+    "name": "CIRQIVA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/circular-pathway-app.git",
+    "liveUrl": "https://circular-pathway-app.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "CIRQIVA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 36,
+    "name": "PREMISORA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/premisora-compliance-hub.git",
+    "liveUrl": "https://premisora-compliance-hub.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "PREMISORA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 37,
+    "name": "AMITYOS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/care-connect.git",
+    "liveUrl": "https://amityos.itechlounge.co.uk",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "AMITYOS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 38,
+    "name": "EVENTPLANR GERMANY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/eventplanrger.git",
+    "liveUrl": "https://eventplanrde.itechlounge.co.uk",
+    "linksTo": null,
+    "proposedRole": "Regional Edition",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "EVENTPLANR",
+    "migrationStructure": "One landlord core with locale/country configuration.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 39,
+    "name": "LESSONAHEAD",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/nectar-design-lab.git",
+    "liveUrl": "https://lessonahead.itechlounge.co.uk",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "LESSONAHEAD",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 40,
+    "name": "GABLEY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/remix-of-property-nexus.git",
+    "liveUrl": "https://gabley.itechlounge.co.uk",
+    "linksTo": null,
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "GABLEY",
+    "migrationStructure": "Property landlord; Immoviq should use shared property core where feature overlap is confirmed.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 41,
+    "name": "KIEZIO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/kiezio.git",
+    "liveUrl": "https://kiezio.itechlounge.co.uk",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "KIEZIO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 42,
+    "name": "ZORYN REWARDS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/zoryn-rewards-hub.git",
+    "liveUrl": "https://zoryn-rewards-hub.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Shared Add-on / Loyalty",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA ENGAGE",
+    "migrationStructure": "Consolidate with Zoryn rather than separate platform plumbing.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared"
+    ]
+  },
+  {
+    "sourceRow": 43,
+    "name": "ZIVVO UK",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/autosouq.git",
+    "liveUrl": "https://autosouq.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Product / Regional Automotive",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "AUTO / MARKETPLACE LAYER",
+    "migrationStructure": "Avoid separate generic infrastructure; use shared automotive/marketplace services.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "marketplace",
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 44,
+    "name": "ILMVERO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/schooldash.git",
+    "liveUrl": "https://schooldash.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "ILMVERO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 45,
+    "name": "STYLESYNC",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/halo-suite-hub.git",
+    "liveUrl": "https://halo-suite-hub.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "STYLESYNC",
+    "migrationStructure": "Salon/beauty landlord; Schonova should use same core.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 46,
+    "name": "SHAREDBRICKS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/propluxe-world.git",
+    "liveUrl": "https://propluxe-world.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "SHAREDBRICKS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 47,
+    "name": "LAWQUO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/dreamweaver-canvas-74.git",
+    "liveUrl": "https://dreamweaver-canvas-74.lovable.app",
+    "linksTo": "UK GERMANY etc, supersedes verislaw",
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "LAWQUO",
+    "migrationStructure": "Legal marketplace/triage landlord; supersede or absorb Veris Law where valid.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "marketplace"
+    ]
+  },
+  {
+    "sourceRow": 48,
+    "name": "SKILLFINCH",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/dreamweaver-canvas-74.git",
+    "liveUrl": "https://care-quest-learn.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "SKILLFINCH",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 49,
+    "name": "BIDLUMO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/bidora1.git",
+    "liveUrl": "https://bidora1.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "BIDLUMO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 50,
+    "name": "BERATERMARKT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/professional-accountant-link.git",
+    "liveUrl": "https://professional-accountant-link.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "BERATERMARKT",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 51,
+    "name": "MARKTPASS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pass-product-ready.git",
+    "liveUrl": "https://pass-product-ready.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "MARKTPASS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 52,
+    "name": "SCHONOVA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/delightful-dash-suite.git",
+    "liveUrl": "https://delightful-dash-suite.lovable.app",
+    "linksTo": "german version of stylesync",
+    "proposedRole": "Regional Brand",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "STYLESYNC",
+    "migrationStructure": "German-branded edition using StyleSync core.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 53,
+    "name": "TRAINDIREKT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/horizon-educate.git",
+    "liveUrl": "https://horizon-educate.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Product / Regional Education",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "EDUCATION LAYER",
+    "migrationStructure": "Training product on shared education layer.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 54,
+    "name": "IMMOVIQ",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-clone-67104.git",
+    "liveUrl": "https://pixel-perfect-clone-67104.lovable.app",
+    "linksTo": "german style version of gabley",
+    "proposedRole": "Regional Brand / Product Variant",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "GABLEY",
+    "migrationStructure": "German-oriented property variant; consolidate core after repo comparison.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 55,
+    "name": "DEARNEXT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-clone-67104.git",
+    "liveUrl": "https://forever-safe-keeper.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "DEARNEXT",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 56,
+    "name": "NAFSI",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/nafsiapp.git",
+    "liveUrl": "https://nafsiapp.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "NAFSI",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 57,
+    "name": "ONYN",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/onyn.git",
+    "liveUrl": "https://onyn.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "ONYN",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 58,
+    "name": "FORMATION GENIE",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/formation-genie-magic.git",
+    "liveUrl": "https://formation-genie-magic.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "FORMATION GENIE",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 59,
+    "name": "QIYAVO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/qantra-catalyst.git",
+    "liveUrl": "https://qantra-catalyst.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "QIYAVO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 60,
+    "name": "TRADEROS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/remix-of-market-mind-intelligence-34.git",
+    "liveUrl": "https://signal-compass-38.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "TRADEROS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 61,
+    "name": "BEINSTANDPLUS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/settle-ease-connect.git",
+    "liveUrl": "https://settle-ease-connect.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "BEINSTANDPLUS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 62,
+    "name": "TAREEVO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/doc-u-sorted.git",
+    "liveUrl": "https://doc-u-sorted.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "TAREEVO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 63,
+    "name": "KINDERSTARS GERMANY",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/kinderstars.git",
+    "liveUrl": "https://kinder-star-finder.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Regional Edition",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "KINDERSTARS",
+    "migrationStructure": "One product core; German localisation/configuration.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 64,
+    "name": "STELLENXPERT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/semantic-hire-flow.git",
+    "liveUrl": "https://semantic-hire-flow.lovable.app",
+    "linksTo": "germay xpertjobs",
+    "proposedRole": "Regional Brand",
+    "architectureRole": "regional_variant",
+    "parentLandlord": "XPERTJOBS",
+    "migrationStructure": "German-branded edition using XpertJobs core, not a fork.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "regional"
+    ]
+  },
+  {
+    "sourceRow": 65,
+    "name": "RETTIO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/rettio.git",
+    "liveUrl": "https://peekaboo-deals-saudi.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "RETTIO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 66,
+    "name": "FLEETORA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/ddelivery3pl.git",
+    "liveUrl": "https://ddelivery3pl.lovable.app",
+    "linksTo": "tenant/landlord",
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "FLEETORA",
+    "migrationStructure": "3PL/fleet landlord; should consume Omniqora Dispatch + Geo.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 67,
+    "name": "PARKPUNKT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/steady-implementor.git",
+    "liveUrl": "https://calm-document-guide.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "PARKPUNKT",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 68,
+    "name": "NIMAH",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/peekabox-deals-saudi.git",
+    "liveUrl": "https://peekabox-deals-saudi.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "NIMAH",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 69,
+    "name": "MERQORA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/daraz-amazon-hub.git",
+    "liveUrl": "https://daraz-amazon-hub.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "MERQORA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 70,
+    "name": "RECOVRABLE",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-showcase-9558.git",
+    "liveUrl": "https://pixel-perfect-showcase-9558.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "RECOVRABLE",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 71,
+    "name": "AXIOM",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/estate-zen-pro.git",
+    "liveUrl": "https://estate-zen-pro.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "AXIOM",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 72,
+    "name": "AUREVIA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/aurevia-clinic-ai.git",
+    "liveUrl": "https://aurevia-clinic-ai.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "AUREVIA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 73,
+    "name": "KAYAN",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/uae-trail-blazer.git",
+    "liveUrl": "https://uae-trail-blazer.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "KAYAN",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 74,
+    "name": "HMO HUB",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/hmo-buddy-pro.git",
+    "liveUrl": "https://hmo-buddy-pro.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "HMO HUB",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 75,
+    "name": "EDUCLOUD",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/learnbridge-pathway.git",
+    "liveUrl": "https://learnbridge-pathway.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Landlord / Education Platform",
+    "architectureRole": "landlord",
+    "parentLandlord": "EDUCATION LAYER",
+    "migrationStructure": "Reusable education platform; clarify overlap with UniPathway/TrainDirekt.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 76,
+    "name": "MENU MAGIC",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/screen-menu-magic.git",
+    "liveUrl": "https://screen-menu-magic.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "MENU MAGIC",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 77,
+    "name": "NEXUSOPS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/teamup-connect-anywhere.git",
+    "liveUrl": "https://teamup-connect-anywhere.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "NEXUSOPS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 78,
+    "name": "PROPCONNECT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/propertysphere-global.git",
+    "liveUrl": "https://teamup-connect-anywhere.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "PROPCONNECT",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 79,
+    "name": "TAXLOUNGE",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/taxlounge-launchpad.git",
+    "liveUrl": "https://taxlounge-launchpad.lovable.app",
+    "linksTo": "tenant",
+    "proposedRole": "Tenant / Practice",
+    "architectureRole": "tenant",
+    "parentLandlord": "TAXNUVIA / ACCOUNTANCY",
+    "migrationStructure": "Accounting practice tenant; do not maintain separate platform plumbing.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 80,
+    "name": "ONYN PK",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/onynapp-pakistan.git",
+    "liveUrl": "https://food-fair-pakistan.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "ONYN PK",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 81,
+    "name": "BONDEDOS",
+    "repositoryUrl": "https://france-bonded-warehouse.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "BONDEDOS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 82,
+    "name": "DISHBEE",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/dishbee-helper.git",
+    "liveUrl": "https://yum-dish-discoverer.lovable.app",
+    "linksTo": "LANDLORD",
+    "proposedRole": "Landlord SaaS",
+    "architectureRole": "landlord",
+    "parentLandlord": "DISHBEE",
+    "migrationStructure": "Hospitality operating system / tenant landlord.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 83,
+    "name": "FASTREMIT",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/screen-shot-magic-526.git",
+    "liveUrl": "https://fastremit.co.uk",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "FASTREMIT",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 84,
+    "name": "MEALDECK",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-71.git",
+    "liveUrl": "https://pixel-perfect-render-7232.lovable.app",
+    "linksTo": "TENANT?",
+    "proposedRole": "Tenant / Operator Layer",
+    "architectureRole": "tenant",
+    "parentLandlord": "DISHBEE",
+    "migrationStructure": "Keep MealDeck brand/workflows, but use Dishbee shared hospitality core rather than a second core.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 85,
+    "name": "AHLNIKKAH",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/ahl-nikkah.git",
+    "liveUrl": "https://pixel-perfect-view-8723.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "AHLNIKKAH",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 86,
+    "name": "VOXENTRI",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/creative-studio.git",
+    "liveUrl": "https://pixel-perfect-pix-648.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "VOXENTRI",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 87,
+    "name": "ALSTERO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/commerce-compass.git",
+    "liveUrl": "https://alstero-shop-love.lovable.app",
+    "linksTo": "TENANT",
+    "proposedRole": "Tenant / Brand",
+    "architectureRole": "tenant",
+    "parentLandlord": "MERQANO",
+    "migrationStructure": "Commerce brand/merchant tenant.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 88,
+    "name": "MEYZAAR",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/fashion-ux-advisor.git",
+    "liveUrl": "https://meyzaar.store",
+    "linksTo": "TENANT",
+    "proposedRole": "Tenant / Brand",
+    "architectureRole": "tenant",
+    "parentLandlord": "MERQANO",
+    "migrationStructure": "Commerce brand/merchant tenant.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 89,
+    "name": "ZARVANE",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/zarvane.git",
+    "liveUrl": "https://zarvanefoods.com",
+    "linksTo": "TENANT",
+    "proposedRole": "Tenant / Brand",
+    "architectureRole": "tenant",
+    "parentLandlord": "MERQANO",
+    "migrationStructure": "Commerce brand/merchant tenant.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 90,
+    "name": "KALETHON",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/fashion-preview-hub.git",
+    "liveUrl": "https://kalethon.com",
+    "linksTo": "TENANT",
+    "proposedRole": "Tenant / Brand",
+    "architectureRole": "tenant",
+    "parentLandlord": "MERQANO",
+    "migrationStructure": "Commerce brand/merchant tenant.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 91,
+    "name": "CAPACITOR",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/native-build-studio.git",
+    "liveUrl": "https://store-ready-studio.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Developer Platform Module",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA PLATFORM",
+    "migrationStructure": "Native build/release capability, not a customer SaaS landlord.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": []
+  },
+  {
+    "sourceRow": 92,
+    "name": "DOMUREVA",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-replica.git",
+    "liveUrl": "https://true-render-duplicator.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "DOMUREVA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 93,
+    "name": "KALETHON TEAMS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-render-6809.git",
+    "liveUrl": "https://pixel-perfect-render-6809.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "KALETHON TEAMS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 94,
+    "name": "BONDEDOS",
+    "repositoryUrl": "https://france-bonded-warehouse.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "BONDEDOS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 95,
+    "name": "INSURE 360",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-replicator-884.git",
+    "liveUrl": "https://pixel-perfect-replicator-884.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "INSURE 360",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 96,
+    "name": "EPOS AI",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/epos-ai-engine.git",
+    "liveUrl": "https://wise-saas-engine.lovable.app",
+    "linksTo": "DISHBEE and OMNIQORA",
+    "proposedRole": "Shared / Vertical Add-on",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA + DISHBEE",
+    "migrationStructure": "Shared intelligence service; hospitality adapter in Dishbee.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared"
+    ]
+  },
+  {
+    "sourceRow": 97,
+    "name": "VIRTUAL LAB",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-replica-20502337.git",
+    "liveUrl": "https://pixel-perfect-render-6753.lovable.app",
+    "linksTo": "UNIPATHWAY EDUCLOUD TRAINDIREKT",
+    "proposedRole": "Shared Vertical Add-on",
+    "architectureRole": "shared_module",
+    "parentLandlord": "EDUCATION LAYER",
+    "migrationStructure": "Reusable education add-on for UniPathway/EduCloud/TrainDirekt.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared"
+    ]
+  },
+  {
+    "sourceRow": 98,
+    "name": "CONSTRUCTION INTELLIGENCE AI",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/screen-snapshot-magic-973.git",
+    "liveUrl": "https://screen-snapshot-magic-973.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "CONSTRUCTION INTELLIGENCE AI",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 99,
+    "name": "FANZENO",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-clone.git",
+    "liveUrl": "https://amerfangame.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "FANZENO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 100,
+    "name": "APNEPAAS",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/voxavelle.git",
+    "liveUrl": "https://pixel-perfect-render-5581.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "APNEPAAS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 101,
+    "name": "ORVILO X",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-clone-ceddafea.git",
+    "liveUrl": "https://pixel-perfect-preview-254.lovable.app",
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "ORVILO X",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge"
+    ]
+  },
+  {
+    "sourceRow": 102,
+    "name": "SPARESGRID",
+    "repositoryUrl": "sparesgrid.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "SPARESGRID",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 103,
+    "name": "SPARESGRID 2",
+    "repositoryUrl": "partsynex.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "SPARESGRID 2",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 104,
+    "name": "CLINOVEYA",
+    "repositoryUrl": "clinoveya.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "CLINOVEYA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 105,
+    "name": "OMNIQORA ADD ON ",
+    "repositoryUrl": "omniqora-ai.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Shared Add-on",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA PLATFORM",
+    "migrationStructure": "Fold into named Omniqora modules rather than standalone duplicated apps.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 106,
+    "name": "VEYUMO",
+    "repositoryUrl": "veyumo.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "VEYUMO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 107,
+    "name": "VISA SPONSOR",
+    "repositoryUrl": "sponsor-intelligence-uk.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "VISA SPONSOR",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 108,
+    "name": "REGULOS",
+    "repositoryUrl": "regulaos.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "REGULOS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 109,
+    "name": "PROMO STUDIO",
+    "repositoryUrl": "promo-studio-kalethon.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Shared Add-on",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA PLATFORM",
+    "migrationStructure": "Reusable creative/promotion module rather than Kalethon-only code.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 110,
+    "name": "SOFELLEA",
+    "repositoryUrl": "sofellea-home.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "SOFELLEA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 111,
+    "name": "AUVANE ONE",
+    "repositoryUrl": "private-lifestyle-concierge.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "AUVANE ONE",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 112,
+    "name": "ODDSENTIA FX",
+    "repositoryUrl": "oddsentia-fx.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "ODDSENTIA FX",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 113,
+    "name": "FINMATCH AI",
+    "repositoryUrl": "finmatch-ai.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "FINMATCH AI",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 114,
+    "name": "ACCOUNTS AI",
+    "repositoryUrl": "https://taxnuvia-accounts.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Shared Vertical Add-on",
+    "architectureRole": "shared_module",
+    "parentLandlord": "FINANCE / TAX LAYER",
+    "migrationStructure": "Reusable accounts intelligence; TaxNuvia/Accountancy consumers.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 115,
+    "name": "ATHLYVO",
+    "repositoryUrl": "https://athlora-sports.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "ATHLYVO",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 116,
+    "name": "ODDSENTIA SPORTS",
+    "repositoryUrl": "https://arblens-uk.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "ODDSENTIA SPORTS",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 117,
+    "name": "AFFIVON",
+    "repositoryUrl": "https://affiliate-commerce-os.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "AFFIVON",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 118,
+    "name": "TENDRYVA",
+    "repositoryUrl": "https://tenderos.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "TENDRYVA",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 119,
+    "name": "GABLEY RETROFIT",
+    "repositoryUrl": "https://gabley-retrofit.amersaleem.chatgpt.site",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Candidate Landlord / Standalone Product",
+    "architectureRole": "standalone_candidate",
+    "parentLandlord": "GABLEY RETROFIT",
+    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "merge",
+      "site_only"
+    ]
+  },
+  {
+    "sourceRow": 120,
+    "name": "OMNIQORA ADD ON ",
+    "repositoryUrl": "https://empfangiq-dashboard.amersaleem.chatgpt.site/",
+    "liveUrl": null,
+    "linksTo": null,
+    "proposedRole": "Shared Add-on",
+    "architectureRole": "shared_module",
+    "parentLandlord": "OMNIQORA PLATFORM",
+    "migrationStructure": "Fold into named Omniqora modules rather than standalone duplicated apps.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Repo audit pending",
+    "traits": [
+      "shared",
+      "site_only"
+    ]
+  }
+]

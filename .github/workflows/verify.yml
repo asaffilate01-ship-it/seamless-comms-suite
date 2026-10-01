@@ -14,18 +14,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: npm ci --no-audit --no-fund
-      - run: npm run build
-      - run: npm run typecheck
-      - run: npm run test:security
-      - run: npm run test:bridges
-      - run: npm run test:mobile
-      - run: npm run test:procurement
-      - run: npm run test:services
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run typecheck
+      - run: bun run test:security
+      - run: bun run test:bridges
+      - run: bun run test:mobile
+      - run: bun run test:procurement
+      - run: bun run test:control-plane
+      - run: bun run test:services
       - run: node --test services/ecosystem-core/tests/*.test.mjs
       - name: Native PostgreSQL adapter and forced RLS
         run: |
