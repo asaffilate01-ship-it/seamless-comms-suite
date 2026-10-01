@@ -48,7 +48,7 @@ const initials = (name: string) =>
   name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
 function time(iso: string) {
-  return new Date(iso).toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
 function Inbox() {
