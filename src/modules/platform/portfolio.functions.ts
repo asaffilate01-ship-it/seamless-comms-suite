@@ -45,6 +45,17 @@ export const syncPortfolioIntake=createServerFn({method:"POST"})
       :await admin.from("portfolio_migration_assets").insert(values).select("id").single();
     if(result.error||!result.data)throw new Error(result.error?.message??"Portfolio intake row could not be synchronized");
     const assetId=result.data.id;
+    const familyName=row.familyKey.split("-").map((part)=>part.charAt(0).toUpperCase()+part.slice(1)).join(" ");
+    const{data:family}=await admin.from("portfolio_product_families").select("family_key")
+      .eq("family_key",row.familyKey).maybeSingle();
+    const familyValues={
+      family_key:row.familyKey,name:familyName,
+      target_kind:row.targetRole==="platform"?"platform":row.targetRole==="shared_engine"||row.targetRole==="shared_addon"?"shared_engine":row.targetRole==="landlord"||row.targetRole==="product_variant"||row.targetRole==="tenant"||row.targetRole==="brand_tenant"?"multi_product_family":"review"
+    };
+    const familyResult=family
+      ?await admin.from("portfolio_product_families").update(familyValues).eq("family_key",row.familyKey)
+      :await admin.from("portfolio_product_families").insert(familyValues);
+    if(familyResult.error)throw new Error(familyResult.error.message);
     const repository=repoFullName(row.repo);
     if(repository){
       const{data:candidate}=await admin.from("portfolio_repo_candidates").select("id")
@@ -230,4 +241,57 @@ export const getPortfolioMigrationSummary=createServerFn({method:"GET"})
     buildInOmniqora:assets.filter((row:any)=>row.build_in_omniqora).length,
     byRole:countBy("target_role"),byWave:countBy("migration_wave"),byStatus:countBy("migration_status"),byFamily:countBy("target_family_key")
   };
+});
+
+
+export const listPortfolioProductFamilies=createServerFn({method:"GET"})
+.middleware([requireSupabaseAuth])
+.handler(async({context})=>{
+  await requirePlatformAdmin(context,false);
+  const db=context.supabase as any;
+  const{data:families,error}=await db.from("portfolio_product_families").select("*")
+    .order("decision_status").order("name");
+  if(error)throw new Error(error.message);
+  const{data:assets,error:assetError}=await db.from("portfolio_migration_assets")
+    .select("id,intake_name,target_family_key,target_role,target_product_key,migration_status,canonical_repo_url,source_kind");
+  if(assetError)throw new Error(assetError.message);
+  return(families??[]).map((family:any)=>({
+    ...family,
+    assets:(assets??[]).filter((asset:any)=>asset.target_family_key===family.family_key)
+  }));
+});
+
+const familyDecisionSchema=z.object({
+  familyKey:z.string().min(1).max(100),
+  name:z.string().min(1).max(200).optional(),
+  targetKind:z.enum(["platform","shared_engine","landlord","multi_product_family","review"]).optional(),
+  canonicalAssetId:z.string().uuid().optional().nullable(),
+  canonicalRepoUrl:z.string().url().optional().nullable(),
+  decisionStatus:z.enum(["provisional","auditing","decided","migration_ready","migrating","complete"]).optional(),
+  rationale:z.string().max(10000).optional().nullable(),
+  metadata:z.record(z.string(),z.unknown()).optional()
+});
+export const savePortfolioFamilyDecision=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof familyDecisionSchema>)=>familyDecisionSchema.parse(input))
+.handler(async({context,data})=>{
+  await requirePlatformAdmin(context,true);
+  const db=context.supabase as any;
+  const{data:existing}=await db.from("portfolio_product_families").select("*")
+    .eq("family_key",data.familyKey).maybeSingle();
+  const values:any={
+    family_key:data.familyKey,
+    name:data.name??existing?.name??data.familyKey,
+    target_kind:data.targetKind??existing?.target_kind??"review",
+    canonical_asset_id:data.canonicalAssetId===undefined?existing?.canonical_asset_id??null:data.canonicalAssetId,
+    canonical_repo_url:data.canonicalRepoUrl===undefined?existing?.canonical_repo_url??null:data.canonicalRepoUrl,
+    decision_status:data.decisionStatus??existing?.decision_status??"provisional",
+    rationale:data.rationale===undefined?existing?.rationale??null:data.rationale,
+    metadata:data.metadata??existing?.metadata??{}
+  };
+  const result=existing
+    ?await db.from("portfolio_product_families").update(values).eq("family_key",data.familyKey).select("*").single()
+    :await db.from("portfolio_product_families").insert(values).select("*").single();
+  if(result.error||!result.data)throw new Error(result.error?.message??"Portfolio family decision could not be saved");
+  return result.data;
 });
