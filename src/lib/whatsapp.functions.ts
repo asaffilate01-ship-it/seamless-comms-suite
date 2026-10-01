@@ -5,6 +5,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const graphBase = () => `https://graph.facebook.com/${process.env["WHATSAPP_GRAPH_VERSION"] ?? "v21.0"}`;
 
+async function requireWhatsAppEntitlement(supabase:any,tenantId:string){
+  const {data,error}=await supabase.rpc(
+    "omniqora_has_service" as never,
+    {target:tenantId,p_service_key:"omniqora.whatsapp"} as never,
+  );
+  if(error)throw new Error("WhatsApp entitlement could not be verified");
+  if(data!==true)throw new Error("WhatsApp is not enabled for this workspace");
+}
+
 const channelSelect =
   "id, label, product_key, external_tenant_id, scope_kind, scope_id, is_primary, ai_enabled, human_handoff_enabled, inbound_enabled, outbound_enabled, display_phone, phone_number_id, waba_id, verify_token, status, updated_at";
 
@@ -66,6 +75,7 @@ export const upsertChannel = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof upsertSchema>) => upsertSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await requireWhatsAppEntitlement(supabase,data.tenantId);
 
     if (data.isPrimary) {
       const { error: clearErr } = await supabase
@@ -164,6 +174,7 @@ export const sendMessage = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof sendSchema>) => sendSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await requireWhatsAppEntitlement(supabase,data.tenantId);
 
     // Authorise with the caller's RLS-scoped session first. Channel credentials
     // are then loaded only with the server service role and never returned.
