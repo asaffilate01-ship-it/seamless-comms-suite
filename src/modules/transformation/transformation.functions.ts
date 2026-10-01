@@ -32,11 +32,16 @@ export const transformationRequest = createServerFn({ method: "POST" })
       .from("tenant_members").select("role")
       .eq("tenant_id", data.tenantId).eq("user_id", userId).maybeSingle();
     if (error || !membership) throw new Error("Tenant access denied");
-    // Operator-managed pilot entitlement. Empty configuration denies every tenant.
-    // Replace with the host's billing entitlement service before self-serve sales.
-    const enabledTenants = new Set((process.env.BUSINESS360_ENABLED_TENANTS ?? "")
-      .split(",").map((value) => value.trim()).filter(Boolean));
-    if (!enabledTenants.has(data.tenantId)) throw new Error("Business360 is not enabled for this workspace");
+    // Universal SaaS Factory entitlement. The environment list remains a
+    // backwards-compatible pilot fallback while existing deployments migrate.
+    const { data: serviceEnabled, error: entitlementError } = await supabase.rpc(
+      "omniqora_has_service" as never,
+      { target: data.tenantId, p_service_key: "omniqora.business360" } as never,
+    );
+    const legacyEnabled = new Set((process.env.BUSINESS360_ENABLED_TENANTS ?? "")
+      .split(",").map((value) => value.trim()).filter(Boolean)).has(data.tenantId);
+    if (entitlementError && !legacyEnabled) throw new Error("Business360 entitlement could not be verified");
+    if (serviceEnabled !== true && !legacyEnabled) throw new Error("Business360 is not enabled for this workspace");
     if (data.command === "members.add") {
       const target = z.string().uuid().parse(data.data.user_id);
       const { data: colleague, error: targetError } = await supabase
