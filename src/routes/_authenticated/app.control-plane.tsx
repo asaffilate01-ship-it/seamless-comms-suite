@@ -14,6 +14,7 @@ import {
   getTenantControlPlane,
   listPlatformTenants,
   linkTenantProduct,
+  rotateProductCredential,
   saveTenantBranding,
   setTenantProduct,
   setTenantService,
@@ -42,6 +43,7 @@ function ControlPlane() {
   const setProductRequest = useServerFn(setTenantProduct);
   const setServiceRequest = useServerFn(setTenantService);
   const linkProductRequest = useServerFn(linkTenantProduct);
+  const rotateCredentialRequest = useServerFn(rotateProductCredential);
   const saveBrandingRequest = useServerFn(saveTenantBranding);
   const saveDomainRequest = useServerFn(upsertTenantDomain);
 
@@ -283,6 +285,16 @@ function ControlPlane() {
             connections={detail.data?.connections ?? []}
             products={catalogue.data?.products ?? []}
             canEdit={isPlatformAdmin}
+            onRotate={async (connectionId) => {
+              try {
+                const credential = await rotateCredentialRequest({ data: { connectionId, validDays: 365 } });
+                await detail.refetch();
+                return credential.token;
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Credential generation failed");
+                return "";
+              }
+            }}
             onSave={async (productKey, externalTenantId, baseUrl) => {
               try {
                 await linkProductRequest({ data: { tenantId: selectedTenantId, productKey, externalTenantId, baseUrl, capabilities: [] } });
@@ -341,21 +353,26 @@ function SectionTitle({ icon: Icon, title, description }: { icon: typeof Buildin
 }
 
 function ProductConnections({
-  tenantId, connections, products, canEdit, onSave,
+  tenantId, connections, products, canEdit, onSave, onRotate,
 }: {
   tenantId: string;
   connections: Array<{ id: string; product_key: string; external_tenant_id: string; base_url?: string | null; status: string }>;
   products: Array<{ product_key: string; name: string }>;
   canEdit: boolean;
   onSave: (productKey: string, externalTenantId: string, baseUrl: string) => Promise<void>;
+  onRotate: (connectionId: string) => Promise<string>;
 }) {
   const [productKey, setProductKey] = useState("dishbee");
   const [externalTenantId, setExternalTenantId] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
+  const [issuedToken, setIssuedToken] = useState("");
+  const [issuedFor, setIssuedFor] = useState("");
 
   useEffect(() => {
     setExternalTenantId("");
     setBaseUrl("");
+    setIssuedToken("");
+    setIssuedFor("");
   }, [tenantId]);
 
   return <section>
@@ -375,10 +392,22 @@ function ProductConnections({
             const product = products.find((p) => p.product_key === connection.product_key);
             return <div key={connection.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
               <div><b>{product?.name ?? connection.product_key}</b><p className="font-mono text-xs text-muted-foreground">{connection.external_tenant_id}</p>{connection.base_url && <p className="text-xs text-muted-foreground">{connection.base_url}</p>}</div>
-              <StatusBadge status={connection.status} />
+              <div className="flex items-center gap-2">
+                {canEdit && <Button variant="outline" size="sm" onClick={async () => {
+                  const token=await onRotate(connection.id);
+                  if(token){setIssuedToken(token);setIssuedFor(connection.id);toast.success("New connector credential generated");}
+                }}>Generate key</Button>}
+                <StatusBadge status={connection.status} />
+              </div>
             </div>;
           }) : <p className="text-sm text-muted-foreground">No product workspace links configured.</p>}
         </div>
+        {issuedToken && <div className="mt-4 rounded-lg border border-warning/30 bg-warning/5 p-3">
+          <p className="text-xs font-medium">Copy this key into the product connector now. It is shown only in this session.</p>
+          <code className="mt-2 block break-all rounded bg-background p-2 text-xs">{issuedToken}</code>
+          <Button className="mt-2" size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(issuedToken)}>Copy key</Button>
+          <span className="ml-2 text-xs text-muted-foreground">Connection {issuedFor.slice(0,8)}…</span>
+        </div>}
       </CardContent></Card>
     </div>
   </section>;
