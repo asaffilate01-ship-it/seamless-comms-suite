@@ -5,16 +5,50 @@ BEGIN;
 ALTER TABLE public.product_catalogue
   ADD COLUMN IF NOT EXISTS product_role text NOT NULL DEFAULT 'product'
     CHECK (product_role IN ('platform','landlord','experience','product','utility')),
-  ADD COLUMN IF NOT EXISTS parent_product_key text REFERENCES public.product_catalogue(product_key) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS parent_product_key text REFERENCES public.product_catalogue(product_key) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS implementation_status text NOT NULL DEFAULT 'external_product'
+    CHECK (implementation_status IN ('live_main','built_main','draft_branch','catalogue_only','external_product'));
 
-UPDATE public.product_catalogue SET product_role='platform', parent_product_key=NULL
+UPDATE public.product_catalogue SET product_role='platform', parent_product_key=NULL, implementation_status='live_main'
 WHERE product_key='omniqora';
 
 UPDATE public.product_catalogue SET product_role='landlord', parent_product_key=NULL
 WHERE product_key IN ('dishbee','kindelo','formationgenie','omniqora-accounts','taxcenda','taxnuvia','lawquo','sparesgrid','haccora','courier-connect','all-road-aid','zivvo','autohashi','fastremit');
 
-UPDATE public.product_catalogue SET product_role='experience', parent_product_key='dishbee'
+UPDATE public.product_catalogue SET product_role='experience', parent_product_key='dishbee', implementation_status='external_product'
 WHERE product_key='mealdeck';
+
+ALTER TABLE public.service_catalogue
+  ADD COLUMN IF NOT EXISTS implementation_status text NOT NULL DEFAULT 'catalogue_only'
+    CHECK (implementation_status IN ('live_main','built_main','draft_branch','catalogue_only','external_product'));
+
+UPDATE public.service_catalogue SET implementation_status=CASE service_key
+  WHEN 'omniqora.identity' THEN 'built_main'
+  WHEN 'omniqora.crm' THEN 'draft_branch'
+  WHEN 'omniqora.ai' THEN 'built_main'
+  WHEN 'omniqora.connect' THEN 'live_main'
+  WHEN 'omniqora.voice' THEN 'draft_branch'
+  WHEN 'omniqora.geo' THEN 'draft_branch'
+  WHEN 'omniqora.dispatch' THEN 'draft_branch'
+  WHEN 'omniqora.fleet' THEN 'draft_branch'
+  WHEN 'omniqora.tracking' THEN 'draft_branch'
+  WHEN 'omniqora.journeys' THEN 'draft_branch'
+  WHEN 'omniqora.rfm' THEN 'draft_branch'
+  WHEN 'omniqora.sales' THEN 'draft_branch'
+  WHEN 'omniqora.feedback' THEN 'draft_branch'
+  WHEN 'omniqora.analytics' THEN 'draft_branch'
+  WHEN 'omniqora.payments' THEN 'draft_branch'
+  WHEN 'omniqora.marketplace' THEN 'draft_branch'
+  WHEN 'omniqora.agent' THEN 'draft_branch'
+  WHEN 'omniqora.rrci' THEN 'built_main'
+  WHEN 'zoryn.rewards' THEN 'external_product'
+  WHEN 'accounts.bookkeeping-ai' THEN 'draft_branch'
+  ELSE CASE
+    WHEN service_key LIKE 'dishbee.%' OR service_key LIKE 'kindelo.%' OR service_key LIKE 'formationgenie.%'
+      THEN 'external_product'
+    ELSE implementation_status
+  END
+END;
 
 CREATE TABLE IF NOT EXISTS public.tenant_brands (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
