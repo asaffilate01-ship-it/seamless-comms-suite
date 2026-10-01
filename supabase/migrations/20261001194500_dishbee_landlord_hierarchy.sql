@@ -297,7 +297,7 @@ GRANT EXECUTE ON FUNCTION public.platform_bootstrap_dishbee_pilot() TO authentic
 
 CREATE OR REPLACE FUNCTION public.server_claim_provisioning_jobs(_limit integer DEFAULT 20)
 RETURNS SETOF public.provisioning_jobs
-LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 BEGIN
   IF COALESCE(current_setting('request.jwt.claim.role',true),'') <> 'service_role' THEN
     RAISE EXCEPTION 'Service role required';
@@ -315,7 +315,7 @@ BEGIN
   FROM claim
   WHERE j.id=claim.id
   RETURNING j.*;
-END; $;
+END; $$;
 REVOKE ALL ON FUNCTION public.server_claim_provisioning_jobs(integer) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.server_claim_provisioning_jobs(integer) TO service_role;
 
@@ -324,7 +324,7 @@ CREATE OR REPLACE FUNCTION public.server_block_provisioning_job(
   _reason text,
   _detail jsonb DEFAULT '{}'::jsonb
 ) RETURNS boolean
-LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE j public.provisioning_jobs%rowtype;
 BEGIN
   IF COALESCE(current_setting('request.jwt.claim.role',true),'') <> 'service_role' THEN
@@ -338,7 +338,7 @@ BEGIN
   INSERT INTO public.provisioning_events(job_id,tenant_id,event,detail)
   VALUES(j.id,j.tenant_id,'blocked',COALESCE(_detail,'{}'::jsonb)||jsonb_build_object('reason',left(COALESCE(_reason,'blocked'),1000)));
   RETURN true;
-END; $;
+END; $$;
 REVOKE ALL ON FUNCTION public.server_block_provisioning_job(uuid,text,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.server_block_provisioning_job(uuid,text,jsonb) TO service_role;
 
