@@ -42,23 +42,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const promoSetLang = promo.setLang;
   const setLang = useCallback((next: Lang) => promoSetLang(next), [promoSetLang]);
 
-  const setLang = useCallback(
-    (next: Lang) => {
-      setLangState((prev) => {
-        if (prev === next) return prev;
-        try {
-          localStorage.setItem(STORAGE_KEY, next);
-        } catch {
-          /* ignore */
-        }
-        setTransitioning(true);
-        window.setTimeout(() => setTransitioning(false), 220);
-        return next;
-      });
-    },
-    [],
-  );
-
 
   const t = useCallback(
     (key: string) => resolve(translations[lang], key),
