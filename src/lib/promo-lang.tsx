@@ -70,9 +70,9 @@ export function usePromo() {
   const ctx = useContext(PromoLangContext);
   if (!ctx) {
     return {
-      lang: "de" as PromoLang,
+      lang: "en" as PromoLang,
       setLang: () => {},
-      c: promoContent.de,
+      c: promoContent.en,
       dir: "ltr" as const,
       transitioning: false,
     };
@@ -92,7 +92,10 @@ export function PromoLanguageSelect({ compact = false }: { compact?: boolean }) 
       role="group"
       aria-label="Language"
     >
-      {promoLangs.map((l) => {
+      {(lang === "de"
+        ? promoLangs
+        : [promoLangs[1], promoLangs[0], ...promoLangs.slice(2)]
+      ).map((l) => {
         const active = l.code === lang;
         return (
           <button
