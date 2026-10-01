@@ -3,8 +3,8 @@ import { ReactNode, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3,
-  Handshake, Settings, Search, Bell, Plus, MessageCircle, ShieldCheck,
-  Menu, LogOut, Factory, Store, TrendingUp, Truck, Rocket, PackageOpen, Building2, ContactRound,
+  Handshake, Settings, Search, Bell, MessageCircle, ShieldCheck,
+  Menu, LogOut, Factory, Store, TrendingUp, Truck, Rocket, PackageOpen, Building2, ContactRound, Cable, ArchiveRestore,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,15 +31,17 @@ type NavItem = {
 const nav: NavItem[] = [
   { to: "/app", labelKey: "app.nav.overview", icon: LayoutDashboard, exact: true },
   { to: "/app/platform-control", labelKey: "", label: "Platform Control", icon: Factory },
+  { to: "/app/portfolio-migration", labelKey: "", label: "Portfolio Migration", icon: ArchiveRestore },
   { to: "/app/tenant-launch", labelKey: "", label: "Tenant Launch", icon: Rocket },
   { to: "/app/tenant-manager", labelKey: "", label: "Tenant Manager", icon: Building2 },
+  { to: "/app/connectors", labelKey: "", label: "Connector Hub", icon: Cable },
   { to: "/app/marketplace", labelKey: "", label: "Marketplace", icon: Store },
   { to: "/app/vendor-portal", labelKey: "", label: "Vendor Portal", icon: PackageOpen },
   { to: "/app/crm", labelKey: "", label: "CRM & Customer 360", icon: ContactRound },
   { to: "/app/growth", labelKey: "", label: "Growth & Journeys", icon: TrendingUp },
   { to: "/app/operations", labelKey: "", label: "Dispatch & Operations", icon: Truck },
-  { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle, badge: "LIVE" },
-  { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox, badge: "12" },
+  { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle },
+  { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox },
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
   { to: "/app/workflows", labelKey: "app.nav.workflows", icon: GitBranch },
@@ -181,12 +183,8 @@ export function AppShell({ children, title, subtitle, actions }: {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <LanguageToggle />
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative" aria-label={t("app.notifications")}>
               <Bell className="h-4 w-4" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
-            </Button>
-            <Button size="sm" className="hidden sm:inline-flex">
-              <Plus className="mr-1 h-4 w-4" /> {t("app.new")}
             </Button>
             <AccountMenu />
           </div>
