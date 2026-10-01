@@ -1,3 +1,5 @@
+import { OMNIQORA_PORTFOLIO } from "./portfolio";
+
 export type ProductKind =
   | "platform"
   | "shared_engine"
@@ -484,6 +486,21 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     supportedLocales: ["en-GB","de-DE","ar-SA","ar-AE","en-US","ur-PK"],
     status: "active",
   },
+
+
+for (const product of OMNIQORA_PORTFOLIO) {
+  if (OMNIQORA_PRODUCTS.some((existing) => existing.key === product.productKey)) continue;
+  OMNIQORA_PRODUCTS.push({
+    key: product.productKey,
+    name: product.name,
+    kind: "vertical_landlord",
+    industry: product.profile,
+    defaultModules: product.modules,
+    supportedRegions: product.regions,
+    supportedLocales: product.locales,
+    status: product.connectorStatus.includes("implemented") ? "migration_candidate" : "incubating",
+  });
+}
 
 export const OMNIQORA_MODULES: ModuleDefinition[] = [
   {
