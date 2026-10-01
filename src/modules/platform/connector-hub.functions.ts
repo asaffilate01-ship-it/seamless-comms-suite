@@ -51,15 +51,9 @@ export const getConnectorHubWorkspace=createServerFn({method:"POST"})
   }
 
   const requirementRows=requirements.data??[];
-  const connectorKeys=[...new Set([
-    ...requirementRows.map((row:any)=>row.connector_key),
-    ...(bindings.data??[]).map((row:any)=>row.plugin_key).filter(Boolean)
-  ])];
-  const catalogue=connectorKeys.length
-    ?await db.from("platform_connector_catalogue")
-      .select("connector_key,name,connector_kind,description,status,capabilities,supported_countries,metadata")
-      .in("connector_key",connectorKeys).order("name")
-    :{data:[],error:null};
+  const catalogue=await db.from("platform_connector_catalogue")
+    .select("connector_key,name,connector_kind,description,status,capabilities,supported_countries,metadata")
+    .neq("status","retired").order("connector_kind").order("name");
   if(catalogue.error)throw new Error(catalogue.error.message);
 
   const safeBindings=(bindings.data??[]).map((row:any)=>({
