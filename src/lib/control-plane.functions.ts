@@ -156,12 +156,28 @@ export const rotateProductCredential = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof rotateCredentialSchema>) => rotateCredentialSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_rotate_product_credential" as never, {
+    const random = crypto.getRandomValues(new Uint8Array(32));
+    const token = "oqcp_" + Array.from(random, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+    const credentialHash = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    const suffix = token.slice(-8);
+
+    const response = await context.supabase.rpc("platform_set_product_credential" as never, {
       _connection: data.connectionId,
+      _credential_hash: credentialHash,
+      _suffix: suffix,
       _valid_days: data.validDays,
     } as never);
     if (response.error) throw new Error(response.error.message);
-    return response.data as unknown as { connectionId: string; token: string; suffix: string; expiresAt: string };
+
+    const stored = response.data as unknown as {
+      connectionId: string;
+      suffix: string;
+      expiresAt: string;
+    };
+    return { ...stored, token };
   });
 
 const brandingSchema = z.object({
