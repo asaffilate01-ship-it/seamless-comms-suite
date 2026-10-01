@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS public.portfolio_migration_assets(
       'tenant','brand_tenant','marketplace_tenant','tenant_review','merge_source',
       'external_connector','review'
     )),
+  target_family_key text,
   target_product_key text,
   target_parent_key text,
   migration_action text NOT NULL DEFAULT 'repo_audit',
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS public.portfolio_migration_assets(
 CREATE INDEX IF NOT EXISTS portfolio_assets_role_idx
   ON public.portfolio_migration_assets(target_role,migration_wave,migration_status);
 CREATE INDEX IF NOT EXISTS portfolio_assets_target_idx
-  ON public.portfolio_migration_assets(target_product_key,target_parent_key);
+  ON public.portfolio_migration_assets(target_family_key,target_product_key,target_parent_key);
 
 CREATE TABLE IF NOT EXISTS public.portfolio_repo_candidates(
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
