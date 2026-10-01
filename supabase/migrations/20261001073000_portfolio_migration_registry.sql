@@ -46,6 +46,23 @@ CREATE INDEX IF NOT EXISTS portfolio_assets_role_idx
 CREATE INDEX IF NOT EXISTS portfolio_assets_target_idx
   ON public.portfolio_migration_assets(target_family_key,target_product_key,target_parent_key);
 
+CREATE TABLE IF NOT EXISTS public.portfolio_product_families(
+  family_key text PRIMARY KEY,
+  name text NOT NULL,
+  target_kind text NOT NULL DEFAULT 'review'
+    CHECK(target_kind IN ('platform','shared_engine','landlord','multi_product_family','review')),
+  canonical_asset_id uuid REFERENCES public.portfolio_migration_assets(id) ON DELETE SET NULL,
+  canonical_repo_url text,
+  decision_status text NOT NULL DEFAULT 'provisional'
+    CHECK(decision_status IN ('provisional','auditing','decided','migration_ready','migrating','complete')),
+  rationale text,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS portfolio_families_status_idx
+  ON public.portfolio_product_families(decision_status,target_kind);
+
 CREATE TABLE IF NOT EXISTS public.portfolio_repo_candidates(
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   asset_id uuid NOT NULL REFERENCES public.portfolio_migration_assets(id) ON DELETE CASCADE,
@@ -116,7 +133,7 @@ DO $$
 DECLARE t text;
 BEGIN
   FOREACH t IN ARRAY ARRAY[
-    'portfolio_migration_assets','portfolio_repo_candidates',
+    'portfolio_migration_assets','portfolio_product_families','portfolio_repo_candidates',
     'portfolio_relationships','portfolio_migration_checks'
   ]
   LOOP
