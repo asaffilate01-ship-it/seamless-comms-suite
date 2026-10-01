@@ -248,6 +248,37 @@ INSERT INTO public.product_provider_requirements(product_key,provider_key,requir
  ('fastremit','remittance.thunes',true,'Cross-border payout rail')
 ON CONFLICT(product_key,provider_key) DO UPDATE SET required=EXCLUDED.required,purpose=EXCLUDED.purpose;
 
+CREATE OR REPLACE FUNCTION public.platform_set_tenant_product_runtime(
+  _tenant uuid,
+  _product text,
+  _region text,
+  _locale text,
+  _runtime_config jsonb DEFAULT '{}'::jsonb
+) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+DECLARE rp public.region_packs%rowtype;
+BEGIN
+  IF NOT public.is_platform_admin(auth.uid())
+     AND NOT public.has_tenant_role(_tenant,auth.uid(),ARRAY['owner','admin']::public.app_role[]) THEN
+    RAISE EXCEPTION 'Tenant product runtime access denied';
+  END IF;
+  SELECT * INTO rp FROM public.region_packs WHERE region_key=_region AND status<>'retired';
+  IF NOT FOUND THEN RAISE EXCEPTION 'Region pack not found'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.locale_packs WHERE locale=_locale AND status<>'retired') THEN
+    RAISE EXCEPTION 'Locale pack not found';
+  END IF;
+  IF NOT (_locale = ANY(rp.supported_locales)) THEN
+    RAISE EXCEPTION 'Locale is not supported by region pack';
+  END IF;
+  UPDATE public.tenant_products
+  SET region_key=_region,locale=_locale,runtime_config=COALESCE(_runtime_config,'{}'::jsonb),
+      launch_status='configuring',updated_at=now()
+  WHERE tenant_id=_tenant AND product_key=_product;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Tenant product not found'; END IF;
+END; $;
+REVOKE ALL ON FUNCTION public.platform_set_tenant_product_runtime(uuid,text,text,text,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.platform_set_tenant_product_runtime(uuid,text,text,text,jsonb) TO authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.platform_set_service_credential(
   _key_id text,
   _secret_hash text,
@@ -300,18 +331,26 @@ BEGIN
   IF _location IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.tenant_locations WHERE id=_location AND tenant_id=_tenant) THEN
     RAISE EXCEPTION 'Location scope does not belong to tenant';
   END IF;
-  INSERT INTO public.provider_bindings(
-    tenant_id,product_key,brand_id,location_id,provider_key,environment,status,secret_refs,config
-  ) VALUES(
-    _tenant,_product,_brand,_location,_provider,_environment,'configured',
-    COALESCE(_secret_refs,'{}'::jsonb),COALESCE(_config,'{}'::jsonb)
-  )
-  ON CONFLICT(
-    tenant_id,product_key,provider_key,environment,
-    COALESCE(brand_id,'00000000-0000-0000-0000-000000000000'::uuid),
-    COALESCE(location_id,'00000000-0000-0000-0000-000000000000'::uuid)
-  ) DO UPDATE SET secret_refs=EXCLUDED.secret_refs,config=EXCLUDED.config,status='configured',updated_at=now()
+  UPDATE public.provider_bindings
+  SET secret_refs=COALESCE(_secret_refs,'{}'::jsonb),
+      config=COALESCE(_config,'{}'::jsonb),
+      status='configured',
+      updated_at=now()
+  WHERE tenant_id=_tenant AND product_key=_product AND provider_key=_provider
+    AND environment=_environment
+    AND brand_id IS NOT DISTINCT FROM _brand
+    AND location_id IS NOT DISTINCT FROM _location
   RETURNING id INTO result;
+
+  IF result IS NULL THEN
+    INSERT INTO public.provider_bindings(
+      tenant_id,product_key,brand_id,location_id,provider_key,environment,status,secret_refs,config
+    ) VALUES(
+      _tenant,_product,_brand,_location,_provider,_environment,'configured',
+      COALESCE(_secret_refs,'{}'::jsonb),COALESCE(_config,'{}'::jsonb)
+    )
+    RETURNING id INTO result;
+  END IF;
   RETURN result;
 END; $$;
 REVOKE ALL ON FUNCTION public.platform_upsert_provider_binding(uuid,text,uuid,uuid,text,text,jsonb,jsonb) FROM PUBLIC,anon;
