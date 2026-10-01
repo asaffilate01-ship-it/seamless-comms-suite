@@ -25,6 +25,7 @@ jobs:
       - run: npm run test:bridges
       - run: npm run test:mobile
       - run: npm run test:procurement
+      - run: npm run test:control-plane
       - run: npm run test:services
       - run: node --test services/ecosystem-core/tests/*.test.mjs
       - name: Native PostgreSQL adapter and forced RLS
