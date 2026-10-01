@@ -8,8 +8,8 @@ const migrations = new URL("../../supabase/migrations/", import.meta.url);
 await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
  CREATE SCHEMA auth; GRANT USAGE ON SCHEMA auth TO authenticated;
  CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb);
- CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$$$
- SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid $$$$;
+ CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $
+ SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid $;
  CREATE PUBLICATION supabase_realtime;`);
 
 for (const name of (await readdir(migrations)).filter((x) => x.endsWith(".sql")).sort()) {
