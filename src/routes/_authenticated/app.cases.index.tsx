@@ -10,13 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTenant, canWrite } from "@/hooks/useTenant";
 import { listCases, createCase } from "@/lib/app.functions";
 import { toast } from "sonner";
+import { useTx, useI18nSafe } from "@/lib/i18n";
 import { Search, Plus, FolderOpen } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/cases/")({
   head: () => ({
     meta: [
-      { title: "Fälle — OmniQora" },
-      { name: "description", content: "Jedes WhatsApp-Gespräch als kontrollierter Geschäftsprozess." },
+      { title: "Cases — OmniQora" },
+      { name: "description", content: "Every conversation as a controlled business case." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/app/cases/")({
 
 type CaseRow = Awaited<ReturnType<typeof listCases>>[number];
 
+const FILTER_EN: Record<string, string> = { all: "All", new: "New", open: "Open", waiting_customer: "Waiting on customer", escalated: "Escalated", closed: "Closed" };
 const FILTERS = [
   { key: "all", label: "Alle" },
   { key: "new", label: "Neu" },
@@ -44,13 +46,15 @@ function Cases() {
 
   const fetchCases = useServerFn(listCases);
   const createFn = useServerFn(createCase);
+  const tx = useTx();
+  const loc = (useI18nSafe()?.lang ?? "en") === "de" ? "de-DE" : "en-GB";
 
   const load = useMemo(
     () => async (id: string) => {
       try {
         setRows((await fetchCases({ data: { tenantId: id } })) as CaseRow[]);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Laden fehlgeschlagen");
+        toast.error(e instanceof Error ? e.message : tx("Laden fehlgeschlagen", "Failed to load"));
       } finally {
         setLoading(false);
       }
@@ -75,11 +79,11 @@ function Cases() {
     if (!tenantId) return;
     setCreating(true);
     try {
-      await createFn({ data: { tenantId, title: "Neuer Fall", priority: "normal" } });
+      await createFn({ data: { tenantId, title: tx("Neuer Fall", "New case"), priority: "normal" } });
       await load(tenantId);
-      toast.success("Fall erstellt");
+      toast.success(tx("Fall erstellt", "Case created"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fall konnte nicht erstellt werden");
+      toast.error(e instanceof Error ? e.message : tx("Fall konnte nicht erstellt werden", "Could not create case"));
     } finally {
       setCreating(false);
     }
@@ -87,13 +91,13 @@ function Cases() {
 
   return (
     <AppShell
-      title="Fälle"
-      subtitle={`${rows.filter((r) => r.status !== "closed").length} aktiv · ${rows.length} insgesamt`}
+      title={tx("Fälle", "Cases")}
+      subtitle={`${rows.filter((r) => r.status !== "closed").length} ${tx("aktiv", "active")} · ${rows.length} ${tx("insgesamt", "total")}`}
       actions={
         canWrite(role) ? (
           <Button size="sm" onClick={handleCreate} disabled={creating}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Neuer Fall
+            {tx("Neuer Fall", "New case")}
           </Button>
         ) : null
       }
@@ -104,9 +108,9 @@ function Cases() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 p-14 text-center">
             <FolderOpen className="h-8 w-8 text-muted-foreground" />
-            <h3 className="font-display text-lg font-semibold">Noch keine Fälle</h3>
+            <h3 className="font-display text-lg font-semibold">{tx("Noch keine Fälle", "No cases yet")}</h3>
             <p className="max-w-md text-sm text-muted-foreground">
-              Fälle entstehen aus Gesprächen im Postfach oder werden hier manuell angelegt.
+              {tx("Fälle entstehen aus Gesprächen im Postfach oder werden hier manuell angelegt.", "Cases are created from inbox conversations or added here manually.")}
             </p>
           </CardContent>
         </Card>
@@ -118,7 +122,7 @@ function Cases() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Fälle durchsuchen…"
+                placeholder={tx("Fälle durchsuchen…", "Search cases…")}
                 className="pl-9"
               />
             </div>
@@ -132,7 +136,7 @@ function Cases() {
                     : "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-surface-2"
                 }
               >
-                {f.label}
+                {tx(f.label, FILTER_EN[f.key] ?? f.label)}
               </button>
             ))}
           </div>
@@ -140,11 +144,11 @@ function Cases() {
             <table className="w-full text-sm">
               <thead className="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3">Fall</th>
-                  <th className="px-4 py-3">Kontakt</th>
+                  <th className="px-4 py-3">{tx("Fall", "Case")}</th>
+                  <th className="px-4 py-3">{tx("Kontakt", "Contact")}</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Priorität</th>
-                  <th className="px-4 py-3">Aktualisiert</th>
+                  <th className="px-4 py-3">{tx("Priorität", "Priority")}</th>
+                  <th className="px-4 py-3">{tx("Aktualisiert", "Updated")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -188,7 +192,7 @@ function Cases() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(c.updated_at).toLocaleString("de-DE")}
+                        {new Date(c.updated_at).toLocaleString(loc)}
                       </td>
                     </tr>
                   );
