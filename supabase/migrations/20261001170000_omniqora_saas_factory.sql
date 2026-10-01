@@ -558,9 +558,9 @@ REVOKE ALL ON FUNCTION public.platform_upsert_domain(uuid,text,text,boolean) FRO
 GRANT EXECUTE ON FUNCTION public.platform_upsert_domain(uuid,text,text,boolean) TO authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.is_organisation_member(_organisation uuid,_user uuid)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
   SELECT EXISTS(SELECT 1 FROM public.organisation_members WHERE organisation_id=_organisation AND user_id=_user);
-$;
+$$;
 REVOKE ALL ON FUNCTION public.is_organisation_member(uuid,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.is_organisation_member(uuid,uuid) TO authenticated,service_role;
 
@@ -570,7 +570,7 @@ CREATE OR REPLACE FUNCTION public.platform_link_product(
   _external_tenant_id text,
   _base_url text DEFAULT NULL,
   _capabilities text[] DEFAULT '{}'
-) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE result uuid;
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN RAISE EXCEPTION 'Platform administrator required'; END IF;
@@ -585,7 +585,7 @@ BEGIN
   ON CONFLICT (tenant_id,product_key) DO UPDATE SET external_tenant_id=EXCLUDED.external_tenant_id,base_url=EXCLUDED.base_url,status=CASE WHEN public.tenant_products.status='active' THEN 'active' ELSE 'provisioning' END,updated_at=now();
   PERFORM public.queue_provisioning(_tenant,'integration',_product||':'||_external_tenant_id,'verify',jsonb_build_object('productKey',_product,'externalTenantId',_external_tenant_id,'baseUrl',_base_url,'capabilities',_capabilities));
   RETURN result;
-END; $;
+END; $$;
 REVOKE ALL ON FUNCTION public.platform_link_product(uuid,text,text,text,text[]) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.platform_link_product(uuid,text,text,text,text[]) TO authenticated,service_role;
 
