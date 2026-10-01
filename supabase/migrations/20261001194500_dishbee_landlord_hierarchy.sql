@@ -295,6 +295,53 @@ END; $$;
 REVOKE ALL ON FUNCTION public.platform_bootstrap_dishbee_pilot() FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.platform_bootstrap_dishbee_pilot() TO authenticated,service_role;
 
+CREATE OR REPLACE FUNCTION public.server_claim_provisioning_jobs(_limit integer DEFAULT 20)
+RETURNS SETOF public.provisioning_jobs
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+BEGIN
+  IF COALESCE(current_setting('request.jwt.claim.role',true),'') <> 'service_role' THEN
+    RAISE EXCEPTION 'Service role required';
+  END IF;
+  RETURN QUERY
+  WITH claim AS (
+    SELECT id FROM public.provisioning_jobs
+    WHERE status='queued'
+    ORDER BY created_at
+    FOR UPDATE SKIP LOCKED
+    LIMIT GREATEST(1,LEAST(_limit,50))
+  )
+  UPDATE public.provisioning_jobs j
+  SET status='running', attempts=j.attempts+1, started_at=COALESCE(j.started_at,now()), last_error=NULL
+  FROM claim
+  WHERE j.id=claim.id
+  RETURNING j.*;
+END; $;
+REVOKE ALL ON FUNCTION public.server_claim_provisioning_jobs(integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.server_claim_provisioning_jobs(integer) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.server_block_provisioning_job(
+  _job uuid,
+  _reason text,
+  _detail jsonb DEFAULT '{}'::jsonb
+) RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+DECLARE j public.provisioning_jobs%rowtype;
+BEGIN
+  IF COALESCE(current_setting('request.jwt.claim.role',true),'') <> 'service_role' THEN
+    RAISE EXCEPTION 'Service role required';
+  END IF;
+  SELECT * INTO j FROM public.provisioning_jobs WHERE id=_job FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Provisioning job not found'; END IF;
+  UPDATE public.provisioning_jobs
+  SET status='blocked',last_error=left(COALESCE(_reason,'blocked'),1000)
+  WHERE id=_job;
+  INSERT INTO public.provisioning_events(job_id,tenant_id,event,detail)
+  VALUES(j.id,j.tenant_id,'blocked',COALESCE(_detail,'{}'::jsonb)||jsonb_build_object('reason',left(COALESCE(_reason,'blocked'),1000)));
+  RETURN true;
+END; $;
+REVOKE ALL ON FUNCTION public.server_block_provisioning_job(uuid,text,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.server_block_provisioning_job(uuid,text,jsonb) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.get_tenant_control_plane(_tenant uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 BEGIN
