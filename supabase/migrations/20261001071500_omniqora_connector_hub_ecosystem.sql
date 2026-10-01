@@ -184,6 +184,10 @@ END $$;
 INSERT INTO public.platform_connector_catalogue(connector_key,name,connector_kind,description,status,capabilities,supported_countries) VALUES
  ('communications.meta-whatsapp','Meta WhatsApp Cloud API','communications','WhatsApp business messaging and templates','active',ARRAY['messages','templates','webhooks'],ARRAY[]::text[]),
  ('communications.twilio','Twilio','communications','Voice, SMS, WhatsApp and masked calling','preview',ARRAY['voice','sms','whatsapp','masked_calls','webhooks'],ARRAY[]::text[]),
+ ('communications.resend','Resend','communications','Transactional email provider','planned',ARRAY['email','transactional','webhooks'],ARRAY[]::text[]),
+ ('communications.sendgrid','Twilio SendGrid','communications','Transactional and marketing email provider','planned',ARRAY['email','transactional','marketing','webhooks'],ARRAY[]::text[]),
+ ('communications.aws-ses','Amazon SES','communications','Transactional email provider','planned',ARRAY['email','transactional','webhooks'],ARRAY[]::text[]),
+ ('communications.firebase','Firebase Cloud Messaging','communications','Mobile and web push notifications','planned',ARRAY['push','mobile','web'],ARRAY[]::text[]),
  ('payments.adyen','Adyen','payments','Checkout, platform splits and payouts','preview',ARRAY['checkout','splits','payouts','refunds','webhooks'],ARRAY[]::text[]),
  ('payments.stripe','Stripe','payments','Checkout, subscriptions and refunds','preview',ARRAY['checkout','subscriptions','refunds','webhooks'],ARRAY[]::text[]),
  ('payments.sumup','SumUp','payments','POS and checkout','preview',ARRAY['pos','checkout'],ARRAY['GB','DE']),
