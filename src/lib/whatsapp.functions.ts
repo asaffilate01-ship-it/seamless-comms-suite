@@ -70,7 +70,7 @@ export const upsertChannel = createServerFn({ method: "POST" })
     const db = supabase as any;
 
     if (data.isPrimary) {
-      const { error: clearErr } = await supabase
+      const { error: clearErr } = await db
         .from("whatsapp_channels")
         .update({ is_primary: false })
         .eq("tenant_id", data.tenantId)
