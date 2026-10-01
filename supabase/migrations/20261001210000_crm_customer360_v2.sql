@@ -51,7 +51,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS crm_people_external_ref_uq
  ON public.crm_people(tenant_id,source_product_key,external_ref)
  WHERE source_product_key IS NOT NULL AND external_ref IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS crm_people_whatsapp_contact_uq
- ON public.crm_people(whatsapp_contact_id) WHERE whatsapp_contact_id IS NOT NULL;
+ ON public.crm_people(whatsapp_contact_id);
 
 CREATE TABLE IF NOT EXISTS public.crm_pipelines (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
