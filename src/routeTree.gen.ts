@@ -44,6 +44,7 @@ import { Route as AuthenticatedAppCasesIndexRouteImport } from './routes/_authen
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiIntegrationsRunsRunIdRouteImport } from './routes/api.integrations.runs.$runId'
 import { Route as ApiIntegrationsHaccoraConnectionIdRouteImport } from './routes/api.integrations.haccora.$connectionId'
+import { Route as ApiIntegrationsConnectEventsRouteImport } from './routes/api.integrations.connect.events'
 import { Route as AuthenticatedAppCasesCaseIdRouteImport } from './routes/_authenticated/app.cases.$caseId'
 import { Route as ApiIntegrationsRunsRunIdContextRouteImport } from './routes/api.integrations.runs.$runId.context'
 
@@ -236,6 +237,12 @@ const ApiIntegrationsHaccoraConnectionIdRoute =
     path: '/api/integrations/haccora/$connectionId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiIntegrationsConnectEventsRoute =
+  ApiIntegrationsConnectEventsRouteImport.update({
+    id: '/api/integrations/connect/events',
+    path: '/api/integrations/connect/events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppCasesCaseIdRoute =
   AuthenticatedAppCasesCaseIdRouteImport.update({
     id: '/$caseId',
@@ -281,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -317,6 +325,7 @@ export interface FileRoutesByTo {
   '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -357,6 +366,7 @@ export interface FileRoutesById {
   '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/api/integrations/gateway'
     | '/app/'
     | '/app/cases/$caseId'
+    | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/public/whatsapp/webhook'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/api/integrations/gateway'
     | '/app'
     | '/app/cases/$caseId'
+    | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/public/whatsapp/webhook'
@@ -472,6 +484,7 @@ export interface FileRouteTypes {
     | '/api/integrations/gateway'
     | '/_authenticated/app/'
     | '/_authenticated/app/cases/$caseId'
+    | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/public/whatsapp/webhook'
@@ -496,6 +509,7 @@ export interface RootRouteChildren {
   WorkflowPacksRoute: typeof WorkflowPacksRoute
   ApiIntegrationsEventsRoute: typeof ApiIntegrationsEventsRoute
   ApiIntegrationsGatewayRoute: typeof ApiIntegrationsGatewayRoute
+  ApiIntegrationsConnectEventsRoute: typeof ApiIntegrationsConnectEventsRoute
   ApiIntegrationsHaccoraConnectionIdRoute: typeof ApiIntegrationsHaccoraConnectionIdRoute
   ApiIntegrationsRunsRunIdRoute: typeof ApiIntegrationsRunsRunIdRouteWithChildren
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
@@ -748,6 +762,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsHaccoraConnectionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/connect/events': {
+      id: '/api/integrations/connect/events'
+      path: '/api/integrations/connect/events'
+      fullPath: '/api/integrations/connect/events'
+      preLoaderRoute: typeof ApiIntegrationsConnectEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/cases/$caseId': {
       id: '/_authenticated/app/cases/$caseId'
       path: '/$caseId'
@@ -861,6 +882,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowPacksRoute: WorkflowPacksRoute,
   ApiIntegrationsEventsRoute: ApiIntegrationsEventsRoute,
   ApiIntegrationsGatewayRoute: ApiIntegrationsGatewayRoute,
+  ApiIntegrationsConnectEventsRoute: ApiIntegrationsConnectEventsRoute,
   ApiIntegrationsHaccoraConnectionIdRoute:
     ApiIntegrationsHaccoraConnectionIdRoute,
   ApiIntegrationsRunsRunIdRoute: ApiIntegrationsRunsRunIdRouteWithChildren,
