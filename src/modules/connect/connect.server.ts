@@ -123,6 +123,14 @@ export async function serveConnectEvent(request: Request) {
     const sourceEventId = requestId(request, true)!;
     const db = await admin();
 
+    const [{data:connectEnabled,error:connectError},{data:whatsAppEnabled,error:whatsAppError}]=await Promise.all([
+      db.rpc("omniqora_has_service",{target:binding.tenant,p_service_key:"omniqora.connect"}),
+      db.rpc("omniqora_has_service",{target:binding.tenant,p_service_key:"omniqora.whatsapp"}),
+    ]);
+    if(connectError||whatsAppError)throw new BridgeError(503,"Omniqora Connect entitlement could not be verified");
+    if(connectEnabled!==true||whatsAppEnabled!==true)
+      throw new BridgeError(403,"Omniqora Connect / WhatsApp is not enabled for this workspace");
+
     const { data: prior } = await db
       .from("communication_events")
       .select("id, status, last_error")
