@@ -1,15 +1,12 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
-  useState,
   useCallback,
   type ReactNode,
 } from "react";
 import { translations, type Lang } from "./translations";
-import { detectLang } from "./detect-locale";
-
+import { usePromo } from "./promo-lang";
 
 type Ctx = {
   lang: Lang;
@@ -19,7 +16,6 @@ type Ctx = {
 };
 
 const I18nContext = createContext<Ctx | null>(null);
-const STORAGE_KEY = "lc.lang";
 
 function resolve(dict: unknown, key: string): string {
   const parts = key.split(".");
@@ -34,49 +30,17 @@ function resolve(dict: unknown, key: string): string {
   return typeof cur === "string" ? cur : key;
 }
 
+/**
+ * Dashboard/app language. Derived from the single site-wide language setting
+ * (PromoLangProvider) so the homepage and dashboard can never disagree.
+ * The app supports DE/EN; any other site language shows English in the app.
+ */
 export function I18nProvider({ children }: { children: ReactNode }) {
-  // Default to German. Read persisted on mount (avoid SSR mismatch).
-  const [lang, setLangState] = useState<Lang>("en");
-  const [transitioning, setTransitioning] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = (localStorage.getItem(STORAGE_KEY) ??
-        localStorage.getItem("omniqora.promo.lang")) as Lang | null;
-      if (saved === "de" || saved === "en") {
-        if (saved !== lang) setLangState(saved);
-        return;
-      }
-    } catch {
-      /* ignore */
-    }
-    setLangState(detectLang() === "de" ? "de" : "en");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.documentElement.lang = lang;
-    }
-  }, [lang]);
-
-  const setLang = useCallback(
-    (next: Lang) => {
-      setLangState((prev) => {
-        if (prev === next) return prev;
-        try {
-          localStorage.setItem(STORAGE_KEY, next);
-        } catch {
-          /* ignore */
-        }
-        setTransitioning(true);
-        window.setTimeout(() => setTransitioning(false), 220);
-        return next;
-      });
-    },
-    [],
-  );
+  const promo = usePromo();
+  const lang: Lang = promo.lang === "de" ? "de" : "en";
+  const transitioning = promo.transitioning;
+  const promoSetLang = promo.setLang;
+  const setLang = useCallback((next: Lang) => promoSetLang(next), [promoSetLang]);
 
 
   const t = useCallback(

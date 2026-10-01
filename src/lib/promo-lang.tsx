@@ -11,7 +11,9 @@ import { promoContent, promoLangs, type PromoContent, type PromoLang } from "./p
 import { detectLang } from "./detect-locale";
 
 
-const STORAGE_KEY = "omniqora.promo.lang";
+// v2: only explicit user choices are stored. Older keys ("omniqora.promo.lang",
+// "lc.lang") could hold an automatic German default, so they are ignored.
+const STORAGE_KEY = "omniqora.lang.v2";
 
 type Ctx = {
   lang: PromoLang;
@@ -29,6 +31,8 @@ export function PromoLangProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      localStorage.removeItem("omniqora.promo.lang");
+      localStorage.removeItem("lc.lang");
       const saved = localStorage.getItem(STORAGE_KEY) as PromoLang | null;
       if (saved && saved in promoContent) {
         setLangState(saved);
@@ -41,13 +45,15 @@ export function PromoLangProvider({ children }: { children: ReactNode }) {
     if (detected in promoContent) setLangState(detected as PromoLang);
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = lang;
+  }, [lang]);
 
   const setLang = useCallback((next: PromoLang) => {
     setLangState((prev) => {
       if (prev === next) return prev;
       try {
         localStorage.setItem(STORAGE_KEY, next);
-        if (next === "de" || next === "en") localStorage.setItem("lc.lang", next);
       } catch {
         /* ignore */
       }
