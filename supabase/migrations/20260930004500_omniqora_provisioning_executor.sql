@@ -18,6 +18,7 @@ DECLARE
   step_kind text;
   step_payload jsonb;
   location_id uuid;
+  connector_kind text;
 BEGIN
   SELECT * INTO r
   FROM public.platform_provisioning_runs
@@ -91,6 +92,38 @@ BEGIN
       )
       ON CONFLICT (hostname)
       DO UPDATE SET tenant_id=r.tenant_id,tenant_product_id=tp,purpose=EXCLUDED.purpose,is_primary=EXCLUDED.is_primary,updated_at=now();
+
+    ELSIF step_kind = 'connector_requirement' THEN
+      SELECT c.connector_kind INTO connector_kind
+      FROM public.platform_connector_catalogue c
+      WHERE c.connector_key=s->>'connectorKey';
+
+      IF connector_kind IS NULL THEN
+        RAISE EXCEPTION 'unknown_connector_requirement:%',s->>'connectorKey';
+      END IF;
+
+      IF NOT EXISTS(
+        SELECT 1 FROM public.tenant_integration_bindings b
+        WHERE b.tenant_id=r.tenant_id
+          AND b.tenant_product_id=tp
+          AND b.plugin_key=s->>'connectorKey'
+          AND b.environment='production'
+          AND b.location_id IS NULL
+      ) THEN
+        INSERT INTO public.tenant_integration_bindings(
+          tenant_id,tenant_product_id,location_id,module_key,provider,plugin_key,
+          integration_kind,environment,secret_ref,secret_refs,external_account_ref,config,status
+        ) VALUES (
+          r.tenant_id,tp,NULL,'connectors.core',
+          split_part(s->>'connectorKey','.',2),s->>'connectorKey',
+          connector_kind,'production',NULL,'{}'::jsonb,NULL,
+          COALESCE(s->'config','{}'::jsonb) || jsonb_build_object(
+            'required',COALESCE((s->>'required')::boolean,false),
+            'purpose',COALESCE(s->>'purpose','')
+          ),
+          'missing_credentials'
+        );
+      END IF;
 
     ELSIF step_kind = 'brand' THEN
       UPDATE public.tenant_products
