@@ -41,7 +41,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) as Lang | null;
+      const saved = (localStorage.getItem(STORAGE_KEY) ??
+        localStorage.getItem("omniqora.promo.lang")) as Lang | null;
       if (saved === "de" || saved === "en") {
         if (saved !== lang) setLangState(saved);
         return;
@@ -101,6 +102,12 @@ export function useI18nSafe() {
   return useContext(I18nContext);
 }
 
+/** Inline bilingual helper: tx("Deutsch", "English"). */
+export function useTx() {
+  const lang = useContext(I18nContext)?.lang ?? "en";
+  return useCallback((de: string, en: string) => (lang === "de" ? de : en), [lang]);
+}
+
 export function useT() {
   return useI18n().t;
 }
@@ -130,12 +137,19 @@ export function LanguageToggle({
     ].join(" ");
   return (
     <div className={wrap} role="group" aria-label="Language">
-      <button type="button" onClick={() => setLang("de")} className={btn(lang === "de")}>
+{lang === "de" ? <>      <button type="button" onClick={() => setLang("de")} className={btn(lang === "de")}>
         DE
       </button>
       <button type="button" onClick={() => setLang("en")} className={btn(lang === "en")}>
         EN
       </button>
+</> : <>      <button type="button" onClick={() => setLang("en")} className={btn(lang === "en")}>
+        EN
+      </button>
+      <button type="button" onClick={() => setLang("de")} className={btn(lang === "de")}>
+        DE
+      </button>
+</>}
     </div>
   );
 }
