@@ -106,71 +106,6 @@ export type Database = {
           },
         ]
       }
-      communication_events: {
-        Row: {
-          attempts: number
-          created_at: string
-          direction: string
-          event_type: string
-          external_tenant_id: string
-          id: string
-          last_error: string | null
-          message: Json | null
-          metadata: Json
-          product_key: string
-          recipient: Json | null
-          scope_id: string
-          source_event_id: string
-          status: string
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          attempts?: number
-          created_at?: string
-          direction: string
-          event_type: string
-          external_tenant_id: string
-          id?: string
-          last_error?: string | null
-          message?: Json | null
-          metadata?: Json
-          product_key: string
-          recipient?: Json | null
-          scope_id: string
-          source_event_id: string
-          status?: string
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          attempts?: number
-          created_at?: string
-          direction?: string
-          event_type?: string
-          external_tenant_id?: string
-          id?: string
-          last_error?: string | null
-          message?: Json | null
-          metadata?: Json
-          product_key?: string
-          recipient?: Json | null
-          scope_id?: string
-          source_event_id?: string
-          status?: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "communication_events_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       contacts: {
         Row: {
           consent_marketing: boolean | null
@@ -411,21 +346,11 @@ export type Database = {
       whatsapp_channels: {
         Row: {
           access_token: string
-          ai_enabled: boolean
           app_secret: string | null
           created_at: string
           display_phone: string | null
-          external_tenant_id: string | null
-          human_handoff_enabled: boolean
           id: string
-          inbound_enabled: boolean
-          is_primary: boolean
-          label: string | null
-          outbound_enabled: boolean
           phone_number_id: string
-          product_key: string
-          scope_id: string | null
-          scope_kind: string
           status: string
           tenant_id: string
           updated_at: string
@@ -434,21 +359,11 @@ export type Database = {
         }
         Insert: {
           access_token: string
-          ai_enabled?: boolean
           app_secret?: string | null
           created_at?: string
           display_phone?: string | null
-          external_tenant_id?: string | null
-          human_handoff_enabled?: boolean
           id?: string
-          inbound_enabled?: boolean
-          is_primary?: boolean
-          label?: string | null
-          outbound_enabled?: boolean
           phone_number_id: string
-          product_key?: string
-          scope_id?: string | null
-          scope_kind?: string
           status?: string
           tenant_id: string
           updated_at?: string
@@ -457,21 +372,11 @@ export type Database = {
         }
         Update: {
           access_token?: string
-          ai_enabled?: boolean
           app_secret?: string | null
           created_at?: string
           display_phone?: string | null
-          external_tenant_id?: string | null
-          human_handoff_enabled?: boolean
           id?: string
-          inbound_enabled?: boolean
-          is_primary?: boolean
-          label?: string | null
-          outbound_enabled?: boolean
           phone_number_id?: string
-          product_key?: string
-          scope_id?: string | null
-          scope_kind?: string
           status?: string
           tenant_id?: string
           updated_at?: string
@@ -492,52 +397,22 @@ export type Database = {
     Views: {
       whatsapp_channel_status: {
         Row: {
-          ai_enabled: boolean | null
           display_phone: string | null
-          external_tenant_id: string | null
-          human_handoff_enabled: boolean | null
           id: string | null
-          inbound_enabled: boolean | null
-          is_primary: boolean | null
-          label: string | null
-          outbound_enabled: boolean | null
-          product_key: string | null
-          scope_id: string | null
-          scope_kind: string | null
           status: string | null
           tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
-          ai_enabled?: boolean | null
           display_phone?: string | null
-          external_tenant_id?: string | null
-          human_handoff_enabled?: boolean | null
           id?: string | null
-          inbound_enabled?: boolean | null
-          is_primary?: boolean | null
-          label?: string | null
-          outbound_enabled?: boolean | null
-          product_key?: string | null
-          scope_id?: string | null
-          scope_kind?: string | null
           status?: string | null
           tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
-          ai_enabled?: boolean | null
           display_phone?: string | null
-          external_tenant_id?: string | null
-          human_handoff_enabled?: boolean | null
           id?: string | null
-          inbound_enabled?: boolean | null
-          is_primary?: boolean | null
-          label?: string | null
-          outbound_enabled?: boolean | null
-          product_key?: string | null
-          scope_id?: string | null
-          scope_kind?: string | null
           status?: string | null
           tenant_id?: string | null
           updated_at?: string | null

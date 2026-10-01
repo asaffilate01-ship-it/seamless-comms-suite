@@ -11,9 +11,10 @@ const PASSWORD = "omniqora2026";
 /** Routes reachable without the promo password. */
 const PUBLIC_PATHS = ["/", "/website", "/impressum", "/datenschutz", "/agb", "/cookies"];
 
-function isPublic(pathname: string) {
-  const p = pathname.replace(/\/+$/, "") || "/";
-  return PUBLIC_PATHS.includes(p) || p.startsWith("/api/");
+// Promo password removed: every public page is open. The app itself stays behind real sign-in.
+function isPublic(_pathname: string) {
+  void PUBLIC_PATHS;
+  return true;
 }
 
 export function unlockSite(password: string) {
