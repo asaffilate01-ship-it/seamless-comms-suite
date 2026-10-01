@@ -23,7 +23,7 @@ export const getCommsHubWorkspace=createServerFn({method:"POST"})
     .select("product_key,parent_product_key").eq("product_key",tp.product_key).maybeSingle();
   const productKeys=[...new Set([tp.product_key,product?.parent_product_key].filter(Boolean))] as string[];
 
-  const[identities,bindings,channels,events,receptionSettings,receptionRequests]=await Promise.all([
+  const[identities,bindings,channels,events,receptionSettings,receptionRequests,domains,locations]=await Promise.all([
     db.from("tenant_communication_identities")
       .select("id,location_id,channel,purpose,identity_value,display_name,reply_to,provider_binding_id,domain_id,verification_status,active,is_primary,verified_at,updated_at")
       .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
@@ -47,10 +47,18 @@ export const getCommsHubWorkspace=createServerFn({method:"POST"})
     db.from("reception_requests")
       .select("id,location_id,kind,channel,crm_person_id,customer_name,contact,summary,status,revision,created_at,updated_at")
       .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
-      .order("created_at",{ascending:false}).limit(250)
+      .order("created_at",{ascending:false}).limit(250),
+    db.from("tenant_domains")
+      .select("id,hostname,purpose,verification_status,is_primary")
+      .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+      .order("purpose"),
+    db.from("tenant_locations")
+      .select("id,location_key,name,status,country_code,locale")
+      .eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+      .eq("status","active").order("name")
   ]);
 
-  for(const result of[identities,bindings,channels,events]){
+  for(const result of[identities,bindings,channels,events,domains,locations]){
     if(result.error)throw new Error(result.error.message);
   }
   // Reception is an optional entitlement; lack of rows/table visibility must not hide core comms.
@@ -109,6 +117,8 @@ export const getCommsHubWorkspace=createServerFn({method:"POST"})
     conversations,
     receptionSettings:safeReceptionSettings,
     receptionRequests:safeReceptionRequests,
+    domains:domains.data??[],
+    locations:locations.data??[],
     activeCapabilities:[...activeCapabilities],
   };
 });
