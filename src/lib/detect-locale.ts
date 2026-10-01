@@ -16,20 +16,26 @@ function tags(): string[] {
   return list.filter(Boolean).map((l) => l.toLowerCase());
 }
 
+const UK_LANG_TIMEZONES = ["Europe/London", "Europe/Belfast", "Europe/Guernsey", "Europe/Jersey", "Europe/Isle_of_Man"];
+
+/**
+ * Country first (time zone), then browser language:
+ * UK -> English, Germany/Austria/Switzerland -> German, elsewhere by browser language, fallback English.
+ */
 export function detectLang(): DetectedLang {
-  const all = tags();
-  for (const tag of all) {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && UK_LANG_TIMEZONES.includes(tz)) return "en";
+    if (tz && GERMAN_TIMEZONES.includes(tz)) return "de";
+  } catch {
+    /* ignore */
+  }
+  for (const tag of tags()) {
     if (tag.startsWith("de")) return "de";
     if (tag.startsWith("tr")) return "tr";
     if (tag.startsWith("ar")) return "ar";
     if (tag.startsWith("fr")) return "fr";
     if (tag.startsWith("en")) return "en";
-  }
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz && GERMAN_TIMEZONES.includes(tz)) return "de";
-  } catch {
-    /* ignore */
   }
   return "en";
 }
