@@ -228,7 +228,14 @@ const EXTRA_PRODUCTS = [
   {product:"alstero",name:"Alstero",repository:"asaffilate01-ship-it/commerce-compass",status:"source-adapter-required",boundary:"Commerce brand tenant under Merqano."},
   {product:"dulcis",name:"Dulcis",repository:"asaffilate01-ship-it/pixel-perfect-show-373",status:"source-adapter-required",boundary:"Food/commerce brand tenant; keep brand UI/content, not a separate SaaS core."},
   {product:"taxlounge",name:"TaxLounge",repository:"asaffilate01-ship-it/taxlounge-launchpad",status:"source-adapter-required",boundary:"Operating accountancy practice tenant on IQ Practice Cloud."},
-  {product:"qatnov",name:"Qatnov",repository:"asaffilate01-ship-it/remix-of-uzbekistan-delivery-hub",status:"source-adapter-required",boundary:"Regional logistics operator tenant on FleetSora."}
+  {product:"qatnov",name:"Qatnov",repository:"asaffilate01-ship-it/remix-of-uzbekistan-delivery-hub",status:"source-adapter-required",boundary:"Regional logistics operator tenant on FleetSora."},
+  {product:"cafe1-st-albans",name:"Cafe 1 St Albans",repository:"asaffilate01-ship-it/cafe1-connect-dash",status:"source-adapter-required",boundary:"Cafe 1 operating tenant on Dishbee; St Albans is a location/brand deployment, not an independent SaaS core."},
+  {product:"cafe1-luton",name:"Cafe 1 Luton",repository:"asaffilate01-ship-it/cafe-1-luton",status:"source-adapter-required",boundary:"Cafe 1 operating tenant on Dishbee; Luton locations remain under the same tenant hierarchy."},
+  {product:"stylesync",name:"StyleSync",repository:"asaffilate01-ship-it/halo-suite-hub",status:"source-adapter-required",boundary:"Salon/beauty SaaS landlord; German branding can inherit the same vertical core."},
+  {product:"schonova",name:"Schonova",repository:"asaffilate01-ship-it/delightful-dash-suite",status:"regional-source",boundary:"German branded product variant on StyleSync core."},
+  {product:"immoviq",name:"Immoviq",repository:"asaffilate01-ship-it/pixel-perfect-clone-67104",status:"regional-source",boundary:"German property product variant on Gabley core."},
+  {product:"kalethon-teams",name:"Kalethon Teams",repository:"asaffilate01-ship-it/pixel-perfect-render-6809",status:"source-adapter-required",boundary:"B2B/team apparel variant under the Kalethon/Merqano commerce hierarchy."},
+  {product:"virtual-lab",name:"Virtual Lab",repository:"asaffilate01-ship-it/pixel-perfect-replica-20502337",status:"source-adapter-required",boundary:"Shared education lab add-on for UniPathway, EduCloud and TrainDirekt."}
 ] as const;
 
 function defaultBoundary(product:string){
@@ -254,6 +261,12 @@ const ARCHITECTURE_OVERRIDES:Record<string,Partial<PortfolioProduct>>={
   alstero:{architectureRole:"tenant",parentProductKey:"merqano",sourceStrategy:"tenant_configuration",migrationStage:"repo_audit",registerInFactory:false,needsReview:false},
   taxlounge:{architectureRole:"tenant",parentProductKey:"iq-practice-cloud",sourceStrategy:"tenant_configuration",migrationStage:"repo_audit",registerInFactory:false,needsReview:false},
   qatnov:{architectureRole:"tenant",parentProductKey:"fleetsora",sourceStrategy:"tenant_configuration",migrationStage:"repo_audit",registerInFactory:false,needsReview:false},
+  "cafe1-st-albans":{architectureRole:"tenant",parentProductKey:"dishbee",sourceStrategy:"tenant_configuration",migrationStage:"repo_audit",registerInFactory:false,needsReview:false},
+  "cafe1-luton":{architectureRole:"tenant",parentProductKey:"dishbee",sourceStrategy:"tenant_configuration",migrationStage:"repo_audit",registerInFactory:false,needsReview:false},
+  stylesync:{architectureRole:"landlord",sourceStrategy:"separate_repo",migrationStage:"repo_audit",registerInFactory:true,needsReview:false},
+  schonova:{architectureRole:"product_variant",parentProductKey:"stylesync",sourceStrategy:"merge_sources",migrationStage:"repo_audit",registerInFactory:true,needsReview:false},
+  immoviq:{architectureRole:"product_variant",parentProductKey:"gabley",sourceStrategy:"merge_sources",migrationStage:"repo_audit",registerInFactory:true,needsReview:false},
+  "kalethon-teams":{architectureRole:"tenant",parentProductKey:"merqano",sourceStrategy:"tenant_configuration",migrationStage:"repo_audit",registerInFactory:false,needsReview:true},
 
   kindelo:{architectureRole:"marketplace_landlord",sourceStrategy:"merge_sources",migrationStage:"canonical_selected",registerInFactory:true,needsReview:false},
   haccora:{architectureRole:"landlord",sourceStrategy:"merge_sources",migrationStage:"repo_audit",registerInFactory:true,needsReview:false},
