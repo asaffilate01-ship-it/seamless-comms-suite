@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useTenant } from "@/hooks/useTenant";
 import {
+  bootstrapDishbeePilot,
   createPlatformTenant,
   getControlPlaneCatalogue,
   getTenantControlPlane,
@@ -40,6 +41,7 @@ function ControlPlane() {
   const listTenantsRequest = useServerFn(listPlatformTenants);
   const tenantRequest = useServerFn(getTenantControlPlane);
   const createTenantRequest = useServerFn(createPlatformTenant);
+  const bootstrapDishbeeRequest = useServerFn(bootstrapDishbeePilot);
   const setProductRequest = useServerFn(setTenantProduct);
   const setServiceRequest = useServerFn(setTenantService);
   const linkProductRequest = useServerFn(linkTenantProduct);
@@ -85,6 +87,7 @@ function ControlPlane() {
     blueprintKey: "mealdeck-uk",
   });
   const [creating, setCreating] = useState(false);
+  const [bootstrappingDishbee, setBootstrappingDishbee] = useState(false);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const enabledProducts = useMemo(
@@ -122,6 +125,21 @@ function ControlPlane() {
       toast.error(e instanceof Error ? e.message : "Unable to create tenant");
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function bootstrapDishbee() {
+    setBootstrappingDishbee(true);
+    try {
+      const result = await bootstrapDishbeeRequest();
+      toast.success("Dishbee landlord pilot created/reconciled");
+      await tenants.refetch();
+      const firstTenant = result.tenants?.[0]?.tenantId;
+      if (firstTenant) setSelectedTenantId(firstTenant);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Dishbee pilot bootstrap failed");
+    } finally {
+      setBootstrappingDishbee(false);
     }
   }
 
@@ -206,6 +224,20 @@ function ControlPlane() {
           {isPlatformAdmin && (
             <Card>
               <CardContent className="p-5">
+                <div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /><h2 className="font-display text-lg font-semibold">Dishbee landlord pilot</h2></div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Create or reconcile 313 Brands Ltd with Dishbee as landlord, Cafe 1 St Albans, Cafe 1 Luton and MealDeck as tenant workspaces.
+                </p>
+                <Button className="mt-4 w-full" variant="outline" disabled={bootstrappingDishbee} onClick={bootstrapDishbee}>
+                  {bootstrappingDishbee ? "Reconciling…" : "Create / reconcile Dishbee pilot"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {isPlatformAdmin && (
+            <Card>
+              <CardContent className="p-5">
                 <div className="flex items-center gap-2"><Plus className="h-4 w-4 text-primary" /><h2 className="font-display text-lg font-semibold">New tenant</h2></div>
                 <p className="mt-1 text-xs text-muted-foreground">Create an organisation/workspace and apply a launch blueprint in one operation.</p>
                 <div className="mt-4 space-y-3">
@@ -249,7 +281,12 @@ function ControlPlane() {
                         <div><h3 className="font-semibold">{product.name}</h3><p className="mt-1 text-xs text-muted-foreground">{product.description}</p></div>
                         <input type="checkbox" aria-label={`Enable ${product.name}`} checked={active} disabled={!isPlatformAdmin || busyKey === `product:${product.product_key}`} onChange={(e) => toggleProduct(product.product_key, e.target.checked)} />
                       </div>
-                      <div className="mt-3 flex items-center gap-2"><Badge variant="secondary">{product.category}</Badge>{tenantProduct && <StatusBadge status={tenantProduct.status} />}</div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary">{product.category}</Badge>
+                        {product.product_role && <Badge variant="outline">{product.product_role.replaceAll("_", " ")}</Badge>}
+                        {product.parent_product_key && <Badge variant="outline">under {product.parent_product_key}</Badge>}
+                        {tenantProduct && <StatusBadge status={tenantProduct.status} />}
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -320,6 +357,32 @@ function ControlPlane() {
               catch (e) { toast.error(e instanceof Error ? e.message : "Domain update failed"); }
             }}
           />
+
+          <section>
+            <SectionTitle icon={Building2} title="Brands & locations" description="Tenant-level brand and location hierarchy used by Dishbee, MealDeck and future landlord SaaS products." />
+            <div className="mt-3 grid gap-4 lg:grid-cols-2">
+              <Card><CardContent className="p-5"><h3 className="font-semibold">Brands</h3>
+                <div className="mt-3 space-y-2">
+                  {(detail.data?.brands ?? []).length ? (detail.data?.brands ?? []).map((brand) => (
+                    <div key={brand.id} className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
+                      <div><b>{brand.name}</b><p className="text-xs text-muted-foreground">{brand.slug} · {brand.product_key ?? "tenant"}</p></div>
+                      {brand.is_primary && <Badge variant="outline">Primary</Badge>}
+                    </div>
+                  )) : <p className="text-sm text-muted-foreground">No tenant brands configured.</p>}
+                </div>
+              </CardContent></Card>
+              <Card><CardContent className="p-5"><h3 className="font-semibold">Locations</h3>
+                <div className="mt-3 space-y-2">
+                  {(detail.data?.locations ?? []).length ? (detail.data?.locations ?? []).map((location) => (
+                    <div key={location.id} className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
+                      <div><b>{location.name}</b><p className="text-xs text-muted-foreground">{location.code} · {location.timezone}</p></div>
+                      <StatusBadge status={location.status} />
+                    </div>
+                  )) : <p className="text-sm text-muted-foreground">No locations configured.</p>}
+                </div>
+              </CardContent></Card>
+            </div>
+          </section>
 
           <section>
             <SectionTitle icon={Settings2} title="Provisioning queue" description="Every product/add-on/domain change becomes an auditable idempotent job for the relevant product adapter." />
