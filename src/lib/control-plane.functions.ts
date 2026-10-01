@@ -116,6 +116,29 @@ export const setTenantService = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const linkProductSchema = z.object({
+  tenantId: uuid,
+  productKey: z.string().min(2).max(80),
+  externalTenantId: z.string().trim().min(1).max(200),
+  baseUrl: z.string().trim().max(1000).optional(),
+  capabilities: z.array(z.string().min(1).max(100)).default([]),
+});
+
+export const linkTenantProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof linkProductSchema>) => linkProductSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc("platform_link_product" as never, {
+      _tenant: data.tenantId,
+      _product: data.productKey,
+      _external_tenant_id: data.externalTenantId,
+      _base_url: data.baseUrl || null,
+      _capabilities: data.capabilities,
+    } as never);
+    if (response.error) throw new Error(response.error.message);
+    return { connectionId: response.data as unknown as string };
+  });
+
 const brandingSchema = z.object({
   tenantId: uuid,
   brandName: z.string().trim().max(160).optional(),
