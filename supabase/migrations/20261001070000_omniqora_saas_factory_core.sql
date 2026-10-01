@@ -365,11 +365,21 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $
   OR public.has_tenant_role(target,auth.uid(),ARRAY['owner','admin']::public.app_role[])
 $$;
 
+CREATE OR REPLACE FUNCTION public.omniqora_has_service(target uuid,p_service_key text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $
+  SELECT EXISTS(
+    SELECT 1 FROM public.omniqora_tenant_services s
+    WHERE s.tenant_id=target AND s.service_key=p_service_key AND s.status='active'
+  )
+$;
+
 REVOKE ALL ON FUNCTION public.omniqora_is_platform_admin() FROM PUBLIC,anon;
 REVOKE ALL ON FUNCTION public.omniqora_is_org_member(uuid) FROM PUBLIC,anon;
 REVOKE ALL ON FUNCTION public.omniqora_can_manage_tenant(uuid) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.omniqora_has_service(uuid,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.omniqora_is_platform_admin(),
-  public.omniqora_is_org_member(uuid),public.omniqora_can_manage_tenant(uuid)
+  public.omniqora_is_org_member(uuid),public.omniqora_can_manage_tenant(uuid),
+  public.omniqora_has_service(uuid,text)
 TO authenticated,service_role;
 
 DO $$
@@ -570,6 +580,14 @@ BEGIN
     ) VALUES(p_tenant,p_service_key,'service.activate','completed',
       jsonb_build_object('serviceKey',p_service_key),now());
 
+    IF p_service_key='omniqora.rrci' THEN
+      INSERT INTO public.addon_entitlements(tenant_id,addon,status,valid_until,billing_reference,updated_at)
+      VALUES(p_tenant,'rrci','active',now()+interval '10 years','omniqora-control-plane',now())
+      ON CONFLICT(tenant_id,addon) DO UPDATE SET
+        status='active',valid_until=now()+interval '10 years',
+        billing_reference='omniqora-control-plane',updated_at=now();
+    END IF;
+
     PERFORM public.omniqora_emit_event(
       p_tenant,'service.activated',jsonb_build_object('serviceKey',p_service_key,'config',coalesce(p_config,'{}'::jsonb))
     );
@@ -595,6 +613,12 @@ BEGIN
       tenant_id,service_key,job_type,status,payload,completed_at
     ) VALUES(p_tenant,p_service_key,'service.deactivate','completed',
       jsonb_build_object('serviceKey',p_service_key),now());
+
+    IF p_service_key='omniqora.rrci' THEN
+      UPDATE public.addon_entitlements
+      SET status='cancelled',valid_until=now(),updated_at=now()
+      WHERE tenant_id=p_tenant AND addon='rrci';
+    END IF;
 
     PERFORM public.omniqora_emit_event(
       p_tenant,'service.deactivated',jsonb_build_object('serviceKey',p_service_key)
