@@ -489,16 +489,20 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
 
 
 for (const product of OMNIQORA_PORTFOLIO) {
+  if (!product.registerInFactory) continue;
   if (OMNIQORA_PRODUCTS.some((existing) => existing.key === product.productKey)) continue;
   OMNIQORA_PRODUCTS.push({
     key: product.productKey,
     name: product.name,
-    kind: "vertical_landlord",
+    kind: product.architectureRole === "product_variant" ? "product_variant" : "vertical_landlord",
+    parentProductKey: product.parentProductKey ?? null,
     industry: product.profile,
     defaultModules: product.modules,
     supportedRegions: product.regions,
     supportedLocales: product.locales,
-    status: product.connectorStatus.includes("implemented") ? "migration_candidate" : "incubating",
+    status: ["canonical_selected","adapter_ready","shadow_sync","dual_read","cutover_ready","migrated"].includes(product.migrationStage)
+      ? "migration_candidate"
+      : "incubating",
   });
 }
 
