@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { ReactNode, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3, ContactRound,
+  Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3, ContactRound, BriefcaseBusiness,
   Handshake, Settings, Search, Bell, Plus, MessageCircle, ShieldCheck,
   Menu, LogOut, Boxes, Cpu,
 } from "lucide-react";
@@ -35,6 +35,7 @@ const nav: NavItem[] = [
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
   { to: "/app/crm", labelKey: "", label: "CRM & Customer 360", icon: ContactRound },
+  { to: "/app/practice", labelKey: "", label: "Practice Operations", icon: BriefcaseBusiness },
   { to: "/app/workflows", labelKey: "app.nav.workflows", icon: GitBranch },
   { to: "/app/campaigns", labelKey: "app.nav.campaigns", icon: Megaphone },
   { to: "/app/analytics", labelKey: "app.nav.analytics", icon: BarChart3 },
