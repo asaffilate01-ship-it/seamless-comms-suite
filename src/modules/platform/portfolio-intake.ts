@@ -192,7 +192,7 @@ export function portfolioIntakeCount(){return portfolioIntakeRows().length;}
 
 
 export type KnownRepoAudit={
-  repositoryFullName:string;repoUrl:string;latestCommitSha:string;latestCommitAt:string;
+  repositoryFullName:string;repoUrl:string;latestCommitSha:string|null;latestCommitAt:string;
   fileCount:number;srcFileCount:number;routeCount:number;supabaseFileCount:number;
   migrationCount:number;functionCount:number;testCount:number;completenessScore:number;
   auditNotes:string;
@@ -216,6 +216,62 @@ export const KNOWN_FAMILY_REPO_AUDITS:Record<string,{canonical:string;rationale:
       {repositoryFullName:"asaffilate01-ship-it/webtemplates",repoUrl:"https://github.com/asaffilate01-ship-it/webtemplates",latestCommitSha:"b0264841c3142fe32bd7e6d7a686e6b461547a11",latestCommitAt:"2026-09-13T08:06:51Z",fileCount:216,srcFileCount:145,routeCount:18,supabaseFileCount:39,migrationCount:9,functionCount:27,testCount:9,completenessScore:94,auditNotes:"Canonical Orvilo source; strongest publishing, domains, subscription, template and backend surface."},
       {repositoryFullName:"asaffilate01-ship-it/launchpad-ai-87",repoUrl:"https://github.com/asaffilate01-ship-it/launchpad-ai-87",latestCommitSha:"2817bf6e6ddaf09c7e25c39c85b97a0df1376866",latestCommitAt:"2026-09-13T08:06:56Z",fileCount:115,srcFileCount:80,routeCount:7,supabaseFileCount:12,migrationCount:3,functionCount:6,testCount:5,completenessScore:55,auditNotes:"Merge source for brand-generation and launch-pack capabilities."},
       {repositoryFullName:"asaffilate01-ship-it/pixel-perfect-clone-ceddafea",repoUrl:"https://github.com/asaffilate01-ship-it/pixel-perfect-clone-ceddafea",latestCommitSha:"2d47a708ac13a4ad37a9961d687088a080c47abf",latestCommitAt:"2026-09-13T21:23:28Z",fileCount:127,srcFileCount:99,routeCount:10,supabaseFileCount:5,migrationCount:3,functionCount:0,testCount:4,completenessScore:48,auditNotes:"Newest Orvilo UI branch but less backend depth; merge UI improvements into canonical B."}
+    ]
+  },
+  haccora:{
+    canonical:"asaffilate01-ship-it/haccora-connect",
+    rationale:"Haccora UK is the stronger current core: 632 files, 94 migrations, 20 edge functions and 53 tests versus 299 files, 20 migrations, 14 functions and 12 tests in the Germany source. Keep Germany as a localisation/compliance merge source rather than a separate core.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/haccora-connect",repoUrl:"https://github.com/asaffilate01-ship-it/haccora-connect",latestCommitSha:null,latestCommitAt:"2026-09-28T21:32:50Z",fileCount:632,srcFileCount:215,routeCount:91,supabaseFileCount:135,migrationCount:94,functionCount:20,testCount:53,completenessScore:98,auditNotes:"Canonical Haccora core; deepest backend, tests and current UK production work."},
+      {repositoryFullName:"asaffilate01-ship-it/haccora",repoUrl:"https://github.com/asaffilate01-ship-it/haccora",latestCommitSha:null,latestCommitAt:"2026-09-15T09:24:24Z",fileCount:299,srcFileCount:146,routeCount:57,supabaseFileCount:43,migrationCount:20,functionCount:14,testCount:12,completenessScore:72,auditNotes:"Germany merge source for DE localisation, rules and any features absent from the UK core."}
+    ]
+  },
+  kindelo:{
+    canonical:"asaffilate01-ship-it/kinderstars-childcare-saas",
+    rationale:"The UK KinderStars/Kindelo source is the operational canonical branch because it is current through 30 September and includes release/preflight/go-live hardening. The Germany repo has more historical migrations, so it must be diffed and merged before the German variant is cut over rather than discarded.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/kinderstars-childcare-saas",repoUrl:"https://github.com/asaffilate01-ship-it/kinderstars-childcare-saas",latestCommitSha:null,latestCommitAt:"2026-09-30T22:43:33Z",fileCount:312,srcFileCount:202,routeCount:56,supabaseFileCount:63,migrationCount:33,functionCount:24,testCount:11,completenessScore:95,auditNotes:"Canonical Kindelo operational core; newest, production-hardened UK branch with release gates and native app work."},
+      {repositoryFullName:"asaffilate01-ship-it/kinderstars",repoUrl:"https://github.com/asaffilate01-ship-it/kinderstars",latestCommitSha:null,latestCommitAt:"2026-09-15T09:31:53Z",fileCount:391,srcFileCount:252,routeCount:63,supabaseFileCount:97,migrationCount:71,functionCount:24,testCount:8,completenessScore:90,auditNotes:"Important Germany merge source; contains deeper historical schema/migration surface that must be parity-checked before DE cutover."}
+    ]
+  },
+  eventplanr:{
+    canonical:"asaffilate01-ship-it/eventplanr2",
+    rationale:"EventPlanr UK has the deepest platform surface and stronger verification footprint: 927 files, 165 migrations, 47 functions and 26 tests. Germany remains a substantial localisation/feature merge source with 128 migrations.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/eventplanr2",repoUrl:"https://github.com/asaffilate01-ship-it/eventplanr2",latestCommitSha:null,latestCommitAt:"2026-09-15T09:00:18Z",fileCount:927,srcFileCount:476,routeCount:75,supabaseFileCount:233,migrationCount:165,functionCount:47,testCount:26,completenessScore:98,auditNotes:"Canonical EventPlanr core; strongest database, functions and tests."},
+      {repositoryFullName:"asaffilate01-ship-it/eventplanrger",repoUrl:"https://github.com/asaffilate01-ship-it/eventplanrger",latestCommitSha:null,latestCommitAt:"2026-09-15T09:31:50Z",fileCount:692,srcFileCount:459,routeCount:69,supabaseFileCount:160,migrationCount:128,functionCount:27,testCount:8,completenessScore:87,auditNotes:"Germany merge source; preserve DE supplier/event/localisation functionality."}
+    ]
+  },
+  xpertjobs:{
+    canonical:"asaffilate01-ship-it/semantic-hire-flow",
+    rationale:"StellenXpert is the newer and broader UI source (503 files, 397 src files, 60 route/page files) while retaining similar Supabase depth to XpertJobs. Use it as the shared recruitment core, then merge UK-specific XpertJobs/sponsor logic and expose country branding as variants.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/semantic-hire-flow",repoUrl:"https://github.com/asaffilate01-ship-it/semantic-hire-flow",latestCommitSha:null,latestCommitAt:"2026-09-29T20:28:16Z",fileCount:503,srcFileCount:397,routeCount:60,supabaseFileCount:71,migrationCount:47,functionCount:20,testCount:2,completenessScore:91,auditNotes:"Canonical recruitment core candidate; newest and broadest route/UI surface."},
+      {repositoryFullName:"asaffilate01-ship-it/xpertjobs",repoUrl:"https://github.com/asaffilate01-ship-it/xpertjobs",latestCommitSha:null,latestCommitAt:"2026-09-15T09:11:39Z",fileCount:457,srcFileCount:346,routeCount:27,supabaseFileCount:71,migrationCount:49,functionCount:20,testCount:4,completenessScore:84,auditNotes:"UK merge source; retain UK sponsor intelligence, rules and any flows not present in StellenXpert."}
+    ]
+  },
+  zivvo:{
+    canonical:"asaffilate01-ship-it/zivvo",
+    rationale:"The Germany Zivvo repo is currently the deeper automotive core: 729 files, 113 migrations, 46 functions and 19 tests versus 571 files, 104 migrations, 44 functions and 6 tests in AutoSouq. Merge UK-specific marketplace flows from AutoSouq into the shared Zivvo core rather than choosing the UK repo only by recency/branding.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/zivvo",repoUrl:"https://github.com/asaffilate01-ship-it/zivvo",latestCommitSha:null,latestCommitAt:"2026-09-27T06:43:29Z",fileCount:729,srcFileCount:356,routeCount:60,supabaseFileCount:168,migrationCount:113,functionCount:46,testCount:19,completenessScore:97,auditNotes:"Canonical Zivvo core candidate by backend/test completeness."},
+      {repositoryFullName:"asaffilate01-ship-it/autosouq",repoUrl:"https://github.com/asaffilate01-ship-it/autosouq",latestCommitSha:null,latestCommitAt:"2026-09-29T20:04:21Z",fileCount:571,srcFileCount:285,routeCount:52,supabaseFileCount:153,migrationCount:104,functionCount:44,testCount:6,completenessScore:90,auditNotes:"UK AutoSouq merge source; retain UK-specific stock, lead and market workflows."}
+    ]
+  },
+  lawquo:{
+    canonical:"asaffilate01-ship-it/dreamweaver-canvas-74",
+    rationale:"The newer VLAW/Lawquo source has 405 files, 105 route/page files, 52 migrations and 51 functions. The older law-remix source has 321 files and 51 functions but no Supabase migration history. Use dreamweaver-canvas-74 as the canonical code source and merge valid legacy Veris/Law features into the Lawquo product.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/dreamweaver-canvas-74",repoUrl:"https://github.com/asaffilate01-ship-it/dreamweaver-canvas-74",latestCommitSha:null,latestCommitAt:"2026-09-29T20:06:52Z",fileCount:405,srcFileCount:272,routeCount:105,supabaseFileCount:104,migrationCount:52,functionCount:51,testCount:2,completenessScore:94,auditNotes:"Canonical Lawquo/VLAW code source; spreadsheet mapping is valid for Lawquo, not Skillfinch."},
+      {repositoryFullName:"asaffilate01-ship-it/law-remix",repoUrl:"https://github.com/asaffilate01-ship-it/law-remix",latestCommitSha:null,latestCommitAt:"2026-09-15T10:11:26Z",fileCount:321,srcFileCount:242,routeCount:95,supabaseFileCount:52,migrationCount:0,functionCount:51,testCount:2,completenessScore:70,auditNotes:"Legacy Veris/Law source for feature comparison and selective merge."}
+    ]
+  },
+  skillfinch:{
+    canonical:"asaffilate01-ship-it/care-quest-learn",
+    rationale:"The spreadsheet incorrectly points Skillfinch at the VLAW/Lawquo repository. The installed care-quest-learn repo is the actual substantial Skillfinch source with 536 files, 103 migrations and 29 tests.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/care-quest-learn",repoUrl:"https://github.com/asaffilate01-ship-it/care-quest-learn",latestCommitSha:null,latestCommitAt:"2026-09-15T10:06:27Z",fileCount:536,srcFileCount:277,routeCount:30,supabaseFileCount:119,migrationCount:103,functionCount:14,testCount:29,completenessScore:97,auditNotes:"Correct canonical Skillfinch source; overrides the spreadsheet repo mapping."},
+      {repositoryFullName:"asaffilate01-ship-it/dreamweaver-canvas-74",repoUrl:"https://github.com/asaffilate01-ship-it/dreamweaver-canvas-74",latestCommitSha:null,latestCommitAt:"2026-09-29T20:06:52Z",fileCount:405,srcFileCount:272,routeCount:105,supabaseFileCount:104,migrationCount:52,functionCount:51,testCount:2,completenessScore:0,auditNotes:"Not a Skillfinch source; spreadsheet mapping error. This repository belongs to the Lawquo/VLAW family."}
     ]
   }
 };
