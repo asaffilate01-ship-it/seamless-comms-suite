@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
@@ -229,6 +230,11 @@ export default function ControlPlaneWorkspace() {
     <AppShell
       title="SaaS Factory control plane"
       subtitle="Canonical inventory → repo audit → decision → adapter → shadow sync → cutover"
+      actions={
+        <Button asChild>
+          <Link to="/app/tenant-factory">Tenants & add-ons</Link>
+        </Button>
+      }
     >
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
