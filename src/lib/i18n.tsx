@@ -36,7 +36,7 @@ function resolve(dict: unknown, key: string): string {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   // Default to German. Read persisted on mount (avoid SSR mismatch).
-  const [lang, setLangState] = useState<Lang>("de");
+  const [lang, setLangState] = useState<Lang>("en");
   const [transitioning, setTransitioning] = useState(false);
 
   useEffect(() => {

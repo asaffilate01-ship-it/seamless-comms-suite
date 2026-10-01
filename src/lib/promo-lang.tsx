@@ -24,7 +24,7 @@ type Ctx = {
 const PromoLangContext = createContext<Ctx | null>(null);
 
 export function PromoLangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<PromoLang>("de");
+  const [lang, setLangState] = useState<PromoLang>("en");
   const [transitioning, setTransitioning] = useState(false);
 
   useEffect(() => {
