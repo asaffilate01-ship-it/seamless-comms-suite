@@ -12,6 +12,15 @@ ON CONFLICT(module_key) DO UPDATE SET
   name=EXCLUDED.name,module_kind=EXCLUDED.module_kind,version=EXCLUDED.version,status=EXCLUDED.status,
   ui_mode=EXCLUDED.ui_mode,dependencies=EXCLUDED.dependencies,capabilities=EXCLUDED.capabilities,updated_at=now();
 
+UPDATE public.platform_modules
+SET dependencies=(
+  SELECT ARRAY(
+    SELECT DISTINCT value
+    FROM unnest(COALESCE(dependencies,'{}'::text[]) || ARRAY['connectors.core']) AS value
+  )
+),updated_at=now()
+WHERE module_key='connect.core';
+
 INSERT INTO public.platform_products(product_key,name,kind,industry,status,parent_product_key) VALUES
  ('mealdeck','MealDeck','vertical_landlord','multi_brand_food_marketplace','migration_candidate',NULL),
  ('courier-connect-hub','Courier Connect Hub','vertical_landlord','courier_orchestration','migration_candidate',NULL),
