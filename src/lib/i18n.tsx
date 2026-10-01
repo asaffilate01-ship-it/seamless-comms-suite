@@ -137,16 +137,16 @@ export function LanguageToggle({
     ].join(" ");
   return (
     <div className={wrap} role="group" aria-label="Language">
-{lang === "de" ? <>      <button type="button" onClick={() => setLang("de")} className={btn(lang === "de")}>
+{lang === "de" ? <>      <button type="button" onClick={() => setLang("de")} className={btn(true)}>
         DE
       </button>
-      <button type="button" onClick={() => setLang("en")} className={btn(lang === "en")}>
+      <button type="button" onClick={() => setLang("en")} className={btn(false)}>
         EN
       </button>
-</> : <>      <button type="button" onClick={() => setLang("en")} className={btn(lang === "en")}>
+</> : <>      <button type="button" onClick={() => setLang("en")} className={btn(true)}>
         EN
       </button>
-      <button type="button" onClick={() => setLang("de")} className={btn(lang === "de")}>
+      <button type="button" onClick={() => setLang("de")} className={btn(false)}>
         DE
       </button>
 </>}
