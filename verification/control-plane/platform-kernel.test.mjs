@@ -108,10 +108,10 @@ const route = await asUser(admin, () => db.query(
 ));
 assert.deepEqual(route.rows[0], { routing_mode: "external", data_region: "eu", connection_ref: "vault://dishbee/luton-db" });
 
-await assert.rejects(
-  () => asUser(stranger, () => db.query("SELECT * FROM public.provider_bindings WHERE tenant_id=$1", [luton.tenantId])),
-  (error) => error.code === "42501" || error.code === "42501",
+const hiddenBindings = await asUser(stranger, () =>
+  db.query("SELECT * FROM public.provider_bindings WHERE tenant_id=$1", [luton.tenantId])
 );
+assert.equal(hiddenBindings.rows.length, 0, "RLS must hide another tenant's provider bindings");
 
 await db.close();
 console.log("platform kernel v2 migration, scope and readiness verified");
