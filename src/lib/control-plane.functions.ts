@@ -15,8 +15,8 @@ export type JsonValue =
 
 export type ControlPlaneCatalogue = {
   isPlatformAdmin: boolean;
-  products: Array<{ product_key: string; name: string; description?: string | null; category: string; deployment_mode: string; status: string; product_role?: string; parent_product_key?: string | null }>;
-  services: Array<{ service_key: string; name: string; description?: string | null; family: string; owner_product_key?: string | null; provisioning_mode: string; status: string }>;
+  products: Array<{ product_key: string; name: string; description?: string | null; category: string; deployment_mode: string; status: string; product_role?: string; parent_product_key?: string | null; implementation_status?: string }>;
+  services: Array<{ service_key: string; name: string; description?: string | null; family: string; owner_product_key?: string | null; provisioning_mode: string; status: string; implementation_status?: string }>;
   dependencies: Array<{ service_key: string; depends_on_service_key: string; required: boolean }>;
   blueprints: Array<{ blueprint_key: string; name: string; description?: string | null; country_code?: string | null; category: string }>;
 };
