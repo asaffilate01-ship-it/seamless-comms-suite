@@ -1,0 +1,148 @@
+import intakeCsv from "../../../docs/portfolio/SAAS-intake.csv?raw";
+
+export type PortfolioIntakeRow={
+  row:number;
+  name:string;
+  repo:string|null;
+  site:string|null;
+  hint:string|null;
+  sourceKind:"repository"|"site_only"|"mixed"|"unknown";
+  familyKey:string;
+  targetRole:"platform"|"shared_engine"|"shared_addon"|"landlord"|"product_variant"|"tenant"|"brand_tenant"|"marketplace_tenant"|"tenant_review"|"merge_source"|"external_connector"|"review";
+  targetProductKey:string|null;
+  targetParentKey:string|null;
+  migrationAction:string;
+  migrationWave:number;
+  needsRepo:boolean;
+  buildInOmniqora:boolean;
+  confidence:"provisional"|"medium"|"high"|"verified";
+};
+
+function parseCsv(text:string){
+  const rows:string[][]=[];let row:string[]=[];let field="";let quoted=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i]!;
+    if(ch==='"'){
+      if(quoted&&text[i+1]==='"'){field+='"';i++;}else quoted=!quoted;
+    }else if(ch===","&&!quoted){row.push(field);field="";}
+    else if((ch==="\n"||ch==="\r")&&!quoted){
+      if(ch==="\r"&&text[i+1]==="\n")i++;
+      row.push(field);field="";
+      if(row.some((value)=>value.trim()!==""))rows.push(row);
+      row=[];
+    }else field+=ch;
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function clean(value:string|undefined){const v=(value??"").trim();return v||null;}
+function slug(value:string){
+  return value.toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80)||"asset";
+}
+
+const FAMILIES:Record<string,string[]>={
+  education:["UNIPATHWAY","EDUCLOUD","TRAINDIREKT","VIRTUAL LAB","STEMCOACH","ILMVERO","SKILLFINCH"],
+  orvilo:["ORVILO A","ORVILO B","ORVILO X"],
+  haccora:["HACCORA UK","HACCORA GERMANY","PREMISORA"],
+  kindelo:["KINDERSTARS UK","KINDERSTARS GERMANY"],
+  eventplanr:["EVENTPLANR UK","EVENTPLANR GERMANY"],
+  xpertjobs:["XPERTJOBS","STELLENXPERT"],
+  zivvo:["ZIVVO UK","ZIVVO GERMANY","AUTOHASHI"],
+  merqano:["MERQANO","DULCIS","MEYZAAR","ZARVANE","KALETHON","ALSTERO","KALETHON TEAMS","PROMO STUDIO"],
+  dishbee:["DISHBEE","CAFE1 ST ALBANS","CAFE1 LUTON","MEALDECK","MENU MAGIC","EPOS AI"],
+  fleetora:["FLEETORA","QATNOV","COURIER CONNECT","MOTORESQ","BIDRIVE","VIAZENO"],
+  lawquo:["LAWQUO","VERIS LAW"],
+  accounting:["ACCOUNTANCY","TAXCENDA","TAXNUVIA","TAXLOUNGE","ACCOUNTS AI","FORMATION GENIE","BERATERMARKT"],
+  sparesgrid:["SPARESGRID","SPARESGRID 2"],
+  omniqora:["OMNIQORA","OMNIQORA ADD ON","LEADSCOUT","DOKUVERA","ZORYN","ZORYN REWARDS","VOXENTRI","CAPACITOR"],
+};
+function familyFor(name:string){
+  for(const [family,names] of Object.entries(FAMILIES))if(names.includes(name))return family;
+  return slug(name);
+}
+
+const EXACT:Record<string,Partial<PortfolioIntakeRow>>={
+  "OMNIQORA":{targetRole:"platform",targetProductKey:"omniqora",familyKey:"omniqora",migrationAction:"retain_core",migrationWave:0,confidence:"verified"},
+  "DISHBEE":{targetRole:"landlord",targetProductKey:"dishbee",familyKey:"dishbee",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
+  "CAFE1 ST ALBANS":{targetRole:"tenant",targetProductKey:"dishbee",targetParentKey:"dishbee",familyKey:"dishbee",migrationAction:"tenantise",migrationWave:1,confidence:"high"},
+  "CAFE1 LUTON":{targetRole:"tenant",targetProductKey:"dishbee",targetParentKey:"dishbee",familyKey:"dishbee",migrationAction:"tenantise",migrationWave:1,confidence:"high"},
+  "MEALDECK":{targetRole:"tenant",targetProductKey:"dishbee",targetParentKey:"dishbee",familyKey:"dishbee",migrationAction:"tenant_operator_layer",migrationWave:1,confidence:"medium"},
+  "MERQANO":{targetRole:"landlord",targetProductKey:"merqano",familyKey:"merqano",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
+  "DULCIS":{targetRole:"brand_tenant",targetProductKey:"merqano",targetParentKey:"merqano",familyKey:"merqano",migrationAction:"tenantise",migrationWave:2,confidence:"high"},
+  "MEYZAAR":{targetRole:"brand_tenant",targetProductKey:"merqano",targetParentKey:"merqano",familyKey:"merqano",migrationAction:"tenantise",migrationWave:2,confidence:"high"},
+  "ZARVANE":{targetRole:"brand_tenant",targetProductKey:"merqano",targetParentKey:"merqano",familyKey:"merqano",migrationAction:"tenantise",migrationWave:2,confidence:"high"},
+  "KALETHON":{targetRole:"brand_tenant",targetProductKey:"merqano",targetParentKey:"merqano",familyKey:"merqano",migrationAction:"tenantise",migrationWave:2,confidence:"high"},
+  "ALSTERO":{targetRole:"brand_tenant",targetProductKey:"merqano",targetParentKey:"merqano",familyKey:"merqano",migrationAction:"tenantise",migrationWave:2,confidence:"medium"},
+  "KALETHON TEAMS":{targetRole:"brand_tenant",targetProductKey:"merqano",targetParentKey:"merqano",familyKey:"merqano",migrationAction:"tenantise",migrationWave:3,confidence:"medium"},
+  "PROMO STUDIO":{targetRole:"shared_addon",targetProductKey:"voxentri",targetParentKey:"voxentri",familyKey:"merqano",migrationAction:"extract_to_omniqora",migrationWave:3,buildInOmniqora:true,confidence:"medium"},
+  "KINDERSTARS UK":{targetRole:"product_variant",targetProductKey:"kindelo-gb",targetParentKey:"kindelo",familyKey:"kindelo",migrationAction:"variantise",migrationWave:1,confidence:"high"},
+  "KINDERSTARS GERMANY":{targetRole:"product_variant",targetProductKey:"kindelo-de",targetParentKey:"kindelo",familyKey:"kindelo",migrationAction:"variantise",migrationWave:1,confidence:"high"},
+  "HACCORA UK":{targetRole:"product_variant",targetProductKey:"haccora-gb",targetParentKey:"haccora",familyKey:"haccora",migrationAction:"variantise",migrationWave:2,confidence:"high"},
+  "HACCORA GERMANY":{targetRole:"product_variant",targetProductKey:"haccora-de",targetParentKey:"haccora",familyKey:"haccora",migrationAction:"variantise",migrationWave:2,confidence:"high"},
+  "EVENTPLANR UK":{targetRole:"product_variant",targetProductKey:"eventplanr-gb",targetParentKey:"eventplanr",familyKey:"eventplanr",migrationAction:"variantise",migrationWave:2,confidence:"medium"},
+  "EVENTPLANR GERMANY":{targetRole:"product_variant",targetProductKey:"eventplanr-de",targetParentKey:"eventplanr",familyKey:"eventplanr",migrationAction:"variantise",migrationWave:2,confidence:"medium"},
+  "XPERTJOBS":{targetRole:"landlord",targetProductKey:"xpertjobs",familyKey:"xpertjobs",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
+  "STELLENXPERT":{targetRole:"product_variant",targetProductKey:"xpertjobs-de",targetParentKey:"xpertjobs",familyKey:"xpertjobs",migrationAction:"variantise",migrationWave:2,confidence:"high"},
+  "ZIVVO UK":{targetRole:"product_variant",targetProductKey:"zivvo-gb",targetParentKey:"zivvo",familyKey:"zivvo",migrationAction:"variantise",migrationWave:2,confidence:"medium"},
+  "ZIVVO GERMANY":{targetRole:"product_variant",targetProductKey:"zivvo-de",targetParentKey:"zivvo",familyKey:"zivvo",migrationAction:"variantise",migrationWave:2,confidence:"medium"},
+  "UNIPATHWAY":{targetRole:"landlord",targetProductKey:"unipathway",familyKey:"education",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
+  "EDUCLOUD":{targetRole:"review",targetProductKey:"educloud",familyKey:"education",migrationAction:"compare_with_unipathway",migrationWave:2,confidence:"medium"},
+  "TRAINDIREKT":{targetRole:"product_variant",targetProductKey:"traindirekt",familyKey:"education",migrationAction:"education_family_migration",migrationWave:3,confidence:"medium"},
+  "VIRTUAL LAB":{targetRole:"shared_addon",targetProductKey:"education-labs",familyKey:"education",migrationAction:"extract_to_omniqora",migrationWave:2,buildInOmniqora:true,confidence:"high"},
+  "ORVILO B":{targetRole:"landlord",targetProductKey:"orvilo",familyKey:"orvilo",migrationAction:"canonical_merge_target",migrationWave:2,confidence:"high"},
+  "ORVILO A":{targetRole:"merge_source",targetProductKey:"orvilo",targetParentKey:"orvilo",familyKey:"orvilo",migrationAction:"merge_into_canonical",migrationWave:2,confidence:"high"},
+  "ORVILO X":{targetRole:"merge_source",targetProductKey:"orvilo",targetParentKey:"orvilo",familyKey:"orvilo",migrationAction:"merge_into_canonical",migrationWave:2,confidence:"high"},
+  "LAWQUO":{targetRole:"landlord",targetProductKey:"lawquo",familyKey:"lawquo",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
+  "VERIS LAW":{targetRole:"merge_source",targetProductKey:"lawquo",targetParentKey:"lawquo",familyKey:"lawquo",migrationAction:"merge_into_canonical",migrationWave:3,confidence:"high"},
+  "ACCOUNTANCY":{targetRole:"landlord",targetProductKey:"iq-practice-cloud",familyKey:"accounting",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
+  "FORMATION GENIE":{targetRole:"landlord",targetProductKey:"formationgenie",familyKey:"accounting",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
+  "TAXCENDA":{targetRole:"landlord",targetProductKey:"taxcenda",familyKey:"accounting",migrationAction:"migrate_landlord",migrationWave:2,confidence:"medium"},
+  "TAXLOUNGE":{targetRole:"tenant",targetProductKey:"iq-practice-cloud",targetParentKey:"iq-practice-cloud",familyKey:"accounting",migrationAction:"tenantise",migrationWave:2,confidence:"medium"},
+  "ACCOUNTS AI":{targetRole:"shared_addon",targetProductKey:"accounting_ai",familyKey:"accounting",migrationAction:"extract_to_omniqora",migrationWave:0,buildInOmniqora:true,confidence:"high"},
+  "COURIER CONNECT":{targetRole:"landlord",targetProductKey:"courier-connect-hub",familyKey:"fleetora",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
+  "FLEETORA":{targetRole:"landlord",targetProductKey:"fleetsora",familyKey:"fleetora",migrationAction:"migrate_landlord",migrationWave:2,confidence:"medium"},
+  "QATNOV":{targetRole:"tenant",targetProductKey:"fleetsora",targetParentKey:"fleetsora",familyKey:"fleetora",migrationAction:"tenantise",migrationWave:3,confidence:"high"},
+  "MOTORESQ":{targetRole:"landlord",targetProductKey:"all-road-aid",familyKey:"fleetora",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
+  "SPARESGRID":{targetRole:"landlord",targetProductKey:"sparesgrid",familyKey:"sparesgrid",migrationAction:"decide_repo_or_build",migrationWave:1,buildInOmniqora:true,confidence:"medium"},
+  "SPARESGRID 2":{targetRole:"merge_source",targetProductKey:"sparesgrid",targetParentKey:"sparesgrid",familyKey:"sparesgrid",migrationAction:"merge_site_into_sparesgrid",migrationWave:1,buildInOmniqora:true,confidence:"medium"},
+  "REGULOS":{targetRole:"landlord",targetProductKey:"regulos",familyKey:"regulos",migrationAction:"decide_repo_or_build",migrationWave:2,buildInOmniqora:true,confidence:"medium"},
+  "AFFIVON":{targetRole:"landlord",targetProductKey:"affivon",familyKey:"affivon",migrationAction:"decide_repo_or_build",migrationWave:2,buildInOmniqora:true,confidence:"medium"},
+  "TENDRYVA":{targetRole:"landlord",targetProductKey:"tendryva",familyKey:"tendryva",migrationAction:"decide_repo_or_build",migrationWave:2,buildInOmniqora:true,confidence:"medium"},
+  "VEYUMO":{targetRole:"landlord",targetProductKey:"veyumo",familyKey:"veyumo",migrationAction:"decide_repo_or_build",migrationWave:2,buildInOmniqora:true,confidence:"medium"},
+  "FASTREMIT":{targetRole:"landlord",targetProductKey:"fastremit",familyKey:"fastremit",migrationAction:"migrate_landlord",migrationWave:1,confidence:"high"},
+  "AHLNIKKAH":{targetRole:"landlord",targetProductKey:"ahl-nikkah",familyKey:"ahl-nikkah",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
+  "LESSONAHEAD":{targetRole:"landlord",targetProductKey:"lessonahead",familyKey:"lessonahead",migrationAction:"migrate_landlord",migrationWave:2,confidence:"high"},
+  "VOXENTRI":{targetRole:"shared_engine",targetProductKey:"voxentri",familyKey:"omniqora",migrationAction:"integrate_shared_engine",migrationWave:0,confidence:"high"},
+  "LEADSCOUT":{targetRole:"shared_addon",targetProductKey:"omniqora-sales",targetParentKey:"omniqora",familyKey:"omniqora",migrationAction:"extract_to_omniqora",migrationWave:0,confidence:"high"},
+  "DOKUVERA":{targetRole:"shared_engine",targetProductKey:"omniqora-documents",targetParentKey:"omniqora",familyKey:"omniqora",migrationAction:"integrate_shared_engine",migrationWave:1,confidence:"medium"},
+  "EPOS AI":{targetRole:"shared_addon",targetProductKey:"hospitality-intelligence",targetParentKey:"omniqora",familyKey:"dishbee",migrationAction:"extract_to_omniqora",migrationWave:0,buildInOmniqora:true,confidence:"high"},
+};
+
+export function portfolioIntakeRows():PortfolioIntakeRow[]{
+  const parsed=parseCsv(intakeCsv);
+  const body=parsed.slice(1);
+  return body.map((cols,index)=>{
+    const name=(cols[0]??"").trim();
+    const repo=clean(cols[1]);
+    const site=clean(cols[2]);
+    const hint=clean(cols[3]);
+    const sourceKind:PortfolioIntakeRow["sourceKind"]=repo?.includes("github.com/")
+      ?"repository"
+      :repo||site
+        ?"site_only"
+        :"unknown";
+    const base:PortfolioIntakeRow={
+      row:index+1,name,repo,site,hint,sourceKind,
+      familyKey:familyFor(name),targetRole:"review",targetProductKey:slug(name),
+      targetParentKey:null,migrationAction:sourceKind==="site_only"?"decide_repo_or_build":"repo_audit",
+      migrationWave:sourceKind==="site_only"?3:4,needsRepo:false,
+      buildInOmniqora:false,confidence:"provisional"
+    };
+    const exact=EXACT[name]??EXACT[name.trim()];
+    const merged={...base,...exact};
+    if(sourceKind==="site_only"&&merged.targetRole==="review")merged.migrationAction="decide_repo_or_build";
+    return merged;
+  });
+}
+
+export function portfolioIntakeCount(){return portfolioIntakeRows().length;}
