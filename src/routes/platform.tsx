@@ -99,13 +99,13 @@ function Landing() {
                   <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-[10px]">{t("home.chatCase")}</Badge>
                 </div>
                 <CardContent className="space-y-3 bg-[oklch(0.98_0.01_265)] p-4">
-                  <Bubble side="in">Guten Tag, ich hätte gern einen Termin für eine Hautanalyse.</Bubble>
-                  <Bubble side="ai">Hallo Anna 👋 Gern. Behandlungsart und Wunschzeit?</Bubble>
-                  <Bubble side="in">Hautanalyse + Reinigung. Do. Nachmittag?</Bubble>
-                  <Bubble side="out">Perfekt — 15:30 oder 16:15 wäre frei. ✅</Bubble>
+                  <Bubble side="in">{lang === "de" ? "Guten Tag, ich hätte gern einen Termin für eine Hautanalyse." : "Hello, I'd like to book a skin analysis appointment."}</Bubble>
+                  <Bubble side="ai">{lang === "de" ? "Hallo Anna 👋 Gern. Behandlungsart und Wunschzeit?" : "Hi Anna 👋 Of course. Which treatment and what time suits you?"}</Bubble>
+                  <Bubble side="in">{lang === "de" ? "Hautanalyse + Reinigung. Do. Nachmittag?" : "Skin analysis + cleansing. Thursday afternoon?"}</Bubble>
+                  <Bubble side="out">{lang === "de" ? "Perfekt — 15:30 oder 16:15 wäre frei. ✅" : "Perfect — 3:30 pm or 4:15 pm is free. ✅"}</Bubble>
                   <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-xs text-primary-foreground/80">
                     <span className="font-medium text-primary">System:</span>{" "}
-                    <span className="text-foreground/70">Termin gebucht · Kalender aktualisiert · SMS-Erinnerung 24h vorher.</span>
+                    <span className="text-foreground/70">{lang === "de" ? "Termin gebucht · Kalender aktualisiert · SMS-Erinnerung 24h vorher." : "Appointment booked · calendar updated · SMS reminder 24h before."}</span>
                   </div>
                 </CardContent>
               </Card>
