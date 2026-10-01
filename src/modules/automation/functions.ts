@@ -68,3 +68,64 @@ export const publishAutomationWorkflow=createServerFn({method:"POST"}).middlewar
   .eq("id",data.workflowId).eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId);
  if(error)throw new Error(error.message);return{ok:true};
 });
+
+
+export const listAutomationWorkflows=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>)=>scope.parse(input))
+.handler(async({context,data})=>{
+  await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"automation.core"});
+  const db=context.supabase as any;
+  const{data:workflows,error}=await db.from("automation_workflows")
+    .select("*").eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .order("updated_at",{ascending:false}).limit(500);
+  if(error)throw new Error(error.message);
+  const ids=(workflows??[]).map((row:any)=>row.id);
+  const versions=ids.length
+    ?await db.from("automation_workflow_versions").select("workflow_id,version,nodes,edges,created_at,created_by")
+      .eq("tenant_id",data.tenantId).in("workflow_id",ids).order("version",{ascending:false})
+    :{data:[],error:null};
+  if(versions.error)throw new Error(versions.error.message);
+  const runs=ids.length
+    ?await db.from("automation_runs").select("id,workflow_id,workflow_version,event_id,status,current_node_id,started_at,completed_at,created_at,updated_at")
+      .eq("tenant_id",data.tenantId).in("workflow_id",ids).order("created_at",{ascending:false}).limit(1000)
+    :{data:[],error:null};
+  if(runs.error)throw new Error(runs.error.message);
+  return(workflows??[]).map((workflow:any)=>{
+    const allVersions=(versions.data??[]).filter((v:any)=>v.workflow_id===workflow.id);
+    const activeVersion=allVersions.find((v:any)=>v.version===workflow.active_version)??allVersions[0]??null;
+    const workflowRuns=(runs.data??[]).filter((r:any)=>r.workflow_id===workflow.id);
+    return{
+      ...workflow,
+      versions:allVersions,
+      activeVersion,
+      runs:workflowRuns,
+      runCounts:{
+        total:workflowRuns.length,
+        active:workflowRuns.filter((r:any)=>["queued","running","waiting","approval"].includes(r.status)).length,
+        completed:workflowRuns.filter((r:any)=>r.status==="completed").length,
+        failed:workflowRuns.filter((r:any)=>r.status==="failed").length
+      }
+    };
+  });
+});
+
+export const setAutomationWorkflowStatus=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>&{workflowId:string;status:"active"|"paused"|"archived"})=>scope.extend({
+  workflowId:z.string().uuid(),status:z.enum(["active","paused","archived"])
+}).parse(input))
+.handler(async({context,data})=>{
+  const access=await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"automation.core"});
+  requireAdminTenantRole(access.role);
+  const db=context.supabase as any;
+  const{data:workflow}=await db.from("automation_workflows").select("id,active_version")
+    .eq("id",data.workflowId).eq("tenant_id",data.tenantId)
+    .eq("tenant_product_id",data.tenantProductId).maybeSingle();
+  if(!workflow)throw new Error("Workflow not found");
+  if(data.status==="active"&&!workflow.active_version)throw new Error("Publish a workflow version before activating it");
+  const{data:row,error}=await db.from("automation_workflows").update({status:data.status})
+    .eq("id",data.workflowId).select("*").single();
+  if(error||!row)throw new Error(error?.message??"Workflow status could not be updated");
+  return row;
+});
