@@ -20,7 +20,6 @@ import { WebAppMockup, MobileAppMockup } from "@/components/promo/mockups";
 import { PricingSection } from "@/components/promo/pricing-section";
 import { Button } from "@/components/ui/button";
 import { usePromo } from "@/lib/promo-lang";
-import { unlockSite } from "@/lib/site-gate";
 import type { PromoLang } from "@/lib/promo-content";
 import { capabilitiesContent } from "@/lib/capabilities-content";
 
