@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3,
   Handshake, Settings, Search, Bell, MessageCircle, ShieldCheck,
-  Menu, LogOut, Factory, Store, TrendingUp, Truck, Rocket, PackageOpen, Building2, ContactRound, Cable, ArchiveRestore,
+  Menu, LogOut, Factory, Store, TrendingUp, Truck, Rocket, PackageOpen, Building2, ContactRound, Cable, ArchiveRestore, Radio,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ const nav: NavItem[] = [
   { to: "/app/tenant-launch", labelKey: "", label: "Tenant Launch", icon: Rocket },
   { to: "/app/tenant-manager", labelKey: "", label: "Tenant Manager", icon: Building2 },
   { to: "/app/connectors", labelKey: "", label: "Connector Hub", icon: Cable },
+  { to: "/app/comms", labelKey: "", label: "Comms Hub", icon: Radio },
   { to: "/app/marketplace", labelKey: "", label: "Marketplace", icon: Store },
   { to: "/app/vendor-portal", labelKey: "", label: "Vendor Portal", icon: PackageOpen },
   { to: "/app/crm", labelKey: "", label: "CRM & Customer 360", icon: ContactRound },
