@@ -557,6 +557,38 @@ END; $$;
 REVOKE ALL ON FUNCTION public.platform_upsert_domain(uuid,text,text,boolean) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.platform_upsert_domain(uuid,text,text,boolean) TO authenticated,service_role;
 
+CREATE OR REPLACE FUNCTION public.is_organisation_member(_organisation uuid,_user uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+  SELECT EXISTS(SELECT 1 FROM public.organisation_members WHERE organisation_id=_organisation AND user_id=_user);
+$;
+REVOKE ALL ON FUNCTION public.is_organisation_member(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.is_organisation_member(uuid,uuid) TO authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.platform_link_product(
+  _tenant uuid,
+  _product text,
+  _external_tenant_id text,
+  _base_url text DEFAULT NULL,
+  _capabilities text[] DEFAULT '{}'
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+DECLARE result uuid;
+BEGIN
+  IF NOT public.is_platform_admin(auth.uid()) THEN RAISE EXCEPTION 'Platform administrator required'; END IF;
+  IF length(COALESCE(_external_tenant_id,''))<1 THEN RAISE EXCEPTION 'External tenant ID required'; END IF;
+  INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,base_url,status,capabilities)
+  VALUES(_tenant,_product,_external_tenant_id,_base_url,'configured',COALESCE(_capabilities,'{}'))
+  ON CONFLICT (tenant_id,product_key,external_tenant_id)
+  DO UPDATE SET base_url=EXCLUDED.base_url,capabilities=EXCLUDED.capabilities,status='configured',updated_at=now()
+  RETURNING id INTO result;
+  INSERT INTO public.tenant_products(tenant_id,product_key,status,external_tenant_id,base_url)
+  VALUES(_tenant,_product,'provisioning',_external_tenant_id,_base_url)
+  ON CONFLICT (tenant_id,product_key) DO UPDATE SET external_tenant_id=EXCLUDED.external_tenant_id,base_url=EXCLUDED.base_url,status=CASE WHEN public.tenant_products.status='active' THEN 'active' ELSE 'provisioning' END,updated_at=now();
+  PERFORM public.queue_provisioning(_tenant,'integration',_product||':'||_external_tenant_id,'verify',jsonb_build_object('productKey',_product,'externalTenantId',_external_tenant_id,'baseUrl',_base_url,'capabilities',_capabilities));
+  RETURN result;
+END; $;
+REVOKE ALL ON FUNCTION public.platform_link_product(uuid,text,text,text,text[]) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.platform_link_product(uuid,text,text,text,text[]) TO authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.get_control_plane_catalogue()
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
 SELECT jsonb_build_object(
@@ -641,9 +673,9 @@ CREATE POLICY "catalogue blueprint products read" ON public.blueprint_products F
 CREATE POLICY "catalogue blueprint services read" ON public.blueprint_services FOR SELECT TO authenticated USING (true);
 
 CREATE POLICY "organisation members read" ON public.organisations FOR SELECT TO authenticated
- USING(public.is_platform_admin(auth.uid()) OR EXISTS(SELECT 1 FROM public.organisation_members m WHERE m.organisation_id=id AND m.user_id=auth.uid()));
+ USING(public.is_platform_admin(auth.uid()) OR public.is_organisation_member(id,auth.uid()));
 CREATE POLICY "organisation membership read" ON public.organisation_members FOR SELECT TO authenticated
- USING(public.is_platform_admin(auth.uid()) OR user_id=auth.uid() OR EXISTS(SELECT 1 FROM public.organisation_members m WHERE m.organisation_id=organisation_id AND m.user_id=auth.uid() AND m.role IN ('owner','admin')));
+ USING(public.is_platform_admin(auth.uid()) OR public.is_organisation_member(organisation_id,auth.uid()));
 
 CREATE POLICY "tenant products read" ON public.tenant_products FOR SELECT TO authenticated USING(public.is_platform_admin(auth.uid()) OR public.is_tenant_member(tenant_id,auth.uid()));
 CREATE POLICY "tenant services read" ON public.tenant_services FOR SELECT TO authenticated USING(public.is_platform_admin(auth.uid()) OR public.is_tenant_member(tenant_id,auth.uid()));
