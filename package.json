@@ -15,7 +15,8 @@
     "test:procurement": "node verification/procurement/readiness.test.mjs && node verification/procurement/database.test.mjs",
     "test:services": "python3 verification/run-services.py",
     "test:bridges": "node --test verification/product-bridges.test.mjs",
-    "test:mobile": "node --test supabase/functions/_shared/veyumo/protocol.test.mjs scripts/veyumo-database.test.mjs scripts/veyumo-gigs.test.mjs"
+    "test:mobile": "node --test supabase/functions/_shared/veyumo/protocol.test.mjs scripts/veyumo-database.test.mjs scripts/veyumo-gigs.test.mjs",
+    "test:control-plane": "node verification/control-plane/portfolio-seed.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
