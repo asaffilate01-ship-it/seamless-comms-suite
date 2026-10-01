@@ -5,6 +5,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const uuid = z.string().uuid();
 const tenantInput = z.object({ tenantId: uuid });
 
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 export type ControlPlaneCatalogue = {
   isPlatformAdmin: boolean;
   products: Array<{ product_key: string; name: string; description?: string | null; category: string; deployment_mode: string; status: string }>;
@@ -30,9 +38,9 @@ export type PlatformTenantRow = {
 export type TenantControlPlane = {
   tenant: { id: string; name: string; slug: string; organisation_id: string; country_code: string; currency: string; timezone: string; status: string };
   organisation: { id: string; name: string; slug: string; country_code: string; billing_currency: string } | null;
-  products: Array<{ product_key: string; status: string; external_tenant_id?: string | null; base_url?: string | null; plan_key?: string | null; config?: Record<string, unknown> }>;
-  services: Array<{ service_key: string; status: string; source: string; valid_until?: string | null; config?: Record<string, unknown> }>;
-  branding: Record<string, unknown> | null;
+  products: Array<{ product_key: string; status: string; external_tenant_id?: string | null; base_url?: string | null; plan_key?: string | null; config?: JsonValue }>;
+  services: Array<{ service_key: string; status: string; source: string; valid_until?: string | null; config?: JsonValue }>;
+  branding: JsonValue | null;
   domains: Array<{ id: string; product_key?: string | null; domain: string; verification_status: string; ssl_status: string; is_primary: boolean }>;
   connections: Array<{ id: string; product_key: string; external_tenant_id: string; base_url?: string | null; status: string; capabilities?: string[]; credential_suffix?: string | null; credential_expires_at?: string | null }>;
   provisioning: Array<{ id: string; target_kind: string; target_key: string; action: string; status: string; attempts: number; last_error?: string | null; created_at: string }>;
