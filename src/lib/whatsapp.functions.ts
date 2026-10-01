@@ -1,4 +1,3 @@
-// @ts-nocheck -- generated database types lag behind this module's newer columns; runtime queries are validated server-side.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -13,7 +12,8 @@ export const listChannels = createServerFn({ method: "POST" })
   .inputValidator((d: { tenantId: string }) => z.object({ tenantId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: rows, error } = await supabase
+    const db = supabase as any;
+    const { data: rows, error } = await db
       .from("whatsapp_channels")
       .select(channelSelect)
       .eq("tenant_id", data.tenantId)
@@ -30,7 +30,8 @@ export const getMyChannel = createServerFn({ method: "POST" })
   .inputValidator((d: { tenantId: string }) => z.object({ tenantId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: rows, error } = await supabase
+    const db = supabase as any;
+    const { data: rows, error } = await db
       .from("whatsapp_channels")
       .select(channelSelect)
       .eq("tenant_id", data.tenantId)
@@ -66,6 +67,7 @@ export const upsertChannel = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof upsertSchema>) => upsertSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const db = supabase as any;
 
     if (data.isPrimary) {
       const { error: clearErr } = await supabase
@@ -76,7 +78,7 @@ export const upsertChannel = createServerFn({ method: "POST" })
       if (clearErr) throw new Error(clearErr.message);
     }
 
-    const { error } = await supabase.from("whatsapp_channels").upsert(
+    const { error } = await db.from("whatsapp_channels").upsert(
       {
         tenant_id: data.tenantId,
         label: data.label,
@@ -102,7 +104,7 @@ export const upsertChannel = createServerFn({ method: "POST" })
     );
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_log").insert({
+    await db.from("audit_log").insert({
       tenant_id: data.tenantId,
       actor: userId,
       action: "channel.upsert",
@@ -126,7 +128,8 @@ export const listConversations = createServerFn({ method: "POST" })
   .inputValidator((d: { tenantId: string }) => z.object({ tenantId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: rows, error } = await supabase
+    const db = supabase as any;
+    const { data: rows, error } = await db
       .from("conversations")
       .select("id, status, channel_id, last_message_at, contact:contacts(id, display_name, wa_id)")
       .eq("tenant_id", data.tenantId)
@@ -143,7 +146,8 @@ export const listMessages = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: rows, error } = await supabase
+    const db = supabase as any;
+    const { data: rows, error } = await db
       .from("messages")
       .select("id, direction, msg_type, body, media_url, status, created_at")
       .eq("conversation_id", data.conversationId)
@@ -164,10 +168,11 @@ export const sendMessage = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof sendSchema>) => sendSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const db = supabase as any;
 
     // Authorise with the caller's RLS-scoped session first. Channel credentials
     // are then loaded only with the server service role and never returned.
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await db
       .from("tenant_members")
       .select("role")
       .eq("tenant_id", data.tenantId)
@@ -178,7 +183,8 @@ export const sendMessage = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: conv, error: convErr } = await supabaseAdmin
+    const admin = supabaseAdmin as any;
+    const { data: conv, error: convErr } = await admin
       .from("conversations")
       .select("id, contact:contacts(wa_id), channel_id")
       .eq("id", data.conversationId)
@@ -191,7 +197,7 @@ export const sendMessage = createServerFn({ method: "POST" })
       | null = null;
 
     if (conv.channel_id) {
-      const { data: exact, error } = await supabaseAdmin
+      const { data: exact, error } = await admin
         .from("whatsapp_channels")
         .select("id, phone_number_id, access_token, outbound_enabled")
         .eq("id", conv.channel_id)
@@ -202,7 +208,7 @@ export const sendMessage = createServerFn({ method: "POST" })
     }
 
     if (!channel) {
-      const { data: fallback, error } = await supabaseAdmin
+      const { data: fallback, error } = await admin
         .from("whatsapp_channels")
         .select("id, phone_number_id, access_token, outbound_enabled")
         .eq("tenant_id", data.tenantId)
@@ -235,7 +241,7 @@ export const sendMessage = createServerFn({ method: "POST" })
     const waMessageId = payload.messages?.[0]?.id ?? null;
 
     const nowIso = new Date().toISOString();
-    await supabaseAdmin.from("messages").insert({
+    await admin.from("messages").insert({
       tenant_id: data.tenantId,
       conversation_id: data.conversationId,
       direction: "outbound",
@@ -245,7 +251,7 @@ export const sendMessage = createServerFn({ method: "POST" })
       status: "sent",
       sent_by: userId,
     });
-    await supabaseAdmin
+    await admin
       .from("conversations")
       .update({ last_message_at: nowIso })
       .eq("id", data.conversationId);
