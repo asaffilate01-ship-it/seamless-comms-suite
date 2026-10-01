@@ -13,12 +13,13 @@ import {
   getControlPlaneCatalogue,
   getTenantControlPlane,
   listPlatformTenants,
+  linkTenantProduct,
   saveTenantBranding,
   setTenantProduct,
   setTenantService,
   upsertTenantDomain,
 } from "@/lib/control-plane.functions";
-import { Building2, Boxes, Globe2, Layers3, Plus, RefreshCw, Settings2, Sparkles } from "lucide-react";
+import { Building2, Boxes, GitBranch as GitBranchIcon, Globe2, Layers3, Plus, RefreshCw, Settings2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/control-plane")({
@@ -40,6 +41,7 @@ function ControlPlane() {
   const createTenantRequest = useServerFn(createPlatformTenant);
   const setProductRequest = useServerFn(setTenantProduct);
   const setServiceRequest = useServerFn(setTenantService);
+  const linkProductRequest = useServerFn(linkTenantProduct);
   const saveBrandingRequest = useServerFn(saveTenantBranding);
   const saveDomainRequest = useServerFn(upsertTenantDomain);
 
@@ -276,6 +278,22 @@ function ControlPlane() {
             </div>
           </section>
 
+          <ProductConnections
+            tenantId={selectedTenantId}
+            connections={detail.data?.connections ?? []}
+            products={catalogue.data?.products ?? []}
+            canEdit={isPlatformAdmin}
+            onSave={async (productKey, externalTenantId, baseUrl) => {
+              try {
+                await linkProductRequest({ data: { tenantId: selectedTenantId, productKey, externalTenantId, baseUrl, capabilities: [] } });
+                toast.success("Product tenant linked; verification queued");
+                await detail.refetch();
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Product link failed");
+              }
+            }}
+          />
+
           <BrandingAndDomains
             tenantId={selectedTenantId}
             detail={detail.data}
@@ -320,6 +338,50 @@ function Metric({ icon: Icon, label, value }: { icon: typeof Building2; label: s
 
 function SectionTitle({ icon: Icon, title, description }: { icon: typeof Building2; title: string; description: string }) {
   return <div className="flex items-start gap-3"><div className="rounded-lg bg-primary/10 p-2"><Icon className="h-4 w-4 text-primary" /></div><div><h2 className="font-display text-lg font-semibold">{title}</h2><p className="text-sm text-muted-foreground">{description}</p></div></div>;
+}
+
+function ProductConnections({
+  tenantId, connections, products, canEdit, onSave,
+}: {
+  tenantId: string;
+  connections: Array<{ id: string; product_key: string; external_tenant_id: string; base_url?: string | null; status: string }>;
+  products: Array<{ product_key: string; name: string }>;
+  canEdit: boolean;
+  onSave: (productKey: string, externalTenantId: string, baseUrl: string) => Promise<void>;
+}) {
+  const [productKey, setProductKey] = useState("dishbee");
+  const [externalTenantId, setExternalTenantId] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+
+  useEffect(() => {
+    setExternalTenantId("");
+    setBaseUrl("");
+  }, [tenantId]);
+
+  return <section>
+    <SectionTitle icon={GitBranchIcon} title="Product tenant links" description="Bind this Omniqora tenant to the real tenant/workspace ID in Dishbee, Kindelo or another SaaS. No vertical data is copied into Omniqora." />
+    <div className="mt-3 grid gap-4 lg:grid-cols-[1fr_1.4fr]">
+      <Card><CardContent className="space-y-3 p-5"><h3 className="font-semibold">Link product workspace</h3>
+        <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={productKey} onChange={(e) => setProductKey(e.target.value)}>
+          {products.map((p) => <option key={p.product_key} value={p.product_key}>{p.name}</option>)}
+        </select>
+        <Input placeholder="External tenant/workspace ID" value={externalTenantId} onChange={(e) => setExternalTenantId(e.target.value)} />
+        <Input placeholder="Product base URL (optional)" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
+        <Button disabled={!canEdit || !externalTenantId || !productKey} onClick={() => onSave(productKey, externalTenantId, baseUrl)}>Link & verify</Button>
+      </CardContent></Card>
+      <Card><CardContent className="p-5"><h3 className="font-semibold">Connected workspaces</h3>
+        <div className="mt-3 space-y-2">
+          {connections.length ? connections.map((connection) => {
+            const product = products.find((p) => p.product_key === connection.product_key);
+            return <div key={connection.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
+              <div><b>{product?.name ?? connection.product_key}</b><p className="font-mono text-xs text-muted-foreground">{connection.external_tenant_id}</p>{connection.base_url && <p className="text-xs text-muted-foreground">{connection.base_url}</p>}</div>
+              <StatusBadge status={connection.status} />
+            </div>;
+          }) : <p className="text-sm text-muted-foreground">No product workspace links configured.</p>}
+        </div>
+      </CardContent></Card>
+    </div>
+  </section>;
 }
 
 function BrandingAndDomains({
