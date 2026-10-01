@@ -306,6 +306,11 @@ BEGIN
   INSERT INTO public.practice_work_requests(tenant_id,product_key,client_id,engagement_id,title,due_at,chase_enabled)
   VALUES(_tenant,_product,job.client_id,job.id,_command->>'title',NULLIF(_command->>'dueAt','')::timestamptz,COALESCE((_command->>'chaseEnabled')::boolean,false))
   RETURNING id INTO result_id;
+ ELSIF op='request.chasing' THEN
+  SELECT * INTO req FROM public.practice_work_requests WHERE id=(_command->>'requestId')::uuid AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+  IF req.id IS NULL THEN RAISE EXCEPTION 'Request not found'; END IF;
+  UPDATE public.practice_work_requests SET chase_enabled=COALESCE((_command->>'enabled')::boolean,false) WHERE id=req.id;
+  result_id:=req.id;
  ELSIF op='request.review' THEN
   SELECT * INTO req FROM public.practice_work_requests WHERE id=(_command->>'requestId')::uuid AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
   IF req.id IS NULL OR req.status<>'submitted' THEN RAISE EXCEPTION 'Submitted request required'; END IF;
@@ -357,6 +362,24 @@ BEGIN
 END; $$;
 REVOKE ALL ON FUNCTION public.practice_workspace_command(uuid,text,jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.practice_workspace_command(uuid,text,jsonb) TO authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.practice_grant_client_user(
+  _tenant uuid,_product text,_client uuid,_user uuid,_role text DEFAULT 'client_viewer'
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+DECLARE member_role text;
+BEGIN
+ IF NOT public.practice_access(_tenant,_product,true) THEN RAISE EXCEPTION 'Practice admin access required'; END IF;
+ SELECT role::text INTO member_role FROM public.tenant_members WHERE tenant_id=_tenant AND user_id=auth.uid();
+ IF NOT public.is_platform_admin(auth.uid()) AND member_role NOT IN ('owner','admin') THEN RAISE EXCEPTION 'Practice admin required'; END IF;
+ IF _role NOT IN ('client_owner','client_viewer') THEN RAISE EXCEPTION 'Invalid client portal role'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.practice_clients WHERE id=_client AND tenant_id=_tenant AND product_key=_product) THEN RAISE EXCEPTION 'Client not found'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM auth.users WHERE id=_user) THEN RAISE EXCEPTION 'Portal user not found'; END IF;
+ INSERT INTO public.practice_client_users(practice_client_id,tenant_id,product_key,user_id,portal_role,status)
+ VALUES(_client,_tenant,_product,_user,_role,'active')
+ ON CONFLICT(practice_client_id,user_id) DO UPDATE SET portal_role=EXCLUDED.portal_role,status='active';
+END; $;
+REVOKE ALL ON FUNCTION public.practice_grant_client_user(uuid,text,uuid,uuid,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.practice_grant_client_user(uuid,text,uuid,uuid,text) TO authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.practice_portal_workspace(
   _client uuid,_action text DEFAULT 'read',_entity uuid DEFAULT NULL,_response text DEFAULT NULL
