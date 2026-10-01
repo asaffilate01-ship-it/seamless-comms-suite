@@ -1,8 +1,6 @@
 -- Secure per-product control-plane credentials and provisioning completion.
 BEGIN;
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 ALTER TABLE public.product_connections
   ADD COLUMN IF NOT EXISTS credential_hash text,
   ADD COLUMN IF NOT EXISTS credential_suffix text,
@@ -12,22 +10,27 @@ CREATE UNIQUE INDEX IF NOT EXISTS product_connections_credential_hash_idx
   ON public.product_connections(credential_hash)
   WHERE credential_hash IS NOT NULL;
 
-CREATE OR REPLACE FUNCTION public.platform_rotate_product_credential(
+CREATE OR REPLACE FUNCTION public.platform_set_product_credential(
   _connection uuid,
+  _credential_hash text,
+  _suffix text,
   _valid_days integer DEFAULT 365
 ) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE token text; row public.product_connections%rowtype;
+DECLARE row public.product_connections%rowtype;
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN RAISE EXCEPTION 'Platform administrator required'; END IF;
   IF _valid_days NOT BETWEEN 1 AND 730 THEN RAISE EXCEPTION 'Invalid credential lifetime'; END IF;
+  IF _credential_hash !~ '^[a-f0-9]{64}$' OR length(_suffix) NOT BETWEEN 4 AND 16 THEN
+    RAISE EXCEPTION 'Invalid credential material';
+  END IF;
+
   SELECT * INTO row FROM public.product_connections WHERE id=_connection;
   IF NOT FOUND THEN RAISE EXCEPTION 'Product connection not found'; END IF;
 
-  token := 'oqcp_' || encode(gen_random_bytes(32),'hex');
   UPDATE public.product_connections
-  SET credential_hash=encode(digest(token,'sha256'),'hex'),
-      credential_suffix=right(token,8),
+  SET credential_hash=_credential_hash,
+      credential_suffix=_suffix,
       credential_expires_at=now()+make_interval(days=>_valid_days),
       status='configured',
       updated_at=now()
@@ -42,13 +45,12 @@ BEGIN
 
   RETURN jsonb_build_object(
     'connectionId',row.id,
-    'token',token,
-    'suffix',right(token,8),
+    'suffix',_suffix,
     'expiresAt',now()+make_interval(days=>_valid_days)
   );
 END; $$;
-REVOKE ALL ON FUNCTION public.platform_rotate_product_credential(uuid,integer) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.platform_rotate_product_credential(uuid,integer) TO authenticated,service_role;
+REVOKE ALL ON FUNCTION public.platform_set_product_credential(uuid,text,text,integer) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.platform_set_product_credential(uuid,text,text,integer) TO authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.server_complete_provisioning_job(
   _job uuid,
