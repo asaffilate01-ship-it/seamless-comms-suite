@@ -154,7 +154,7 @@ function PortfolioMigration(){
                 </CardContent></Card>
               </div>
 
-              {selected?<AssetEditor asset={selected} busy={busy==="asset:"+selected.id} onPatch={(patch)=>patchAsset(patch,selected,patch)} patchAsset={patch}/>:<State text="Select a portfolio asset to classify it."/>}
+              {selected?<AssetEditor asset={selected} busy={busy==="asset:"+selected.id} patchAsset={patch}/>:<State text="Select a portfolio asset to classify it."/>}
             </div>
           </TabsContent>
 
@@ -179,7 +179,7 @@ function PortfolioMigration(){
   </AppShell>;
 }
 
-function AssetEditor({asset,busy,onPatch,patchAsset}:{asset:Asset;busy:boolean;onPatch:(p:Record<string,unknown>)=>void;patchAsset:(id:string,p:Record<string,unknown>)=>Promise<void>}){
+function AssetEditor({asset,busy,patchAsset}:{asset:Asset;busy:boolean;patchAsset:(id:string,p:Record<string,unknown>)=>Promise<void>}){
   const[family,setFamily]=useState(asset.target_family_key??"");
   const[product,setProduct]=useState(asset.target_product_key??"");
   const[parent,setParent]=useState(asset.target_parent_key??"");
@@ -197,17 +197,17 @@ function AssetEditor({asset,busy,onPatch,patchAsset}:{asset:Asset;busy:boolean;o
     <Card><CardContent className="p-5 space-y-4">
       <h3 className="font-semibold">Target architecture</h3>
       <Field label="Family"><Input value={family} onChange={(e)=>setFamily(e.target.value)}/></Field>
-      <Field label="Role"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={asset.target_role} onChange={(e)=>onPatch({targetRole:e.target.value})}>{ROLES.map((r)=><option key={r}>{r}</option>)}</select></Field>
+      <Field label="Role"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={asset.target_role} onChange={(e)=>patchAsset(asset.id,{targetRole:e.target.value})}>{ROLES.map((r)=><option key={r}>{r}</option>)}</select></Field>
       <Field label="Target product key"><Input value={product} onChange={(e)=>setProduct(e.target.value)}/></Field>
       <Field label="Parent landlord / product"><Input value={parent} onChange={(e)=>setParent(e.target.value)} placeholder="none"/></Field>
       <Field label="Migration action"><Input value={action} onChange={(e)=>setAction(e.target.value)}/></Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Wave"><Input type="number" min={0} max={20} value={asset.migration_wave} onChange={(e)=>onPatch({migrationWave:Number(e.target.value)})}/></Field>
-        <Field label="Confidence"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={asset.confidence} onChange={(e)=>onPatch({confidence:e.target.value})}>{CONFIDENCE.map((v)=><option key={v}>{v}</option>)}</select></Field>
+        <Field label="Wave"><Input type="number" min={0} max={20} value={asset.migration_wave} onChange={(e)=>patchAsset(asset.id,{migrationWave:Number(e.target.value)})}/></Field>
+        <Field label="Confidence"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={asset.confidence} onChange={(e)=>patchAsset(asset.id,{confidence:e.target.value})}>{CONFIDENCE.map((v)=><option key={v}>{v}</option>)}</select></Field>
       </div>
-      <Field label="Migration status"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={asset.migration_status} onChange={(e)=>onPatch({migrationStatus:e.target.value})}>{STATUSES.map((v)=><option key={v}>{v}</option>)}</select></Field>
+      <Field label="Migration status"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={asset.migration_status} onChange={(e)=>patchAsset(asset.id,{migrationStatus:e.target.value})}>{STATUSES.map((v)=><option key={v}>{v}</option>)}</select></Field>
       <Field label="Notes"><textarea className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" value={notes} onChange={(e)=>setNotes(e.target.value)}/></Field>
-      <Button disabled={busy} onClick={()=>onPatch({targetFamilyKey:family||null,targetProductKey:product||null,targetParentKey:parent||null,migrationAction:action,notes:notes||null})}>Save classification</Button>
+      <Button disabled={busy} onClick={()=>patchAsset(asset.id,{targetFamilyKey:family||null,targetProductKey:product||null,targetParentKey:parent||null,migrationAction:action,notes:notes||null})}>Save classification</Button>
     </CardContent></Card>
 
     <Card><CardContent className="p-0">
