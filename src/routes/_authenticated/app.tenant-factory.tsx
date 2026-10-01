@@ -284,6 +284,7 @@ function ControlPlane() {
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <Badge variant="secondary">{product.category}</Badge>
                         {product.product_role && <Badge variant="outline">{product.product_role.replaceAll("_", " ")}</Badge>}
+                        {product.implementation_status && <Badge variant="outline">{product.implementation_status.replaceAll("_", " ")}</Badge>}
                         {product.parent_product_key && <Badge variant="outline">under {product.parent_product_key}</Badge>}
                         {tenantProduct && <StatusBadge status={tenantProduct.status} />}
                       </div>
@@ -308,7 +309,7 @@ function ControlPlane() {
                         <div><h3 className="font-semibold">{service.name}</h3><p className="mt-1 text-xs text-muted-foreground">{service.description}</p></div>
                         <input type="checkbox" aria-label={`Enable ${service.name}`} checked={active} disabled={!isPlatformAdmin || busyKey === `service:${service.service_key}`} onChange={(e) => toggleService(service.service_key, e.target.checked)} />
                       </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-2"><Badge variant="outline">{service.family}</Badge>{tenantService && <StatusBadge status={tenantService.status} />}</div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2"><Badge variant="outline">{service.family}</Badge>{service.implementation_status && <Badge variant="outline">{service.implementation_status.replaceAll("_", " ")}</Badge>}{tenantService && <StatusBadge status={tenantService.status} />}</div>
                       {deps.length > 0 && <p className="mt-2 text-[11px] text-muted-foreground">Requires: {deps.join(", ")}</p>}
                     </CardContent>
                   </Card>
