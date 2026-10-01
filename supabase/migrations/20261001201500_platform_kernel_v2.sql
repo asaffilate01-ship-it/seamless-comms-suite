@@ -255,7 +255,7 @@ CREATE OR REPLACE FUNCTION public.platform_set_tenant_product_runtime(
   _locale text,
   _runtime_config jsonb DEFAULT '{}'::jsonb
 ) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE rp public.region_packs%rowtype;
 BEGIN
   IF NOT public.is_platform_admin(auth.uid())
@@ -275,7 +275,7 @@ BEGIN
       launch_status='configuring',updated_at=now()
   WHERE tenant_id=_tenant AND product_key=_product;
   IF NOT FOUND THEN RAISE EXCEPTION 'Tenant product not found'; END IF;
-END; $;
+END; $$;
 REVOKE ALL ON FUNCTION public.platform_set_tenant_product_runtime(uuid,text,text,text,jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.platform_set_tenant_product_runtime(uuid,text,text,text,jsonb) TO authenticated,service_role;
 
