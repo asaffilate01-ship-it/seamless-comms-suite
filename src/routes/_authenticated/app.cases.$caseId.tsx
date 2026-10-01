@@ -9,13 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTenant, canWrite } from "@/hooks/useTenant";
 import { getCaseDetail, updateCase } from "@/lib/app.functions";
 import { toast } from "sonner";
+import { useTx, useI18nSafe } from "@/lib/i18n";
 import { ArrowLeft, ShieldAlert, User, MessageCircle, Clock, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/cases/$caseId")({
   head: () => ({
     meta: [
-      { title: "Falldetails — OmniQora" },
-      { name: "description", content: "Vollständige Fallhistorie, Freigaben und Audit-Trail." },
+      { title: "Case details — OmniQora" },
+      { name: "description", content: "Full case history, approvals and audit trail." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -33,12 +34,14 @@ function CaseDetail() {
 
   const fetchDetail = useServerFn(getCaseDetail);
   const updateFn = useServerFn(updateCase);
+  const tx = useTx();
+  const loc = (useI18nSafe()?.lang ?? "en") === "de" ? "de-DE" : "en-GB";
 
   const load = useCallback(async () => {
     try {
       setDetail((await fetchDetail({ data: { caseId } })) as Detail);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Laden fehlgeschlagen");
+      toast.error(e instanceof Error ? e.message : tx("Laden fehlgeschlagen", "Failed to load"));
     } finally {
       setLoading(false);
     }
@@ -54,9 +57,9 @@ function CaseDetail() {
     try {
       await updateFn({ data: { caseId, tenantId, ...input } });
       await load();
-      toast.success("Fall aktualisiert");
+      toast.success(tx("Fall aktualisiert", "Case updated"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update fehlgeschlagen");
+      toast.error(e instanceof Error ? e.message : tx("Update fehlgeschlagen", "Update failed"));
     } finally {
       setSaving(false);
     }
@@ -64,7 +67,7 @@ function CaseDetail() {
 
   if (loading) {
     return (
-      <AppShell title="Fall" subtitle="Wird geladen…">
+      <AppShell title={tx("Fall", "Case")} subtitle={tx("Wird geladen…", "Loading…")}>
         <Skeleton className="h-96 w-full rounded-xl" />
       </AppShell>
     );
@@ -72,11 +75,11 @@ function CaseDetail() {
 
   if (!detail) {
     return (
-      <AppShell title="Fall nicht gefunden" subtitle="Dieser Fall existiert nicht oder ist nicht sichtbar">
+      <AppShell title={tx("Fall nicht gefunden", "Case not found")} subtitle={tx("Dieser Fall existiert nicht oder ist nicht sichtbar", "This case does not exist or is not visible")}>
         <Link to="/app/cases">
           <Button variant="outline" size="sm">
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-            Zurück zu Fällen
+            {tx("Zurück zu Fällen", "Back to cases")}
           </Button>
         </Link>
       </AppShell>
@@ -96,18 +99,18 @@ function CaseDetail() {
           <Link to="/app/cases">
             <Button variant="outline" size="sm">
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-              Zurück
+              {tx("Zurück", "Back")}
             </Button>
           </Link>
           {writable && (
             <>
               <Button variant="outline" size="sm" disabled={saving} onClick={() => patch({ status: "escalated" })}>
                 <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
-                Eskalieren
+                {tx("Eskalieren", "Escalate")}
               </Button>
               <Button size="sm" disabled={saving} onClick={() => patch({ status: "closed" })}>
                 <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                Schließen
+                {tx("Schließen", "Close")}
               </Button>
             </>
           )}
@@ -122,27 +125,27 @@ function CaseDetail() {
                 <div className="flex items-center gap-2">
                   <StatusBadge status={c.status} />
                   <Badge variant="outline" className="text-[10px] capitalize">
-                    Priorität: {c.priority}
+                    {tx("Priorität", "Priority")}: {c.priority}
                   </Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Erstellt {new Date(c.created_at).toLocaleString("de-DE")} · zuletzt aktualisiert{" "}
-                  {new Date(c.updated_at).toLocaleString("de-DE")}
+                  {tx("Erstellt", "Created")} {new Date(c.created_at).toLocaleString(loc)} · {tx("zuletzt aktualisiert", "last updated")}{" "}
+                  {new Date(c.updated_at).toLocaleString(loc)}
                 </p>
               </div>
               {writable && !c.assignee && (
                 <Button variant="outline" size="sm" disabled={saving} onClick={() => patch({ assignToMe: true })}>
                   <User className="mr-1.5 h-3.5 w-3.5" />
-                  Mir zuweisen
+                  {tx("Mir zuweisen", "Assign to me")}
                 </Button>
               )}
             </div>
 
             <div className="mt-6">
-              <h3 className="font-display text-lg font-semibold">Gesprächsverlauf</h3>
+              <h3 className="font-display text-lg font-semibold">{tx("Gesprächsverlauf", "Conversation history")}</h3>
               {detail.messages.length === 0 ? (
                 <p className="mt-3 text-sm text-muted-foreground">
-                  Noch keine Nachrichten mit diesem Fall verknüpft.
+                  {tx("Noch keine Nachrichten mit diesem Fall verknüpft.", "No messages linked to this case yet.")}
                 </p>
               ) : (
                 <ol className="mt-4 space-y-4">
@@ -154,8 +157,8 @@ function CaseDetail() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {new Date(m.created_at).toLocaleString("de-DE")} ·{" "}
-                          {m.direction === "inbound" ? "Kunde" : "Team"}
+                          {new Date(m.created_at).toLocaleString(loc)} ·{" "}
+                          {m.direction === "inbound" ? tx("Kunde", "Customer") : "Team"}
                         </div>
                         <div className="mt-0.5 whitespace-pre-wrap text-sm">{m.body ?? `[${m.msg_type}]`}</div>
                       </div>
@@ -170,22 +173,22 @@ function CaseDetail() {
         <div className="space-y-4">
           <Card>
             <CardContent className="p-5">
-              <h4 className="text-xs uppercase tracking-wide text-muted-foreground">Kontakt</h4>
+              <h4 className="text-xs uppercase tracking-wide text-muted-foreground">{tx("Kontakt", "Contact")}</h4>
               <div className="mt-3 text-sm">
-                <div className="font-semibold">{contact?.display_name ?? "Unbekannt"}</div>
+                <div className="font-semibold">{contact?.display_name ?? tx("Unbekannt", "Unknown")}</div>
                 {contact?.wa_id && <div className="font-mono text-xs text-muted-foreground">+{contact.wa_id}</div>}
                 <div className="mt-2 text-xs text-muted-foreground">
-                  Sprache: <span className="text-foreground">{contact?.locale ?? "de"}</span>
+                  {tx("Sprache", "Language")}: <span className="text-foreground">{contact?.locale ?? "—"}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Marketing-Einwilligung:{" "}
-                  <span className="text-foreground">{contact?.consent_marketing ? "erteilt" : "keine"}</span>
+                  {tx("Marketing-Einwilligung", "Marketing consent")}:{" "}
+                  <span className="text-foreground">{contact?.consent_marketing ? tx("erteilt", "granted") : tx("keine", "none")}</span>
                 </div>
               </div>
               {c.conversation_id && (
                 <Link to="/app/inbox">
                   <Button variant="outline" size="sm" className="mt-4 w-full">
-                    Im Postfach antworten
+                    {tx("Im Postfach antworten", "Reply in inbox")}
                   </Button>
                 </Link>
               )}
@@ -196,12 +199,12 @@ function CaseDetail() {
             <CardContent className="p-5">
               <h4 className="text-xs uppercase tracking-wide text-muted-foreground">Audit-Trail</h4>
               {detail.audit.length === 0 ? (
-                <p className="mt-3 text-xs text-muted-foreground">Keine Einträge.</p>
+                <p className="mt-3 text-xs text-muted-foreground">{tx("Keine Einträge.", "No entries.")}</p>
               ) : (
                 <ul className="mt-3 space-y-2 text-xs">
                   {detail.audit.map((a) => (
                     <li key={a.id} className="text-muted-foreground">
-                      {new Date(a.created_at).toLocaleString("de-DE")} ·{" "}
+                      {new Date(a.created_at).toLocaleString(loc)} ·{" "}
                       <span className="text-foreground">{a.action}</span>
                     </li>
                   ))}

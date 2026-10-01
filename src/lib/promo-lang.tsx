@@ -47,6 +47,7 @@ export function PromoLangProvider({ children }: { children: ReactNode }) {
       if (prev === next) return prev;
       try {
         localStorage.setItem(STORAGE_KEY, next);
+        if (next === "de" || next === "en") localStorage.setItem("lc.lang", next);
       } catch {
         /* ignore */
       }

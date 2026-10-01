@@ -10,13 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTenant } from "@/hooks/useTenant";
 import { listContacts } from "@/lib/app.functions";
 import { toast } from "sonner";
+import { useTx, useI18nSafe } from "@/lib/i18n";
 import { Search, Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/contacts")({
   head: () => ({
     meta: [
-      { title: "Kontakte — OmniQora" },
-      { name: "description", content: "Alle WhatsApp-Kontakte mit Einwilligungsstatus und Sprache." },
+      { title: "Contacts — OmniQora" },
+      { name: "description", content: "All contacts with consent status and language." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -31,13 +32,15 @@ function Contacts() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const fetchContacts = useServerFn(listContacts);
+  const tx = useTx();
+  const loc = (useI18nSafe()?.lang ?? "en") === "de" ? "de-DE" : "en-GB";
 
   useEffect(() => {
     if (!tenantId) return;
     let cancelled = false;
     fetchContacts({ data: { tenantId } })
       .then((r) => !cancelled && setRows(r as Contact[]))
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Laden fehlgeschlagen"))
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : tx("Laden fehlgeschlagen", "Failed to load")))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
@@ -51,8 +54,8 @@ function Contacts() {
 
   return (
     <AppShell
-      title="Kontakte"
-      subtitle={`${rows.length} Kontakte · ${rows.filter((c) => c.consent_marketing).length} mit Marketing-Einwilligung`}
+      title={tx("Kontakte", "Contacts")}
+      subtitle={`${rows.length} ${tx("Kontakte", "contacts")} · ${rows.filter((c) => c.consent_marketing).length} ${tx("mit Marketing-Einwilligung", "with marketing consent")}`}
     >
       {tenantLoading || loading ? (
         <Skeleton className="h-72 w-full rounded-xl" />
@@ -60,9 +63,9 @@ function Contacts() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 p-14 text-center">
             <Users className="h-8 w-8 text-muted-foreground" />
-            <h3 className="font-display text-lg font-semibold">Noch keine Kontakte</h3>
+            <h3 className="font-display text-lg font-semibold">{tx("Noch keine Kontakte", "No contacts yet")}</h3>
             <p className="max-w-md text-sm text-muted-foreground">
-              Kontakte werden automatisch angelegt, sobald eine Person über WhatsApp schreibt.
+              {tx("Kontakte werden automatisch angelegt, sobald eine Person über einen Kanal schreibt.", "Contacts are created automatically as soon as someone messages you on any channel.")}
             </p>
           </CardContent>
         </Card>
@@ -74,7 +77,7 @@ function Contacts() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Name oder Nummer suchen…"
+                placeholder={tx("Name oder Nummer suchen…", "Search name or number…")}
                 className="pl-9"
               />
             </div>
@@ -83,11 +86,11 @@ function Contacts() {
             <table className="w-full text-sm">
               <thead className="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3">Kontakt</th>
-                  <th className="px-4 py-3">Nummer</th>
-                  <th className="px-4 py-3">Sprache</th>
-                  <th className="px-4 py-3">Einwilligung</th>
-                  <th className="px-4 py-3">Zuletzt aktiv</th>
+                  <th className="px-4 py-3">{tx("Kontakt", "Contact")}</th>
+                  <th className="px-4 py-3">{tx("Nummer", "Number")}</th>
+                  <th className="px-4 py-3">{tx("Sprache", "Language")}</th>
+                  <th className="px-4 py-3">{tx("Einwilligung", "Consent")}</th>
+                  <th className="px-4 py-3">{tx("Zuletzt aktiv", "Last active")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -106,7 +109,7 @@ function Contacts() {
                         </div>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs">+{c.wa_id}</td>
-                      <td className="px-4 py-3 uppercase text-muted-foreground">{c.locale ?? "de"}</td>
+                      <td className="px-4 py-3 uppercase text-muted-foreground">{c.locale ?? "—"}</td>
                       <td className="px-4 py-3">
                         <Badge
                           variant="outline"
@@ -116,11 +119,11 @@ function Contacts() {
                               : "border-muted-foreground/30 text-muted-foreground"
                           }
                         >
-                          {c.consent_marketing ? "erteilt" : "keine"}
+                          {c.consent_marketing ? tx("erteilt", "granted") : tx("keine", "none")}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(c.updated_at).toLocaleString("de-DE")}
+                        {new Date(c.updated_at).toLocaleString(loc)}
                       </td>
                     </tr>
                   );

@@ -8,12 +8,13 @@ import { Progress } from "@/components/ui/progress";
 import { useTenant } from "@/hooks/useTenant";
 import { getDashboard } from "@/lib/app.functions";
 import { toast } from "sonner";
+import { useTx, useI18nSafe } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/app/analytics")({
   head: () => ({
     meta: [
-      { title: "Analysen — OmniQora" },
-      { name: "description", content: "Operative Kennzahlen, Automatisierungsqualität und Fallverteilung." },
+      { title: "Analytics — OmniQora" },
+      { name: "description", content: "Operational metrics, automation quality and case distribution." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -27,18 +28,20 @@ function Analytics() {
   const [dash, setDash] = useState<Dash | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchDash = useServerFn(getDashboard);
+  const tx = useTx();
+  const loc = (useI18nSafe()?.lang ?? "en") === "de" ? "de-DE" : "en-GB";
 
   useEffect(() => {
     if (!tenantId) return;
     fetchDash({ data: { tenantId } })
       .then((d) => setDash(d as Dash))
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Laden fehlgeschlagen"))
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : tx("Laden fehlgeschlagen", "Failed to load")))
       .finally(() => setLoading(false));
   }, [tenantId, fetchDash]);
 
   if (tenantLoading || loading) {
     return (
-      <AppShell title="Analysen" subtitle="Wird geladen…">
+      <AppShell title={tx("Analysen", "Analytics")} subtitle={tx("Wird geladen…", "Loading…")}>
         <Skeleton className="h-72 w-full rounded-xl" />
       </AppShell>
     );
@@ -51,13 +54,13 @@ function Analytics() {
   const responseRatio = inbound ? Math.min(100, Math.round((outbound / inbound) * 100)) : 0;
 
   return (
-    <AppShell title="Analysen" subtitle="Live-Kennzahlen der letzten 7 Tage aus deinem Workspace">
+    <AppShell title={tx("Analysen", "Analytics")} subtitle={tx("Live-Kennzahlen der letzten 7 Tage aus deinem Workspace", "Live metrics from the last 7 days in your workspace")}>
       <div className="grid gap-4 md:grid-cols-4">
         {[
-          ["Aktive Fälle", dash?.activeCases ?? 0],
-          ["Heute geschlossen", dash?.closedToday ?? 0],
-          ["Automatisierungsgrad", `${dash?.automationRate ?? 0}%`],
-          ["Kontakte", dash?.contacts ?? 0],
+          [tx("Aktive Fälle", "Active cases"), dash?.activeCases ?? 0],
+          [tx("Heute geschlossen", "Closed today"), dash?.closedToday ?? 0],
+          [tx("Automatisierungsgrad", "Automation rate"), `${dash?.automationRate ?? 0}%`],
+          [tx("Kontakte", "Contacts"), dash?.contacts ?? 0],
         ].map(([k, v]) => (
           <Card key={k as string}>
             <CardContent className="p-5">
@@ -71,9 +74,9 @@ function Analytics() {
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card>
           <CardContent className="p-6">
-            <h3 className="font-display text-lg font-semibold">Volumen · 7 Tage</h3>
+            <h3 className="font-display text-lg font-semibold">{tx("Volumen · 7 Tage", "Volume · 7 days")}</h3>
             {volume.every((d) => d.inbound + d.outbound === 0) ? (
-              <p className="mt-4 text-sm text-muted-foreground">Noch keine Nachrichten in diesem Zeitraum.</p>
+              <p className="mt-4 text-sm text-muted-foreground">{tx("Noch keine Nachrichten in diesem Zeitraum.", "No messages in this period yet.")}</p>
             ) : (
               <div className="mt-6 flex h-64 items-stretch gap-3">
                 {volume.map((d) => (
@@ -83,7 +86,7 @@ function Analytics() {
                       <div className="w-full rounded-b bg-info" style={{ height: `${(d.outbound / max) * 100}%` }} />
                     </div>
                     <span className="text-[11px] text-muted-foreground">
-                      {new Date(d.day).toLocaleDateString("de-DE", { weekday: "short" })}
+                      {new Date(d.day).toLocaleDateString(loc, { weekday: "short" })}
                     </span>
                   </div>
                 ))}
@@ -94,13 +97,13 @@ function Analytics() {
 
         <Card>
           <CardContent className="p-6">
-            <h3 className="font-display text-lg font-semibold">Qualitätsindikatoren</h3>
+            <h3 className="font-display text-lg font-semibold">{tx("Qualitätsindikatoren", "Quality indicators")}</h3>
             <div className="mt-5 space-y-5">
               {[
-                { label: "Antwortquote (ausgehend/eingehend)", value: responseRatio },
-                { label: "Automatisierungsgrad", value: dash?.automationRate ?? 0 },
+                { label: tx("Antwortquote (ausgehend/eingehend)", "Response ratio (outbound/inbound)"), value: responseRatio },
+                { label: tx("Automatisierungsgrad", "Automation rate"), value: dash?.automationRate ?? 0 },
                 {
-                  label: "Abgeschlossene Fälle",
+                  label: tx("Abgeschlossene Fälle", "Closed cases"),
                   value:
                     (dash?.activeCases ?? 0) + (dash?.closedToday ?? 0) > 0
                       ? Math.round(
@@ -125,27 +128,27 @@ function Analytics() {
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         {[
           {
-            t: "Gesprächsfluss",
+            t: tx("Gesprächsfluss", "Conversation flow"),
             rows: [
-              ["Eingehende Nachrichten", String(inbound)],
-              ["Ausgehende Nachrichten", String(outbound)],
-              ["Offene Gespräche", String(dash?.openConversations ?? 0)],
+              [tx("Eingehende Nachrichten", "Inbound messages"), String(inbound)],
+              [tx("Ausgehende Nachrichten", "Outbound messages"), String(outbound)],
+              [tx("Offene Gespräche", "Open conversations"), String(dash?.openConversations ?? 0)],
             ],
           },
           {
-            t: "Fallstatus",
+            t: tx("Fallstatus", "Case status"),
             rows: [
-              ["Aktiv", String(dash?.activeCases ?? 0)],
-              ["Eskaliert", String(dash?.escalated ?? 0)],
-              ["Dringend", String(dash?.urgent ?? 0)],
+              [tx("Aktiv", "Active"), String(dash?.activeCases ?? 0)],
+              [tx("Eskaliert", "Escalated"), String(dash?.escalated ?? 0)],
+              [tx("Dringend", "Urgent"), String(dash?.urgent ?? 0)],
             ],
           },
           {
-            t: "Einwilligungen",
+            t: tx("Einwilligungen", "Consent"),
             rows: [
-              ["Kontakte gesamt", String(dash?.contacts ?? 0)],
-              ["Mit Kundenantwort", String(dash?.awaitingReply ?? 0)],
-              ["Nachrichten (7 Tage)", String(dash?.messages7d ?? 0)],
+              [tx("Kontakte gesamt", "Total contacts"), String(dash?.contacts ?? 0)],
+              [tx("Mit Kundenantwort", "Awaiting reply"), String(dash?.awaitingReply ?? 0)],
+              [tx("Nachrichten (7 Tage)", "Messages (7 days)"), String(dash?.messages7d ?? 0)],
             ],
           },
         ].map((s) => (
