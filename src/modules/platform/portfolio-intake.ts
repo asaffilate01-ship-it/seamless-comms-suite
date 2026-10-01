@@ -146,3 +146,33 @@ export function portfolioIntakeRows():PortfolioIntakeRow[]{
 }
 
 export function portfolioIntakeCount(){return portfolioIntakeRows().length;}
+
+
+export type KnownRepoAudit={
+  repositoryFullName:string;repoUrl:string;latestCommitSha:string;latestCommitAt:string;
+  fileCount:number;srcFileCount:number;routeCount:number;supabaseFileCount:number;
+  migrationCount:number;functionCount:number;testCount:number;completenessScore:number;
+  auditNotes:string;
+};
+
+export const KNOWN_FAMILY_REPO_AUDITS:Record<string,{canonical:string;rationale:string;candidates:KnownRepoAudit[]}>={
+  education:{
+    canonical:"asaffilate01-ship-it/ascent-education-cloud",
+    rationale:"Ascent Education Cloud is the strongest current education source: 609 files, 179 route/page files, 194 Supabase files, 120 migrations and 69 functions. EduCloud and TrainDirekt are substantial but smaller; Virtual Lab is a focused add-on. Later README-only commits do not outweigh the deeper implemented surface.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/ascent-education-cloud",repoUrl:"https://github.com/asaffilate01-ship-it/ascent-education-cloud",latestCommitSha:"4030e330ca49b71b9191c36e28943a16647be38a",latestCommitAt:"2026-09-29T18:16:01Z",fileCount:609,srcFileCount:333,routeCount:179,supabaseFileCount:194,migrationCount:120,functionCount:69,testCount:11,completenessScore:96,auditNotes:"Canonical education codebase candidate; broadest functional and database surface."},
+      {repositoryFullName:"asaffilate01-ship-it/learnbridge-pathway",repoUrl:"https://github.com/asaffilate01-ship-it/learnbridge-pathway",latestCommitSha:"733f4916299dd5b92c78b56117fd18ae508a037f",latestCommitAt:"2026-09-29T20:44:43Z",fileCount:396,srcFileCount:239,routeCount:116,supabaseFileCount:125,migrationCount:75,functionCount:47,testCount:5,completenessScore:74,auditNotes:"Strong EduCloud source; preserve distinct useful education modules during merge review."},
+      {repositoryFullName:"asaffilate01-ship-it/horizon-educate",repoUrl:"https://github.com/asaffilate01-ship-it/horizon-educate",latestCommitSha:"74b49c727b4b84ef5de055ca9602d0ca8f2b19dd",latestCommitAt:"2026-09-29T20:13:53Z",fileCount:439,srcFileCount:274,routeCount:122,supabaseFileCount:131,migrationCount:79,functionCount:49,testCount:5,completenessScore:78,auditNotes:"Strong TrainDirekt source; retain regional/training features not already present in canonical education core."},
+      {repositoryFullName:"asaffilate01-ship-it/pixel-perfect-replica-20502337",repoUrl:"https://github.com/asaffilate01-ship-it/pixel-perfect-replica-20502337",latestCommitSha:"1ad5cad538c0238a6297d8fa9ad0c9cdadd5ad57",latestCommitAt:"2026-09-29T21:17:18Z",fileCount:117,srcFileCount:79,routeCount:9,supabaseFileCount:0,migrationCount:0,functionCount:0,testCount:3,completenessScore:28,auditNotes:"Virtual Lab is a focused add-on, not the education-family core."}
+    ]
+  },
+  orvilo:{
+    canonical:"asaffilate01-ship-it/webtemplates",
+    rationale:"Orvilo B is the most complete codebase: 216 files, 18 routes/pages, 39 Supabase files, 9 migrations and 27 functions. Orvilo X has the newest commit but substantially less backend depth. Merge useful A/X work into B rather than selecting solely by recency.",
+    candidates:[
+      {repositoryFullName:"asaffilate01-ship-it/webtemplates",repoUrl:"https://github.com/asaffilate01-ship-it/webtemplates",latestCommitSha:"b0264841c3142fe32bd7e6d7a686e6b461547a11",latestCommitAt:"2026-09-13T08:06:51Z",fileCount:216,srcFileCount:145,routeCount:18,supabaseFileCount:39,migrationCount:9,functionCount:27,testCount:9,completenessScore:94,auditNotes:"Canonical Orvilo source; strongest publishing, domains, subscription, template and backend surface."},
+      {repositoryFullName:"asaffilate01-ship-it/launchpad-ai-87",repoUrl:"https://github.com/asaffilate01-ship-it/launchpad-ai-87",latestCommitSha:"2817bf6e6ddaf09c7e25c39c85b97a0df1376866",latestCommitAt:"2026-09-13T08:06:56Z",fileCount:115,srcFileCount:80,routeCount:7,supabaseFileCount:12,migrationCount:3,functionCount:6,testCount:5,completenessScore:55,auditNotes:"Merge source for brand-generation and launch-pack capabilities."},
+      {repositoryFullName:"asaffilate01-ship-it/pixel-perfect-clone-ceddafea",repoUrl:"https://github.com/asaffilate01-ship-it/pixel-perfect-clone-ceddafea",latestCommitSha:"2d47a708ac13a4ad37a9961d687088a080c47abf",latestCommitAt:"2026-09-13T21:23:28Z",fileCount:127,srcFileCount:99,routeCount:10,supabaseFileCount:5,migrationCount:3,functionCount:0,testCount:4,completenessScore:48,auditNotes:"Newest Orvilo UI branch but less backend depth; merge UI improvements into canonical B."}
+    ]
+  }
+};
