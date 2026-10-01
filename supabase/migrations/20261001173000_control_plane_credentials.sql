@@ -1,6 +1,8 @@
 -- Secure per-product control-plane credentials and provisioning completion.
 BEGIN;
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 ALTER TABLE public.product_connections
   ADD COLUMN IF NOT EXISTS credential_hash text,
   ADD COLUMN IF NOT EXISTS credential_suffix text,
