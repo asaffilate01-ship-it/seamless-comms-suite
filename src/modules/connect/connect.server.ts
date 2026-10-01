@@ -2,7 +2,7 @@
 import { z } from "zod";
 import type { Json } from "@/integrations/supabase/types";
 import { BridgeError, bearerBinding, checkScope, permit, freshness, readBody, requestId } from "@/modules/ecosystem/bridge-core";
-import { connectManifest } from "./product-manifests";
+import { connectEventAllowed, connectManifest } from "./product-manifests";
 
 const id = z.string().min(1).max(100).regex(/^[A-Za-z0-9_.:-]+$/);
 const phone = z.string().min(7).max(20).regex(/^\+?[0-9]+$/);
@@ -116,7 +116,10 @@ export async function serveConnectEvent(request: Request) {
     checkScope(binding, input.tenantId, input.scopeId);
 
     const manifest = connectManifest(binding.product);
-    if (manifest && !manifest.events.includes(input.eventType)) {
+    if (!manifest) {
+      throw new BridgeError(422, "Product is not registered in the Omniqora SaaS Factory");
+    }
+    if (!connectEventAllowed(manifest,input.eventType)) {
       throw new BridgeError(422, "Event is not enabled by this product's Connect manifest");
     }
 

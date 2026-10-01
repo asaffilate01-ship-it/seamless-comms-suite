@@ -1,0 +1,404 @@
+import { z } from "zod";
+import { ModuleEventProcessorRegistry, type ClaimedModuleEvent } from "./event-worker.server";
+import { parseStandardEventPayload } from "./standard-events";
+
+async function admin(){const{ supabaseAdmin }=await import("@/integrations/supabase/client.server");return supabaseAdmin as any;}
+function sourceProduct(job:ClaimedModuleEvent){return String(job.event.product_key??"unknown");}
+function occurred(job:ClaimedModuleEvent){return String(job.event.occurred_at??new Date().toISOString());}
+
+async function findPerson(db:any,job:ClaimedModuleEvent,ref:string){const{data}=await db.from("crm_people").select("id,company_id").eq("tenant_id",job.tenantId).eq("source_product_key",sourceProduct(job)).eq("external_ref",ref).maybeSingle();return data??null;}
+async function findCompany(db:any,job:ClaimedModuleEvent,ref:string){const{data}=await db.from("crm_companies").select("id").eq("tenant_id",job.tenantId).eq("source_product_key",sourceProduct(job)).eq("external_ref",ref).maybeSingle();return data??null;}
+
+async function crmProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);const payload=parseStandardEventPayload(type,job.event.payload??{});
+ if(type==="customer.created"||type==="customer.updated"){const p=payload as z.infer<typeof import("./standard-events").customerPayload>;let companyId:string|null=null;if(p.companyRef){companyId=(await findCompany(db,job,p.companyRef))?.id??null;}const existing=await findPerson(db,job,p.customerRef);const values={tenant_id:job.tenantId,company_id:companyId,display_name:p.displayName,first_name:p.firstName??null,last_name:p.lastName??null,email:p.email??null,phone_e164:p.phoneE164??null,locale:p.locale??null,lifecycle_stage:"customer",marketing_consent:p.marketingConsent,source_product_key:sourceProduct(job),external_ref:p.customerRef,metadata:p.metadata};const result=existing?await db.from("crm_people").update(values).eq("id",existing.id):await db.from("crm_people").insert(values);if(result.error)throw new Error(result.error.message);return;}
+ if(type==="company.created"||type==="company.updated"){const p:any=payload;const existing=await findCompany(db,job,p.companyRef);const values={tenant_id:job.tenantId,name:p.name,legal_name:p.legalName??null,website:p.website??null,industry:p.industry??null,status:"customer",source_product_key:sourceProduct(job),external_ref:p.companyRef,metadata:p.metadata};const result=existing?await db.from("crm_companies").update(values).eq("id",existing.id):await db.from("crm_companies").insert(values);if(result.error)throw new Error(result.error.message);return;}
+ if(type==="lead.created"){const p:any=payload;const person=p.customerRef?await findPerson(db,job,p.customerRef):null;const company=p.companyRef?await findCompany(db,job,p.companyRef):null;const{data:existing}=await db.from("crm_leads").select("id").eq("tenant_id",job.tenantId).eq("source_product_key",sourceProduct(job)).eq("external_ref",p.leadRef).maybeSingle();const values={tenant_id:job.tenantId,person_id:person?.id??null,company_id:company?.id??null,title:p.title,source:p.source??sourceProduct(job),status:"new",score:p.score??null,source_product_key:sourceProduct(job),external_ref:p.leadRef,metadata:p.metadata};const result=existing?await db.from("crm_leads").update(values).eq("id",existing.id):await db.from("crm_leads").insert(values);if(result.error)throw new Error(result.error.message);return;}
+ if(type==="order.completed"||type==="booking.completed"){const p:any=payload;if(!p.customerRef)return;const person=await findPerson(db,job,p.customerRef);if(!person)return;const{data:existing}=await db.from("crm_activities").select("id").eq("tenant_id",job.tenantId).eq("source_product_key",sourceProduct(job)).eq("external_ref",job.event.id).maybeSingle();if(existing)return;const{error}=await db.from("crm_activities").insert({tenant_id:job.tenantId,activity_type:"system_event",summary:type==="order.completed"?"Order completed":"Booking completed",person_id:person.id,company_id:person.company_id??null,source_product_key:sourceProduct(job),external_ref:job.event.id,metadata:{eventType:type,...p},occurred_at:occurred(job)});if(error)throw new Error(error.message);}
+}
+
+async function analyticsProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);let metric:string|null=null;let value:number|null=null;let currency:string|null=null;const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ if(type==="customer.created"){metric="customers.new";value=1;}else if(type==="order.completed"){metric="revenue.gross";value=p.amounts.grossMinor;currency=p.amounts.currency;}else if(type==="marketplace.order.completed"){metric="revenue.gross";value=Number(p.totalMinor??p.amounts?.grossMinor??0);currency=p.currency??p.amounts?.currency??null;}else if(type==="dispatch.job.completed"){metric="jobs.completed";value=1;}
+ if(!metric||value===null)return;const d=new Date(occurred(job));const start=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));const end=new Date(start.getTime()+86400000);const{error}=await db.from("analytics_metric_points").upsert({tenant_id:job.tenantId,product_key:sourceProduct(job),metric_key:metric,period_start:start.toISOString(),period_end:end.toISOString(),value,currency,dimensions:{sourceProduct:sourceProduct(job)},calculated_at:new Date().toISOString(),source_event_id:job.event.id},{onConflict:"tenant_id,metric_key,source_event_id"});if(error)throw new Error(error.message);
+}
+
+async function financialProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});let kind:string|null=null;let amount:number|null=null;let currency:string|null=null;let suffix="";
+ if(type==="order.completed"){kind="revenue";amount=p.amounts.grossMinor;currency=p.amounts.currency;suffix="gross";}else if(type==="marketplace.order.completed"){kind="revenue";amount=Number(p.totalMinor??p.amounts?.grossMinor??0);currency=p.currency??p.amounts?.currency??null;suffix="gross";}else if(type==="refund.completed"||type==="marketplace.refund.completed"){kind="refund";amount=Number(p.amountMinor??p.totalMinor??0);currency=p.currency??null;suffix="refund";}
+ if(!kind||amount===null||!currency)return;const day=occurred(job).slice(0,10);const{error}=await db.from("financial_actuals").upsert({tenant_id:job.tenantId,product_key:sourceProduct(job),period_start:day,period_end:day,category:kind,kind,amount_minor:amount,currency,source_ref:"event:"+job.event.id+":"+suffix,source_event_id:job.event.id,observed_at:occurred(job)},{onConflict:"tenant_id,source_ref"});if(error)throw new Error(error.message);
+}
+
+
+
+
+async function intelligenceProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);const p:any=job.event.payload??{};
+ if(!job.tenantProductId)return;
+ if(!["accounting_ai.extraction.requested","accounting_ai.accounts_prep.requested","tax_intelligence.research.requested","intelligence.decision.requested"].includes(type))return;
+
+ let jobType:string,subjectType:string,subjectId:string,requirements:Record<string,unknown>,input:Record<string,unknown>;
+ if(type==="accounting_ai.extraction.requested"){
+  const{data:run}=await db.from("accounting_extraction_runs").select("id,batch_id,status")
+   .eq("id",p.extractionRunId).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!run)return;
+  const{data:batch}=await db.from("accounting_intake_batches")
+   .select("id,practice_client_id,phase,source,period_start,period_end")
+   .eq("id",run.batch_id).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!batch)return;
+  const{data:items}=await db.from("accounting_intake_items")
+   .select("id,document_id,source_type,original_reference,extraction_status")
+   .eq("batch_id",batch.id).eq("tenant_id",job.tenantId);
+  jobType="accounting_extraction";subjectType="accounting_extraction_run";subjectId=run.id;
+  requirements={
+   outputContract:"accounting_ai.extraction.result",
+   evidenceRequired:true,
+   capabilities:["document_extraction","vision"],
+   noLedgerPosting:true,
+   noApproval:true
+  };
+  input={...p,batch,items:items??[]};
+ }else if(type==="accounting_ai.accounts_prep.requested"){
+  const{data:run}=await db.from("accounting_accounts_prep_runs")
+   .select("id,practice_client_id,engagement_id,period_start,period_end,framework_key,opening_trial_balance_ref,prior_accounts_document_id,status")
+   .eq("id",p.prepRunId).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!run||run.status!=="building")return;
+  const[{data:trialBalance,error:tbError},{data:assets,error:assetError}]=await Promise.all([
+   db.rpc("accounting_trial_balance",{
+    _tenant:job.tenantId,_client:run.practice_client_id,_period_start:run.period_start,_period_end:run.period_end
+   }),
+   db.from("accounting_assets").select("id,asset_class,description,acquisition_date,cost_minor,currency,depreciation_method,useful_life_months,opening_accumulated_depreciation_minor,status")
+    .eq("tenant_id",job.tenantId).eq("practice_client_id",run.practice_client_id).in("status",["proposed","active"])
+  ]);
+  if(tbError)throw new Error(tbError.message);
+  if(assetError)throw new Error(assetError.message);
+  let priorAccounts:null|Record<string,unknown>=null;
+  if(run.prior_accounts_document_id){
+   const{data:doc}=await db.from("platform_documents").select("id,title,document_type,current_version,metadata")
+    .eq("id",run.prior_accounts_document_id).eq("tenant_id",job.tenantId).maybeSingle();
+   if(doc){
+    const{data:version}=await db.from("platform_document_versions")
+     .select("version,storage_ref,file_name,mime_type,size_bytes,sha256")
+     .eq("document_id",doc.id).eq("version",doc.current_version).maybeSingle();
+    priorAccounts={document:doc,version:version??null};
+   }
+  }
+  jobType="accounts_prep";subjectType="accounts_prep_run";subjectId=run.id;
+  requirements={
+   outputContract:"accounting_ai.accounts_prep.result",
+   evidenceRequired:true,
+   balancedAdjustmentsOnly:true,
+   noLedgerPosting:true,
+   noAccountsApproval:true,
+   comparePriorPeriod:true
+  };
+  input={
+   ...p,
+   run:{
+    id:run.id,practiceClientId:run.practice_client_id,engagementId:run.engagement_id,
+    periodStart:run.period_start,periodEnd:run.period_end,frameworkKey:run.framework_key,
+    openingTrialBalanceRef:run.opening_trial_balance_ref
+   },
+   trialBalance:trialBalance??[],assets:assets??[],priorAccounts
+  };
+ }else if(type==="tax_intelligence.research.requested"){
+  const{data:run}=await db.from("tax_research_runs")
+   .select("id,research_issue_id,query,source_hierarchy,status")
+   .eq("id",p.researchRunId).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!run)return;
+  const{data:issue}=await db.from("tax_research_issues")
+   .select("id,jurisdiction,tax_type,period_key,issue,factual_basis,fact_evidence_refs")
+   .eq("id",run.research_issue_id).eq("tenant_id",job.tenantId).maybeSingle();
+  if(!issue)return;
+  jobType="tax_research";subjectType="tax_research_run";subjectId=run.id;
+  requirements={
+   outputContract:"tax.research.result",
+   authoritativeSourcesRequired:true,
+   sourceHierarchy:run.source_hierarchy??[],
+   contraryAuthorityRequired:true,
+   noTaxPositionApproval:true
+  };
+  input={...p,query:run.query,issue};
+ }else{
+  jobType="decision";subjectType="automation_action";subjectId=String(p.automationActionId??job.event.id);
+  requirements={outputContract:"intelligence.decision.result",noSideEffects:true};
+  input=p;
+ }
+
+ const{error}=await db.from("intelligence_jobs").upsert({
+  tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,job_type:jobType,
+  subject_type:subjectType,subject_id:subjectId,source_event_id:job.event.id,
+  priority:["tax_research","accounts_prep"].includes(jobType)?"high":"normal",status:"queued",
+  input,requirements,next_attempt_at:new Date().toISOString()
+ },{onConflict:"tenant_id,job_type,source_event_id",ignoreDuplicates:true});
+ if(error)throw new Error(error.message);
+}
+
+
+async function bookingPaymentProcessor(job:ClaimedModuleEvent){
+ const type=String(job.event.event_type);
+ if(!["payment.captured","payment.failed","payment.cancelled"].includes(type))return;
+ if(!job.tenantProductId)return;
+ const p:any=job.event.payload??{};
+ const paymentIntentId=typeof p.paymentIntentId==="string"?p.paymentIntentId:null;
+ if(!paymentIntentId)return;
+ const db=await admin();
+ const{data:payment,error:paymentError}=await db.from("payment_intents")
+  .select("id,tenant_id,tenant_product_id,context_type,context_id,status,metadata")
+  .eq("id",paymentIntentId).eq("tenant_id",job.tenantId)
+  .eq("tenant_product_id",job.tenantProductId).maybeSingle();
+ if(paymentError)throw new Error(paymentError.message);
+ if(!payment||payment.context_type!=="marketplace_booking"||!payment.context_id)return;
+
+ const{data:booking,error:bookingError}=await db.from("bookings")
+  .select("id,status,hold_expires_at,customer_ref")
+  .eq("id",payment.context_id).eq("tenant_id",job.tenantId)
+  .eq("tenant_product_id",job.tenantProductId).maybeSingle();
+ if(bookingError)throw new Error(bookingError.message);
+ if(!booking)return;
+
+ if(type==="payment.captured"){
+  if(booking.status==="confirmed")return;
+  if(booking.status!=="hold")return;
+  const expired=booking.hold_expires_at&&Date.parse(booking.hold_expires_at)<=Date.now();
+  if(expired){
+   const{error:expireError}=await db.rpc("transition_booking",{
+    _booking:booking.id,_status:"expired",
+    _metadata:{paymentIntentId:payment.id,paymentCapturedAfterHold:true}
+   });
+   if(expireError)throw new Error(expireError.message);
+   await db.from("payment_intents").update({
+    metadata:{...(payment.metadata??{}),requiresManualRefund:true,bookingId:booking.id}
+   }).eq("id",payment.id);
+   const{data:admins,error:adminError}=await db.from("tenant_members").select("user_id")
+    .eq("tenant_id",job.tenantId).in("role",["owner","admin"]);
+   if(adminError)throw new Error(adminError.message);
+   for(const member of admins??[]){
+    const{error:notifError}=await db.from("user_notifications").upsert({
+     tenant_id:job.tenantId,user_id:member.user_id,tenant_product_id:job.tenantProductId,
+     notification_type:"booking.payment_late",title:"Booking payment captured after slot hold expired",
+     body:"A marketplace booking could not be confirmed because its slot hold had already expired. Review/refund the payment.",
+     priority:"urgent",entity_type:"booking",entity_id:booking.id,metadata:{paymentIntentId:payment.id},
+     source_event_id:job.event.id
+    },{onConflict:"tenant_id,user_id,source_event_id",ignoreDuplicates:true});
+    if(notifError)throw new Error(notifError.message);
+   }
+   return;
+  }
+  const{error:confirmError}=await db.rpc("transition_booking",{
+   _booking:booking.id,_status:"confirmed",
+   _metadata:{paymentIntentId:payment.id,paymentStatus:"captured"}
+  });
+  if(confirmError)throw new Error(confirmError.message);
+  return;
+ }
+
+ if(booking.status==="hold"){
+  const{error:cancelError}=await db.rpc("transition_booking",{
+   _booking:booking.id,_status:"cancelled",
+   _metadata:{paymentIntentId:payment.id,paymentStatus:type.slice("payment.".length)}
+  });
+  if(cancelError)throw new Error(cancelError.message);
+ }
+}
+
+async function inventoryProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ if(type!=="inventory.movement.recorded"&&type!=="hospitality.waste.recorded")return;
+ if(!job.tenantProductId)throw new Error("Inventory event requires tenant product scope");
+ const locationId=typeof job.event.location_id==="string"?job.event.location_id:null;
+ if(!locationId)throw new Error("Inventory event requires tenant location scope");
+ const movementType=type==="hospitality.waste.recorded"?"waste":p.movementType;
+ const mappedType=movementType==="purchase"?"receipt":movementType;
+ const{data:itemExisting}=await db.from("inventory_items").select("id").eq("tenant_id",job.tenantId)
+  .eq("product_key",sourceProduct(job)).eq("external_ref",p.itemRef).maybeSingle();
+ let itemId=itemExisting?.id??null;
+ if(!itemId){
+  const itemName=typeof p.metadata?.itemName==="string"?p.metadata.itemName:p.itemRef;
+  const{data:item,error}=await db.from("inventory_items").insert({
+   tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,product_key:sourceProduct(job),
+   external_ref:p.itemRef,sku:typeof p.metadata?.sku==="string"?p.metadata.sku:null,
+   name:itemName,unit:p.unit??"each",track_stock:true,metadata:p.metadata??{}
+  }).select("id").single();
+  if(error||!item)throw new Error(error?.message??"Inventory item could not be projected");
+  itemId=item.id;
+ }
+ const{data:locExisting}=await db.from("inventory_stock_locations").select("id").eq("tenant_id",job.tenantId)
+  .eq("tenant_product_id",job.tenantProductId).eq("location_id",locationId).eq("location_kind","store").maybeSingle();
+ let stockLocationId=locExisting?.id??null;
+ if(!stockLocationId){
+  const{data:tenantLocation}=await db.from("tenant_locations").select("name").eq("id",locationId).eq("tenant_id",job.tenantId).maybeSingle();
+  const{data:stockLocation,error}=await db.from("inventory_stock_locations").insert({
+   tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,location_id:locationId,
+   external_ref:"tenant-location:"+locationId,name:tenantLocation?.name??"Location stock",location_kind:"store"
+  }).select("id").single();
+  if(error||!stockLocation)throw new Error(error?.message??"Stock location could not be projected");
+  stockLocationId=stockLocation.id;
+ }
+ const{error}=await db.rpc("record_inventory_movement",{
+  _tenant:job.tenantId,_item:itemId,_location:stockLocationId,_type:mappedType,_quantity:p.quantity,
+  _source_ref:p.sourceRef,_occurred_at:occurred(job),_unit_cost_minor:p.costMinor??null,
+  _currency:p.currency??null,_metadata:p.metadata??{}
+ });
+ if(error)throw new Error(error.message);
+}
+
+
+function configuredEarnQuantity(rule:unknown,type:string,payload:any):number|null{
+ if(!rule||typeof rule!=="object"||Array.isArray(rule))return null;
+ const r=rule as Record<string,unknown>;
+ const events=Array.isArray(r.eventTypes)?r.eventTypes.map(String):[];
+ if(events.length&&!events.includes(type))return null;
+ const mode=String(r.mode??"");
+ if(mode==="fixed_per_event"){
+  const q=Number(r.quantity??0);return Number.isFinite(q)&&q>0?q:null;
+ }
+ if(mode==="per_minor_spend"){
+  if(type!=="order.completed")return null;
+  const denominator=Number(r.minorUnitsPerReward??0);
+  const units=Number(r.rewardUnits??1);
+  const basis=String(r.amountBasis??"gross");
+  const amount=Number(basis==="net"?(payload.amounts?.netMinor??payload.amounts?.grossMinor??0):(payload.amounts?.grossMinor??0));
+  if(!Number.isFinite(denominator)||denominator<=0||!Number.isFinite(units)||units<=0||!Number.isFinite(amount)||amount<=0)return null;
+  return Math.floor(amount/denominator)*units;
+ }
+ return null;
+}
+
+async function loyaltyProcessor(job:ClaimedModuleEvent){
+ const type=String(job.event.event_type);
+ if(!["order.completed","booking.completed"].includes(type))return;
+ if(!job.tenantProductId)return;
+ const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ const customerRef=typeof p.customerRef==="string"?p.customerRef:null;
+ if(!customerRef)return;
+ const db=await admin();
+ const{data:programmes,error}=await db.from("loyalty_programmes")
+  .select("id,earn_rule").eq("tenant_id",job.tenantId)
+  .eq("tenant_product_id",job.tenantProductId).eq("active",true);
+ if(error)throw new Error(error.message);
+ for(const programme of programmes??[]){
+  const quantity=configuredEarnQuantity(programme.earn_rule,type,p);
+  if(quantity===null||quantity<=0)continue;
+  const{error:ledgerError}=await db.rpc("apply_loyalty_entry",{
+   _tenant:job.tenantId,_programme:programme.id,_customer_ref:customerRef,_entry_type:"earn",
+   _quantity:quantity,_source_ref:"event:"+job.event.id+":programme:"+programme.id,
+   _reason:"Automatic earn from "+type,_occurred_at:occurred(job)
+  });
+  if(ledgerError)throw new Error(ledgerError.message);
+ }
+}
+
+async function automationProcessor(job:ClaimedModuleEvent){
+ if(!job.tenantProductId)return;
+ const db=await admin();const type=String(job.event.event_type);
+ const{data:workflows,error}=await db.from("automation_workflows")
+  .select("id,tenant_product_id,trigger_event,active_version")
+  .eq("tenant_id",job.tenantId).eq("status","active");
+ if(error)throw new Error(error.message);
+ for(const workflow of workflows??[]){
+  if(workflow.tenant_product_id&&workflow.tenant_product_id!==job.tenantProductId)continue;
+  const pattern=String(workflow.trigger_event);
+  const matches=pattern==="*"||(pattern.endsWith("*")&&type.startsWith(pattern.slice(0,-1)))||pattern===type;
+  if(!matches||!workflow.active_version)continue;
+  const{error:runError}=await db.from("automation_runs").upsert({
+   tenant_id:job.tenantId,workflow_id:workflow.id,workflow_version:workflow.active_version,
+   event_id:job.event.id,status:"queued",context:{event:job.event}
+  },{onConflict:"workflow_id,event_id",ignoreDuplicates:true});
+  if(runError)throw new Error(runError.message);
+ }
+}
+
+
+async function notificationProcessor(job:ClaimedModuleEvent){
+ const type=String(job.event.event_type);
+ if(type!=="notification.requested")return;
+ const db=await admin();const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ const recipients=new Set<string>((p.recipientUserIds??[]).map(String));
+ if(Array.isArray(p.recipientRoles)&&p.recipientRoles.length){
+  const{data:members,error}=await db.from("tenant_members").select("user_id,role")
+   .eq("tenant_id",job.tenantId).in("role",p.recipientRoles);
+  if(error)throw new Error(error.message);
+  for(const member of members??[])recipients.add(String(member.user_id));
+ }
+ if(!recipients.size)return;
+ for(const userId of recipients){
+  const{error}=await db.from("user_notifications").upsert({
+   tenant_id:job.tenantId,user_id:userId,tenant_product_id:job.tenantProductId,
+   notification_type:p.notificationType,title:p.title,body:p.body??null,priority:p.priority,
+   entity_type:p.entityType??null,entity_id:p.entityId??null,action_url:p.actionUrl??null,
+   expires_at:p.expiresAt??null,metadata:p.metadata??{},source_event_id:job.event.id
+  },{onConflict:"tenant_id,user_id,source_event_id",ignoreDuplicates:true});
+  if(error)throw new Error(error.message);
+ }
+}
+
+async function searchProcessor(job:ClaimedModuleEvent){
+ const type=String(job.event.event_type);
+ if(!job.tenantProductId)return;
+ if(!["customer.created","customer.updated","company.created","company.updated","lead.created"].includes(type))return;
+ const db=await admin();const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ let entityType:string,entityId:string,title:string,body:string;
+ if(type.startsWith("customer.")){
+  entityType="customer";entityId=p.customerRef;title=p.displayName;
+  body=[p.email,p.phoneE164,p.firstName,p.lastName].filter(Boolean).join(" ");
+ }else if(type.startsWith("company.")){
+  entityType="company";entityId=p.companyRef;title=p.name;
+  body=[p.legalName,p.website,p.industry].filter(Boolean).join(" ");
+ }else{
+  entityType="lead";entityId=p.leadRef;title=p.title;
+  body=[p.source,p.customerRef,p.companyRef].filter(Boolean).join(" ");
+ }
+ const{error}=await db.from("platform_search_documents").upsert({
+  tenant_id:job.tenantId,tenant_product_id:job.tenantProductId,product_key:sourceProduct(job),
+  entity_type:entityType,entity_id:entityId,title,body,keywords:[],locale:p.locale??null,
+  source_revision:job.event.id,metadata:{eventType:type},updated_at:new Date().toISOString()
+ },{onConflict:"tenant_id,product_key,entity_type,entity_id"});
+ if(error)throw new Error(error.message);
+}
+
+async function hospitalityProcessor(job:ClaimedModuleEvent){
+ const db=await admin();const type=String(job.event.event_type);const p:any=parseStandardEventPayload(type,job.event.payload??{});
+ const tenantProductId=job.tenantProductId;
+ const locationId=typeof job.event.location_id==="string"?job.event.location_id:null;
+ if(!tenantProductId)throw new Error("Hospitality event requires tenant product scope");
+ if((type==="epos.transaction.recorded"||type==="inventory.movement.recorded"||type==="hospitality.waste.recorded")&&!locationId)throw new Error("Hospitality event requires location scope");
+
+ if(type==="epos.transaction.recorded"){
+  const values={
+   tenant_id:job.tenantId,tenant_product_id:tenantProductId,location_id:locationId,
+   product_key:sourceProduct(job),source_transaction_ref:p.sourceTransactionRef,business_date:p.businessDate,
+   occurred_at:occurred(job),channel:p.channel,order_type:p.orderType??null,currency:p.amounts.currency,
+   gross_minor:p.amounts.grossMinor,discount_minor:p.amounts.discountMinor,refund_minor:p.amounts.refundMinor,
+   net_minor:p.amounts.netMinor,tax_minor:p.amounts.taxMinor??null,cogs_minor:p.amounts.cogsMinor??null,
+   item_count:p.itemCount,customer_ref:p.customerRef??null,metadata:p.metadata
+  };
+  const{data:fact,error}=await db.from("epos_transaction_facts").upsert(values,{onConflict:"tenant_id,product_key,source_transaction_ref"}).select("id").single();
+  if(error||!fact)throw new Error(error?.message??"EPOS transaction fact failed");
+  if(Array.isArray(p.items)){
+   for(const item of p.items){
+    const{error:itemError}=await db.from("epos_item_facts").upsert({
+     tenant_id:job.tenantId,transaction_id:fact.id,line_ref:item.lineRef,item_ref:item.itemRef,item_name:item.itemName,
+     category_ref:item.categoryRef??null,quantity:item.quantity,gross_minor:item.grossMinor,
+     discount_minor:item.discountMinor,refund_minor:item.refundMinor,net_minor:item.netMinor,
+     estimated_cogs_minor:item.estimatedCogsMinor??null,modifier_refs:item.modifierRefs
+    },{onConflict:"transaction_id,line_ref"});
+    if(itemError)throw new Error(itemError.message);
+   }
+  }
+  return;
+ }
+
+ if(type==="inventory.movement.recorded"||type==="hospitality.waste.recorded"){
+  const movementType=type==="hospitality.waste.recorded"?"waste":p.movementType;
+  const{error}=await db.from("inventory_movement_facts").upsert({
+   tenant_id:job.tenantId,tenant_product_id:tenantProductId,location_id:locationId,
+   item_ref:p.itemRef,movement_type:movementType,quantity:p.quantity,unit:p.unit??null,
+   cost_minor:p.costMinor??null,currency:p.currency??null,occurred_at:occurred(job),
+   source_ref:p.sourceRef
+  },{onConflict:"tenant_id,source_ref"});
+  if(error)throw new Error(error.message);
+ }
+}
+
+export function createDefaultModuleProcessorRegistry(){return new ModuleEventProcessorRegistry().register("crm.core",crmProcessor).register("intelligence.core",intelligenceProcessor).register("analytics.core",analyticsProcessor).register("financials.core",financialProcessor).register("bookings.core",bookingPaymentProcessor).register("inventory.core",inventoryProcessor).register("hospitality.intelligence",hospitalityProcessor).register("loyalty.core",loyaltyProcessor).register("automation.core",automationProcessor).register("notifications.core",notificationProcessor).register("search.core",searchProcessor);}
