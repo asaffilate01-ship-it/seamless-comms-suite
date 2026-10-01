@@ -64,8 +64,9 @@ export const getPortfolioControlPlane = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     await requireWorkspaceAdmin(context, data.tenantId);
     await ensurePortfolioSeed(context, data.tenantId);
+    const db = context.supabase as any;
 
-    const { data: assets, error } = await context.supabase
+    const { data: assets, error } = await db
       .from('portfolio_assets')
       .select('*')
       .eq('tenant_id', data.tenantId)
@@ -97,8 +98,9 @@ export const updatePortfolioAsset = createServerFn({ method: 'POST' })
   .inputValidator(updatePortfolioAssetInputSchema)
   .handler(async ({ context, data }) => {
     await requireWorkspaceAdmin(context, data.tenantId);
+    const db = context.supabase as any;
 
-    const { data: current, error: currentError } = await context.supabase
+    const { data: current, error: currentError } = await db
       .from('portfolio_assets')
       .select('*')
       .eq('tenant_id', data.tenantId)
@@ -118,7 +120,7 @@ export const updatePortfolioAsset = createServerFn({ method: 'POST' })
     if (data.canonicalRepositoryUrl !== undefined) patch.canonical_repository_url = data.canonicalRepositoryUrl;
     if (data.ownerNotes !== undefined) patch.owner_notes = data.ownerNotes;
 
-    const { data: updated, error: updateError } = await context.supabase
+    const { data: updated, error: updateError } = await db
       .from('portfolio_assets')
       .update(patch)
       .eq('tenant_id', data.tenantId)
@@ -135,7 +137,7 @@ export const updatePortfolioAsset = createServerFn({ method: 'POST' })
       .filter(([key]) => key !== 'updated_at')
       .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as Record<string, unknown>);
 
-    await context.supabase.from('portfolio_migration_events').insert({
+    await db.from('portfolio_migration_events').insert({
       tenant_id: data.tenantId,
       asset_id: data.assetId,
       actor_user_id: context.userId,
@@ -147,7 +149,7 @@ export const updatePortfolioAsset = createServerFn({ method: 'POST' })
       details: changes,
     });
 
-    await context.supabase.from('audit_log').insert({
+    await db.from('audit_log').insert({
       tenant_id: data.tenantId,
       actor: context.userId,
       action: 'portfolio_asset.updated',
