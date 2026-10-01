@@ -208,23 +208,23 @@ CREATE OR REPLACE FUNCTION public.platform_bootstrap_dishbee_pilot()
 RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE
-  org_id uuid;
-  tenant_id uuid;
-  brand_id uuid;
+  v_org_id uuid;
+  v_tenant_id uuid;
+  v_brand_id uuid;
   item record;
   result jsonb := '[]'::jsonb;
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN RAISE EXCEPTION 'Platform administrator required'; END IF;
 
-  SELECT id INTO org_id FROM public.organisations WHERE slug='313-brands';
-  IF org_id IS NULL THEN
+  SELECT o.id INTO v_org_id FROM public.organisations o WHERE o.slug='313-brands';
+  IF v_org_id IS NULL THEN
     INSERT INTO public.organisations(name,slug,country_code,billing_currency)
     VALUES('313 Brands Ltd','313-brands','GB','GBP')
-    RETURNING id INTO org_id;
+    RETURNING id INTO v_org_id;
   END IF;
 
   INSERT INTO public.organisation_members(organisation_id,user_id,role)
-  VALUES(org_id,auth.uid(),'owner')
+  VALUES(v_org_id,auth.uid(),'owner')
   ON CONFLICT (organisation_id,user_id) DO UPDATE SET role='owner';
 
   FOR item IN
@@ -234,51 +234,51 @@ BEGIN
       ('MealDeck','mealdeck','mealdeck-uk','mealdeck')
     ) AS x(tenant_name,tenant_slug,blueprint_key,brand_slug)
   LOOP
-    SELECT id INTO tenant_id FROM public.tenants WHERE slug=item.tenant_slug;
-    IF tenant_id IS NULL THEN
+    SELECT t.id INTO v_tenant_id FROM public.tenants t WHERE t.slug=item.tenant_slug;
+    IF v_tenant_id IS NULL THEN
       INSERT INTO public.tenants(name,slug,organisation_id,country_code,currency,timezone,status)
-      VALUES(item.tenant_name,item.tenant_slug,org_id,'GB','GBP','Europe/London','active')
-      RETURNING id INTO tenant_id;
+      VALUES(item.tenant_name,item.tenant_slug,v_org_id,'GB','GBP','Europe/London','active')
+      RETURNING id INTO v_tenant_id;
     ELSE
-      IF (SELECT organisation_id FROM public.tenants WHERE id=tenant_id) <> org_id THEN
+      IF (SELECT t.organisation_id FROM public.tenants t WHERE t.id=v_tenant_id) <> v_org_id THEN
         RAISE EXCEPTION 'Tenant % already belongs to another organisation', item.tenant_slug;
       END IF;
     END IF;
 
     INSERT INTO public.tenant_members(tenant_id,user_id,role)
-    VALUES(tenant_id,auth.uid(),'owner')
-    ON CONFLICT (tenant_id,user_id) DO UPDATE SET role='owner';
+    VALUES(v_tenant_id,auth.uid(),'owner')
+    ON CONFLICT ON CONSTRAINT tenant_members_pkey DO UPDATE SET role='owner';
 
-    PERFORM public.platform_apply_blueprint(tenant_id,item.blueprint_key);
+    PERFORM public.platform_apply_blueprint(v_tenant_id,item.blueprint_key);
 
     SELECT public.platform_upsert_tenant_brand(
-      tenant_id,
+      v_tenant_id,
       CASE WHEN item.tenant_slug='mealdeck' THEN 'mealdeck' ELSE 'dishbee' END,
       item.tenant_name,
       item.brand_slug,
       true,
       NULL,
       '{}'::jsonb
-    ) INTO brand_id;
+    ) INTO v_brand_id;
 
     IF item.tenant_slug='cafe1-st-albans' THEN
       PERFORM public.platform_upsert_tenant_location(
-        tenant_id,brand_id,'St Albans Crown Court','st-albans-crown-court','Europe/London',
+        v_tenant_id,v_brand_id,'St Albans Crown Court','st-albans-crown-court','Europe/London',
         jsonb_build_object('city','St Albans','country','GB'),'active'
       );
     ELSIF item.tenant_slug='cafe1-luton' THEN
       PERFORM public.platform_upsert_tenant_location(
-        tenant_id,brand_id,'Luton Crown Court','luton-crown-court','Europe/London',
+        v_tenant_id,v_brand_id,'Luton Crown Court','luton-crown-court','Europe/London',
         jsonb_build_object('city','Luton','country','GB'),'active'
       );
       PERFORM public.platform_upsert_tenant_location(
-        tenant_id,brand_id,'Futures House','futures-house','Europe/London',
+        v_tenant_id,v_brand_id,'Futures House','futures-house','Europe/London',
         jsonb_build_object('city','Luton','country','GB'),'active'
       );
     END IF;
 
     result := result || jsonb_build_array(jsonb_build_object(
-      'tenantId',tenant_id,
+      'tenantId',v_tenant_id,
       'tenantName',item.tenant_name,
       'tenantSlug',item.tenant_slug,
       'blueprint',item.blueprint_key
@@ -286,7 +286,7 @@ BEGIN
   END LOOP;
 
   RETURN jsonb_build_object(
-    'organisationId',org_id,
+    'organisationId',v_org_id,
     'organisationSlug','313-brands',
     'landlordProductKey','dishbee',
     'tenants',result
