@@ -129,3 +129,76 @@ export const setAutomationWorkflowStatus=createServerFn({method:"POST"})
   if(error||!row)throw new Error(error?.message??"Workflow status could not be updated");
   return row;
 });
+
+
+export const listAutomationWorkspace=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>)=>scope.parse(input))
+.handler(async({context,data})=>{
+  await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"automation.core"});
+  const db=context.supabase as any;
+  const{data:workflows,error}=await db.from("automation_workflows")
+    .select("*").eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+    .order("updated_at",{ascending:false});
+  if(error)throw new Error(error.message);
+  const ids=(workflows??[]).map((row:any)=>row.id);
+  if(!ids.length)return{workflows:[],versions:[],runs:[],actions:[]};
+  const[versions,runs,actions]=await Promise.all([
+    db.from("automation_workflow_versions").select("*").eq("tenant_id",data.tenantId)
+      .in("workflow_id",ids).order("version",{ascending:false}),
+    db.from("automation_runs").select("*").eq("tenant_id",data.tenantId)
+      .in("workflow_id",ids).order("created_at",{ascending:false}).limit(500),
+    db.from("automation_action_queue").select("id,run_id,workflow_id,node_id,module_key,action_key,risk,requires_approval,state,error,created_at,updated_at")
+      .eq("tenant_id",data.tenantId).in("workflow_id",ids).order("created_at",{ascending:false}).limit(500)
+  ]);
+  for(const result of[versions,runs,actions])if(result.error)throw new Error(result.error.message);
+  return{workflows:workflows??[],versions:versions.data??[],runs:runs.data??[],actions:actions.data??[]};
+});
+
+const versionSchema=scope.extend({
+ workflowId:z.string().uuid(),name:z.string().min(2).max(200),
+ description:z.string().max(2000).optional().nullable(),triggerEvent:z.string().min(1).max(200),
+ nodes:z.array(node).min(1).max(500),
+ edges:z.array(z.object({from:z.string().max(100),to:z.string().max(100),condition:z.string().max(500).optional().nullable()})).max(1000)
+});
+export const saveAutomationWorkflowVersion=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof versionSchema>)=>versionSchema.parse(input))
+.handler(async({context,data})=>{
+ const access=await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"automation.core"});
+ requireAdminTenantRole(access.role);validateGraph(data.nodes,data.edges);
+ const db=context.supabase as any;
+ const{data:workflowRow}=await db.from("automation_workflows").select("id,status,active_version")
+  .eq("id",data.workflowId).eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId).maybeSingle();
+ if(!workflowRow)throw new Error("Workflow not found");
+ const{data:latest,error:latestError}=await db.from("automation_workflow_versions").select("version")
+  .eq("workflow_id",data.workflowId).eq("tenant_id",data.tenantId).order("version",{ascending:false}).limit(1).maybeSingle();
+ if(latestError)throw new Error(latestError.message);
+ const nextVersion=Number(latest?.version??0)+1;
+ const{error:updateError}=await db.from("automation_workflows").update({
+  name:data.name,description:data.description??null,trigger_event:data.triggerEvent,
+  status:workflowRow.status==="archived"?"draft":workflowRow.status
+ }).eq("id",data.workflowId).eq("tenant_id",data.tenantId);
+ if(updateError)throw new Error(updateError.message);
+ const{error:versionError}=await db.from("automation_workflow_versions").insert({
+  workflow_id:data.workflowId,tenant_id:data.tenantId,version:nextVersion,
+  nodes:data.nodes,edges:data.edges,created_by:context.userId
+ });
+ if(versionError)throw new Error(versionError.message);
+ return{id:data.workflowId,version:nextVersion};
+});
+
+export const setAutomationWorkflowStatus=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((input:z.input<typeof scope>&{workflowId:string;status:"draft"|"active"|"paused"|"archived"})=>
+  scope.extend({workflowId:z.string().uuid(),status:z.enum(["draft","active","paused","archived"])}).parse(input))
+.handler(async({context,data})=>{
+ const access=await requireModuleEntitlement(context,{tenantId:data.tenantId,tenantProductId:data.tenantProductId,moduleKey:"automation.core"});
+ requireAdminTenantRole(access.role);
+ const db=context.supabase as any;
+ const{data:row,error}=await db.from("automation_workflows").update({status:data.status})
+   .eq("id",data.workflowId).eq("tenant_id",data.tenantId).eq("tenant_product_id",data.tenantProductId)
+   .select("id,status,active_version,updated_at").single();
+ if(error||!row)throw new Error(error?.message??"Workflow status could not be updated");
+ return row;
+});
