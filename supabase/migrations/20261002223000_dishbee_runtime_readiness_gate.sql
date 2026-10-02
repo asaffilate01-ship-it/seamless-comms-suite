@@ -10,6 +10,7 @@ DECLARE
   source_runtime jsonb;
   blockers jsonb := '[]'::jsonb;
   new_status text;
+  shadow_check_key text;
 BEGIN
   SELECT * INTO t
   FROM public.portfolio_migration_targets
@@ -72,6 +73,8 @@ BEGIN
         'warnings',COALESCE(e.payload->'warnings','[]'::jsonb),
         'activeLocations',COALESCE((e.payload->>'activeLocations')::integer,0),
         'mappedLocations',COALESCE((e.payload->>'mappedLocations')::integer,0),
+        'successfulShadowHandoffs',COALESCE((e.payload->>'successfulShadowHandoffs')::integer,0),
+        'lastShadowHandoffAt',e.payload->>'lastShadowHandoffAt',
         'dishbeeTenantId',e.payload->>'dishbeeTenantId'
       )
       INTO source_runtime
@@ -91,6 +94,41 @@ BEGIN
         blockers:=blockers||jsonb_build_array('source_runtime_readiness_missing');
       ELSIF NOT COALESCE((source_runtime->>'ready')::boolean,false) THEN
         blockers:=blockers||jsonb_build_array('source_runtime_not_ready');
+      ELSE
+        shadow_check_key:='dishbee-runtime-shadow:'||t.source_workspace_id||':'||(source_runtime->>'eventId');
+
+        INSERT INTO public.portfolio_shadow_checks(
+          tenant_id,asset_id,target_id,check_key,check_type,status,
+          source_value,target_value,evidence,checked_at
+        )
+        SELECT
+          t.tenant_id,
+          t.asset_id,
+          t.id,
+          shadow_check_key,
+          'event_parity',
+          'passed',
+          jsonb_build_object(
+            'dishbeeTenantId',source_runtime->>'dishbeeTenantId',
+            'successfulShadowHandoffs',COALESCE((source_runtime->>'successfulShadowHandoffs')::integer,0),
+            'lastShadowHandoffAt',source_runtime->>'lastShadowHandoffAt'
+          ),
+          jsonb_build_object(
+            'omniqoraTenantId',t.target_tenant_id,
+            'productKey',t.target_product_key
+          ),
+          jsonb_build_object(
+            'sourceRuntimeEventId',source_runtime->>'eventId',
+            'automatic',true
+          ),
+          now()
+        WHERE NOT EXISTS(
+          SELECT 1
+          FROM public.portfolio_shadow_checks s
+          WHERE s.asset_id=t.asset_id
+            AND s.target_id=t.id
+            AND s.check_key=shadow_check_key
+        );
       END IF;
     END IF;
   END IF;
