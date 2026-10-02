@@ -40,6 +40,7 @@ const nav: NavItem[] = [
   { to: "/app/crm", labelKey: "", label: "CRM & Customer 360", icon: ContactRound },
   { to: "/app/workflows", labelKey: "app.nav.workflows", icon: GitBranch },
   { to: "/app/campaigns", labelKey: "app.nav.campaigns", icon: Megaphone },
+  { to: "/app/feedback", labelKey: "", label: "Feedback & NPS", icon: MessageCircle },
   { to: "/app/analytics", labelKey: "app.nav.analytics", icon: BarChart3 },
   { to: "/app/partners", labelKey: "app.nav.partners", icon: Handshake },
   { to: "/app/transformation", labelKey: "", label: "Business360", icon: BarChart3 },
