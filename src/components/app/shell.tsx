@@ -48,6 +48,7 @@ const nav: NavItem[] = [
   { to: "/app/integrations", labelKey: "", label: "Product connections", icon: GitBranch },
   { to: "/app/procurement-readiness", labelKey: "", label: "Procurement readiness", icon: ShieldCheck },
   { to: "/app/control-plane", labelKey: "", label: "SaaS Factory", icon: Boxes },
+  { to: "/app/migration-factory", labelKey: "", label: "Migration Factory", icon: GitBranch },
   { to: "/app/platform-kernel", labelKey: "", label: "Platform Kernel", icon: Cpu },
   { to: "/app/utilities", labelKey: "", label: "Platform Utilities", icon: Wrench },
   { to: "/app/vertical-packages", labelKey: "", label: "Vertical Packages", icon: Boxes },
