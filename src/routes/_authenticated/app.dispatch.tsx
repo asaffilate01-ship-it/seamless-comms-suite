@@ -51,8 +51,37 @@ function DispatchWorkspace(){
     <div className="divide-y">{jobs.map(job=><div key={job.id} className="p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><b>{job.job_type}</b><p className="text-xs text-muted-foreground">{job.product_key} · {job.external_ref||job.id}</p></div><StatusBadge status={job.status}/></div>
      <div className="mt-3 flex flex-wrap gap-2">{(job.stops??[]).sort((a:any,b:any)=>a.position-b.position).map((s:any)=><Badge key={s.id} variant="outline"><MapPin className="mr-1 h-3 w-3"/>{s.stop_kind}: {s.address||s.latitude+","+s.longitude}</Badge>)}</div>
      {!job.assigned_agent_id&&agents.length>0&&<Button className="mt-3" size="sm" variant="outline" onClick={()=>run(()=>assignFn({data:{jobId:job.id,agentId:agents.find(a=>a.status==="available")?.id||agents[0].id,vehicleId:vehicles.find(v=>v.status==="available")?.id||null}}),"Job assigned")}>Assign available agent</Button>}
-     <div className="mt-3 flex flex-wrap gap-2">{["accepted","en_route","arrived","in_progress","completed"].map(s=><Button key={s} size="sm" variant="outline" disabled={job.status===s||["completed","failed","cancelled"].includes(job.status)} onClick={()=>run(()=>statusFn({data:{jobId:job.id,status:s}}),`Status: ${s}`)}>{s}</Button>)}
-      <Button size="sm" variant="outline" onClick={async()=>{try{const r=await trackFn({data:{tenantId,subjectType:"dispatch_job",subjectId:job.id,hours:24}});setTrackingToken(r.token);toast.success("Tracking link token generated");}catch(e){toast.error(e instanceof Error?e.message:String(e));}}>Tracking link</Button></div>
+     <div className="mt-3 flex flex-wrap gap-2">
+      {["accepted","en_route","arrived","in_progress","completed"].map((nextStatus) => (
+       <Button
+        key={nextStatus}
+        size="sm"
+        variant="outline"
+        disabled={job.status===nextStatus||["completed","failed","cancelled"].includes(job.status)}
+        onClick={() => run(
+         () => statusFn({ data: { jobId: job.id, status: nextStatus as any } }),
+         "Status: " + nextStatus,
+        )}
+       >
+        {nextStatus}
+       </Button>
+      ))}
+      <Button
+       size="sm"
+       variant="outline"
+       onClick={async () => {
+        try {
+         const result=await trackFn({data:{tenantId,subjectType:"dispatch_job",subjectId:job.id,hours:24}});
+         setTrackingToken(result.token);
+         toast.success("Tracking link token generated");
+        } catch (error) {
+         toast.error(error instanceof Error?error.message:String(error));
+        }
+       }}
+      >
+       Tracking link
+      </Button>
+     </div>
     </div>)}{!jobs.length&&<p className="p-5 text-sm text-muted-foreground">No dispatch jobs yet.</p>}</div>
    </CardContent></Card>
   </div>
