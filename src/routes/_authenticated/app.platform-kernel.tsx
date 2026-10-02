@@ -115,7 +115,7 @@ function PlatformKernel() {
   );
   const readiness=(kernel.data?.readiness??{}) as {ready?:boolean;blockers?:string[];warnings?:string[]};
   const serviceCapabilities=selectedProduct==="dishbee"
-    ?["orders.consume","orders.ack","events.write","usage.write"]
+    ?["orders.consume","orders.ack","events.write","usage.write","crm.write"]
     :["events.write","usage.write"];
 
   async function refresh(){await Promise.all([tenant.refetch(),kernel.refetch(),kernelCatalogue.refetch()]);}
