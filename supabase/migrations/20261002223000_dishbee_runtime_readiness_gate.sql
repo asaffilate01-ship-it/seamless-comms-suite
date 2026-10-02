@@ -101,7 +101,15 @@ BEGIN
   END;
 
   UPDATE public.portfolio_migration_targets
-  SET status=new_status,updated_at=now()
+  SET
+    status=new_status,
+    config=COALESCE(config,'{}'::jsonb)||jsonb_build_object(
+      'lastCheckedAt',now(),
+      'lastProductReadiness',COALESCE(readiness,'{}'::jsonb),
+      'lastSourceRuntime',COALESCE(source_runtime,'{}'::jsonb),
+      'lastBlockers',blockers
+    ),
+    updated_at=now()
   WHERE id=t.id;
 
   RETURN jsonb_build_object(
