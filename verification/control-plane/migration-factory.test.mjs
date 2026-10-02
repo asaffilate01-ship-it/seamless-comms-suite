@@ -27,7 +27,7 @@ assert(bootstrapNames.has("Cafe 1 Luton"));
 assert(bootstrapNames.has("Cafe 1 St Albans"));
 assert(bootstrapNames.has("MealDeck"));
 let evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
-assert.equal(evaluation.ready,false);assert(evaluation.blockers.includes("required_targets_not_ready"));assert(evaluation.blockers.includes("shadow_checks_missing"));assert(evaluation.blockers.includes("approved_cutover_plan_missing"));
+assert.equal(evaluation.ready,false);assert(evaluation.blockers.includes("required_targets_not_ready"));assert(evaluation.blockers.includes("required_target_shadow_checks_missing"));assert(evaluation.blockers.includes("approved_cutover_plan_missing"));
 
 await asService(async()=>{
  for(const[,tenantId,workspace]of targets){
@@ -56,6 +56,8 @@ await asService(async()=>{
      warnings:[],
      activeLocations:2,
      mappedLocations:2,
+     successfulShadowHandoffs:1,
+     lastShadowHandoffAt:new Date().toISOString(),
      checkedAt:new Date().toISOString()
     })
    ]
@@ -69,10 +71,9 @@ for(const row of mapped.rows){
  assert.equal(r.sourceRuntime.dishbeeTenantId,row.source_workspace_id);
  assert.equal(r.sourceRuntime.ready,true);
 }
-await asUser(admin,()=>db.query("INSERT INTO public.portfolio_shadow_checks(tenant_id,asset_id,check_key,check_type,status,evidence) VALUES($1,$2,'orders-parity','order_parity','passed','{\"source\":100,\"target\":100}'::jsonb)",[ownerTenant,asset]));
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_cutover_plans(asset_id,tenant_id,change_window,freeze_strategy,dns_strategy,communication_plan,rollback_strategy,smoke_tests,owner_user_id,approved_by,approved_at) VALUES($1,$2,'overnight','5 minute final delta','switch only after smoke tests','notify operators','Restore source routes and disable target writes','[\"auth\",\"orders\",\"payments\",\"KDS\"]'::jsonb,$3,$3,now())",[asset,ownerTenant,admin]));
 evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
-assert.equal(evaluation.ready,true);assert.equal(evaluation.requiredTargets,3);assert.equal(evaluation.readyTargets,3);assert.equal(evaluation.failedShadowChecks,0);assert.equal(evaluation.passedShadowChecks,1);
+assert.equal(evaluation.ready,true);assert.equal(evaluation.requiredTargets,3);assert.equal(evaluation.readyTargets,3);assert.equal(evaluation.shadowReadyTargets,3);assert.equal(evaluation.failedShadowChecks,0);assert.equal(evaluation.passedShadowChecks,3);
 await asUser(admin,()=>db.query("SELECT public.migration_mark_cutover_ready($1)",[asset]));
 const stage=await asUser(admin,()=>db.query("SELECT migration_stage,stage_progress FROM public.portfolio_assets WHERE id=$1",[asset]));assert.deepEqual(stage.rows[0],{migration_stage:"cutover_ready",stage_progress:85});
 const cutover=await asUser(admin,async()=> (await db.query("SELECT public.migration_begin_cutover($1) AS id",[asset])).rows[0].id);assert(cutover);
