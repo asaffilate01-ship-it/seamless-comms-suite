@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3, ContactRound,
   Handshake, Settings, Search, Bell, Plus, MessageCircle, ShieldCheck,
-  Menu, LogOut, Boxes, Cpu, ShoppingBasket,
+  Menu, LogOut, Boxes, Cpu, ShoppingBasket, Truck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const nav: NavItem[] = [
   { to: "/app", labelKey: "app.nav.overview", icon: LayoutDashboard, exact: true },
   { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle, badge: "LIVE" },
   { to: "/app/order-intake", labelKey: "", label: "Assisted Ordering", icon: ShoppingBasket },
+  { to: "/app/dispatch", labelKey: "", label: "Dispatch & Tracking", icon: Truck },
   { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox, badge: "12" },
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
