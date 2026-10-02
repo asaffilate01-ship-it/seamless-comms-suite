@@ -15,26 +15,74 @@ const asset=(await asUser(admin,()=>db.query(`INSERT INTO public.portfolio_asset
 ) VALUES($1,999,'Dishbee','https://github.com/example/dishbee','Hospitality landlord','landlord',NULL,'Retain Dishbee vertical core; move shared services to Omniqora','landlord','adapter','dishbee',55) RETURNING id`,[ownerTenant]))).rows[0].id;
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_repo_audits(tenant_id,asset_id,repository_url,status,audited_at,evidence) VALUES($1,$2,'https://github.com/example/dishbee','passed',now(),'{\"ci\":true}'::jsonb)",[ownerTenant,asset]));
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_migration_adapters(tenant_id,asset_id,adapter_key,status,idempotency_strategy,rollback_strategy,verified_at) VALUES($1,$2,'dishbee-v2','verified','source event id + tenant','Disable Omniqora routing and restore source-only operation',now())",[ownerTenant,asset]));
-const targets=[["cafe1-luton",luton.tenantId,"dishbee-luton"],["cafe1-st-albans",stalbans.tenantId,"dishbee-stalbans"],["mealdeck",mealdeck.tenantId,"dishbee-mealdeck"]];
-for(const[,tenantId,workspace]of targets){
- const tid=await asUser(admin,async()=> (await db.query("SELECT public.migration_map_target($1,$2,'dishbee',$3,true) AS id",[asset,tenantId,workspace])).rows[0].id);assert(tid);
-}
+const lutonWorkspace="10000000-0000-4000-8000-000000000001";
+const stalbansWorkspace="10000000-0000-4000-8000-000000000002";
+const mealdeckWorkspace="10000000-0000-4000-8000-000000000003";
+const targets=[["cafe1-luton",luton.tenantId,lutonWorkspace],["cafe1-st-albans",stalbans.tenantId,stalbansWorkspace],["mealdeck",mealdeck.tenantId,mealdeckWorkspace]];
+const bootstrapped=await asUser(admin,async()=> (await db.query(
+ "SELECT public.migration_bootstrap_dishbee_targets($1,$2,$3,$4) AS result",
+ [asset,lutonWorkspace,stalbansWorkspace,mealdeckWorkspace]
+)).rows[0].result);
+assert.equal(bootstrapped.productKey,"dishbee");
+assert.equal(bootstrapped.targets.length,3);
+const bootstrapNames=new Set(bootstrapped.targets.map(x=>x.name));
+assert(bootstrapNames.has("Cafe 1 Luton"));
+assert(bootstrapNames.has("Cafe 1 St Albans"));
+assert(bootstrapNames.has("MealDeck"));
 let evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
-assert.equal(evaluation.ready,false);assert(evaluation.blockers.includes("required_targets_not_ready"));assert(evaluation.blockers.includes("shadow_checks_missing"));assert(evaluation.blockers.includes("approved_cutover_plan_missing"));
+assert.equal(evaluation.ready,false);assert(evaluation.blockers.includes("required_targets_not_ready"));assert(evaluation.blockers.includes("required_target_shadow_checks_missing"));assert(evaluation.blockers.includes("approved_cutover_plan_missing"));
+
+const configuredConnections=await asUser(admin,()=>db.query("SELECT tenant_id,external_tenant_id,status FROM public.product_connections WHERE product_key='dishbee' AND external_tenant_id IN ($1,$2,$3) ORDER BY external_tenant_id",[lutonWorkspace,stalbansWorkspace,mealdeckWorkspace]));
+assert.equal(configuredConnections.rows.length,3);
+assert(configuredConnections.rows.every(row=>row.status==="configured"));
 
 await asService(async()=>{
- for(const[,tenantId,workspace]of targets){
+ for(const[,tenantId]of targets){
   await db.query("UPDATE public.tenant_products SET status='active',region_key='gb',locale='en-GB' WHERE tenant_id=$1 AND product_key='dishbee'",[tenantId]);
   await db.query("UPDATE public.tenant_services SET status='active' WHERE tenant_id=$1",[tenantId]);
-  await db.query("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status) VALUES($1,'dishbee',$2,'connected') ON CONFLICT(tenant_id,product_key,external_tenant_id) DO UPDATE SET status='connected'",[tenantId,workspace]);
  }
 });
-const mapped=await asUser(admin,()=>db.query("SELECT id,target_tenant_id FROM public.portfolio_migration_targets WHERE asset_id=$1",[asset]));
-for(const row of mapped.rows){const r=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[row.id])).rows[0].e);assert.equal(r.ready,true);}
-await asUser(admin,()=>db.query("INSERT INTO public.portfolio_shadow_checks(tenant_id,asset_id,check_key,check_type,status,evidence) VALUES($1,$2,'orders-parity','order_parity','passed','{\"source\":100,\"target\":100}'::jsonb)",[ownerTenant,asset]));
+const mapped=await asUser(admin,()=>db.query("SELECT id,target_tenant_id,source_workspace_id FROM public.portfolio_migration_targets WHERE asset_id=$1 ORDER BY target_tenant_id",[asset]));
+const beforeRuntime=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[mapped.rows[0].id])).rows[0].e);
+assert.equal(beforeRuntime.ready,false);
+assert(beforeRuntime.blockers.includes("product_connection_not_connected"));
+assert(beforeRuntime.blockers.includes("source_runtime_readiness_missing"));
+
+await asService(async()=>{
+ for(const row of mapped.rows){
+  await db.query(
+   "INSERT INTO public.platform_events(tenant_id,product_key,event_type,subject_type,subject_id,idempotency_key,data_classification,payload) VALUES($1,'dishbee','dishbee.runtime.readiness','tenant',$2,$3,'internal',$4::jsonb)",
+   [
+    row.target_tenant_id,
+    row.source_workspace_id,
+    "runtime-ready:"+row.source_workspace_id,
+    JSON.stringify({
+     dishbeeTenantId:row.source_workspace_id,
+     ready:true,
+     blockers:[],
+     warnings:[],
+     activeLocations:2,
+     mappedLocations:2,
+     successfulShadowHandoffs:1,
+     lastShadowHandoffAt:new Date().toISOString(),
+     checkedAt:new Date().toISOString()
+    })
+   ]
+  );
+ }
+});
+
+for(const row of mapped.rows){
+ const r=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[row.id])).rows[0].e);
+ assert.equal(r.ready,true);
+ assert.equal(r.productConnectionStatus,"connected");
+ assert(r.productConnectionId);
+ assert.equal(r.sourceRuntime.dishbeeTenantId,row.source_workspace_id);
+ assert.equal(r.sourceRuntime.ready,true);
+}
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_cutover_plans(asset_id,tenant_id,change_window,freeze_strategy,dns_strategy,communication_plan,rollback_strategy,smoke_tests,owner_user_id,approved_by,approved_at) VALUES($1,$2,'overnight','5 minute final delta','switch only after smoke tests','notify operators','Restore source routes and disable target writes','[\"auth\",\"orders\",\"payments\",\"KDS\"]'::jsonb,$3,$3,now())",[asset,ownerTenant,admin]));
 evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
-assert.equal(evaluation.ready,true);assert.equal(evaluation.requiredTargets,3);assert.equal(evaluation.readyTargets,3);assert.equal(evaluation.failedShadowChecks,0);assert.equal(evaluation.passedShadowChecks,1);
+assert.equal(evaluation.ready,true);assert.equal(evaluation.requiredTargets,3);assert.equal(evaluation.readyTargets,3);assert.equal(evaluation.shadowReadyTargets,3);assert.equal(evaluation.failedShadowChecks,0);assert.equal(evaluation.passedShadowChecks,3);
 await asUser(admin,()=>db.query("SELECT public.migration_mark_cutover_ready($1)",[asset]));
 const stage=await asUser(admin,()=>db.query("SELECT migration_stage,stage_progress FROM public.portfolio_assets WHERE id=$1",[asset]));assert.deepEqual(stage.rows[0],{migration_stage:"cutover_ready",stage_progress:85});
 const cutover=await asUser(admin,async()=> (await db.query("SELECT public.migration_begin_cutover($1) AS id",[asset])).rows[0].id);assert(cutover);

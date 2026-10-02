@@ -65,3 +65,25 @@ export const evaluateMigrationAsset=createServerFn({method:"POST"}).middleware([
 .inputValidator((i:{assetId:string})=>z.object({assetId:uuid}).parse(i)).handler(async({context,data})=>{const r=await(context.supabase as any).rpc("migration_evaluate_asset",{_asset:data.assetId});if(r.error)throw new Error(r.error.message);return r.data;});
 export const markMigrationCutoverReady=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:{assetId:string})=>z.object({assetId:uuid}).parse(i)).handler(async({context,data})=>{const r=await(context.supabase as any).rpc("migration_mark_cutover_ready",{_asset:data.assetId});if(r.error)throw new Error(r.error.message);return r.data;});
+
+
+const dishbeeBootstrap=z.object({
+ assetId:uuid,
+ cafe1LutonWorkspace:uuid,
+ cafe1StAlbansWorkspace:uuid,
+ mealDeckWorkspace:uuid,
+});
+
+export const bootstrapDishbeeMigrationTargets=createServerFn({method:"POST"})
+ .middleware([requireSupabaseAuth])
+ .inputValidator((i:z.input<typeof dishbeeBootstrap>)=>dishbeeBootstrap.parse(i))
+ .handler(async({context,data})=>{
+  const r=await(context.supabase as any).rpc("migration_bootstrap_dishbee_targets",{
+   _asset:data.assetId,
+   _luton_workspace:data.cafe1LutonWorkspace,
+   _stalbans_workspace:data.cafe1StAlbansWorkspace,
+   _mealdeck_workspace:data.mealDeckWorkspace,
+  });
+  if(r.error)throw new Error(r.error.message);
+  return r.data;
+ });
