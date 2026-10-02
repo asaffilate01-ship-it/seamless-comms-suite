@@ -15,10 +15,13 @@ const asset=(await asUser(admin,()=>db.query(`INSERT INTO public.portfolio_asset
 ) VALUES($1,999,'Dishbee','https://github.com/example/dishbee','Hospitality landlord','landlord',NULL,'Retain Dishbee vertical core; move shared services to Omniqora','landlord','adapter','dishbee',55) RETURNING id`,[ownerTenant]))).rows[0].id;
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_repo_audits(tenant_id,asset_id,repository_url,status,audited_at,evidence) VALUES($1,$2,'https://github.com/example/dishbee','passed',now(),'{\"ci\":true}'::jsonb)",[ownerTenant,asset]));
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_migration_adapters(tenant_id,asset_id,adapter_key,status,idempotency_strategy,rollback_strategy,verified_at) VALUES($1,$2,'dishbee-v2','verified','source event id + tenant','Disable Omniqora routing and restore source-only operation',now())",[ownerTenant,asset]));
-const targets=[["cafe1-luton",luton.tenantId,"dishbee-luton"],["cafe1-st-albans",stalbans.tenantId,"dishbee-stalbans"],["mealdeck",mealdeck.tenantId,"dishbee-mealdeck"]];
+const lutonWorkspace="10000000-0000-4000-8000-000000000001";
+const stalbansWorkspace="10000000-0000-4000-8000-000000000002";
+const mealdeckWorkspace="10000000-0000-4000-8000-000000000003";
+const targets=[["cafe1-luton",luton.tenantId,lutonWorkspace],["cafe1-st-albans",stalbans.tenantId,stalbansWorkspace],["mealdeck",mealdeck.tenantId,mealdeckWorkspace]];
 const bootstrapped=await asUser(admin,async()=> (await db.query(
  "SELECT public.migration_bootstrap_dishbee_targets($1,$2,$3,$4) AS result",
- [asset,"dishbee-luton","dishbee-stalbans","dishbee-mealdeck"]
+ [asset,lutonWorkspace,stalbansWorkspace,mealdeckWorkspace]
 )).rows[0].result);
 assert.equal(bootstrapped.productKey,"dishbee");
 assert.equal(bootstrapped.targets.length,3);
