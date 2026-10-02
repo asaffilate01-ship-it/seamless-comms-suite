@@ -92,6 +92,34 @@ BEGIN
     updated_at=now()
   WHERE id=_asset;
 
+  INSERT INTO public.product_connections(
+    tenant_id,product_key,external_tenant_id,status,capabilities,metadata
+  )
+  VALUES
+    (
+      luton_tenant,'dishbee',btrim(_luton_workspace),'configured',
+      ARRAY['runtime-v2','orders','events','crm']::text[],
+      jsonb_build_object('source','migration-factory','target','cafe1-luton')
+    ),
+    (
+      stalbans_tenant,'dishbee',btrim(_stalbans_workspace),'configured',
+      ARRAY['runtime-v2','orders','events','crm']::text[],
+      jsonb_build_object('source','migration-factory','target','cafe1-st-albans')
+    ),
+    (
+      mealdeck_tenant,'dishbee',btrim(_mealdeck_workspace),'configured',
+      ARRAY['runtime-v2','orders','events','crm']::text[],
+      jsonb_build_object('source','migration-factory','target','mealdeck')
+    )
+  ON CONFLICT(tenant_id,product_key,external_tenant_id) DO UPDATE SET
+    status=CASE
+      WHEN public.product_connections.status='connected' THEN 'connected'
+      ELSE 'configured'
+    END,
+    capabilities=EXCLUDED.capabilities,
+    metadata=public.product_connections.metadata||EXCLUDED.metadata,
+    updated_at=now();
+
   SELECT public.migration_map_target(
     _asset,luton_tenant,'dishbee',btrim(_luton_workspace),true
   ) INTO luton_target;
