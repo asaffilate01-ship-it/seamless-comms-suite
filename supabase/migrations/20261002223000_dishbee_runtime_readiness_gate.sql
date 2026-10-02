@@ -94,6 +94,8 @@ BEGIN
         blockers:=blockers||jsonb_build_array('source_runtime_readiness_missing');
       ELSIF NOT COALESCE((source_runtime->>'ready')::boolean,false) THEN
         blockers:=blockers||jsonb_build_array('source_runtime_not_ready');
+      ELSIF COALESCE((source_runtime->>'successfulShadowHandoffs')::integer,0)<1 THEN
+        blockers:=blockers||jsonb_build_array('source_runtime_shadow_handoff_missing');
       ELSE
         shadow_check_key:='dishbee-runtime-shadow:'||t.source_workspace_id||':'||(source_runtime->>'eventId');
 
