@@ -26,40 +26,8 @@ BEGIN
     RAISE EXCEPTION 'Migration target access denied';
   END IF;
 
-  SELECT * INTO conn
-  FROM public.product_connections
-  WHERE tenant_id=t.target_tenant_id
-    AND product_key=t.target_product_key
-    AND (t.source_workspace_id IS NULL OR external_tenant_id=t.source_workspace_id)
-  ORDER BY CASE WHEN status='connected' THEN 0 ELSE 1 END,id
-  LIMIT 1;
-
-  IF conn.id IS NULL OR conn.status<>'connected' THEN
-    blockers:=blockers||jsonb_build_array('product_connection_not_connected');
-  ELSE
-    UPDATE public.portfolio_migration_targets
-    SET product_connection_id=conn.id
-    WHERE id=t.id;
-  END IF;
-
-  BEGIN
-    readiness:=public.get_tenant_product_readiness(
-      t.target_tenant_id,
-      t.target_product_key
-    );
-  EXCEPTION WHEN OTHERS THEN
-    readiness:=jsonb_build_object(
-      'ready',false,
-      'blockers',jsonb_build_array('tenant_product_readiness_unavailable')
-    );
-  END;
-
-  IF NOT COALESCE((readiness->>'ready')::boolean,false) THEN
-    blockers:=blockers||COALESCE(readiness->'blockers','[]'::jsonb);
-  END IF;
-
-  -- Dishbee reports its own operational readiness from the authoritative source
-  -- workspace. A connected product row is not enough to declare a live source ready.
+  -- Dishbee proves the source connection by emitting a scoped, recent platform
+  -- event from the exact local workspace mapped to this target.
   IF t.target_product_key='dishbee' THEN
     IF t.source_workspace_id IS NULL OR btrim(t.source_workspace_id)='' THEN
       blockers:=blockers||jsonb_build_array('source_workspace_id_missing');
@@ -90,14 +58,93 @@ BEGIN
       ORDER BY e.occurred_at DESC,e.created_at DESC
       LIMIT 1;
 
+      IF source_runtime IS NOT NULL THEN
+        INSERT INTO public.product_connections(
+          tenant_id,product_key,external_tenant_id,status,capabilities,
+          metadata,last_verified_at,updated_at
+        )
+        VALUES(
+          t.target_tenant_id,
+          t.target_product_key,
+          t.source_workspace_id,
+          'connected',
+          ARRAY['runtime-v2','orders','events','crm']::text[],
+          jsonb_build_object(
+            'source','dishbee.runtime.readiness',
+            'lastRuntimeEventId',source_runtime->>'eventId',
+            'lastRuntimeReady',COALESCE((source_runtime->>'ready')::boolean,false)
+          ),
+          now(),
+          now()
+        )
+        ON CONFLICT(tenant_id,product_key,external_tenant_id) DO UPDATE SET
+          status='connected',
+          capabilities=EXCLUDED.capabilities,
+          metadata=public.product_connections.metadata||EXCLUDED.metadata,
+          last_verified_at=now(),
+          updated_at=now()
+        RETURNING * INTO conn;
+      END IF;
+    END IF;
+  END IF;
+
+  -- Non-Dishbee products, and Dishbee before the first runtime event, use the
+  -- existing configured/connected product-connection record.
+  IF conn.id IS NULL THEN
+    SELECT * INTO conn
+    FROM public.product_connections
+    WHERE tenant_id=t.target_tenant_id
+      AND product_key=t.target_product_key
+      AND (
+        t.source_workspace_id IS NULL
+        OR external_tenant_id=t.source_workspace_id
+      )
+    ORDER BY CASE WHEN status='connected' THEN 0 ELSE 1 END,id
+    LIMIT 1;
+  END IF;
+
+  IF conn.id IS NULL OR conn.status<>'connected' THEN
+    blockers:=blockers||jsonb_build_array('product_connection_not_connected');
+  ELSE
+    UPDATE public.portfolio_migration_targets
+    SET product_connection_id=conn.id
+    WHERE id=t.id;
+  END IF;
+
+  BEGIN
+    readiness:=public.get_tenant_product_readiness(
+      t.target_tenant_id,
+      t.target_product_key
+    );
+  EXCEPTION WHEN OTHERS THEN
+    readiness:=jsonb_build_object(
+      'ready',false,
+      'blockers',jsonb_build_array('tenant_product_readiness_unavailable')
+    );
+  END;
+
+  IF NOT COALESCE((readiness->>'ready')::boolean,false) THEN
+    blockers:=blockers||COALESCE(readiness->'blockers','[]'::jsonb);
+  END IF;
+
+  IF t.target_product_key='dishbee' THEN
+    IF t.source_workspace_id IS NOT NULL AND btrim(t.source_workspace_id)<>'' THEN
       IF source_runtime IS NULL THEN
         blockers:=blockers||jsonb_build_array('source_runtime_readiness_missing');
       ELSIF NOT COALESCE((source_runtime->>'ready')::boolean,false) THEN
         blockers:=blockers||jsonb_build_array('source_runtime_not_ready');
-      ELSIF COALESCE((source_runtime->>'successfulShadowHandoffs')::integer,0)<1 THEN
-        blockers:=blockers||jsonb_build_array('source_runtime_shadow_handoff_missing');
+      ELSIF COALESCE(
+        (source_runtime->>'successfulShadowHandoffs')::integer,
+        0
+      )<1 THEN
+        blockers:=blockers||jsonb_build_array(
+          'source_runtime_shadow_handoff_missing'
+        );
       ELSE
-        shadow_check_key:='dishbee-runtime-shadow:'||t.source_workspace_id||':'||(source_runtime->>'eventId');
+        shadow_check_key:=
+          'dishbee-runtime-shadow:'||
+          t.source_workspace_id||':'||
+          (source_runtime->>'eventId');
 
         INSERT INTO public.portfolio_shadow_checks(
           tenant_id,asset_id,target_id,check_key,check_type,status,
@@ -112,8 +159,13 @@ BEGIN
           'passed',
           jsonb_build_object(
             'dishbeeTenantId',source_runtime->>'dishbeeTenantId',
-            'successfulShadowHandoffs',COALESCE((source_runtime->>'successfulShadowHandoffs')::integer,0),
-            'lastShadowHandoffAt',source_runtime->>'lastShadowHandoffAt'
+            'successfulShadowHandoffs',
+              COALESCE(
+                (source_runtime->>'successfulShadowHandoffs')::integer,
+                0
+              ),
+            'lastShadowHandoffAt',
+              source_runtime->>'lastShadowHandoffAt'
           ),
           jsonb_build_object(
             'omniqoraTenantId',t.target_tenant_id,
@@ -156,6 +208,8 @@ BEGIN
     'targetId',t.id,
     'ready',jsonb_array_length(blockers)=0,
     'blockers',blockers,
+    'productConnectionId',conn.id,
+    'productConnectionStatus',conn.status,
     'productReadiness',readiness,
     'sourceRuntime',source_runtime
   );
@@ -163,6 +217,7 @@ END; $$;
 
 REVOKE ALL ON FUNCTION public.migration_refresh_target(uuid)
 FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.migration_refresh_target(uuid)
 TO authenticated,service_role;
 
