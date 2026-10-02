@@ -48,6 +48,14 @@ BEGIN
     RAISE EXCEPTION 'Dishbee workspace IDs must be unique';
   END IF;
 
+  BEGIN
+    PERFORM btrim(_luton_workspace)::uuid;
+    PERFORM btrim(_stalbans_workspace)::uuid;
+    PERFORM btrim(_mealdeck_workspace)::uuid;
+  EXCEPTION WHEN invalid_text_representation THEN
+    RAISE EXCEPTION 'Dishbee workspace IDs must be UUIDs';
+  END;
+
   SELECT organisation_id INTO owner_org
   FROM public.tenants
   WHERE id=a.tenant_id;
