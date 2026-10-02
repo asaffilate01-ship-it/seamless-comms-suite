@@ -32,16 +32,20 @@ assert(bootstrapNames.has("MealDeck"));
 let evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
 assert.equal(evaluation.ready,false);assert(evaluation.blockers.includes("required_targets_not_ready"));assert(evaluation.blockers.includes("required_target_shadow_checks_missing"));assert(evaluation.blockers.includes("approved_cutover_plan_missing"));
 
+const configuredConnections=await asUser(admin,()=>db.query("SELECT tenant_id,external_tenant_id,status FROM public.product_connections WHERE product_key='dishbee' AND external_tenant_id IN ($1,$2,$3) ORDER BY external_tenant_id",[lutonWorkspace,stalbansWorkspace,mealdeckWorkspace]));
+assert.equal(configuredConnections.rows.length,3);
+assert(configuredConnections.rows.every(row=>row.status==="configured"));
+
 await asService(async()=>{
- for(const[,tenantId,workspace]of targets){
+ for(const[,tenantId]of targets){
   await db.query("UPDATE public.tenant_products SET status='active',region_key='gb',locale='en-GB' WHERE tenant_id=$1 AND product_key='dishbee'",[tenantId]);
   await db.query("UPDATE public.tenant_services SET status='active' WHERE tenant_id=$1",[tenantId]);
-  await db.query("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status) VALUES($1,'dishbee',$2,'connected') ON CONFLICT(tenant_id,product_key,external_tenant_id) DO UPDATE SET status='connected'",[tenantId,workspace]);
  }
 });
 const mapped=await asUser(admin,()=>db.query("SELECT id,target_tenant_id,source_workspace_id FROM public.portfolio_migration_targets WHERE asset_id=$1 ORDER BY target_tenant_id",[asset]));
 const beforeRuntime=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[mapped.rows[0].id])).rows[0].e);
 assert.equal(beforeRuntime.ready,false);
+assert(beforeRuntime.blockers.includes("product_connection_not_connected"));
 assert(beforeRuntime.blockers.includes("source_runtime_readiness_missing"));
 
 await asService(async()=>{
@@ -71,6 +75,8 @@ await asService(async()=>{
 for(const row of mapped.rows){
  const r=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[row.id])).rows[0].e);
  assert.equal(r.ready,true);
+ assert.equal(r.productConnectionStatus,"connected");
+ assert(r.productConnectionId);
  assert.equal(r.sourceRuntime.dishbeeTenantId,row.source_workspace_id);
  assert.equal(r.sourceRuntime.ready,true);
 }
