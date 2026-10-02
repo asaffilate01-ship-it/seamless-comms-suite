@@ -1,0 +1,27 @@
+import assert from "node:assert/strict";
+import { readFile,readdir } from "node:fs/promises";
+import { PGlite } from "@electric-sql/pglite";
+const db=new PGlite();const migrations=new URL("../../supabase/migrations/",import.meta.url);
+await db.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role BYPASSRLS;CREATE SCHEMA auth;GRANT USAGE ON SCHEMA auth TO authenticated;CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid $$;CREATE PUBLICATION supabase_realtime;`);
+for(const name of (await readdir(migrations)).filter(x=>x.endsWith(".sql")).sort()){const sql=await readFile(new URL(name,migrations),"utf8");if(name.startsWith("20260816120554"))for(const id of ["18bafcd5-3e4c-4044-bb63-10325a0b7209","e66c0525-1787-4250-be26-79f849624521","890c71b1-cf6e-4b68-a56e-dd6050372481","97319fe5-82fd-44cd-b27d-6ae314ee368b"])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,"fixture@example.invalid"]);await db.exec(sql);}
+const admin="88888888-aaaa-4aaa-8aaa-888888888888",stranger="99999999-bbbb-4bbb-8bbb-999999999999";for(const id of[admin,stranger])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
+async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
+const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
+for(const svc of ["omniqora.crm","omniqora.documents","omniqora.automation","omniqora.ai"]){await asUser(admin,()=>db.query("SELECT public.platform_set_tenant_service($1,$2,true,'{}'::jsonb)",[md.tenantId,svc]));}
+await db.exec("SET ROLE service_role");await db.query("UPDATE public.tenant_services SET status='active' WHERE tenant_id=$1",[md.tenantId]);await db.exec("RESET ROLE");
+await asUser(admin,()=>db.query("SELECT public.vertical_enable_package($1,'mealdeck','practice.core','{}'::jsonb)",[md.tenantId]));
+await asUser(admin,()=>db.query("SELECT public.vertical_enable_package($1,'mealdeck','accounting.ai','{}'::jsonb)",[md.tenantId]));
+const packages=await asUser(admin,()=>db.query("SELECT package_key,status FROM public.tenant_vertical_packages WHERE tenant_id=$1 ORDER BY package_key",[md.tenantId]));assert(packages.rows.some(r=>r.package_key==="practice.core"&&r.status==="active"));assert(packages.rows.some(r=>r.package_key==="accounting.ai"&&r.status==="active"));
+const pay=(await asUser(admin,()=>db.query("INSERT INTO public.payroll_runs(tenant_id,product_key,employer_ref,period_key,pay_date) VALUES($1,'mealdeck','313-brands','2026-10','2026-10-31') RETURNING id",[md.tenantId]))).rows[0].id;assert(pay);
+const entity=(await asUser(admin,()=>db.query("INSERT INTO public.company_secretarial_entities(tenant_id,product_key,jurisdiction,legal_name,status) VALUES($1,'mealdeck','GB','313 Brands Ltd','active') RETURNING id",[md.tenantId]))).rows[0].id;
+await asUser(admin,()=>db.query("INSERT INTO public.company_secretarial_obligations(tenant_id,entity_id,obligation_type,due_at) VALUES($1,$2,'confirmation_statement',now()+interval '30 days')",[md.tenantId,entity]));
+const ing=(await asUser(admin,()=>db.query("INSERT INTO public.accounting_ingestion_jobs(tenant_id,product_key,client_ref,source_kind,status) VALUES($1,'mealdeck','313-brands','pdf','queued') RETURNING id",[md.tenantId]))).rows[0].id;assert(ing);
+const research=(await asUser(admin,()=>db.query("INSERT INTO public.tax_research_cases(tenant_id,product_key,client_ref,jurisdiction,tax_type,question) VALUES($1,'mealdeck','313-brands','GB','corporation_tax','Example research case') RETURNING id",[md.tenantId]))).rows[0].id;assert(research);
+await asUser(admin,()=>db.query("INSERT INTO public.tenant_compliance_pack_status(tenant_id,product_key,pack_key,status) VALUES($1,'mealdeck','uk-companies-house','in_progress')",[md.tenantId]));
+const hidden=await asUser(stranger,()=>db.query("SELECT * FROM public.payroll_runs WHERE tenant_id=$1",[md.tenantId]));assert.equal(hidden.rows.length,0);
+const cat=await db.query("SELECT package_key,implementation_status FROM public.vertical_package_catalogue WHERE package_key IN('kindelo.childcare','automotive.shared','payroll.core','formation.secretarial') ORDER BY package_key");
+assert.equal(cat.rows.find(r=>r.package_key==="kindelo.childcare").implementation_status,"catalogue_only");
+assert.equal(cat.rows.find(r=>r.package_key==="automotive.shared").implementation_status,"draft_branch");
+assert.equal(cat.rows.find(r=>r.package_key==="payroll.core").implementation_status,"built_main");
+assert.equal(cat.rows.find(r=>r.package_key==="formation.secretarial").implementation_status,"built_main");
+await db.close();console.log("Vertical package dependencies, payroll, accounting, tax, secretarial and compliance verified");
