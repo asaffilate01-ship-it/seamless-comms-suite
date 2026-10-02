@@ -1,91 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppShell, StatusBadge } from "@/components/app/shell";
-import { Card, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { AppShell,StatusBadge } from "@/components/app/shell";
+import { Card,CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { workflows } from "@/lib/mockData";
-import { Plus, Bot, User, Users, Building, UserCheck } from "lucide-react";
-
-export const Route = createFileRoute("/_authenticated/app/workflows")({
-  component: Workflows,
-});
-
-const iconFor: Record<string, React.ElementType> = {
-  AI: Bot, Staff: User, Manager: Users, "Third-party": Building, Customer: UserCheck,
-};
-
-function Workflows() {
-  return (
-    <AppShell
-      title="Workflows"
-      subtitle="Reusable steps with AI, staff, customer, manager and partner owners"
-      actions={<Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" />New workflow</Button>}
-    >
-      <div className="grid gap-4 lg:grid-cols-2">
-        {workflows.map((w) => (
-          <Card key={w.id} className="overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-display text-lg font-semibold">{w.name}</h3>
-                    <StatusBadge status={w.status} />
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">Vertical: <span className="text-foreground">{w.vertical}</span></p>
-                </div>
-                <div className="text-right">
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <Stat v={w.runs30d.toString()} l="runs / 30d" />
-                    <Stat v={`${w.conversion}%`} l="conv." />
-                    <Stat v={`${w.avgHandleMinutes}m`} l="handle" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 overflow-x-auto">
-                <ol className="flex min-w-max items-stretch gap-3">
-                  {w.steps.map((s, i) => {
-                    const Icon = iconFor[s.owner] ?? Bot;
-                    return (
-                      <li key={s.id} className="relative flex items-center gap-3">
-                        <div className="w-40 rounded-lg border border-border bg-surface p-3">
-                          <div className="flex items-center gap-1.5">
-                            <Icon className="h-3.5 w-3.5 text-primary" />
-                            <Badge variant="secondary" className="text-[10px]">{s.owner}</Badge>
-                          </div>
-                          <div className="mt-1.5 text-sm font-medium">{s.name}</div>
-                        </div>
-                        {i < w.steps.length - 1 && <span className="text-muted-foreground">→</span>}
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-
-              <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-                <div className="flex gap-1.5">
-                  {["Approvals", "SLA", "Consent", "Templates"].map((t) => (
-                    <Badge key={t} variant="outline" className="text-[10px]">{t}</Badge>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">Simulate</Button>
-                  <Button variant="outline" size="sm">Edit</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </AppShell>
-  );
-}
-
-function Stat({ v, l }: { v: string; l: string }) {
-  return (
-    <div>
-      <div className="font-display text-sm font-semibold">{v}</div>
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{l}</div>
-    </div>
-  );
+import { useTenant } from "@/hooks/useTenant";
+import { createJourney,getGrowthWorkspace } from "@/modules/growth/functions";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
+export const Route=createFileRoute("/_authenticated/app/workflows")({component:Journeys});
+function Journeys(){
+ const t=useTenant();const tenantId=t.tenantId??"";const getFn=useServerFn(getGrowthWorkspace),createFn=useServerFn(createJourney);
+ const q=useQuery({queryKey:["growth",tenantId],queryFn:()=>getFn({data:{tenantId}}),enabled:!!tenantId,retry:false});
+ const[name,setName]=useState(""),[trigger,setTrigger]=useState("marketplace.order.completed");
+ async function create(){try{await createFn({data:{tenantId,name,productKey:null,triggerEvent:trigger,definition:{nodes:[{id:"start",type:"trigger"}],edges:[]}}});setName("");toast.success("Journey created");await q.refetch();}catch(e){toast.error(e instanceof Error?e.message:String(e));}}
+ return <AppShell title="Customer Journeys" subtitle="Data-backed event-triggered journeys replacing the previous demo workflow cards.">
+  <Card><CardContent className="grid gap-3 p-5 md:grid-cols-[1fr_1fr_auto]"><Input value={name} onChange={e=>setName(e.target.value)} placeholder="Post-order review journey"/><Input value={trigger} onChange={e=>setTrigger(e.target.value)} placeholder="marketplace.order.completed"/><Button disabled={!name||!trigger} onClick={create}><Plus className="mr-2 h-4 w-4"/>Create</Button></CardContent></Card>
+  <div className="mt-6 grid gap-4 lg:grid-cols-2">{(q.data?.journeys??[]).map((j:any)=><Card key={j.id}><CardContent className="p-5"><div className="flex justify-between gap-3"><div><h3 className="font-semibold">{j.name}</h3><p className="mt-1 text-xs text-muted-foreground">{j.trigger_event}</p></div><StatusBadge status={j.status}/></div><div className="mt-4 flex gap-2"><Badge variant="outline">{(j.definition?.nodes??[]).length} nodes</Badge><Badge variant="outline">{(j.definition?.edges??[]).length} edges</Badge></div></CardContent></Card>)}{!(q.data?.journeys??[]).length&&<p className="text-sm text-muted-foreground">No journeys yet.</p>}</div>
+ </AppShell>
 }
