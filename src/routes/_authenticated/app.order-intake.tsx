@@ -80,6 +80,10 @@ function OrderIntake() {
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [deliveryLine1, setDeliveryLine1] = useState("");
+  const [deliveryCity, setDeliveryCity] = useState("");
+  const [deliveryPostcode, setDeliveryPostcode] = useState("");
+  const [vehicleRegistration, setVehicleRegistration] = useState("");
   const [itemName, setItemName] = useState("");
   const [sku, setSku] = useState("");
   const [qty, setQty] = useState("1");
@@ -116,6 +120,18 @@ function OrderIntake() {
           fulfilment,
           customerPhone: customerPhone || null,
           customerName: customerName || null,
+          deliveryAddress:
+            fulfilment === "delivery"
+              ? {
+                  line1: deliveryLine1,
+                  city: deliveryCity || undefined,
+                  postcode: deliveryPostcode,
+                }
+              : null,
+          vehicle:
+            fulfilment === "curbside"
+              ? { registration: vehicleRegistration }
+              : null,
           items,
           currency: "GBP",
           idempotencyKey: "staff-" + crypto.randomUUID(),
@@ -125,6 +141,10 @@ function OrderIntake() {
       setItems([]);
       setCustomerName("");
       setCustomerPhone("");
+      setDeliveryLine1("");
+      setDeliveryCity("");
+      setDeliveryPostcode("");
+      setVehicleRegistration("");
       await orders.refetch();
     } catch (error) {
       toast.error(
@@ -289,6 +309,44 @@ function OrderIntake() {
                 />
               </div>
 
+              {fulfilment === "delivery" ? (
+                <div className="mt-3 space-y-2 rounded-lg border p-3">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Delivery address
+                  </p>
+                  <Input
+                    placeholder="Address line 1"
+                    value={deliveryLine1}
+                    onChange={(event) => setDeliveryLine1(event.target.value)}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      placeholder="Town / city"
+                      value={deliveryCity}
+                      onChange={(event) => setDeliveryCity(event.target.value)}
+                    />
+                    <Input
+                      placeholder="Postcode"
+                      value={deliveryPostcode}
+                      onChange={(event) => setDeliveryPostcode(event.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              {fulfilment === "curbside" ? (
+                <div className="mt-3 rounded-lg border p-3">
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">
+                    Vehicle
+                  </p>
+                  <Input
+                    placeholder="Vehicle registration"
+                    value={vehicleRegistration}
+                    onChange={(event) => setVehicleRegistration(event.target.value)}
+                  />
+                </div>
+              ) : null}
+
               <div className="mt-3 grid grid-cols-[1fr_120px_70px_100px] gap-2">
                 <Input
                   placeholder="Item"
@@ -363,7 +421,10 @@ function OrderIntake() {
                   !items.length ||
                   !tenantId ||
                   (dishbeeNeedsLocation && !locationId) ||
-                  !dishbeeItemsMapped
+                  !dishbeeItemsMapped ||
+                  (fulfilment === "delivery" &&
+                    (!deliveryLine1 || !deliveryPostcode)) ||
+                  (fulfilment === "curbside" && !vehicleRegistration)
                 }
                 onClick={create}
               >

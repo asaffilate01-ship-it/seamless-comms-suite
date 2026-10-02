@@ -26,6 +26,13 @@ const createSchema=z.object({
  channel:z.enum(["voice","whatsapp","sms","manual","webchat"]).default("manual"),
  fulfilment:z.enum(["pickup","curbside","delivery","dine_in"]).default("pickup"),
  customerPhone:z.string().max(40).nullish(),customerName:z.string().max(200).nullish(),
+ deliveryAddress:z.object({
+  line1:z.string().trim().min(1).max(240),
+  line2:z.string().trim().max(240).optional(),
+  city:z.string().trim().max(120).optional(),
+  postcode:z.string().trim().min(2).max(20)
+ }).nullish(),
+ vehicle:z.object({registration:z.string().trim().min(1).max(30)}).nullish(),
  items:z.array(z.object({
   name:z.string().min(1).max(200),
   sku:z.string().trim().min(1).max(100).optional(),
@@ -44,9 +51,13 @@ export const createManualOrderIntake=createServerFn({method:"POST"}).middleware(
   const unmapped=data.items.find(item=>!item.menuItemId&&!item.sku&&!item.externalRef);
   if(unmapped)throw new Error("Dishbee order items require menuItemId, SKU or externalRef");
  }
+ if(data.fulfilment==="delivery"&&!data.deliveryAddress)throw new Error("Delivery address is required");
+ if(data.fulfilment==="curbside"&&!data.vehicle?.registration)throw new Error("Vehicle registration is required for curbside");
  const total=data.items.reduce((n,item)=>n+item.qty*item.unitMinor,0);
  const order={
   fulfilment:data.fulfilment,
+  delivery_address:data.deliveryAddress??null,
+  vehicle:data.vehicle??null,
   items:data.items.map(i=>({
    name:i.name,
    sku:i.sku??null,

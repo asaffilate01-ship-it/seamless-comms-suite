@@ -114,6 +114,9 @@ function PlatformKernel() {
     !region?.supported_locales?.length || region.supported_locales.includes(l.locale)
   );
   const readiness=(kernel.data?.readiness??{}) as {ready?:boolean;blockers?:string[];warnings?:string[]};
+  const serviceCapabilities=selectedProduct==="dishbee"
+    ?["orders.consume","orders.ack","events.write","usage.write"]
+    :["events.write","usage.write"];
 
   async function refresh(){await Promise.all([tenant.refetch(),kernel.refetch(),kernelCatalogue.refetch()]);}
 
@@ -223,10 +226,11 @@ function PlatformKernel() {
 
         <Card><CardContent className="p-5">
           <h2 className="font-semibold">Product service credential</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Generate a scoped machine credential for canonical event and usage reporting. The complete token is shown once.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Generate a scoped machine credential. Dishbee receives paid-order consume/ack plus event and usage scopes; other products default to event and usage reporting. The complete token is shown once.</p>
+          <div className="mt-3 flex flex-wrap gap-2">{serviceCapabilities.map(capability=><Badge key={capability} variant="outline">{capability}</Badge>)}</div>
           <Button className="mt-4" disabled={!isPlatformAdmin||!tenantId||!selectedProduct} onClick={async()=>{
             try{
-              const result=await credentialFn({data:{scopes:[{tenantId,productKey:selectedProduct,capabilities:["events.write","usage.write"]}],validDays:365}});
+              const result=await credentialFn({data:{scopes:[{tenantId,productKey:selectedProduct,capabilities:serviceCapabilities}],validDays:365}});
               setServiceToken(result.token);toast.success("Service credential generated");
             }catch(e){toast.error(e instanceof Error?e.message:"Credential generation failed");}
           }}><KeyRound className="mr-2 h-4 w-4"/>Generate credential</Button>
