@@ -29,8 +29,39 @@ await asService(async()=>{
   await db.query("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status) VALUES($1,'dishbee',$2,'connected') ON CONFLICT(tenant_id,product_key,external_tenant_id) DO UPDATE SET status='connected'",[tenantId,workspace]);
  }
 });
-const mapped=await asUser(admin,()=>db.query("SELECT id,target_tenant_id FROM public.portfolio_migration_targets WHERE asset_id=$1",[asset]));
-for(const row of mapped.rows){const r=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[row.id])).rows[0].e);assert.equal(r.ready,true);}
+const mapped=await asUser(admin,()=>db.query("SELECT id,target_tenant_id,source_workspace_id FROM public.portfolio_migration_targets WHERE asset_id=$1 ORDER BY target_tenant_id",[asset]));
+const beforeRuntime=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[mapped.rows[0].id])).rows[0].e);
+assert.equal(beforeRuntime.ready,false);
+assert(beforeRuntime.blockers.includes("source_runtime_readiness_missing"));
+
+await asService(async()=>{
+ for(const row of mapped.rows){
+  await db.query(
+   "INSERT INTO public.platform_events(tenant_id,product_key,event_type,subject_type,subject_id,idempotency_key,data_classification,payload) VALUES($1,'dishbee','dishbee.runtime.readiness','tenant',$2,$3,'internal',$4::jsonb)",
+   [
+    row.target_tenant_id,
+    row.source_workspace_id,
+    "runtime-ready:"+row.source_workspace_id,
+    JSON.stringify({
+     dishbeeTenantId:row.source_workspace_id,
+     ready:true,
+     blockers:[],
+     warnings:[],
+     activeLocations:2,
+     mappedLocations:2,
+     checkedAt:new Date().toISOString()
+    })
+   ]
+  );
+ }
+});
+
+for(const row of mapped.rows){
+ const r=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[row.id])).rows[0].e);
+ assert.equal(r.ready,true);
+ assert.equal(r.sourceRuntime.dishbeeTenantId,row.source_workspace_id);
+ assert.equal(r.sourceRuntime.ready,true);
+}
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_shadow_checks(tenant_id,asset_id,check_key,check_type,status,evidence) VALUES($1,$2,'orders-parity','order_parity','passed','{\"source\":100,\"target\":100}'::jsonb)",[ownerTenant,asset]));
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_cutover_plans(asset_id,tenant_id,change_window,freeze_strategy,dns_strategy,communication_plan,rollback_strategy,smoke_tests,owner_user_id,approved_by,approved_at) VALUES($1,$2,'overnight','5 minute final delta','switch only after smoke tests','notify operators','Restore source routes and disable target writes','[\"auth\",\"orders\",\"payments\",\"KDS\"]'::jsonb,$3,$3,now())",[asset,ownerTenant,admin]));
 evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
