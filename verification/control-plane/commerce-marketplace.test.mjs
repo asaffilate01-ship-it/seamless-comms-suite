@@ -23,6 +23,9 @@ const svc=(await asUser(admin,()=>db.query("INSERT INTO public.booking_services(
 const bid=await asUser(admin,async()=> (await db.query("SELECT public.booking_create($1,'mealdeck',$2,NULL,'crm:test',now()+interval '1 hour',now()+interval '75 minutes','Europe/London',2,'web','booking-0001') AS id",[md.tenantId,svc])).rows[0].id);assert(bid);
 const prog=(await asUser(admin,()=>db.query("INSERT INTO public.loyalty_programmes(tenant_id,product_key,name,loyalty_currency) VALUES($1,'mealdeck','Zoryn Rewards','points') RETURNING id",[md.tenantId]))).rows[0].id;
 await asService(()=>db.query("SELECT public.loyalty_apply($1,$2,'crm:test','earn',100,'earn-0001','order')",[md.tenantId,prog]));await asService(()=>db.query("SELECT public.loyalty_apply($1,$2,'crm:test','redeem',30,'redeem-0001','reward')",[md.tenantId,prog]));
-const loyalty=await asUser(admin,()=>db.query("SELECT balance,lifetime_earned,lifetime_redeemed FROM public.loyalty_accounts WHERE programme_id=$1",[prog]));assert.deepEqual(loyalty.rows[0],{balance:70,lifetime_earned:100,lifetime_redeemed:30});
+const loyalty=await asUser(admin,()=>db.query("SELECT balance,lifetime_earned,lifetime_redeemed FROM public.loyalty_accounts WHERE programme_id=$1",[prog]));
+assert.equal(Number(loyalty.rows[0].balance),70);
+assert.equal(Number(loyalty.rows[0].lifetime_earned),100);
+assert.equal(Number(loyalty.rows[0].lifetime_redeemed),30);
 const hidden=await asUser(stranger,()=>db.query("SELECT * FROM public.marketplace_orders WHERE tenant_id=$1",[md.tenantId]));assert.equal(hidden.rows.length,0);
 await db.close();console.log("MealDeck multi-vendor cart, inventory, booking and loyalty verified");
