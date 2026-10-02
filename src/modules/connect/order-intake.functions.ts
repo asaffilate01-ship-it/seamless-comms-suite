@@ -24,15 +24,40 @@ export const listOrderChannels=createServerFn({method:"POST"}).middleware([requi
 const createSchema=z.object({
  tenantId:uuid,productKey:z.string().min(2).max(80),brandId:uuid.nullish(),locationId:uuid.nullish(),
  channel:z.enum(["voice","whatsapp","sms","manual","webchat"]).default("manual"),
+ fulfilment:z.enum(["pickup","curbside","delivery","dine_in"]).default("pickup"),
  customerPhone:z.string().max(40).nullish(),customerName:z.string().max(200).nullish(),
- items:z.array(z.object({name:z.string().min(1).max(200),sku:z.string().max(100).optional(),qty:z.number().int().min(1).max(100),unitMinor:z.number().int().min(0).max(10000000)})).min(1).max(200),
+ items:z.array(z.object({
+  name:z.string().min(1).max(200),
+  sku:z.string().trim().min(1).max(100).optional(),
+  menuItemId:uuid.optional(),
+  externalRef:z.string().trim().min(1).max(160).optional(),
+  qty:z.number().int().min(1).max(100),
+  unitMinor:z.number().int().min(0).max(10000000)
+ })).min(1).max(200),
  currency:z.string().regex(/^[A-Z]{3}$/).default("GBP"),idempotencyKey:z.string().min(8).max(160)
 });
 export const createManualOrderIntake=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:z.input<typeof createSchema>)=>createSchema.parse(i))
 .handler(async({context,data})=>{
+ if(data.productKey==="dishbee"){
+  if(!data.locationId)throw new Error("Dishbee assisted orders require a mapped location");
+  const unmapped=data.items.find(item=>!item.menuItemId&&!item.sku&&!item.externalRef);
+  if(unmapped)throw new Error("Dishbee order items require menuItemId, SKU or externalRef");
+ }
  const total=data.items.reduce((n,item)=>n+item.qty*item.unitMinor,0);
- const order={items:data.items.map(i=>({name:i.name,sku:i.sku??null,qty:i.qty,unit_minor:i.unitMinor})),total_minor:total,currency:data.currency};
+ const order={
+  fulfilment:data.fulfilment,
+  items:data.items.map(i=>({
+   name:i.name,
+   sku:i.sku??null,
+   menu_item_id:i.menuItemId??null,
+   external_ref:i.externalRef??null,
+   qty:i.qty,
+   unit_minor:i.unitMinor
+  })),
+  total_minor:total,
+  currency:data.currency
+ };
  const r=await (context.supabase as any).rpc("order_create_manual_session",{
   _tenant:data.tenantId,_product:data.productKey,_brand:data.brandId??null,_location:data.locationId??null,_channel:data.channel,
   _customer_phone:data.customerPhone??null,_customer_name:data.customerName??null,_order:order,_idempotency:data.idempotencyKey,_expires_minutes:120
