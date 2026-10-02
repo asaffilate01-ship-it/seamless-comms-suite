@@ -69,9 +69,9 @@ export const markMigrationCutoverReady=createServerFn({method:"POST"}).middlewar
 
 const dishbeeBootstrap=z.object({
  assetId:uuid,
- cafe1LutonWorkspace:z.string().trim().min(1).max(200),
- cafe1StAlbansWorkspace:z.string().trim().min(1).max(200),
- mealDeckWorkspace:z.string().trim().min(1).max(200),
+ cafe1LutonWorkspace:uuid,
+ cafe1StAlbansWorkspace:uuid,
+ mealDeckWorkspace:uuid,
 });
 
 export const bootstrapDishbeeMigrationTargets=createServerFn({method:"POST"})
