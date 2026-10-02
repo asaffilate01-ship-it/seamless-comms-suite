@@ -16,9 +16,16 @@ const asset=(await asUser(admin,()=>db.query(`INSERT INTO public.portfolio_asset
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_repo_audits(tenant_id,asset_id,repository_url,status,audited_at,evidence) VALUES($1,$2,'https://github.com/example/dishbee','passed',now(),'{\"ci\":true}'::jsonb)",[ownerTenant,asset]));
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_migration_adapters(tenant_id,asset_id,adapter_key,status,idempotency_strategy,rollback_strategy,verified_at) VALUES($1,$2,'dishbee-v2','verified','source event id + tenant','Disable Omniqora routing and restore source-only operation',now())",[ownerTenant,asset]));
 const targets=[["cafe1-luton",luton.tenantId,"dishbee-luton"],["cafe1-st-albans",stalbans.tenantId,"dishbee-stalbans"],["mealdeck",mealdeck.tenantId,"dishbee-mealdeck"]];
-for(const[,tenantId,workspace]of targets){
- const tid=await asUser(admin,async()=> (await db.query("SELECT public.migration_map_target($1,$2,'dishbee',$3,true) AS id",[asset,tenantId,workspace])).rows[0].id);assert(tid);
-}
+const bootstrapped=await asUser(admin,async()=> (await db.query(
+ "SELECT public.migration_bootstrap_dishbee_targets($1,$2,$3,$4) AS result",
+ [asset,"dishbee-luton","dishbee-stalbans","dishbee-mealdeck"]
+)).rows[0].result);
+assert.equal(bootstrapped.productKey,"dishbee");
+assert.equal(bootstrapped.targets.length,3);
+const bootstrapNames=new Set(bootstrapped.targets.map(x=>x.name));
+assert(bootstrapNames.has("Cafe 1 Luton"));
+assert(bootstrapNames.has("Cafe 1 St Albans"));
+assert(bootstrapNames.has("MealDeck"));
 let evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
 assert.equal(evaluation.ready,false);assert(evaluation.blockers.includes("required_targets_not_ready"));assert(evaluation.blockers.includes("shadow_checks_missing"));assert(evaluation.blockers.includes("approved_cutover_plan_missing"));
 
