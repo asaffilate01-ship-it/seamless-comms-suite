@@ -11,7 +11,7 @@ RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE
  p jsonb:=NEW.payload;
- sale_id uuid;
+ v_sale_id uuid;
  source_tx text;
  line jsonb;
  tender_type text;
@@ -52,16 +52,16 @@ BEGIN
    tax_minor=EXCLUDED.tax_minor,service_charge_minor=EXCLUDED.service_charge_minor,
    tip_minor=EXCLUDED.tip_minor,total_minor=EXCLUDED.total_minor,paid_minor=EXCLUDED.paid_minor,
    status='paid',metadata=public.commerce_sales.metadata||EXCLUDED.metadata,updated_at=now()
-  RETURNING id INTO sale_id;
+  RETURNING id INTO v_sale_id;
 
-  DELETE FROM public.commerce_sale_lines WHERE sale_id=sale_id;
+  DELETE FROM public.commerce_sale_lines l WHERE l.sale_id=v_sale_id;
   IF jsonb_typeof(p->'items')='array' THEN
    FOR line IN SELECT value FROM jsonb_array_elements(p->'items') LOOP
     INSERT INTO public.commerce_sale_lines(
      tenant_id,sale_id,line_type,external_ref,sku,name,quantity,unit_price_minor,discount_minor,tax_minor,line_total_minor,
      staff_ref,modifiers,metadata
     ) VALUES(
-     NEW.tenant_id,sale_id,
+     NEW.tenant_id,v_sale_id,
      coalesce(nullif(line->>'lineType',''),'service'),
      line->>'externalRef',line->>'sku',coalesce(line->>'name','Item'),
      greatest(coalesce((line->>'quantity')::numeric,1),0.0001),
@@ -86,7 +86,7 @@ BEGIN
   INSERT INTO public.commerce_tenders(
    tenant_id,sale_id,tender_type,amount_minor,currency,status,idempotency_key,provider_ref,metadata
   ) VALUES(
-   NEW.tenant_id,sale_id,tender_type,greatest(coalesce((p->>'totalMinor')::bigint,0),0),
+   NEW.tenant_id,v_sale_id,tender_type,greatest(coalesce((p->>'totalMinor')::bigint,0),0),
    upper(coalesce(p->>'currency','GBP')),'captured',
    'shadow:'||NEW.product_key||':'||source_tx||':tender',
    p->>'paymentReference',jsonb_build_object('shadow',true,'sourceEventId',NEW.id)
@@ -97,7 +97,7 @@ BEGIN
 
  ELSIF NEW.event_type LIKE '%.commerce.refund.succeeded' THEN
   source_tx:=coalesce(nullif(p->>'sourceTransactionId',''),nullif(p->>'originalTransactionId',''),p->>'bookingId');
-  SELECT id,total_minor INTO sale_id,sale_total
+  SELECT id,total_minor INTO v_sale_id,sale_total
   FROM public.commerce_sales
   WHERE tenant_id=NEW.tenant_id AND product_key=NEW.product_key
     AND (
@@ -106,12 +106,12 @@ BEGIN
     )
   ORDER BY created_at DESC LIMIT 1;
 
-  IF sale_id IS NOT NULL THEN
+  IF v_sale_id IS NOT NULL THEN
    refund_amount:=greatest(coalesce((p->>'amountMinor')::bigint,0),0);
    INSERT INTO public.commerce_refunds(
     tenant_id,sale_id,refund_type,amount_minor,currency,reason,status,provider_ref,customer_signature_ref,metadata,completed_at,idempotency_key
    ) VALUES(
-    NEW.tenant_id,sale_id,coalesce(p->>'refundType','refund'),refund_amount,
+    NEW.tenant_id,v_sale_id,coalesce(p->>'refundType','refund'),refund_amount,
     upper(coalesce(p->>'currency','GBP')),p->>'reason','succeeded',p->>'paymentReference',
     p->>'signatureRef',jsonb_build_object('shadow',true,'sourceEventId',NEW.id)||coalesce(p->'metadata','{}'::jsonb),
     NEW.occurred_at,'shadow:'||NEW.product_key||':refund:'||NEW.subject_id
@@ -120,15 +120,15 @@ BEGIN
     amount_minor=EXCLUDED.amount_minor,status='succeeded',reason=EXCLUDED.reason,completed_at=EXCLUDED.completed_at;
 
    SELECT coalesce(sum(amount_minor),0) INTO total_paid
-   FROM public.commerce_tenders WHERE sale_id=project_commerce_shadow_event.sale_id AND status='captured';
+   FROM public.commerce_tenders WHERE sale_id=v_sale_id AND status='captured';
    SELECT coalesce(sum(amount_minor),0) INTO total_refunded
-   FROM public.commerce_refunds WHERE sale_id=project_commerce_shadow_event.sale_id AND status='succeeded';
+   FROM public.commerce_refunds WHERE sale_id=v_sale_id AND status='succeeded';
 
    UPDATE public.commerce_sales SET
     paid_minor=total_paid,refunded_minor=total_refunded,
     status=case when total_refunded>=sale_total and sale_total>0 then 'refunded' else 'partially_refunded' end,
     updated_at=now()
-   WHERE id=project_commerce_shadow_event.sale_id;
+   WHERE id=v_sale_id;
   END IF;
  END IF;
  RETURN NEW;
