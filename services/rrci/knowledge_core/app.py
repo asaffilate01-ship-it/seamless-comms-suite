@@ -77,7 +77,7 @@ class Application:
                     raise APIError(400, "Invalid JSON") from None
                 routes = {"/v1/documents/upsert": self.service.ingest,
                           "/v1/documents/delete": self.service.delete,
-                          "/v1/graph/edges/upsert": self.service.add_edge,
+                          "/v1/graph/edges/upsert": self.service.add_edge,\n                          "/v1/graph/proposals": self.service.propose_graph,
                           "/v1/query": self.service.query}
                 if path == "/v1/rrci":
                     if self.compliance is None:
