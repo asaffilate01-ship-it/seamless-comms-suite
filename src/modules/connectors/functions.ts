@@ -35,7 +35,7 @@ export const recordConnectorHealth=createServerFn({method:"POST"}).middleware([r
  const a=await requireService(context,data.tenantId,"omniqora.connectors");requireWriteRole(a.role);const db=context.supabase as any;
  const {data:row,error}=await db.from("connector_health_checks").insert({tenant_id:data.tenantId,product_key:data.productKey,provider_key:data.providerKey,
   binding_id:data.bindingId??null,status:data.status,latency_ms:data.latencyMs??null,detail:data.detail}).select("*").single();if(error)throw new Error(error.message);
- await db.from("provider_bindings").update({status:data.status==="healthy"?"connected":data.status==="failed"?"failed":"degraded",
+ await db.from("provider_bindings").update({status:data.status==="healthy"?"active":data.status==="failed"?"failed":"degraded",
   last_verified_at:new Date().toISOString()}).eq("tenant_id",data.tenantId).eq("product_key",data.productKey).eq("provider_key",data.providerKey);
  return row;
 });
