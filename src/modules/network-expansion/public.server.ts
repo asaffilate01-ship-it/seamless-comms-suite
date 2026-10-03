@@ -53,6 +53,8 @@ async function context(programmeKey:string){
       const seeded=await db.from("network_territories").insert(rows);
       if(seeded.error)throw new Error(seeded.error.message);
     }
+    const defaults=await db.rpc("network_seed_default_territory_designs",{_tenant:tenant.data.id});
+    if(defaults.error)throw new Error(defaults.error.message);
   }
   if(!programme.data||programme.data.status!=="active")throw new Error("Franchise programme is not active");
   return{db,tenant:tenant.data,programme:programme.data};
