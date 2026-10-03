@@ -21,7 +21,7 @@ function ContactCentre(){
  const q=useQuery({queryKey:["contact-centre",tenantId,productKey],queryFn:()=>getFn({data:{tenantId,productKey}}),enabled:!!tenantId&&!!productKey,retry:false});
  const[name,setName]=useState(""),[queueName,setQueueName]=useState("");
  async function run(fn:()=>Promise<unknown>,msg:string){try{await fn();toast.success(msg);await q.refetch();}catch(e){toast.error(e instanceof Error?e.message:String(e));}}
- const m=q.data?.metrics??{};
+ const m=q.data?.metrics??{},firstCentre=(q.data?.centres??[])[0];
  return <AppShell title="Omniqora Contact" subtitle="AI-first voice/contact centre with queues, callbacks, warm handover, same-agent preference, masking, transcripts and attribution."
  actions={<Button size="sm" variant="outline" onClick={()=>q.refetch()}><RefreshCw className="mr-2 h-4 w-4"/>Refresh</Button>}>
   <Card><CardContent className="p-5"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={productKey} onChange={e=>setProductKey(e.target.value)}>{products.map((p:string)=><option key={p}>{p}</option>)}</select></CardContent></Card>
@@ -30,7 +30,7 @@ function ContactCentre(){
    <Card><CardContent className="p-5"><h2 className="font-semibold">Contact centre</h2><div className="mt-3 flex gap-2"><Input placeholder="Centre name" value={name} onChange={e=>setName(e.target.value)}/><Button disabled={!name} onClick={()=>run(()=>centreFn({data:{tenantId,productKey,name,aiResolutionTarget:80}}),"Contact centre created")}>Create</Button></div>
     <div className="mt-4 space-y-2">{(q.data?.centres??[]).map((x:any)=><div key={x.id} className="flex items-center justify-between rounded-lg border p-3 text-sm"><div><b>{x.name}</b><p className="text-xs text-muted-foreground">AI target {x.ai_resolution_target}% · recording {x.recording_policy}</p></div><StatusBadge status={x.status}/></div>)}</div>
    </CardContent></Card>
-   <Card><CardContent className="p-5"><h2 className="font-semibold">Queues</h2><div className="mt-3 flex gap-2"><Input placeholder="Queue name" value={queueName} onChange={e=>setQueueName(e.target.value)}/><Button disabled={!queueName||!(q.data?.centres??[])[0]} onClick={()=>run(()=>queueFn({data:{tenantId,productKey,centreId:q.data.centres[0].id,name:queueName,skills:[]}}),"Queue created")}>Create</Button></div>
+   <Card><CardContent className="p-5"><h2 className="font-semibold">Queues</h2><div className="mt-3 flex gap-2"><Input placeholder="Queue name" value={queueName} onChange={e=>setQueueName(e.target.value)}/><Button disabled={!queueName||!firstCentre} onClick={()=>run(()=>queueFn({data:{tenantId,productKey,centreId:firstCentre!.id,name:queueName,skills:[]}}),"Queue created")}>Create</Button></div>
     <div className="mt-4 space-y-2">{(q.data?.queues??[]).map((x:any)=><div key={x.id} className="rounded-lg bg-muted p-3 text-sm"><b>{x.name}</b><p className="text-xs text-muted-foreground">AI first · callback {x.callback_enabled?"on":"off"} · same agent {x.same_agent_enabled?"on":"off"}</p></div>)}</div>
    </CardContent></Card>
   </div>
