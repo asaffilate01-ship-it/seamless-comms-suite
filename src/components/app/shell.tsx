@@ -56,7 +56,7 @@ const nav: NavItem[] = [
   { to: "/app/analytics", labelKey: "app.nav.analytics", icon: BarChart3 },
   { to: "/app/partners", labelKey: "app.nav.partners", icon: Handshake },
   { to: "/app/transformation", labelKey: "", label: "Business360", icon: BarChart3 },
-  { to: "/app/compliance-intelligence", labelKey: "", label: "Knowledge & compliance", icon: ShieldCheck },
+  { to: "/app/compliance-intelligence", labelKey: "", label: "Knowledge & compliance", icon: ShieldCheck },\n  { to: "/app/regulatory-monitoring", labelKey: "", label: "Regulatory Monitoring", icon: ShieldCheck },
   { to: "/app/integrations", labelKey: "", label: "Product connections", icon: GitBranch },
   { to: "/app/procurement-readiness", labelKey: "", label: "Procurement readiness", icon: ShieldCheck },
   { to: "/app/control-plane", labelKey: "", label: "SaaS Factory", icon: Boxes },
