@@ -125,7 +125,7 @@ export const createGrowthContentItem=createServerFn({method:"POST"}).middleware(
 
 
 const territoryDesign=scope.extend({
- territoryId:uuid,centrePostcode:z.string().max(16).nullish(),centreLat:z.number().min(-90).max(90),centreLng:z.number().min(-180).max(180),
+ territoryId:uuid,centrePostcode:z.string().max(160).nullish(),centreLat:z.number().min(-90).max(90).nullish(),centreLng:z.number().min(-180).max(180).nullish(),
  coreDriveMinutes:z.number().int().min(5).max(60).default(25),sharedDriveMinutes:z.number().int().min(5).max(75).default(30),
  overflowDriveMinutes:z.number().int().min(5).max(90).default(35),coreMinMinutes:z.number().int().min(5).max(60).default(18),
  coreMaxMinutes:z.number().int().min(5).max(60).default(28),targetPopulationMin:z.number().int().nonnegative().nullish(),
@@ -137,10 +137,16 @@ export const saveTerritoryDesign=createServerFn({method:"POST"}).middleware([req
 .inputValidator((i:z.input<typeof territoryDesign>)=>territoryDesign.parse(i))
 .handler(async({context,data})=>{
  const{db}=await access(context,data.tenantId,true);
- const territory=await db.from("network_territories").select("id").eq("tenant_id",data.tenantId).eq("id",data.territoryId).maybeSingle();
+ const territory=await db.from("network_territories").select("id,name").eq("tenant_id",data.tenantId).eq("id",data.territoryId).maybeSingle();
  if(territory.error||!territory.data)throw new Error("Territory not found");
+ let centreLat=data.centreLat??null,centreLng=data.centreLng??null;
+ if(centreLat===null||centreLng===null){
+  const query=(data.centrePostcode||territory.data.name)+", United Kingdom";
+  const{geocodeAddress}=await import("./territory-engine.server");
+  const point=await geocodeAddress(query);centreLat=point.lat;centreLng=point.lng;
+ }
  const{data:row,error}=await db.from("network_territory_designs").upsert({
-  territory_id:data.territoryId,tenant_id:data.tenantId,centre_postcode:data.centrePostcode??null,centre_lat:data.centreLat,centre_lng:data.centreLng,
+  territory_id:data.territoryId,tenant_id:data.tenantId,centre_postcode:data.centrePostcode??null,centre_lat:centreLat,centre_lng:centreLng,
   core_drive_minutes:data.coreDriveMinutes,shared_drive_minutes:data.sharedDriveMinutes,overflow_drive_minutes:data.overflowDriveMinutes,
   core_min_minutes:data.coreMinMinutes,core_max_minutes:data.coreMaxMinutes,target_population_min:data.targetPopulationMin??null,
   target_population_max:data.targetPopulationMax??null,max_sample_radius_km:data.maxSampleRadiusKm,bearings:data.bearings,max_neighbours:data.maxNeighbours,
