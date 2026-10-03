@@ -49,6 +49,68 @@ class KnowledgeService:
         scope = principal.scope(data["collection"], "ingest")
         return self.store.delete(scope, identifier(data["id"], "id"), integer(data["expected_revision"], "expected_revision", 1, 1_000_000))
 
+    def propose_graph(self, principal, data):
+        fields(data, {"collection", "document_id", "document_revision", "title", "text", "jurisdiction", "language"},
+               {"collection", "document_id", "document_revision", "title", "text"})
+        scope = principal.scope(data["collection"], "ingest")
+        if self.provider is None or not hasattr(self.provider, "propose_graph"):
+            raise APIError(503, "A graph-proposal model is not configured")
+        document_id = identifier(data["document_id"], "document_id")
+        revision = integer(data["document_revision"], "document_revision", 1, 1_000_000)
+        title = text(data["title"], "title", 1000)
+        body = text(data["text"], "text", 100000)
+        jurisdiction = identifier(data.get("jurisdiction", "unspecified"), "jurisdiction")
+        language = identifier(data.get("language", "en"), "language")
+        profile = PROFILES.get(scope.project, PROFILES["generic"])
+        raw, usage = self.provider.propose_graph({
+            "document_id": document_id, "document_revision": revision, "title": title,
+            "text": body, "jurisdiction": jurisdiction, "language": language
+        }, profile.instruction)
+        entities = raw.get("entities")
+        edges = raw.get("edges")
+        if not isinstance(entities, list) or not isinstance(edges, list) or len(entities) > 200 or len(edges) > 500:
+            raise APIError(502, "Graph proposal exceeded schema limits")
+        clean_entities = []
+        keys = set()
+        for item in entities:
+            if not isinstance(item, dict) or set(item) != {"key", "label", "type", "aliases", "quote", "confidence"}:
+                raise APIError(502, "Invalid graph entity proposal")
+            key = identifier(item["key"], "entity key")
+            label = text(item["label"], "entity label", 300)
+            entity_type = identifier(item["type"], "entity type")
+            aliases = item["aliases"]
+            quote = text(item["quote"], "entity quote", 1000)
+            confidence = item["confidence"]
+            if not isinstance(aliases, list) or len(aliases) > 50 or any(not isinstance(a, str) or not a.strip() or len(a.strip()) > 300 for a in aliases):
+                raise APIError(502, "Invalid graph entity aliases")
+            if type(confidence) not in (int, float) or not 0 <= confidence <= 1 or quote not in body:
+                raise APIError(502, "Graph entity proposal is not source-supported")
+            if key in keys:
+                raise APIError(502, "Duplicate graph entity key")
+            keys.add(key)
+            clean_entities.append({"key": key, "label": label, "type": entity_type,
+                                   "aliases": [a.strip() for a in aliases], "quote": quote,
+                                   "confidence": float(confidence)})
+        clean_edges = []
+        for item in edges:
+            if not isinstance(item, dict) or set(item) != {"source", "relation", "target", "quote", "confidence"}:
+                raise APIError(502, "Invalid graph edge proposal")
+            source = identifier(item["source"], "edge source")
+            relation = identifier(item["relation"], "edge relation")
+            target = identifier(item["target"], "edge target")
+            quote = text(item["quote"], "edge quote", 1000, 10)
+            confidence = item["confidence"]
+            if source not in keys or target not in keys or source == target:
+                raise APIError(502, "Graph edge references an invalid entity")
+            if type(confidence) not in (int, float) or not 0 <= confidence <= 1 or quote not in body:
+                raise APIError(502, "Graph edge proposal is not source-supported")
+            clean_edges.append({"source": source, "relation": relation, "target": target,
+                                "quote": quote, "confidence": float(confidence)})
+        return {"status": "review_required", "document_id": document_id,
+                "document_revision": revision, "entities": clean_entities, "edges": clean_edges,
+                "usage": usage, "automatic_promotion": False,
+                "review_note": "Accept reviewed relationships through the existing edge API; proposals are not trusted graph facts."}
+
     def query(self, principal, data):
         start = time.perf_counter()
         fields(data, {"collection", "question", "mode", "seeds", "hops", "top_k", "as_of", "jurisdiction", "language"}, {"collection", "question"})
