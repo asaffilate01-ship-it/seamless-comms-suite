@@ -139,9 +139,12 @@ CREATE POLICY "demographics read" ON public.geo_demographic_cells FOR SELECT TO 
 
 ALTER TABLE public.network_territory_version_cells ENABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.network_territory_version_cells TO service_role;
-GRANT SELECT ON public.network_territory_version_cells TO authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.network_territory_version_cells TO authenticated;
 CREATE POLICY "territory version cells read" ON public.network_territory_version_cells FOR SELECT TO authenticated
 USING(EXISTS(SELECT 1 FROM public.network_territory_versions v WHERE v.id=version_id AND (public.is_platform_admin(auth.uid()) OR public.is_tenant_member(v.tenant_id,auth.uid()))));
+CREATE POLICY "territory version cells write" ON public.network_territory_version_cells FOR ALL TO authenticated
+USING(EXISTS(SELECT 1 FROM public.network_territory_versions v WHERE v.id=version_id AND (public.is_platform_admin(auth.uid()) OR public.can_write(v.tenant_id,auth.uid()))))
+WITH CHECK(EXISTS(SELECT 1 FROM public.network_territory_versions v WHERE v.id=version_id AND (public.is_platform_admin(auth.uid()) OR public.can_write(v.tenant_id,auth.uid()))));
 
 
 CREATE OR REPLACE FUNCTION public.network_apply_mealdeck_managed_defaults()
