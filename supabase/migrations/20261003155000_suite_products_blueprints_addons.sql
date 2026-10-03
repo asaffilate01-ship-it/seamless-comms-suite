@@ -223,7 +223,7 @@ ON CONFLICT(blueprint_key) DO UPDATE SET
 INSERT INTO public.blueprint_products(blueprint_key,product_key,required) VALUES
  ('onyn-uk','onyngo',true),
  ('merqano-uk','merqano',true),
- ('dulcis-hybrid-uk','merqano',true),('dulcis-hybrid-uk','dishbee',false),
+ ('dulcis-hybrid-uk','merqano',true),
  ('stylesync-uk','stylesync',true),
  ('schonova-de','schonova',true),
  ('zivvo-uk','zivvo',true),
@@ -252,6 +252,7 @@ INSERT INTO public.ecosystem_addon_offers(
  ('zoryn-rewards','Zoryn Rewards','loyalty','zoryn-rewards',NULL,'Shared loyalty, rewards and customer incentives.',ARRAY['GB','DE'],'product',true,'active'),
  ('courier-connect','Courier Connect','delivery','courier-connect',NULL,'Courier aggregation and delivery operations.',ARRAY['GB'],'product',false,'active'),
  ('taxnuvia','TaxNuvia','accounting','taxnuvia',NULL,'Accountant discovery and matching marketplace.',ARRAY['GB'],'product',false,'active'),
+ ('dishbee','Dishbee Hospitality','hospitality','dishbee',NULL,'Restaurant, kitchen, EPOS, KDS, ordering and hospitality operations.',ARRAY['GB','DE'],'product',false,'active'),
  ('marketplace-full','Marketplace Core','marketplace',NULL,'omniqora.marketplace','Reusable marketplace foundation.',ARRAY[]::text[],'service',false,'active'),
  ('commerce-epos','Commerce / EPOS Core','commerce',NULL,'omniqora.commerce','Reusable EPOS/commerce transaction core.',ARRAY[]::text[],'service',false,'active')
 ON CONFLICT(addon_key) DO UPDATE SET
@@ -259,7 +260,7 @@ ON CONFLICT(addon_key) DO UPDATE SET
 
 INSERT INTO public.ecosystem_product_addons(source_product_key,addon_key,sort_order) VALUES
  ('dishbee','haccora',10),('dishbee','accounts',20),('dishbee','xpertjobs',30),('dishbee','lawquo',40),('dishbee','onyngo',50),('dishbee','zoryn-rewards',60),('dishbee','courier-connect',70),
- ('merqano','accounts',10),('merqano','xpertjobs',20),('merqano','lawquo',30),('merqano','zoryn-rewards',40),('merqano','courier-connect',50),('merqano','haccora',60),
+ ('merqano','accounts',10),('merqano','xpertjobs',20),('merqano','lawquo',30),('merqano','zoryn-rewards',40),('merqano','courier-connect',50),('merqano','haccora',60),('merqano','dishbee',70),
  ('stylesync','accounts',10),('stylesync','xpertjobs',20),('stylesync','lawquo',30),('stylesync','zoryn-rewards',40),
  ('schonova','accounts',10),('schonova','xpertjobs',20),('schonova','zoryn-rewards',30),
  ('onyngo','dishbee',10),('onyngo','haccora',20),('onyngo','accounts',30),('onyngo','xpertjobs',40),('onyngo','zoryn-rewards',50),
@@ -267,6 +268,15 @@ INSERT INTO public.ecosystem_product_addons(source_product_key,addon_key,sort_or
  ('autohashi','accounts',10),('autohashi','lawquo',20),('autohashi','courier-connect',30),
  ('taxnuvia','accounts',10),('lawquo','accounts',10),('xpertjobs','accounts',10)
 ON CONFLICT(source_product_key,addon_key) DO UPDATE SET sort_order=EXCLUDED.sort_order;
+
+
+-- Every active product may opt into the governed AI router and signed webhook hub without bespoke wiring.
+INSERT INTO public.product_services(product_key,service_key,default_enabled,required)
+SELECT p.product_key,s.service_key,false,false
+FROM public.product_catalogue p
+CROSS JOIN (VALUES('omniqora.ai-router'),('omniqora.webhooks')) s(service_key)
+WHERE p.status='active' AND p.product_key<>'omniqora'
+ON CONFLICT(product_key,service_key) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION public.ecosystem_enable_addon(
  _tenant uuid,_source_product text,_addon text,_config jsonb DEFAULT '{}'::jsonb
