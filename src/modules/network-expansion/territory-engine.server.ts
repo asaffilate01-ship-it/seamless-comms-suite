@@ -3,9 +3,21 @@ type Candidate={bearing:number;radiusKm:number;lat:number;lng:number;index:numbe
 type RouteSample={durationSeconds:number;distanceMeters:number|null;condition:string|null};
 
 const GOOGLE_ROUTE_MATRIX_URL="https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
+const GOOGLE_GEOCODE_URL="https://maps.googleapis.com/maps/api/geocode/json";
 
 function rad(v:number){return v*Math.PI/180}
 function deg(v:number){return v*180/Math.PI}
+export async function geocodeAddress(address:string):Promise<LatLng>{
+  const key=process.env.GOOGLE_GEOCODING_API_KEY||process.env.GOOGLE_ROUTES_API_KEY;
+  if(!key)throw new Error("Google geocoding API key is not configured");
+  const url=new URL(GOOGLE_GEOCODE_URL);url.searchParams.set("address",address);url.searchParams.set("region","gb");url.searchParams.set("key",key);
+  const response=await fetch(url);if(!response.ok)throw new Error(`Google geocoding failed (${response.status})`);
+  const payload=await response.json() as any;
+  const loc=payload?.results?.[0]?.geometry?.location;
+  if(payload?.status!=="OK"||!loc||!Number.isFinite(Number(loc.lat))||!Number.isFinite(Number(loc.lng)))throw new Error("Address could not be geocoded");
+  return{lat:Number(loc.lat),lng:Number(loc.lng)};
+}
+
 export function haversineKm(a:LatLng,b:LatLng){
   const R=6371,dLat=rad(b.lat-a.lat),dLng=rad(b.lng-a.lng);
   const q=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
@@ -116,7 +128,6 @@ function boundaryFor(
         if(pd<threshold&&cur>pd){
           const ratio=Math.max(0,Math.min(1,(threshold-pd)/(cur-pd)));
           const radius=previous.radiusKm+(c.radiusKm-previous.radiusKm)*ratio;
-          const p=destination({lat:samples[0].lat,lng:samples[0].lng},0,0); // overwritten below
           const bearing=c.bearing;
           const originBack=destination({lat:c.lat,lng:c.lng},(bearing+180)%360,c.radiusKm);
           const interp=destination(originBack,bearing,radius);
