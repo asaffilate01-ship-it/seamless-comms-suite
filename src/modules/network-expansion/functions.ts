@@ -171,8 +171,13 @@ export const approveNetworkTerritoryVersion=createServerFn({method:"POST"}).midd
  const{db}=await access(context,data.tenantId,true);
  const version=await db.from("network_territory_versions").select("*").eq("tenant_id",data.tenantId).eq("id",data.versionId).single();
  if(version.error)throw new Error(version.error.message);
+ const territory=await db.from("network_territories").select("territory_code,name").eq("tenant_id",data.tenantId).eq("id",version.data.territory_id).single();
+ if(territory.error)throw new Error(territory.error.message);
+ const{createHash}=await import("node:crypto");
+ const polygonSha256=createHash("sha256").update(JSON.stringify(version.data.protected_geojson)).digest("hex");
+ const contractReference=territory.data.territory_code+"-v"+version.data.version;
  await db.from("network_territory_versions").update({status:"superseded"}).eq("tenant_id",data.tenantId).eq("territory_id",version.data.territory_id).eq("status","approved").neq("id",data.versionId);
- const approved=await db.from("network_territory_versions").update({status:"approved",approved_by:context.userId,approved_at:new Date().toISOString()})
+ const approved=await db.from("network_territory_versions").update({status:"approved",contract_reference:contractReference,polygon_sha256:polygonSha256,approved_by:context.userId,approved_at:new Date().toISOString()})
   .eq("tenant_id",data.tenantId).eq("id",data.versionId).select("*").single();
  if(approved.error)throw new Error(approved.error.message);
  const metrics={territoryVersionId:data.versionId,algorithm:version.data.algorithm_version,protectedPopulation:version.data.protected_population,
@@ -248,4 +253,23 @@ export const calculateManagementPeriod=createServerFn({method:"POST"}).middlewar
   calculation:{opexMinor:opex,profitShareBps:ag.data.profit_share_bps,basis:"managed_operating_profit",managementFeeIsSeparateFromOpex:true}};
  const{data:row,error}=await db.from("network_management_periods").upsert(values,{onConflict:"agreement_id,period_start,period_end"}).select("*").single();
  if(error)throw new Error(error.message);return row;
+});
+
+
+export const getTerritoryAgreementExhibit=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:{tenantId:string;territoryId:string})=>scope.extend({territoryId:uuid}).parse(i))
+.handler(async({context,data})=>{
+ const{db}=await access(context,data.tenantId);
+ const territory=await db.from("network_territories").select("id,territory_code,name,region,fee_minor,currency").eq("tenant_id",data.tenantId).eq("id",data.territoryId).single();
+ if(territory.error)throw new Error(territory.error.message);
+ const version=await db.from("network_territory_versions").select("*").eq("tenant_id",data.tenantId).eq("territory_id",data.territoryId).eq("status","approved").order("version",{ascending:false}).limit(1).maybeSingle();
+ if(version.error)throw new Error(version.error.message);if(!version.data)throw new Error("No approved territory version");
+ return{
+  exhibitReference:version.data.contract_reference??territory.data.territory_code+"-v"+version.data.version,
+  polygonSha256:version.data.polygon_sha256,
+  territory:territory.data,version:version.data.version,approvedAt:version.data.approved_at,
+  protectedGeojson:version.data.protected_geojson,sharedGeojson:version.data.shared_geojson,overflowGeojson:version.data.overflow_geojson,
+  population:{protected:version.data.protected_population,households:version.data.protected_households,daytime:version.data.protected_daytime_population,students:version.data.protected_students},
+  rules:{protectedCore:"Contractual exclusive territory",shared:"Non-exclusive routing overlap",overflow:"Operational delivery reach only"}
+ };
 });
