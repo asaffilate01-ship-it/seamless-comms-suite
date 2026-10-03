@@ -460,6 +460,7 @@ END $$;
 ALTER TABLE public.ai_model_catalogue ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON public.ai_model_catalogue TO authenticated;
 GRANT ALL ON public.ai_model_catalogue TO service_role;
+DROP POLICY IF EXISTS "ai model catalogue read" ON public.ai_model_catalogue;
 CREATE POLICY "ai model catalogue read" ON public.ai_model_catalogue FOR SELECT TO authenticated USING(status<>'retired');
 
 INSERT INTO public.service_catalogue(service_key,name,description,family,owner_product_key,billable,provisioning_mode,status) VALUES
