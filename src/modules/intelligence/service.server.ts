@@ -4,7 +4,7 @@ import {authoriseServiceScope,parseServiceAuthorization,verifyServiceSecret,type
 
 const uuid=z.string().uuid();
 const scope=z.object({tenantId:uuid,productKey:z.string().min(2).max(80)});
-const request=z.discriminatedUnion("operation",[
+const requestSchema=z.discriminatedUnion("operation",[
  scope.extend({operation:z.literal("run.start"),profile:z.enum(["discovery","finance","technical","compliance","product","transaction","accounting","tax","operations"]),
   goal:z.string().min(4).max(5000),maxSteps:z.number().int().min(1).max(32).default(8),providerKey:z.string().max(120).nullish(),model:z.string().max(200).nullish(),
   inputVersion:z.string().max(200).nullish(),context:z.record(z.string(),z.unknown()).default({}),sourceRefs:z.array(z.string().max(500)).max(200).default([])}),
@@ -21,7 +21,7 @@ const request=z.discriminatedUnion("operation",[
 
 function reply(body:unknown,status=200){return Response.json(body,{status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"}});}
 
-async function auth(request:Request,input:z.infer<typeof request>){
+async function auth(request:Request,input:z.infer<typeof requestSchema>){
  const header=request.headers.get("authorization")??"";
  const bearer=header.startsWith("Bearer ")?header.slice(7):"";
  const {supabaseAdmin}=await import("@/integrations/supabase/client.server");const db=supabaseAdmin as any;
@@ -55,7 +55,7 @@ export async function serveIntelligenceService(httpRequest:Request){
  try{
   const raw=await httpRequest.text();if(raw.length>524288)return reply({error:"Payload too large"},413);
   let json:unknown;try{json=JSON.parse(raw);}catch{return reply({error:"Invalid JSON"},400);}
-  const input=request.parse(json);const {db,credential,keyId,connectorId}=await auth(httpRequest,input);
+  const input=requestSchema.parse(json);const {db,credential,keyId,connectorId}=await auth(httpRequest,input);
   const capability=input.operation==="run.start"?"intelligence.run.start":
    input.operation==="run.get"?"intelligence.run.read":
    input.operation==="job.claim"?"intelligence.jobs":
