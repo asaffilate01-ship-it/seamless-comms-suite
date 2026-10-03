@@ -37,9 +37,9 @@ async function context(programmeKey:string){
       model_type:"franchise",status:"active",currency:"GBP",fee_min_minor:750000,fee_max_minor:2500000,
       royalty_bps:550,marketing_bps:150,tech_fee_minor_per_order:25,supply_markup_bps:1000,
       offer:{brands:"15+ and growing",featuredMarkets:[
-        {name:"Luton",status:"coming_soon"},{name:"St Albans",status:"coming_soon"},
+        {name:"Luton",status:"taken",note:"LU4 8NU"},{name:"St Albans",status:"taken",note:"AL1 3JU"},
         {name:"Bedford",status:"taken"},{name:"Milton Keynes",status:"taken"},
-        {name:"Islington / Camden",status:"taken",note:"Taken"}
+        {name:"Islington / Camden",status:"taken",note:"N7 8XH"}
       ]}
     }).select("*").single();
     if(created.error)throw new Error(created.error.message);
