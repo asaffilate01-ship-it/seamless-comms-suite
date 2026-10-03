@@ -146,7 +146,7 @@ function boundaryFor(
 
 async function demographicCells(db:any,polygon:any,geographyType:string){
   const box=bboxOf(polygon);
-  const q=await db.from("geo_demographic_cells").select("geography_code,centroid_lat,centroid_lng,population,households,daytime_population,students")
+  const q=await db.from("geo_demographic_cells").select("geography_code,centroid_lat,centroid_lng,population,households,daytime_population,students,population_source,household_source,source_year")
     .eq("geography_type",geographyType).gte("centroid_lat",box.minLat).lte("centroid_lat",box.maxLat)
     .gte("centroid_lng",box.minLng).lte("centroid_lng",box.maxLng).range(0,4999);
   if(q.error)throw new Error(q.error.message);
@@ -241,7 +241,8 @@ export async function calculateTerritoryVersion(db:any,tenantId:string,territory
     shared_population:demographicLoaded?sharedAgg.population:null,shared_households:demographicLoaded?sharedAgg.households:null,
     neighbour_analysis:{neighbours:neighbourDesigns.map(n=>({territoryId:n.territory_id,distanceKm:Number(n.distanceKm.toFixed(2))})),toleranceSeconds:tolerance},
     demographic_analysis:{geography:design.demographic_geography,loaded:demographicLoaded,cellsConsidered:allCells.length,protectedCells:protectedCells.length,sharedCells:sharedCells.length,
-      populationSource:"ONS small-area population estimates (imported)",householdSource:"Census/ONS households (imported)",method:"centroid-in-polygon estimate"},
+      populationSources:[...new Set(allCells.map((x:any)=>x.population_source).filter(Boolean))],householdSources:[...new Set(allCells.map((x:any)=>x.household_source).filter(Boolean))],
+      sourceYears:[...new Set(allCells.map((x:any)=>x.source_year).filter(Boolean))].sort(),method:"centroid-in-polygon estimate"},
     calculation:{candidatePoints:candidates.length,bearings:design.bearings,maxRadiusKm:design.max_sample_radius_km,requestedCoreMinutes:design.core_drive_minutes,
       selectedCoreMinutes:tuned.minutes,targetPopulationMin:design.target_population_min,targetPopulationMax:design.target_population_max,routingPreference:design.routing_preference}
   }).select("*").single();
