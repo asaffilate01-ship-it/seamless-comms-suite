@@ -64,7 +64,7 @@ export const createConnectorReconciliation=createServerFn({method:"POST"}).middl
  if(error)throw new Error(error.message);return row;
 });
 
-const identity=scope.extend({channel:z.enum(["whatsapp","sms","email","voice","push"]),providerKey:z.string().max(120).nullish(),
+const identity=scope.extend({channel:z.enum(["whatsapp","sms","email","voice","push","web_chat","social"]),providerKey:z.string().max(120).nullish(),
  address:z.string().min(1).max(320),displayName:z.string().max(160).nullish(),config:z.record(z.string(),z.unknown()).default({})});
 export const upsertCommunicationIdentity=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:z.input<typeof identity>)=>identity.parse(i)).handler(async({context,data})=>{
