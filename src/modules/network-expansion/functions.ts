@@ -33,9 +33,14 @@ export const getNetworkExpansionWorkspace=createServerFn({method:"POST"}).middle
     db.from("growth_channel_catalogue").select("*").eq("status","active").order("medium").order("name"),
     db.from("growth_acquisition_campaigns").select("*,territory:network_territories(name,territory_code)").eq("tenant_id",data.tenantId).order("created_at",{ascending:false}).limit(500),
     db.from("growth_content_items").select("*,territory:network_territories(name,territory_code)").eq("tenant_id",data.tenantId).order("created_at",{ascending:false}).limit(500),
+    db.from("network_management_agreements").select("*,territory:network_territories(name,territory_code)").eq("tenant_id",data.tenantId).order("created_at",{ascending:false}).limit(500),
+    db.from("network_territory_designs").select("*,territory:network_territories(name,territory_code,status,programme_id)").eq("tenant_id",data.tenantId).order("updated_at",{ascending:false}).limit(500),
+    db.from("network_territory_versions").select("*,territory:network_territories(name,territory_code)").eq("tenant_id",data.tenantId).order("created_at",{ascending:false}).limit(500),
+    db.from("geo_demographic_cells").select("geography_code",{count:"exact",head:true})
   ]);
   for(const r of rs)if(r.error)throw new Error(r.error.message);
-  return{programmes:rs[0].data??[],territories:rs[1].data??[],applications:rs[2].data??[],channels:rs[3].data??[],campaigns:rs[4].data??[],content:rs[5].data??[]};
+  return{programmes:rs[0].data??[],territories:rs[1].data??[],applications:rs[2].data??[],channels:rs[3].data??[],campaigns:rs[4].data??[],content:rs[5].data??[],
+    managementAgreements:rs[6].data??[],territoryDesigns:rs[7].data??[],territoryVersions:rs[8].data??[],demographicCells:rs[9].count??0};
 });
 
 export const seedMealDeckNetwork=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
@@ -116,4 +121,123 @@ export const createGrowthContentItem=createServerFn({method:"POST"}).middleware(
     channel_key:data.channelKey??null,content_type:data.contentType,title:data.title,target_url:data.targetUrl??null,brief:data.brief,status:"idea"
   }).select("*").single();
   if(error)throw new Error(error.message);return row;
+});
+
+
+const territoryDesign=scope.extend({
+ territoryId:uuid,centrePostcode:z.string().max(16).nullish(),centreLat:z.number().min(-90).max(90),centreLng:z.number().min(-180).max(180),
+ coreDriveMinutes:z.number().int().min(5).max(60).default(25),sharedDriveMinutes:z.number().int().min(5).max(75).default(30),
+ overflowDriveMinutes:z.number().int().min(5).max(90).default(35),coreMinMinutes:z.number().int().min(5).max(60).default(18),
+ coreMaxMinutes:z.number().int().min(5).max(60).default(28),targetPopulationMin:z.number().int().nonnegative().nullish(),
+ targetPopulationMax:z.number().int().nonnegative().nullish(),maxSampleRadiusKm:z.number().min(2).max(60).default(15),
+ bearings:z.number().int().min(12).max(72).default(30),maxNeighbours:z.number().int().min(0).max(12).default(4),
+ rules:z.record(z.string(),z.unknown()).default({})
+});
+export const saveTerritoryDesign=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof territoryDesign>)=>territoryDesign.parse(i))
+.handler(async({context,data})=>{
+ const{db}=await access(context,data.tenantId,true);
+ const territory=await db.from("network_territories").select("id").eq("tenant_id",data.tenantId).eq("id",data.territoryId).maybeSingle();
+ if(territory.error||!territory.data)throw new Error("Territory not found");
+ const{data:row,error}=await db.from("network_territory_designs").upsert({
+  territory_id:data.territoryId,tenant_id:data.tenantId,centre_postcode:data.centrePostcode??null,centre_lat:data.centreLat,centre_lng:data.centreLng,
+  core_drive_minutes:data.coreDriveMinutes,shared_drive_minutes:data.sharedDriveMinutes,overflow_drive_minutes:data.overflowDriveMinutes,
+  core_min_minutes:data.coreMinMinutes,core_max_minutes:data.coreMaxMinutes,target_population_min:data.targetPopulationMin??null,
+  target_population_max:data.targetPopulationMax??null,max_sample_radius_km:data.maxSampleRadiusKm,bearings:data.bearings,max_neighbours:data.maxNeighbours,
+  routing_provider:"google-routes",routing_preference:"TRAFFIC_UNAWARE",demographic_geography:"LSOA21",rules:data.rules,status:"ready",updated_at:new Date().toISOString()
+ },{onConflict:"territory_id"}).select("*").single();
+ if(error)throw new Error(error.message);return row;
+});
+
+export const calculateNetworkTerritory=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:{tenantId:string;territoryId:string})=>scope.extend({territoryId:uuid}).parse(i))
+.handler(async({context,data})=>{
+ const{db}=await access(context,data.tenantId,true);
+ const{calculateTerritoryVersion}=await import("./territory-engine.server");
+ return calculateTerritoryVersion(db,data.tenantId,data.territoryId);
+});
+
+export const approveNetworkTerritoryVersion=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:{tenantId:string;versionId:string})=>scope.extend({versionId:uuid}).parse(i))
+.handler(async({context,data})=>{
+ const{db}=await access(context,data.tenantId,true);
+ const version=await db.from("network_territory_versions").select("*").eq("tenant_id",data.tenantId).eq("id",data.versionId).single();
+ if(version.error)throw new Error(version.error.message);
+ await db.from("network_territory_versions").update({status:"superseded"}).eq("tenant_id",data.tenantId).eq("territory_id",version.data.territory_id).eq("status","approved").neq("id",data.versionId);
+ const approved=await db.from("network_territory_versions").update({status:"approved",approved_by:context.userId,approved_at:new Date().toISOString()})
+  .eq("tenant_id",data.tenantId).eq("id",data.versionId).select("*").single();
+ if(approved.error)throw new Error(approved.error.message);
+ const metrics={territoryVersionId:data.versionId,algorithm:version.data.algorithm_version,protectedPopulation:version.data.protected_population,
+  protectedHouseholds:version.data.protected_households,sharedPopulation:version.data.shared_population,approvedAt:new Date().toISOString()};
+ const t=await db.from("network_territories").update({
+  protected_geojson:version.data.protected_geojson,shared_geojson:version.data.shared_geojson,overflow_geojson:version.data.overflow_geojson,
+  resident_population:version.data.protected_population,households:version.data.protected_households,daytime_population:version.data.protected_daytime_population,
+  students:version.data.protected_students,metrics,updated_at:new Date().toISOString()
+ }).eq("tenant_id",data.tenantId).eq("id",version.data.territory_id);
+ if(t.error)throw new Error(t.error.message);
+ await db.from("network_territory_designs").update({status:"approved",updated_at:new Date().toISOString()}).eq("territory_id",version.data.territory_id);
+ return approved.data;
+});
+
+const demographicCell=z.object({
+ geographyCode:z.string().min(3).max(40),geographyType:z.string().min(2).max(30).default("LSOA21"),name:z.string().max(200).nullish(),
+ centroidLat:z.number().min(-90).max(90),centroidLng:z.number().min(-180).max(180),population:z.number().int().nonnegative().default(0),
+ households:z.number().int().nonnegative().default(0),daytimePopulation:z.number().int().nonnegative().nullish(),students:z.number().int().nonnegative().nullish(),
+ boundaryGeojson:z.record(z.string(),z.unknown()).nullish(),populationSource:z.string().max(500).nullish(),householdSource:z.string().max(500).nullish(),
+ sourceYear:z.number().int().min(2000).max(2100).nullish(),metadata:z.record(z.string(),z.unknown()).default({})
+});
+export const importDemographicCells=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:{tenantId:string;cells:z.input<typeof demographicCell>[]})=>scope.extend({cells:z.array(demographicCell).min(1).max(1000)}).parse(i))
+.handler(async({context,data})=>{
+ const{db,isPlatformAdmin}=await access(context,data.tenantId,true);if(!isPlatformAdmin)throw new Error("Platform administrator required for demographic imports");
+ const rows=data.cells.map(c=>({geography_code:c.geographyCode,geography_type:c.geographyType,name:c.name??null,centroid_lat:c.centroidLat,centroid_lng:c.centroidLng,
+  population:c.population,households:c.households,daytime_population:c.daytimePopulation??null,students:c.students??null,boundary_geojson:c.boundaryGeojson??null,
+  population_source:c.populationSource??null,household_source:c.householdSource??null,source_year:c.sourceYear??null,metadata:c.metadata,updated_at:new Date().toISOString()}));
+ const r=await db.from("geo_demographic_cells").upsert(rows,{onConflict:"geography_code"});if(r.error)throw new Error(r.error.message);return{imported:rows.length};
+});
+
+const managementAgreement=scope.extend({
+ programmeId:uuid,territoryId:uuid,managementProvider:z.string().min(2).max(160).default("mealdeck-operations"),
+ profitShareBps:z.number().int().min(0).max(10000).default(2000),minimumMonthlyFeeMinor:z.number().int().nonnegative().default(0),
+ effectiveFrom:z.string().nullish(),effectiveUntil:z.string().nullish(),terms:z.record(z.string(),z.unknown()).default({})
+});
+export const saveManagementAgreement=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof managementAgreement>)=>managementAgreement.parse(i))
+.handler(async({context,data})=>{
+ const{db}=await access(context,data.tenantId,true);
+ const{data:row,error}=await db.from("network_management_agreements").insert({
+  tenant_id:data.tenantId,programme_id:data.programmeId,territory_id:data.territoryId,management_provider:data.managementProvider,status:"proposed",
+  profit_share_bps:data.profitShareBps,minimum_monthly_fee_minor:data.minimumMonthlyFeeMinor,profit_basis:"managed_operating_profit",
+  effective_from:data.effectiveFrom??null,effective_until:data.effectiveUntil??null,terms:data.terms
+ }).select("*").single();
+ if(error)throw new Error(error.message);return row;
+});
+
+const managementPeriod=scope.extend({
+ agreementId:uuid,periodStart:z.string(),periodEnd:z.string(),netSalesMinor:z.number().int().nonnegative(),
+ foodPackagingMinor:z.number().int().nonnegative().default(0),payrollMinor:z.number().int().nonnegative().default(0),premisesMinor:z.number().int().nonnegative().default(0),
+ utilitiesMinor:z.number().int().nonnegative().default(0),deliveryPaymentMinor:z.number().int().nonnegative().default(0),localMarketingMinor:z.number().int().nonnegative().default(0),
+ otherSiteOpexMinor:z.number().int().nonnegative().default(0),royaltyMinor:z.number().int().nonnegative().default(0),marketingLevyMinor:z.number().int().nonnegative().default(0),
+ technologyMinor:z.number().int().nonnegative().default(0)
+});
+export const calculateManagementPeriod=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof managementPeriod>)=>managementPeriod.parse(i))
+.handler(async({context,data})=>{
+ const{db}=await access(context,data.tenantId,true);
+ const ag=await db.from("network_management_agreements").select("*").eq("tenant_id",data.tenantId).eq("id",data.agreementId).single();
+ if(ag.error)throw new Error(ag.error.message);
+ const opex=data.foodPackagingMinor+data.payrollMinor+data.premisesMinor+data.utilitiesMinor+data.deliveryPaymentMinor+data.localMarketingMinor+data.otherSiteOpexMinor+
+  data.royaltyMinor+data.marketingLevyMinor+data.technologyMinor;
+ const managedProfit=data.netSalesMinor-opex;
+ const percentFee=managedProfit>0?Math.round(managedProfit*Number(ag.data.profit_share_bps)/10000):0;
+ const managementFee=managedProfit>0?Math.max(Number(ag.data.minimum_monthly_fee_minor??0),percentFee):0;
+ const investorDistributable=Math.max(0,managedProfit-managementFee);
+ const values={tenant_id:data.tenantId,agreement_id:data.agreementId,period_start:data.periodStart,period_end:data.periodEnd,
+  net_sales_minor:data.netSalesMinor,food_packaging_minor:data.foodPackagingMinor,payroll_minor:data.payrollMinor,premises_minor:data.premisesMinor,
+  utilities_minor:data.utilitiesMinor,delivery_payment_minor:data.deliveryPaymentMinor,local_marketing_minor:data.localMarketingMinor,other_site_opex_minor:data.otherSiteOpexMinor,
+  royalty_minor:data.royaltyMinor,marketing_levy_minor:data.marketingLevyMinor,technology_minor:data.technologyMinor,
+  managed_operating_profit_minor:managedProfit,management_fee_minor:managementFee,investor_distributable_minor:investorDistributable,status:"review",
+  calculation:{opexMinor:opex,profitShareBps:ag.data.profit_share_bps,basis:"managed_operating_profit",managementFeeIsSeparateFromOpex:true}};
+ const{data:row,error}=await db.from("network_management_periods").upsert(values,{onConflict:"agreement_id,period_start,period_end"}).select("*").single();
+ if(error)throw new Error(error.message);return row;
 });
