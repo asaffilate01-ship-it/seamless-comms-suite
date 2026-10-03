@@ -124,6 +124,22 @@ class Store:
             db.execute("INSERT INTO edges VALUES (?,?,?,?,?,?,?) ON CONFLICT(scope,id) DO UPDATE SET source=excluded.source,relation=excluded.relation,target=excluded.target,chunk_id=excluded.chunk_id,quote=excluded.quote", (scope.key, edge["id"], edge["source"], edge["relation"], edge["target"], support["id"], edge["quote"]))
         return {"id": edge["id"], "support_chunk": support["id"], "status": "indexed"}
 
+    def document_snapshot(self, scope, document_id):
+        with self.connect() as db:
+            document = db.execute(
+                "SELECT * FROM documents WHERE scope=? AND id=?",
+                (scope.key, document_id),
+            ).fetchone()
+            if not document:
+                raise APIError(404, "Document not found")
+            chunks = [
+                dict(row) for row in db.execute(
+                    "SELECT id,document_id,ordinal,content FROM chunks WHERE scope=? AND document_id=? ORDER BY ordinal",
+                    (scope.key, document_id),
+                )
+            ]
+        return dict(document), chunks
+
     def snapshot(self, scope, as_of, jurisdiction, language):
         with self.connect() as db:
             db.execute("BEGIN")
