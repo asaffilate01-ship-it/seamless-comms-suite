@@ -37,7 +37,8 @@ assert.equal(byName["Bedford"].status,"taken");
 assert.equal(byName["Bedford"].is_sellable,false);
 assert.equal(byName["Milton Keynes"].status,"taken");
 assert.equal(byName["Luton / Dunstable"].status,"coming_soon");
-assert.equal(byName["Islington / Camden"].status,"available");
+assert.equal(byName["Islington / Camden"].status,"taken");
+assert.equal(byName["Islington / Camden"].is_sellable,false);
 assert.equal(byName["Islington / Camden"].metadata.anchor,"Caledonian Road");
 
 const channels=await db.query("SELECT count(*)::int AS n FROM public.growth_channel_catalogue WHERE status='active'");
