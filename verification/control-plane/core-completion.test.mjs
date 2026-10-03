@@ -95,6 +95,26 @@ await asUser(admin,()=>db.query(`
 const readiness=await asUser(admin,async()=> (await db.query("SELECT public.transaction_readiness($1) AS r",[programme])).rows[0].r);
 assert.equal(readiness.ready,true);
 
+const household=(await asUser(admin,()=>db.query(
+ "INSERT INTO public.childcare_households(tenant_id,product_key,household_ref,postcode,care_requirements) VALUES($1,'kindelo','hh-1','LU1','{\"days\":[\"mon\"]}'::jsonb) RETURNING id",
+ [tenant.tenantId]))).rows[0].id;
+const provider=(await asUser(admin,()=>db.query(
+ "INSERT INTO public.childcare_providers(tenant_id,product_key,provider_ref,postcode,status) VALUES($1,'kindelo','cm-1','LU1','active') RETURNING id",
+ [tenant.tenantId]))).rows[0].id;
+const match=(await asUser(admin,async()=> (await db.query(
+ "SELECT public.childcare_propose_match($1,'kindelo',$2,$3,92,1.4,'[\"location\",\"availability\"]'::jsonb,'[]'::jsonb) AS id",
+ [tenant.tenantId,household,provider])).rows[0].id));assert(match);
+
+const vehicle=(await asUser(admin,()=>db.query(
+ "INSERT INTO public.vehicle_profiles(tenant_id,product_key,vehicle_ref,vin,registration,make,model,identity_status) VALUES($1,'sparesgrid','veh-1','VIN-FIXTURE-1','AB12CDE','Fixture','Car','partially_verified') RETURNING id",
+ [tenant.tenantId]))).rows[0].id;
+await asUser(admin,()=>db.query(
+ "INSERT INTO public.vehicle_evidence_records(tenant_id,vehicle_id,evidence_type,source_provider,result,confidence) VALUES($1,$2,'identity','fixture','{\"verified\":true}'::jsonb,0.99)",
+ [tenant.tenantId,vehicle]));
+const verticalStatus=await asUser(admin,()=>db.query(
+ "SELECT package_key,implementation_status FROM public.vertical_package_catalogue WHERE package_key IN('kindelo.childcare','automotive.shared') ORDER BY package_key"));
+assert(verticalStatus.rows.every(r=>r.implementation_status==="live_main"));
+
 const hidden=await asUser(stranger,()=>db.query("SELECT * FROM public.transaction_programmes WHERE id=$1",[programme]));
 assert.equal(hidden.rows.length,0);
 const profiles=await asUser(admin,()=>db.query("SELECT profile_key FROM public.ai_agent_profiles ORDER BY profile_key"));
