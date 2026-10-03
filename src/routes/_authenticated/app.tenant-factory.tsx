@@ -19,6 +19,7 @@ import {
   saveTenantBranding,
   setTenantProduct,
   setTenantService,
+  setTenantEcosystemAddon,
   upsertTenantDomain,
 } from "@/lib/control-plane.functions";
 import { Building2, Boxes, GitBranch as GitBranchIcon, Globe2, Layers3, Plus, RefreshCw, Settings2, Sparkles } from "lucide-react";
@@ -44,6 +45,7 @@ function ControlPlane() {
   const bootstrapDishbeeRequest = useServerFn(bootstrapDishbeePilot);
   const setProductRequest = useServerFn(setTenantProduct);
   const setServiceRequest = useServerFn(setTenantService);
+  const setEcosystemAddonRequest = useServerFn(setTenantEcosystemAddon);
   const linkProductRequest = useServerFn(linkTenantProduct);
   const rotateCredentialRequest = useServerFn(rotateProductCredential);
   const saveBrandingRequest = useServerFn(saveTenantBranding);
@@ -97,6 +99,10 @@ function ControlPlane() {
   const enabledServices = useMemo(
     () => new Set((detail.data?.services ?? []).filter((s) => !["cancelled", "failed"].includes(s.status)).map((s) => s.service_key)),
     [detail.data?.services],
+  );
+  const enabledEcosystemAddons=useMemo(
+    ()=>new Set((detail.data?.ecosystemAddons??[]).filter(a=>!["cancelled","suspended"].includes(a.status)).map(a=>a.addon_key)),
+    [detail.data?.ecosystemAddons],
   );
 
   async function refreshTenant() {
@@ -167,6 +173,16 @@ function ControlPlane() {
     } finally {
       setBusyKey(null);
     }
+  }
+
+  async function toggleEcosystemAddon(hostProductKey:string,addonKey:string,enabled:boolean){
+    setBusyKey(`ecosystem:${addonKey}`);
+    try{
+      await setEcosystemAddonRequest({data:{tenantId:selectedTenantId,hostProductKey,addonKey,enabled}});
+      toast.success(enabled?"Ecosystem add-on requested":"Ecosystem add-on removed from this product");
+      await refreshTenant();
+    }catch(e){toast.error(e instanceof Error?e.message:"Ecosystem add-on update failed")}
+    finally{setBusyKey(null)}
   }
 
   const tenantLabel = detail.data?.tenant?.name ?? current.name ?? "Workspace";
@@ -315,6 +331,31 @@ function ControlPlane() {
                   </Card>
                 );
               })}
+            </div>
+          </section>
+
+          <section>
+            <SectionTitle icon={GitBranchIcon} title="Ecosystem add-ons" description="Attach another SaaS capability without copying its authoritative data. Each card shows the integration mode and data boundary." />
+            <div className="mt-3 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+              {(catalogue.data?.ecosystemAddons??[])
+                .filter((addon)=>enabledProducts.has(addon.host_product_key))
+                .map((addon)=>{
+                  const active=enabledEcosystemAddons.has(addon.addon_key);
+                  const tenantAddon=detail.data?.ecosystemAddons?.find(a=>a.addon_key===addon.addon_key&&a.host_product_key===addon.host_product_key);
+                  return <Card key={addon.addon_key} className={active?"border-primary/40":""}>
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div><p className="text-[10px] font-black uppercase tracking-wide text-primary">{addon.host_product_key} · {addon.category}</p><h3 className="mt-1 font-semibold">{addon.name}</h3><p className="mt-1 text-xs text-muted-foreground">{addon.description}</p></div>
+                        <input type="checkbox" aria-label={`Enable ${addon.name}`} checked={active} disabled={!isPlatformAdmin||busyKey===`ecosystem:${addon.addon_key}`} onChange={e=>toggleEcosystemAddon(addon.host_product_key,addon.addon_key,e.target.checked)}/>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2"><Badge variant="outline">{addon.integration_mode.replaceAll("_"," ")}</Badge>{addon.addon_product_key&&<Badge variant="secondary">{addon.addon_product_key}</Badge>}{addon.addon_service_key&&<Badge variant="secondary">{addon.addon_service_key}</Badge>}{tenantAddon&&<StatusBadge status={tenantAddon.status}/>}</div>
+                      <p className="mt-3 rounded-lg bg-muted p-2 text-[11px] leading-5 text-muted-foreground"><b>Data boundary:</b> {addon.data_boundary}</p>
+                      {!!addon.capabilities?.length&&<p className="mt-2 text-[11px] text-muted-foreground">Capabilities: {addon.capabilities.join(", ")}</p>}
+                    </CardContent>
+                  </Card>;
+                })}
+              {!(catalogue.data?.ecosystemAddons??[]).some(addon=>enabledProducts.has(addon.host_product_key))&&
+                <Card><CardContent className="p-5 text-sm text-muted-foreground">Enable a host product to see its compatible ecosystem add-ons.</CardContent></Card>}
             </div>
           </section>
 
