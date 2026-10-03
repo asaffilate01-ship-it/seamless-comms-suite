@@ -134,10 +134,7 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $$
 DECLARE m public.regulatory_source_monitors%rowtype;prior_hash text;prior_revision integer;new_revision integer;snapshot_id uuid;change_id uuid;
 BEGIN
- IF COALESCE(current_setting('request.jwt.claim.role',true),'')<>'service_role' THEN
-  RAISE EXCEPTION 'Service role required';
- END IF;
- IF _content_hash !~ '^[0-9a-f]{64}$' THEN RAISE EXCEPTION 'Invalid content hash'; END IF;
+IF _content_hash !~ '^[0-9a-f]{64}$' THEN RAISE EXCEPTION 'Invalid content hash'; END IF;
  SELECT * INTO m FROM public.regulatory_source_monitors WHERE id=_monitor FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Regulatory monitor not found'; END IF;
  prior_hash:=m.last_content_hash;prior_revision:=m.current_revision;
