@@ -316,7 +316,7 @@ BEGIN
  RETURN tid;
 END;$$;
 REVOKE ALL ON FUNCTION public.commerce_capture_tender(uuid,uuid,text,bigint,text,text,text,text,jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.commerce_capture_tender(uuid,uuid,text,bigint,text,text,text,jsonb) TO authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.commerce_capture_tender(uuid,uuid,text,bigint,text,text,text,text,jsonb) TO authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.commerce_ingest_offline_event(
  _tenant uuid,_product text,_terminal uuid,_client_event uuid,_event_type text,_payload jsonb
