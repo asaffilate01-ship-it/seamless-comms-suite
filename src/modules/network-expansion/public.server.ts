@@ -12,6 +12,7 @@ const application=z.object({
   availableCapitalMinor:z.number().int().nonnegative().nullish(),
   launchTiming:z.string().trim().max(100).nullish(),
   multiUnitInterest:z.boolean().default(false),
+  operatorModel:z.enum(["owner_operator","managed_investor","multi_unit_operator"]).default("owner_operator"),
   source:z.string().trim().max(100).nullish(),
   utm:z.record(z.string(),z.unknown()).default({}),
   answers:z.record(z.string(),z.unknown()).default({}),
@@ -95,7 +96,8 @@ export async function servePublicNetworkExpansion(request:Request){
           feeMin:Number(programme.fee_min_minor)/100,feeMax:Number(programme.fee_max_minor)/100,
           royaltyPercent:Number(programme.royalty_bps)/100,marketingPercent:Number(programme.marketing_bps)/100,
           techFeePerOrder:Number(programme.tech_fee_minor_per_order)/100,supplyMarkupPercent:Number(programme.supply_markup_bps)/100,
-          offer:programme.offer??{}
+          managedFranchiseAvailable:!!programme.managed_franchise_available,managedProfitSharePercent:Number(programme.managed_profit_share_bps??0)/100,
+          managedProfitBasis:programme.managed_profit_basis??"managed_operating_profit",offer:programme.offer??{}
         },
         territories:(territories.data??[]).map(safeTerritory)
       },{headers:{"Cache-Control":"public, max-age=60, stale-while-revalidate=300"}});
@@ -119,7 +121,7 @@ export async function servePublicNetworkExpansion(request:Request){
         person=await db.from("crm_people").insert({
           tenant_id:tenant.id,display_name:parsed.name,email,phone_e164:parsed.phone||null,lifecycle_stage:"lead",
           marketing_consent:parsed.consent,source_product_key:"mealdeck",tags:["franchise-prospect"],
-          metadata:{preferredArea:parsed.preferredArea,existingKitchen:parsed.existingKitchen,multiUnitInterest:parsed.multiUnitInterest}
+          metadata:{preferredArea:parsed.preferredArea,existingKitchen:parsed.existingKitchen,multiUnitInterest:parsed.multiUnitInterest,operatorModel:parsed.operatorModel}
         }).select("*").single();
         if(person.error)throw new Error(person.error.message);
       }
@@ -127,14 +129,14 @@ export async function servePublicNetworkExpansion(request:Request){
       const lead=await db.from("crm_leads").insert({
         tenant_id:tenant.id,person_id:person.data.id,title:`MealDeck franchise — ${parsed.preferredArea}`,
         source:parsed.source||"mealdeck-franchise-page",status:"new",score:leadScore,source_product_key:"mealdeck",
-        metadata:{programmeKey:programme.programme_key,territoryCode:territory?.territory_code??null,utm:parsed.utm}
+        metadata:{programmeKey:programme.programme_key,territoryCode:territory?.territory_code??null,operatorModel:parsed.operatorModel,utm:parsed.utm}
       }).select("*").single();
       if(lead.error)throw new Error(lead.error.message);
       const app=await db.from("network_applications").insert({
         tenant_id:tenant.id,programme_id:programme.id,territory_id:territory?.id??null,crm_person_id:person.data.id,crm_lead_id:lead.data.id,
         applicant_name:parsed.name,email,phone_e164:parsed.phone||null,preferred_area:parsed.preferredArea,
         existing_kitchen:parsed.existingKitchen,existing_business:parsed.existingBusiness||null,available_capital_minor:parsed.availableCapitalMinor??null,
-        launch_timing:parsed.launchTiming||null,multi_unit_interest:parsed.multiUnitInterest,stage:"new",score:leadScore,
+        launch_timing:parsed.launchTiming||null,multi_unit_interest:parsed.multiUnitInterest,operator_model:parsed.operatorModel,stage:"new",score:leadScore,
         source:parsed.source||"mealdeck-franchise-page",utm:parsed.utm,answers:parsed.answers,consent:true
       }).select("*").single();
       if(app.error)throw new Error(app.error.message);
