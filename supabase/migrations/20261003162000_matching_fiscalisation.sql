@@ -17,35 +17,15 @@ INSERT INTO public.product_provider_requirements(product_key,provider_key,requir
 ('schonova','fiscal.de-tse',true,'German cash-register fiscalisation and DSFinV-K export')
 ON CONFLICT(product_key,provider_key) DO UPDATE SET required=true,purpose=EXCLUDED.purpose;
 
-CREATE TABLE IF NOT EXISTS public.marketplace_matches(
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
- product_key text NOT NULL REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
- request_type text NOT NULL,
- request_ref text NOT NULL,
- vendor_id uuid REFERENCES public.marketplace_vendors(id) ON DELETE CASCADE,
- listing_id uuid REFERENCES public.marketplace_listings(id) ON DELETE SET NULL,
- score numeric NOT NULL DEFAULT 0,
- rank integer,
- reasons jsonb NOT NULL DEFAULT '[]'::jsonb,
- status text NOT NULL DEFAULT 'candidate' CHECK(status IN('candidate','shortlisted','contacted','accepted','rejected','expired')),
- model_ref text,
- generated_at timestamptz NOT NULL DEFAULT now(),
- metadata jsonb NOT NULL DEFAULT '{}'::jsonb
-);
-CREATE INDEX IF NOT EXISTS marketplace_matches_request_idx
- ON public.marketplace_matches(tenant_id,product_key,request_type,request_ref,score DESC);
+-- Marketplace Core v3 already owns the canonical request-based match table.
+-- Extend it with explainable model metadata instead of creating a competing schema.
+ALTER TABLE public.marketplace_matches
+ ADD COLUMN IF NOT EXISTS model_ref text,
+ ADD COLUMN IF NOT EXISTS generated_at timestamptz NOT NULL DEFAULT now(),
+ ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}'::jsonb;
+CREATE INDEX IF NOT EXISTS marketplace_matches_request_score_idx
+ ON public.marketplace_matches(tenant_id,request_id,score DESC);
 
-ALTER TABLE public.marketplace_matches ENABLE ROW LEVEL SECURITY;
-GRANT ALL ON public.marketplace_matches TO service_role;
-GRANT SELECT,INSERT,UPDATE,DELETE ON public.marketplace_matches TO authenticated;
-DROP POLICY IF EXISTS "marketplace matches read" ON public.marketplace_matches;
-CREATE POLICY "marketplace matches read" ON public.marketplace_matches FOR SELECT TO authenticated
- USING(public.is_platform_admin(auth.uid()) OR public.is_tenant_member(tenant_id,auth.uid()));
-DROP POLICY IF EXISTS "marketplace matches write" ON public.marketplace_matches;
-CREATE POLICY "marketplace matches write" ON public.marketplace_matches FOR ALL TO authenticated
- USING(public.is_platform_admin(auth.uid()) OR public.can_write(tenant_id,auth.uid()))
- WITH CHECK(public.is_platform_admin(auth.uid()) OR public.can_write(tenant_id,auth.uid()));
 
 INSERT INTO public.service_catalogue(service_key,name,description,family,owner_product_key,billable,provisioning_mode,status) VALUES
 ('omniqora.marketplace-matching','Marketplace Matching','Reusable deterministic/AI-assisted provider, listing and opportunity matching with explainable scores.','marketplace','omniqora',true,'automatic','active'),
