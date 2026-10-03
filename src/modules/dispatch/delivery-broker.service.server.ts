@@ -26,7 +26,15 @@ const schema=z.discriminatedUnion("operation",[
     metadata:z.record(z.string(),z.unknown()).default({}),
   }),
   base.extend({
+    operation:z.literal("quote.execute"),
+    requestId:z.string().uuid(),
+  }),
+  base.extend({
     operation:z.literal("route.select"),
+    requestId:z.string().uuid(),
+  }),
+  base.extend({
+    operation:z.literal("book.execute"),
     requestId:z.string().uuid(),
   }),
   base.extend({
@@ -41,6 +49,17 @@ const schema=z.discriminatedUnion("operation",[
 
 function reply(body:unknown,status=200){
   return Response.json(body,{status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"}});
+}
+
+function asObject(value:unknown){
+  return value&&typeof value==="object"&&!Array.isArray(value)
+    ?value as Record<string,unknown>
+    :{};
+}
+
+function number(value:unknown,fallback=0){
+  const n=Number(value);
+  return Number.isFinite(n)?n:fallback;
 }
 
 async function authenticate(request:Request){
@@ -71,6 +90,265 @@ async function assertProduct(db:any,tenantId:string,productKey:string){
   if(error||!data||data.status!=="active")throw new Error("Active tenant product required");
 }
 
+async function connectorRequest(baseUrl:string,token:string,path:string,body:unknown){
+  const response=await fetch(baseUrl.replace(/\/$/,"")+path,{
+    method:"POST",
+    headers:{"content-type":"application/json","authorization":"Bearer "+token},
+    body:JSON.stringify(body),
+    signal:AbortSignal.timeout(10_000),
+  });
+  const text=await response.text();
+  let payload:Record<string,unknown>={};
+  if(text){
+    try{payload=JSON.parse(text) as Record<string,unknown>}
+    catch{payload={raw:text}}
+  }
+  if(!response.ok)throw new Error(String(payload["error"]??payload["message"]??("connector_http_"+response.status)));
+  return payload;
+}
+
+function envToken(handle:unknown){
+  const key=String(handle??"").trim();
+  if(!/^[A-Z0-9_]{3,120}$/.test(key))return"";
+  return String(process.env[key]??"").trim();
+}
+
+async function loadRequest(db:any,tenantId:string,productKey:string,requestId:string){
+  const{data,error}=await db.from("delivery_quote_requests")
+    .select("*").eq("id",requestId).eq("tenant_id",tenantId).eq("product_key",productKey).maybeSingle();
+  if(error)throw new Error(error.message);
+  if(!data)throw new Error("Delivery quote request not found");
+  return data;
+}
+
+async function executeQuotes(db:any,input:{tenantId:string;productKey:string;requestId:string}){
+  const req=await loadRequest(db,input.tenantId,input.productKey,input.requestId);
+  const{data:accounts,error}=await db.from("delivery_provider_accounts")
+    .select("*")
+    .eq("tenant_id",input.tenantId)
+    .eq("product_key",input.productKey)
+    .eq("enabled",true);
+  if(error)throw new Error(error.message);
+
+  const candidates=(accounts??[]).filter((row:any)=>
+    row.location_id==null||req.location_id==null||row.location_id===req.location_id
+  );
+  if(!candidates.length)throw new Error("No delivery provider account configured");
+
+  await db.from("delivery_quote_requests")
+    .update({status:"quoting",updated_at:new Date().toISOString()})
+    .eq("id",req.id);
+
+  const outcomes=await Promise.allSettled(candidates.map(async(account:any)=>{
+    const provider=String(account.provider_key);
+    const settings=asObject(account.settings);
+
+    if(provider==="own_fleet"){
+      const pickup=asObject(req.pickup);
+      const dropoff=asObject(req.dropoff);
+      const pickupLat=number(pickup["lat"]??pickup["latitude"],NaN);
+      const pickupLng=number(pickup["lng"]??pickup["longitude"],NaN);
+      const dropLat=number(dropoff["lat"]??dropoff["latitude"],NaN);
+      const dropLng=number(dropoff["lng"]??dropoff["longitude"],NaN);
+      const coordsReady=[pickupLat,pickupLng,dropLat,dropLng].every(Number.isFinite);
+      if(!coordsReady)return null;
+
+      const{count}=await db.from("dispatch_agents")
+        .select("id",{count:"exact",head:true})
+        .eq("tenant_id",input.tenantId)
+        .eq("product_key",input.productKey)
+        .eq("status","available");
+
+      const available=(count??0)>0||settings["allowWithoutAvailableAgent"]===true;
+      if(!available)return null;
+
+      const price=Math.max(0,Math.round(number(settings["effectiveCostMinor"],0)));
+      const pickupEta=Math.max(0,Math.round(number(settings["pickupEtaMinutes"],10)));
+      const deliveryEta=Math.max(pickupEta,Math.round(number(settings["deliveryEtaMinutes"],30)));
+      const quoteRef="own:"+req.id+":"+Date.now();
+
+      const{data,error:quoteError}=await db.rpc("server_record_delivery_quote",{
+        _request:req.id,
+        _provider_account:account.id,
+        _provider:provider,
+        _quote_ref:quoteRef,
+        _price:price,
+        _pickup_eta:pickupEta,
+        _delivery_eta:deliveryEta,
+        _expires_at:new Date(Date.now()+5*60_000).toISOString(),
+        _available:true,
+        _raw:{availableDrivers:count??0},
+      });
+      if(quoteError)throw new Error(quoteError.message);
+      return data;
+    }
+
+    const baseUrl=String(settings["connectorBaseUrl"]??"").trim();
+    const token=envToken(account.credential_handle);
+    if(!baseUrl||!token)return null;
+    const payload=await connectorRequest(baseUrl,token,"/quote",{
+      provider,
+      request:{
+        pickup:req.pickup,
+        dropoff:req.dropoff,
+        readyAt:req.ready_at,
+        orderValueMinor:req.order_value_minor,
+        currency:req.currency,
+      },
+    });
+    if(payload["available"]===false)return null;
+    const quoteRef=String(payload["quoteRef"]??"");
+    if(!quoteRef)return null;
+    const price=Math.max(0,Math.round(number(payload["priceMinor"]??payload["pricePence"],0)));
+    const pickupEta=Math.max(0,Math.round(number(payload["pickupEtaMinutes"],0)));
+    const deliveryEta=Math.max(0,Math.round(number(payload["deliveryEtaMinutes"],0)));
+    const expiresAt=typeof payload["expiresAt"]==="string"?payload["expiresAt"]:null;
+
+    const{data,error:quoteError}=await db.rpc("server_record_delivery_quote",{
+      _request:req.id,
+      _provider_account:account.id,
+      _provider:provider,
+      _quote_ref:quoteRef,
+      _price:price,
+      _pickup_eta:pickupEta,
+      _delivery_eta:deliveryEta,
+      _expires_at:expiresAt,
+      _available:true,
+      _raw:payload,
+    });
+    if(quoteError)throw new Error(quoteError.message);
+    return data;
+  }));
+
+  const succeeded=outcomes.filter(row=>row.status==="fulfilled"&&row.value).length;
+  if(!succeeded)throw new Error("No delivery provider returned a quote");
+
+  const{data:selected,error:selectError}=await db.rpc("delivery_select_best_quote",{_request:req.id});
+  if(selectError)throw new Error(selectError.message);
+  const{data:quote,error:quoteError}=await db.from("delivery_quotes")
+    .select("id,provider_key,provider_quote_ref,price_minor,pickup_eta_minutes,delivery_eta_minutes,expires_at,score")
+    .eq("id",selected).single();
+  if(quoteError)throw new Error(quoteError.message);
+  return{requestId:req.id,quoteCount:succeeded,selectedQuote:quote};
+}
+
+async function executeBooking(db:any,input:{tenantId:string;productKey:string;requestId:string}){
+  const req=await loadRequest(db,input.tenantId,input.productKey,input.requestId);
+  let quoteId=req.selected_quote_id as string|null;
+  if(!quoteId){
+    const{data,error}=await db.rpc("delivery_select_best_quote",{_request:req.id});
+    if(error)throw new Error(error.message);
+    quoteId=String(data);
+  }
+  const{data:quote,error:quoteError}=await db.from("delivery_quotes")
+    .select("*").eq("id",quoteId).single();
+  if(quoteError)throw new Error(quoteError.message);
+  const{data:account,error:accountError}=await db.from("delivery_provider_accounts")
+    .select("*").eq("id",quote.provider_account_id).maybeSingle();
+  if(accountError)throw new Error(accountError.message);
+  if(!account)throw new Error("Delivery provider account not found");
+
+  const provider=String(quote.provider_key);
+  let externalRef="";
+  let trackingUrl:string|null=null;
+  let dispatchJobId:string|null=null;
+  let courier:Record<string,unknown>={};
+
+  if(provider==="own_fleet"){
+    const pickup=asObject(req.pickup);
+    const dropoff=asObject(req.dropoff);
+    const pickupLat=number(pickup["lat"]??pickup["latitude"],NaN);
+    const pickupLng=number(pickup["lng"]??pickup["longitude"],NaN);
+    const dropLat=number(dropoff["lat"]??dropoff["latitude"],NaN);
+    const dropLng=number(dropoff["lng"]??dropoff["longitude"],NaN);
+    if(![pickupLat,pickupLng,dropLat,dropLng].every(Number.isFinite)){
+      throw new Error("Own-fleet delivery requires pickup/dropoff coordinates");
+    }
+
+    const{data:agent,error:agentError}=await db.from("dispatch_agents")
+      .select("id,name,phone")
+      .eq("tenant_id",input.tenantId)
+      .eq("product_key",input.productKey)
+      .eq("status","available")
+      .order("updated_at",{ascending:false})
+      .limit(1)
+      .maybeSingle();
+    if(agentError)throw new Error(agentError.message);
+    if(!agent)throw new Error("No own-fleet driver available");
+
+    const job=await db.from("dispatch_jobs").insert({
+      tenant_id:input.tenantId,
+      product_key:input.productKey,
+      location_id:req.location_id,
+      job_type:"delivery",
+      status:"assigned",
+      priority:"normal",
+      external_ref:req.external_order_ref,
+      assigned_agent_id:agent.id,
+      metadata:{deliveryBrokerRequestId:req.id},
+    }).select("id").single();
+    if(job.error||!job.data)throw new Error(job.error?.message??"Dispatch job could not be created");
+    dispatchJobId=job.data.id;
+    await db.from("dispatch_job_stops").insert([
+      {
+        job_id:dispatchJobId,tenant_id:input.tenantId,position:0,stop_kind:"pickup",
+        latitude:pickupLat,longitude:pickupLng,address:String(pickup["address"]??""),
+        contact_name:String(pickup["contactName"]??""),contact_phone:String(pickup["contactPhone"]??""),
+        instructions:String(pickup["instructions"]??""),
+      },
+      {
+        job_id:dispatchJobId,tenant_id:input.tenantId,position:1,stop_kind:"dropoff",
+        latitude:dropLat,longitude:dropLng,address:String(dropoff["address"]??""),
+        contact_name:String(dropoff["contactName"]??""),contact_phone:String(dropoff["contactPhone"]??""),
+        instructions:String(dropoff["instructions"]??""),
+      },
+    ]);
+    await db.from("dispatch_agents").update({status:"busy",updated_at:new Date().toISOString()}).eq("id",agent.id);
+    externalRef=String(dispatchJobId);
+    courier={agentId:agent.id,name:agent.name,phone:agent.phone};
+  }else{
+    const settings=asObject(account.settings);
+    const baseUrl=String(settings["connectorBaseUrl"]??"").trim();
+    const token=envToken(account.credential_handle);
+    if(!baseUrl||!token)throw new Error("Delivery connector is not configured");
+    const payload=await connectorRequest(baseUrl,token,"/deliveries",{
+      provider,
+      quoteRef:quote.provider_quote_ref,
+      orderRef:req.external_order_ref,
+      requestId:req.id,
+    });
+    externalRef=String(payload["deliveryRef"]??"");
+    if(!externalRef)throw new Error("Delivery connector reference missing");
+    trackingUrl=typeof payload["trackingUrl"]==="string"?payload["trackingUrl"]:null;
+    courier=asObject(payload["courier"]);
+  }
+
+  const{data:jobId,error:jobError}=await db.rpc("server_upsert_delivery_broker_job",{
+    _request:req.id,
+    _quote:quote.id,
+    _provider_account:account.id,
+    _provider:provider,
+    _external_delivery_ref:externalRef,
+    _dispatch_job:dispatchJobId,
+    _status:provider==="own_fleet"?"driver_assigned":"accepted",
+    _price:quote.price_minor,
+    _currency:req.currency,
+    _tracking_url:trackingUrl,
+    _courier:courier,
+    _metadata:{bookedBy:"omniqora.delivery-broker"},
+  });
+  if(jobError)throw new Error(jobError.message);
+
+  return{
+    jobId,
+    provider,
+    deliveryRef:externalRef,
+    trackingUrl,
+    priceMinor:Number(quote.price_minor),
+    currency:String(req.currency),
+  };
+}
+
 export async function serveDeliveryBroker(request:Request){
   try{
     const raw=await request.text();
@@ -80,11 +358,14 @@ export async function serveDeliveryBroker(request:Request){
     const input=schema.parse(value);
     const{db,credential}=await authenticate(request);
 
-    const capability=input.operation==="quote.request"
-      ?"delivery.quote"
-      :input.operation==="route.select"
-        ?"delivery.route"
-        :"delivery.read";
+    const capability=
+      input.operation==="quote.request"||input.operation==="quote.execute"
+        ?"delivery.quote"
+        :input.operation==="route.select"
+          ?"delivery.route"
+          :input.operation==="book.execute"
+            ?"delivery.book"
+            :"delivery.read";
 
     authoriseServiceScope(credential,{
       tenantId:input.tenantId,
@@ -112,19 +393,27 @@ export async function serveDeliveryBroker(request:Request){
       return reply({requestId:data,status:"pending"},201);
     }
 
+    if(input.operation==="quote.execute"){
+      const result=await executeQuotes(db,input);
+      await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+      return reply(result);
+    }
+
     if(input.operation==="route.select"){
-      const{data:requestRow,error:requestError}=await db.from("delivery_quote_requests")
-        .select("tenant_id,product_key,status").eq("id",input.requestId).maybeSingle();
-      if(requestError||!requestRow||requestRow.tenant_id!==input.tenantId||requestRow.product_key!==input.productKey){
-        throw new Error("Delivery quote request not found");
-      }
+      const req=await loadRequest(db,input.tenantId,input.productKey,input.requestId);
       const{data,error}=await db.rpc("delivery_select_best_quote",{_request:input.requestId});
       if(error)throw new Error(error.message);
       const{data:quote,error:quoteError}=await db.from("delivery_quotes")
         .select("id,provider_key,provider_quote_ref,price_minor,pickup_eta_minutes,delivery_eta_minutes,expires_at,score")
         .eq("id",data).single();
       if(quoteError)throw new Error(quoteError.message);
-      return reply({selectedQuote:quote});
+      return reply({requestId:req.id,selectedQuote:quote});
+    }
+
+    if(input.operation==="book.execute"){
+      const result=await executeBooking(db,input);
+      await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+      return reply(result,201);
     }
 
     if(input.operation==="request.get"){
