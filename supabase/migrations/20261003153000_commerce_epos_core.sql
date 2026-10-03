@@ -151,8 +151,7 @@ CREATE TABLE IF NOT EXISTS public.commerce_receipts(
  sms_to text,
  printed boolean NOT NULL DEFAULT false,
  sent_at timestamptz,
- created_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(tenant_id,product_key,receipt_number)
+ created_at timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE public.commerce_receipts ADD COLUMN IF NOT EXISTS product_key text;
 UPDATE public.commerce_receipts r
@@ -163,6 +162,8 @@ ALTER TABLE public.commerce_receipts ALTER COLUMN product_key SET NOT NULL;
 ALTER TABLE public.commerce_receipts
  ADD CONSTRAINT commerce_receipts_product_key_fkey
  FOREIGN KEY(product_key) REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE;
+CREATE UNIQUE INDEX IF NOT EXISTS commerce_receipt_number_uq
+ ON public.commerce_receipts(tenant_id,product_key,receipt_number);
 
 CREATE TABLE IF NOT EXISTS public.commerce_cash_events(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
