@@ -470,7 +470,7 @@ BEGIN
      tenant_id,product_key,client_ref,period_end,account_code,account_name,debit_minor,credit_minor,source,metadata
    ) VALUES(
      r.tenant_id,r.product_key,r.client_ref,
-     COALESCE((r.proposed_entry->>'periodEnd')::date,date_trunc('month',current_date)::date + interval '1 month - 1 day'),
+     COALESCE((r.proposed_entry->>'periodEnd')::date,(date_trunc('month',current_date)+interval '1 month - 1 day')::date),
      code,nm,d,c,'journal',jsonb_build_object('journalId',j)
    )
    ON CONFLICT(tenant_id,product_key,client_ref,period_end,account_code) DO UPDATE SET
