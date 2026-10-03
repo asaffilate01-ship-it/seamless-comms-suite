@@ -367,3 +367,42 @@ export const setResourceAccessRule=createServerFn({method:"POST"}).middleware([r
   principal_type:data.principalType,principal_ref:data.principalRef,permission:data.permission,effect:data.effect,reason:data.reason??null,created_by:context.userId
  },{onConflict:"tenant_id,resource_type,resource_id,principal_type,principal_ref,permission,effect"}).select("*").single();if(error)throw new Error(error.message);return row;
 });
+
+
+export const getRegulatoryMonitoringWorkspace=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.infer<typeof scope>)=>scope.parse(i)).handler(async({context,data})=>{
+ await requireTenantMembership(context,data.tenantId);const db=context.supabase as any;
+ const rs=await Promise.all([
+  db.from("regulatory_source_monitors").select("*").eq("tenant_id",data.tenantId).or("product_key.eq."+data.productKey+",product_key.is.null").order("updated_at",{ascending:false}),
+  db.from("regulatory_change_events").select("*").eq("tenant_id",data.tenantId).order("created_at",{ascending:false}).limit(200),
+  db.from("regulatory_source_outages").select("*").eq("tenant_id",data.tenantId).order("detected_at",{ascending:false}).limit(100),
+  db.from("regulatory_source_snapshots").select("*").eq("tenant_id",data.tenantId).order("checked_at",{ascending:false}).limit(200)
+ ]);for(const r of rs)if(r.error)throw new Error(r.error.message);
+ return{monitors:rs[0].data??[],changes:rs[1].data??[],outages:rs[2].data??[],snapshots:rs[3].data??[]};
+});
+
+const regulatoryMonitor=scope.extend({
+ sourceKey:z.string().regex(/^[a-z0-9_.-]{2,160}$/),authority:z.string().min(1).max(200),jurisdiction:z.string().min(2).max(80),
+ sourceType:z.string().min(1).max(120),sourceUrl:z.string().url().refine(v=>v.startsWith("https://")),
+ providerKey:z.string().max(120).nullish(),collectionKey:z.string().max(160).nullish(),pollingRrule:z.string().max(1000).nullish()
+});
+export const createRegulatoryMonitor=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof regulatoryMonitor>)=>regulatoryMonitor.parse(i)).handler(async({context,data})=>{
+ await adminAccess(context,data.tenantId,"omniqora.regulatory-monitoring");
+ const{data:row,error}=await(context.supabase as any).from("regulatory_source_monitors").upsert({
+  tenant_id:data.tenantId,product_key:data.productKey,source_key:data.sourceKey,authority:data.authority,
+  jurisdiction:data.jurisdiction,source_type:data.sourceType,source_url:data.sourceUrl,provider_key:data.providerKey??null,
+  collection_key:data.collectionKey??null,polling_rrule:data.pollingRrule??null,status:"configured",updated_at:new Date().toISOString()
+ },{onConflict:"tenant_id,source_key"}).select("*").single();if(error)throw new Error(error.message);return row;
+});
+
+export const reviewRegulatoryChange=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:{tenantId:string;changeId:string;status:"accepted"|"action_required"|"dismissed";impact?:Record<string,unknown>})=>
+ z.object({tenantId:uuid,changeId:uuid,status:z.enum(["accepted","action_required","dismissed"]),impact:z.record(z.string(),z.unknown()).default({})}).parse(i))
+.handler(async({context,data})=>{
+ await writeAccess(context,data.tenantId,"omniqora.regulatory-monitoring");
+ const{data:row,error}=await(context.supabase as any).from("regulatory_change_events").update({
+  status:data.status,impact:data.impact,reviewed_by:context.userId,reviewed_at:new Date().toISOString()
+ }).eq("tenant_id",data.tenantId).eq("id",data.changeId).eq("status","review").select("*").single();
+ if(error)throw new Error(error.message);return row;
+});
