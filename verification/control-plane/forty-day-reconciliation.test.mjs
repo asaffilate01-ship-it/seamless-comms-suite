@@ -12,13 +12,14 @@ for(const name of (await readdir(migrations)).filter(x=>x.endsWith(".sql")).sort
  }
  await db.exec(sql);
 }
-const admin="55555555-aaaa-4aaa-8aaa-555555555555",stranger="44444444-bbbb-4bbb-8bbb-444444444444";
-for(const id of[admin,stranger])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);
+const admin="55555555-aaaa-4aaa-8aaa-555555555555",stranger="44444444-bbbb-4bbb-8bbb-444444444444",member="33333333-cccc-4ccc-8ccc-333333333333";
+for(const id of[admin,stranger,member])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);
 await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
 async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
 async function asService(fn){await db.exec("BEGIN;SET LOCAL ROLE service_role;");try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
 const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);
 const tenant=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(tenant?.tenantId);
+await asService(()=>db.query("INSERT INTO public.tenant_members(tenant_id,user_id,role) VALUES($1,$2,'agent')",[tenant.tenantId,member]));
 
 const sa=await asUser(admin,()=>db.query("SELECT country_code,currency,supported_locales FROM public.region_packs WHERE region_key='sa'"));
 assert.equal(sa.rows[0].country_code,"SA");assert.equal(sa.rows[0].currency,"SAR");assert(sa.rows[0].supported_locales.includes("ar-SA"));
@@ -71,6 +72,26 @@ const qitt=await asUser(admin,()=>db.query("SELECT framework,status FROM public.
 const taxPacks=await asUser(admin,()=>db.query("SELECT pack_key,metadata FROM public.tax_rule_packs WHERE pack_key IN('gb-core-framework','us-core-framework','de-core-framework') ORDER BY pack_key"));assert.equal(taxPacks.rows.length,3);assert(taxPacks.rows.every(r=>r.metadata.ratesIncluded===false));
 const embed=(await asUser(admin,()=>db.query("INSERT INTO public.embedded_surfaces(tenant_id,product_key,surface_key,surface_type,name,status) VALUES($1,'mealdeck','portal-widget','widget','Portal Widget','active') RETURNING id",[tenant.tenantId]))).rows[0].id;assert(embed);
 const line=(await asUser(admin,()=>db.query("INSERT INTO public.telecom_lines(tenant_id,product_key,provider_key,line_type,status) VALUES($1,'mealdeck','telecom.gigs','staff','requested') RETURNING id",[tenant.tenantId]))).rows[0].id;assert(line);
+
+const documentId=(await asUser(admin,()=>db.query("INSERT INTO public.document_records(tenant_id,product_key,document_type,title,status,created_by) VALUES($1,'mealdeck','private_note','Restricted document','active',$2) RETURNING id",[tenant.tenantId,admin]))).rows[0].id;
+await asUser(admin,()=>db.query("INSERT INTO public.document_versions(document_id,tenant_id,version,storage_ref,created_by) VALUES($1,$2,1,'urn:fixture:restricted',$3)",[documentId,tenant.tenantId,admin]));
+const beforeAcl=await asUser(member,()=>db.query("SELECT id FROM public.document_records WHERE id=$1",[documentId]));assert.equal(beforeAcl.rows.length,1);
+await asUser(admin,()=>db.query("INSERT INTO public.resource_access_rules(tenant_id,product_key,resource_type,resource_id,principal_type,principal_ref,permission,effect,created_by) VALUES($1,'mealdeck','document',$2,'user',$3,'read','allow',$3)",[tenant.tenantId,documentId,admin]));
+const afterAcl=await asUser(member,()=>db.query("SELECT id FROM public.document_records WHERE id=$1",[documentId]));assert.equal(afterAcl.rows.length,0);
+const adminDoc=await asUser(admin,()=>db.query("SELECT id FROM public.document_records WHERE id=$1",[documentId]));assert.equal(adminDoc.rows.length,1);
+
+const financeProfile=(await asUser(admin,()=>db.query("INSERT INTO public.embedded_finance_profiles(tenant_id,product_key,provider_key,vendor_ref,status) VALUES($1,'mealdeck','payments.adyen','merchant-1','active') RETURNING id",[tenant.tenantId]))).rows[0].id;
+const beneficiary=(await asUser(admin,()=>db.query("INSERT INTO public.embedded_finance_beneficiaries(tenant_id,profile_id,beneficiary_ref,name,status) VALUES($1,$2,'supplier-1','Supplier One','review') RETURNING id",[tenant.tenantId,financeProfile]))).rows[0].id;
+const transfer=(await asUser(admin,()=>db.query("INSERT INTO public.embedded_finance_transfers(tenant_id,product_key,profile_id,beneficiary_id,amount_minor,currency,purpose,idempotency_key,status) VALUES($1,'mealdeck',$2,$3,2500,'GBP','Supplier payment','transfer-fixture-1','review') RETURNING id",[tenant.tenantId,financeProfile,beneficiary]))).rows[0].id;
+await assert.rejects(()=>asUser(admin,()=>db.query("SELECT public.embedded_finance_approve_transfer($1)",[transfer])),/Approved beneficiary required/);
+await asUser(admin,()=>db.query("UPDATE public.embedded_finance_beneficiaries SET status='approved',approved_by=$1,approved_at=now() WHERE id=$2",[admin,beneficiary]));
+await asUser(admin,()=>db.query("SELECT public.embedded_finance_approve_transfer($1)",[transfer]));
+const transferStatus=await asUser(admin,()=>db.query("SELECT status FROM public.embedded_finance_transfers WHERE id=$1",[transfer]));assert.equal(transferStatus.rows[0].status,"approved");
+
+await asUser(admin,()=>db.query("INSERT INTO public.crm_tasks(tenant_id,title,status,priority,due_at,assignee_user_id,source_product_key,created_by) VALUES($1,'Prepare morning pack','open','high',now()+interval '2 hours',$2,'mealdeck',$2)",[tenant.tenantId,admin]));
+await asUser(admin,()=>db.query("INSERT INTO public.support_tickets(tenant_id,product_key,subject,priority,status,assigned_user_id) VALUES($1,'mealdeck','Urgent customer blocker','urgent','open',$2)",[tenant.tenantId,admin]));
+const briefId=await asUser(admin,async()=> (await db.query("SELECT public.daily_brief_generate($1,'mealdeck',$2) AS id",[tenant.tenantId,admin])).rows[0].id);
+const brief=await asUser(admin,()=>db.query("SELECT status,summary FROM public.daily_brief_runs WHERE id=$1",[briefId]));assert.equal(brief.rows[0].status,"ready");assert(Number(brief.rows[0].summary.tasks)>=1);assert(Number(brief.rows[0].summary.blockers)>=1);
 
 const hidden=await asUser(stranger,()=>db.query("SELECT * FROM public.contact_centres WHERE tenant_id=$1",[tenant.tenantId]));assert.equal(hidden.rows.length,0);
 await assert.rejects(()=>asUser(stranger,()=>db.query("SELECT * FROM public.contact_masking_participants")),e=>e.code==="42501");
