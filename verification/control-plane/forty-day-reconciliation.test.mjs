@@ -93,6 +93,13 @@ await asUser(admin,()=>db.query("INSERT INTO public.support_tickets(tenant_id,pr
 const briefId=await asUser(admin,async()=> (await db.query("SELECT public.daily_brief_generate($1,'mealdeck',$2) AS id",[tenant.tenantId,admin])).rows[0].id);
 const brief=await asUser(admin,()=>db.query("SELECT status,summary FROM public.daily_brief_runs WHERE id=$1",[briefId]));assert.equal(brief.rows[0].status,"ready");assert(Number(brief.rows[0].summary.tasks)>=1);assert(Number(brief.rows[0].summary.blockers)>=1);
 
+const webChat=(await asUser(admin,()=>db.query("INSERT INTO public.communication_identities(tenant_id,product_key,channel,address,display_name,status) VALUES($1,'mealdeck','web_chat','site-chat','Website Chat','active') RETURNING id",[tenant.tenantId]))).rows[0].id;assert(webChat);
+const monitor=(await asUser(admin,()=>db.query("INSERT INTO public.regulatory_source_monitors(tenant_id,product_key,source_key,authority,jurisdiction,source_type,source_url,status) VALUES($1,'mealdeck','fixture-regulator','Fixture Authority','GB','official','https://example.invalid/rules','active') RETURNING id",[tenant.tenantId]))).rows[0].id;
+const snap1=await asService(async()=> (await db.query("SELECT public.regulatory_record_snapshot($1,$2,NULL,'fixture:v1','{\"headline\":\"Initial source\"}'::jsonb,'{}'::jsonb) AS r",[monitor,"a".repeat(64)])).rows[0].r);assert.equal(snap1.changed,true);assert.equal(snap1.revision,1);
+const same=await asService(async()=> (await db.query("SELECT public.regulatory_record_snapshot($1,$2,NULL,'fixture:v1','{}'::jsonb,'{}'::jsonb) AS r",[monitor,"a".repeat(64)])).rows[0].r);assert.equal(same.changed,false);assert.equal(same.revision,1);
+const snap2=await asService(async()=> (await db.query("SELECT public.regulatory_record_snapshot($1,$2,NULL,'fixture:v2','{\"headline\":\"Rule changed\"}'::jsonb,'{}'::jsonb) AS r",[monitor,"b".repeat(64)])).rows[0].r);assert.equal(snap2.changed,true);assert.equal(snap2.revision,2);
+const changes=await asUser(admin,()=>db.query("SELECT change_type,status FROM public.regulatory_change_events WHERE monitor_id=$1 ORDER BY to_revision",[monitor]));assert.equal(changes.rows.length,2);assert.equal(changes.rows[1].status,"review");
+
 const hidden=await asUser(stranger,()=>db.query("SELECT * FROM public.contact_centres WHERE tenant_id=$1",[tenant.tenantId]));assert.equal(hidden.rows.length,0);
 await assert.rejects(()=>asUser(stranger,()=>db.query("SELECT * FROM public.contact_masking_participants")),e=>e.code==="42501");
 
