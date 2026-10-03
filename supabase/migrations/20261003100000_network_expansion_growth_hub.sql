@@ -362,6 +362,6 @@ DO $$ DECLARE tid uuid;BEGIN
     (tid,'omniqora.attribution','active','migration','{}'::jsonb)
   ON CONFLICT(tenant_id,service_key) DO UPDATE SET status='active',source='migration',updated_at=now();
  END IF;
-END $;
+END $$;
 
 COMMIT;
