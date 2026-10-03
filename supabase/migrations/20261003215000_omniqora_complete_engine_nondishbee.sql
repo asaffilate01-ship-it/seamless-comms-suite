@@ -380,7 +380,8 @@ ALTER TABLE public.tax_knowledge_sources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_agent_profiles ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON public.tax_knowledge_sources,public.ai_agent_profiles TO authenticated;
 GRANT ALL ON public.tax_knowledge_sources,public.ai_agent_profiles TO service_role;
-CREATE POLICY "tax sources authenticated read" ON public.tax_knowledge_sources FOR SELECT TO authenticated USING(true);\nCREATE POLICY "tax sources platform admin write" ON public.tax_knowledge_sources FOR ALL TO authenticated USING(public.is_platform_admin(auth.uid())) WITH CHECK(public.is_platform_admin(auth.uid()));
+CREATE POLICY "tax sources authenticated read" ON public.tax_knowledge_sources FOR SELECT TO authenticated USING(true);
+CREATE POLICY "tax sources platform admin write" ON public.tax_knowledge_sources FOR ALL TO authenticated USING(public.is_platform_admin(auth.uid())) WITH CHECK(public.is_platform_admin(auth.uid()));
 CREATE POLICY "agent profiles authenticated read" ON public.ai_agent_profiles FOR SELECT TO authenticated USING(status<>'retired');
 
 CREATE INDEX IF NOT EXISTS accounting_review_tenant_status_idx ON public.accounting_review_items(tenant_id,status,created_at);
