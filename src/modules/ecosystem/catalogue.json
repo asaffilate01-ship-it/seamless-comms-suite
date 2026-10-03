@@ -150,14 +150,25 @@
     "status": "source-adapter-required"
   },
   {
-    "id": "onyngo-16",
-    "name": "OnýnGo",
-    "product": "onyngo",
+    "id": "dishbee-plus-16",
+    "name": "Dishbee+",
+    "product": "dishbee-plus",
     "repository": "asaffilate01-ship-it/onyn",
     "source": "https://github.com/asaffilate01-ship-it/onyn/pull/2",
-    "profile": "generic",
-    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
-    "status": "source-adapter-required"
+    "profile": "marketplace",
+    "boundary": "Consumer marketplace frontend remains independently deployable; tenant/vendor access is scoped through Omniqora product connections. Restaurant execution is handed to Dishbee/Hive, while non-food vendors use Omniqora Marketplace.",
+    "status": "omniqora-product-registered",
+    "metadata": {
+      "previousProductName": "OnynGo",
+      "brandFamily": "Dishbee",
+      "categories": [
+        "food",
+        "grocery",
+        "pharmacy",
+        "convenience",
+        "more"
+      ]
+    }
   },
   {
     "id": "iq-practice-cloud-17",
