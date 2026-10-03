@@ -1614,13 +1614,13 @@ REVOKE ALL ON FUNCTION public.growth_assign_variant(uuid,uuid,text) FROM PUBLIC,
 GRANT EXECUTE ON FUNCTION public.growth_assign_variant(uuid,uuid,text) TO authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.billing_activate_subscription(
- _tenant uuid,_product text,_plan text,_provider text DEFAULT NULL,_provider_ref text DEFAULT NULL
+ _tenant uuid,_product text,_plan text,_provider text DEFAULT NULL,_provider_ref text DEFAULT NULL,_actor uuid DEFAULT NULL
 ) RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $$
 DECLARE sid uuid;svc record;
 BEGIN
- IF NOT public.is_platform_admin(auth.uid()) THEN
+ IF _actor IS NULL OR NOT public.is_platform_admin(_actor) THEN
   RAISE EXCEPTION 'Platform administrator required';
  END IF;
  IF NOT EXISTS(
@@ -1642,8 +1642,8 @@ BEGIN
  END LOOP;
  RETURN sid;
 END $$;
-REVOKE ALL ON FUNCTION public.billing_activate_subscription(uuid,text,text,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.billing_activate_subscription(uuid,text,text,text,text) TO service_role;
+REVOKE ALL ON FUNCTION public.billing_activate_subscription(uuid,text,text,text,text,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.billing_activate_subscription(uuid,text,text,text,text,uuid) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.decision_promote_model_candidate(_candidate uuid)
 RETURNS void
