@@ -407,12 +407,18 @@ CREATE OR REPLACE FUNCTION public.daily_brief_generate(_tenant uuid,_product tex
 RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $$
-DECLARE rid uuid:=gen_random_uuid();n_tasks integer:=0;n_approvals integer:=0;n_blockers integer:=0;n_deadlines integer:=0;
+DECLARE rid uuid:=gen_random_uuid();n_tasks integer:=0;n_approvals integer:=0;n_blockers integer:=0;n_deadlines integer:=0;caller uuid:=auth.uid();
 BEGIN
  IF _user IS NULL OR (
    NOT public.is_platform_admin(_user)
    AND NOT public.is_tenant_member(_tenant,_user)
- ) THEN RAISE EXCEPTION 'Daily brief access denied'; END IF;
+ ) THEN RAISE EXCEPTION 'Daily brief target denied'; END IF;
+ IF caller IS NOT NULL
+    AND caller<>_user
+    AND NOT public.is_platform_admin(caller)
+    AND NOT public.has_tenant_role(_tenant,caller,ARRAY['owner','admin']::public.app_role[]) THEN
+  RAISE EXCEPTION 'Daily brief access denied';
+ END IF;
 
  INSERT INTO public.daily_brief_runs(id,tenant_id,product_key,user_id,brief_date,status)
  VALUES(rid,_tenant,_product,_user,current_date,'building');
@@ -475,5 +481,68 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.daily_brief_generate(uuid,text,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.daily_brief_generate(uuid,text,uuid) TO authenticated,service_role;
+
+-- Mutation hardening: UI checks are not the security boundary.
+DROP POLICY IF EXISTS "billing subscription admin mutation" ON public.billing_subscriptions;
+CREATE POLICY "billing subscription admin mutation" AS RESTRICTIVE
+ ON public.billing_subscriptions FOR ALL TO authenticated
+ USING(public.is_platform_admin(auth.uid()))
+ WITH CHECK(public.is_platform_admin(auth.uid()));
+DROP POLICY IF EXISTS "billing addon subscription admin mutation" ON public.billing_addon_subscriptions;
+CREATE POLICY "billing addon subscription admin mutation" AS RESTRICTIVE
+ ON public.billing_addon_subscriptions FOR ALL TO authenticated
+ USING(public.is_platform_admin(auth.uid()))
+ WITH CHECK(public.is_platform_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "finance beneficiary admin update" ON public.embedded_finance_beneficiaries;
+CREATE POLICY "finance beneficiary admin update" AS RESTRICTIVE
+ ON public.embedded_finance_beneficiaries FOR UPDATE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+DROP POLICY IF EXISTS "finance transfer admin update" ON public.embedded_finance_transfers;
+CREATE POLICY "finance transfer admin update" AS RESTRICTIVE
+ ON public.embedded_finance_transfers FOR UPDATE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+
+DROP POLICY IF EXISTS "contact centre admin mutation" ON public.contact_centres;
+CREATE POLICY "contact centre admin mutation" AS RESTRICTIVE
+ ON public.contact_centres FOR ALL TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+DROP POLICY IF EXISTS "contact queue admin mutation" ON public.contact_queues;
+CREATE POLICY "contact queue admin mutation" AS RESTRICTIVE
+ ON public.contact_queues FOR ALL TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+DROP POLICY IF EXISTS "experiment admin update" ON public.growth_experiments;
+CREATE POLICY "experiment admin update" AS RESTRICTIVE
+ ON public.growth_experiments FOR UPDATE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+
+DROP POLICY IF EXISTS "daily brief profile self read" ON public.daily_brief_profiles;
+CREATE POLICY "daily brief profile self read" AS RESTRICTIVE
+ ON public.daily_brief_profiles FOR SELECT TO authenticated
+ USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+DROP POLICY IF EXISTS "daily brief profile self write" ON public.daily_brief_profiles;
+CREATE POLICY "daily brief profile self write" AS RESTRICTIVE
+ ON public.daily_brief_profiles FOR ALL TO authenticated
+ USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+
+DROP POLICY IF EXISTS "daily brief run private read" ON public.daily_brief_runs;
+CREATE POLICY "daily brief run private read" AS RESTRICTIVE
+ ON public.daily_brief_runs FOR SELECT TO authenticated
+ USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+DROP POLICY IF EXISTS "daily brief item private read" ON public.daily_brief_items;
+CREATE POLICY "daily brief item private read" AS RESTRICTIVE
+ ON public.daily_brief_items FOR SELECT TO authenticated
+ USING(EXISTS(
+  SELECT 1 FROM public.daily_brief_runs r
+  WHERE r.id=run_id AND r.tenant_id=tenant_id
+    AND (r.user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(r.tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ ));
+REVOKE INSERT,UPDATE,DELETE ON public.daily_brief_runs,public.daily_brief_items FROM authenticated;
 
 COMMIT;
