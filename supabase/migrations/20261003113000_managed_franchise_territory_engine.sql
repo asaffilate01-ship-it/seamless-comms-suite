@@ -25,9 +25,11 @@ CREATE TABLE IF NOT EXISTS public.network_management_agreements(
    CHECK(profit_basis IN('managed_operating_profit','ebitda','net_profit')),
  effective_from date,effective_until date,
  terms jsonb NOT NULL DEFAULT '{}'::jsonb,
- created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(territory_id,status) DEFERRABLE INITIALLY IMMEDIATE
+ created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS network_one_active_management_agreement_uq
+ ON public.network_management_agreements(territory_id)
+ WHERE status='active';
 
 CREATE TABLE IF NOT EXISTS public.network_management_periods(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -166,5 +168,40 @@ WHERE p.programme_key='mealdeck-england-wales' AND t.name='Islington / Camden'
 ON CONFLICT(territory_id) DO UPDATE SET centre_postcode=EXCLUDED.centre_postcode,centre_lat=EXCLUDED.centre_lat,centre_lng=EXCLUDED.centre_lng,
  core_drive_minutes=EXCLUDED.core_drive_minutes,shared_drive_minutes=EXCLUDED.shared_drive_minutes,overflow_drive_minutes=EXCLUDED.overflow_drive_minutes,
  target_population_min=EXCLUDED.target_population_min,target_population_max=EXCLUDED.target_population_max,rules=EXCLUDED.rules,status='ready',updated_at=now();
+
+
+CREATE OR REPLACE FUNCTION public.network_seed_default_territory_designs(_tenant uuid) RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+DECLARE n integer:=0;tid uuid;
+BEGIN
+ IF COALESCE(current_setting('request.jwt.claim.role',true),'')<>'service_role'
+    AND NOT public.is_platform_admin(auth.uid())
+    AND NOT public.has_tenant_role(_tenant,auth.uid(),ARRAY['owner','admin']::public.app_role[]) THEN
+   RAISE EXCEPTION 'Network expansion access denied';
+ END IF;
+ SELECT t.id INTO tid
+ FROM public.network_territories t JOIN public.network_programmes p ON p.id=t.programme_id
+ WHERE t.tenant_id=_tenant AND p.programme_key='mealdeck-england-wales' AND t.name='Islington / Camden' LIMIT 1;
+ IF tid IS NOT NULL THEN
+  INSERT INTO public.network_territory_designs(
+   territory_id,tenant_id,centre_postcode,centre_lat,centre_lng,core_drive_minutes,shared_drive_minutes,overflow_drive_minutes,
+   core_min_minutes,core_max_minutes,target_population_min,target_population_max,max_sample_radius_km,bearings,max_neighbours,rules,status
+  ) VALUES(
+   tid,_tenant,'N7 8XH',51.54323,-0.114474,25,30,35,18,28,150000,200000,12,30,4,
+   jsonb_build_object(
+    'protectedRule','Use stable road-time baseline, population target and neighbouring territory competition. Approved polygon is the contractual territory.',
+    'neighbourRule','Candidate point remains protected only when this kitchen is not slower than competing approved/taken neighbour anchors by the configured tolerance.',
+    'demographicRule','Population and households are estimated from imported ONS small-area cells whose centroids fall inside the polygon.'
+   ),'ready'
+  )
+  ON CONFLICT(territory_id) DO UPDATE SET centre_postcode=EXCLUDED.centre_postcode,centre_lat=EXCLUDED.centre_lat,centre_lng=EXCLUDED.centre_lng,
+   core_drive_minutes=EXCLUDED.core_drive_minutes,shared_drive_minutes=EXCLUDED.shared_drive_minutes,overflow_drive_minutes=EXCLUDED.overflow_drive_minutes,
+   target_population_min=EXCLUDED.target_population_min,target_population_max=EXCLUDED.target_population_max,rules=EXCLUDED.rules,status='ready',updated_at=now();
+  n:=n+1;
+ END IF;
+ RETURN n;
+END;$;
+REVOKE ALL ON FUNCTION public.network_seed_default_territory_designs(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.network_seed_default_territory_designs(uuid) TO authenticated,service_role;
 
 COMMIT;
