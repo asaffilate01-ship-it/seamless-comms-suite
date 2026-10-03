@@ -378,7 +378,8 @@ END $$;
 
 ALTER TABLE public.tax_knowledge_sources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_agent_profiles ENABLE ROW LEVEL SECURITY;
-GRANT SELECT ON public.tax_knowledge_sources,public.ai_agent_profiles TO authenticated;
+GRANT SELECT ON public.ai_agent_profiles TO authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.tax_knowledge_sources TO authenticated;
 GRANT ALL ON public.tax_knowledge_sources,public.ai_agent_profiles TO service_role;
 CREATE POLICY "tax sources authenticated read" ON public.tax_knowledge_sources FOR SELECT TO authenticated USING(true);
 CREATE POLICY "tax sources platform admin write" ON public.tax_knowledge_sources FOR ALL TO authenticated USING(public.is_platform_admin(auth.uid())) WITH CHECK(public.is_platform_admin(auth.uid()));
