@@ -284,7 +284,7 @@ UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus
 WHERE template_key='mealdeck-england-wales' AND name IN('Bedford','Milton Keynes');
 UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"coming_soon","isSellable":false,"publicNote":"Coming soon"}'::jsonb
 WHERE template_key='mealdeck-england-wales' AND name='Luton / Dunstable';
-UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"available","priority":true,"anchor":"Caledonian Road","publicNote":"Priority London territory near Caledonian Road"}'::jsonb
+UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"taken","isSellable":false,"anchor":"Caledonian Road","publicNote":"Taken"}'::jsonb
 WHERE template_key='mealdeck-england-wales' AND name='Islington / Camden';
 
 INSERT INTO public.service_catalogue(service_key,name,description,family,owner_product_key,billable,provisioning_mode,status,implementation_status) VALUES
@@ -319,7 +319,7 @@ BEGIN
    jsonb_build_object('name','St Albans','status','coming_soon'),
    jsonb_build_object('name','Bedford','status','taken'),
    jsonb_build_object('name','Milton Keynes','status','taken'),
-   jsonb_build_object('name','Islington / Camden','status','available','note','Priority London territory near Caledonian Road')
+   jsonb_build_object('name','Islington / Camden','status','taken','note','Taken')
   ),
   'franchisorProvides',jsonb_build_array('15+ MealDeck brands','Dishbee hospitality operating system','Omniqora intelligence and control plane','KDS/order orchestration','delivery integrations','national and local marketing','training','admin and ongoing support','central production and supply'),
   'franchiseeFunds',jsonb_build_array('franchise fee','rent and premises costs','staff and payroll','utilities','opening and ongoing stock','food and packaging purchases','missing kitchen equipment','KDS screen and printer where required','local operating costs and working capital')
@@ -347,7 +347,7 @@ DO $$ DECLARE tid uuid;BEGIN
  IF tid IS NOT NULL THEN
   INSERT INTO public.network_programmes(tenant_id,product_key,programme_key,name,model_type,status,currency,fee_min_minor,fee_max_minor,royalty_bps,marketing_bps,tech_fee_minor_per_order,supply_markup_bps,offer)
   VALUES(tid,'mealdeck','mealdeck-england-wales','MealDeck England & Wales','franchise','active','GBP',750000,2500000,550,150,25,1000,
-   '{"brands":"15+ and growing","featuredMarkets":[{"name":"Luton","status":"coming_soon"},{"name":"St Albans","status":"coming_soon"},{"name":"Bedford","status":"taken"},{"name":"Milton Keynes","status":"taken"},{"name":"Islington / Camden","status":"available","note":"Priority London territory near Caledonian Road"}]}'::jsonb)
+   '{"brands":"15+ and growing","featuredMarkets":[{"name":"Luton","status":"coming_soon"},{"name":"St Albans","status":"coming_soon"},{"name":"Bedford","status":"taken"},{"name":"Milton Keynes","status":"taken"},{"name":"Islington / Camden","status":"taken","note":"Taken"}]}'::jsonb)
   ON CONFLICT(tenant_id,programme_key) DO NOTHING;
   INSERT INTO public.network_territories(tenant_id,programme_id,territory_code,name,region,status,fee_minor,currency,is_sellable,public_note,metadata)
   SELECT tid,p.id,t.territory_code,t.name,t.region,COALESCE(t.metadata->>'publicStatus','available'),t.fee_minor,t.currency,
