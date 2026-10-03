@@ -355,7 +355,13 @@ DO $$ DECLARE tid uuid;BEGIN
   FROM public.network_programmes p CROSS JOIN public.network_territory_templates t
   WHERE p.tenant_id=tid AND p.programme_key='mealdeck-england-wales' AND t.template_key='mealdeck-england-wales'
   ON CONFLICT(programme_id,territory_code) DO NOTHING;
+
+  INSERT INTO public.tenant_services(tenant_id,service_key,status,source,config)
+  VALUES
+    (tid,'omniqora.network-expansion','active','migration','{}'::jsonb),
+    (tid,'omniqora.attribution','active','migration','{}'::jsonb)
+  ON CONFLICT(tenant_id,service_key) DO UPDATE SET status='active',source='migration',updated_at=now();
  END IF;
-END $$;
+END $;
 
 COMMIT;
