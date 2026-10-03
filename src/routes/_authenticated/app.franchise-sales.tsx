@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs,TabsContent,TabsList,TabsTrigger } from "@/components/ui/tabs";
 import { useTenant } from "@/hooks/useTenant";
 import {
-  createAcquisitionCampaign,createGrowthContentItem,getNetworkExpansionWorkspace,seedMealDeckNetwork,
-  updateNetworkApplication,updateNetworkTerritory
+  approveNetworkTerritoryVersion,calculateNetworkTerritory,createAcquisitionCampaign,createGrowthContentItem,getNetworkExpansionWorkspace,
+  saveManagementAgreement,saveTerritoryDesign,seedMealDeckNetwork,updateNetworkApplication,updateNetworkTerritory
 } from "@/modules/network-expansion/functions";
 import { BadgePoundSterling,BarChart3,Building2,MapPinned,Megaphone,Plus,RefreshCw,Users } from "lucide-react";
 import { toast } from "sonner";
@@ -29,13 +29,19 @@ function FranchiseSales(){
  const tenant=useTenant();const tenantId=tenant.tenantId??"";const qc=useQueryClient();
  const getFn=useServerFn(getNetworkExpansionWorkspace),seedFn=useServerFn(seedMealDeckNetwork),territoryFn=useServerFn(updateNetworkTerritory);
  const applicationFn=useServerFn(updateNetworkApplication),campaignFn=useServerFn(createAcquisitionCampaign),contentFn=useServerFn(createGrowthContentItem);
+ const designFn=useServerFn(saveTerritoryDesign),calculateFn=useServerFn(calculateNetworkTerritory),approveFn=useServerFn(approveNetworkTerritoryVersion);
+ const agreementFn=useServerFn(saveManagementAgreement);
  const q=useQuery({queryKey:["network-expansion",tenantId],queryFn:()=>getFn({data:{tenantId}}),enabled:!!tenantId&&!tenant.loading,retry:false});
  const programme=(q.data?.programmes??[])[0] as any;
  const territories=(q.data?.territories??[]) as any[],applications=(q.data?.applications??[]) as any[],channels=(q.data?.channels??[]) as any[];
  const campaigns=(q.data?.campaigns??[]) as any[],content=(q.data?.content??[]) as any[];
+ const managementAgreements=(q.data?.managementAgreements??[]) as any[],territoryDesigns=(q.data?.territoryDesigns??[]) as any[],territoryVersions=(q.data?.territoryVersions??[]) as any[];
+ const demographicCells=Number(q.data?.demographicCells??0);
  const[search,setSearch]=useState(""),[region,setRegion]=useState("all"),[busy,setBusy]=useState("");
  const[campaign,setCampaign]=useState({name:"",channel:"seo",budget:"",territory:""});
  const[item,setItem]=useState({title:"",channel:"seo",type:"seo_page",territory:""});
+ const[design,setDesign]=useState({territoryId:"",postcode:"",lat:"",lng:"",core:"25",shared:"30",overflow:"35",popMin:"150000",popMax:"250000",radius:"15"});
+ const[managed,setManaged]=useState({territoryId:"",provider:"MealDeck Operations",profitShare:"20",minimum:"0"});
  const regions=useMemo(()=>Array.from(new Set(territories.map(t=>t.region))).sort(),[territories]);
  const filtered=territories.filter(t=>(region==="all"||t.region===region)&&(!search||String(t.name).toLowerCase().includes(search.toLowerCase())||String(t.territory_code).toLowerCase().includes(search.toLowerCase())));
  const available=territories.filter(t=>t.status==="available"&&t.is_sellable).length;
@@ -69,6 +75,7 @@ function FranchiseSales(){
   <Tabs defaultValue="territories" className="mt-6">
    <TabsList className="mb-5 flex h-auto flex-wrap justify-start">
     <TabsTrigger value="territories">Territories</TabsTrigger><TabsTrigger value="applications">Applications</TabsTrigger>
+    <TabsTrigger value="territory-engine">Territory engine</TabsTrigger><TabsTrigger value="managed">Managed investors</TabsTrigger>
     <TabsTrigger value="acquisition">Acquisition</TabsTrigger><TabsTrigger value="content">Content & media</TabsTrigger>
    </TabsList>
 
@@ -85,6 +92,33 @@ function FranchiseSales(){
      {applications.map(a=><tr key={a.id}><td className="px-4 py-3"><b>{a.applicant_name}</b><p className="text-xs text-muted-foreground">{a.email}{a.phone_e164?" · "+a.phone_e164:""}</p></td><td>{a.territory?.name??a.preferred_area}</td><td>{a.source??"direct"}</td><td>{a.existing_kitchen?"Existing":"Needs site"}</td><td>{a.score??"—"}</td><td><select className="h-8 rounded border bg-background px-2 text-xs" value={a.stage} onChange={e=>run("app:"+a.id,()=>applicationFn({data:{tenantId,applicationId:a.id,stage:e.target.value as any,score:a.score}}),"Application stage updated")}>{stages.map(s=><option key={s} value={s}>{s.replaceAll("_"," ")}</option>)}</select></td><td className="pr-4 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</td></tr>)}
      {!applications.length&&<tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No franchise applications yet.</td></tr>}
     </tbody></table></div></CardContent></Card>
+   </TabsContent>
+
+   <TabsContent value="territory-engine">
+    <div className="mb-4 grid gap-4 md:grid-cols-3"><Metric icon={MapPinned} label="Territory designs" value={territoryDesigns.length}/><Metric icon={MapPinned} label="Approved versions" value={territoryVersions.filter(v=>v.status==="approved").length}/><Metric icon={Users} label="ONS demographic cells" value={demographicCells}/></div>
+    <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
+     <Card><CardContent className="p-5"><h2 className="font-semibold">Configure territory design</h2><p className="mt-1 text-xs text-muted-foreground">Anchor a kitchen, set drive-time layers and population target, then calculate with Google Routes + imported ONS cells.</p>
+      <select className="mt-4 h-10 w-full rounded-md border bg-background px-3 text-sm" value={design.territoryId} onChange={e=>setDesign(v=>({...v,territoryId:e.target.value}))}><option value="">Select territory</option>{territories.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
+      <Input className="mt-3" placeholder="Centre postcode" value={design.postcode} onChange={e=>setDesign(v=>({...v,postcode:e.target.value}))}/>
+      <div className="mt-3 grid grid-cols-2 gap-2"><Input placeholder="Latitude" value={design.lat} onChange={e=>setDesign(v=>({...v,lat:e.target.value}))}/><Input placeholder="Longitude" value={design.lng} onChange={e=>setDesign(v=>({...v,lng:e.target.value}))}/></div>
+      <div className="mt-3 grid grid-cols-3 gap-2"><Input placeholder="Core min" value={design.core} onChange={e=>setDesign(v=>({...v,core:e.target.value}))}/><Input placeholder="Shared min" value={design.shared} onChange={e=>setDesign(v=>({...v,shared:e.target.value}))}/><Input placeholder="Overflow min" value={design.overflow} onChange={e=>setDesign(v=>({...v,overflow:e.target.value}))}/></div>
+      <div className="mt-3 grid grid-cols-2 gap-2"><Input placeholder="Pop min" value={design.popMin} onChange={e=>setDesign(v=>({...v,popMin:e.target.value}))}/><Input placeholder="Pop max" value={design.popMax} onChange={e=>setDesign(v=>({...v,popMax:e.target.value}))}/></div>
+      <Button className="mt-3 w-full" disabled={!design.territoryId||!design.lat||!design.lng} onClick={()=>run("design",()=>designFn({data:{tenantId,territoryId:design.territoryId,centrePostcode:design.postcode||null,centreLat:Number(design.lat),centreLng:Number(design.lng),coreDriveMinutes:Number(design.core),sharedDriveMinutes:Number(design.shared),overflowDriveMinutes:Number(design.overflow),coreMinMinutes:Math.max(5,Number(design.core)-7),coreMaxMinutes:Math.min(60,Number(design.core)+3),targetPopulationMin:Number(design.popMin)||null,targetPopulationMax:Number(design.popMax)||null,maxSampleRadiusKm:Number(design.radius),bearings:30,maxNeighbours:4,rules:{neighbourToleranceSeconds:120}}}),"Territory design saved")}>Save design</Button>
+     </CardContent></Card>
+     <Card><CardContent className="p-0"><div className="divide-y">{territoryDesigns.map(d=>{const latest=territoryVersions.find(v=>v.territory_id===d.territory_id);return <div key={d.territory_id} className="p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><b>{d.territory?.name??d.territory_id}</b><p className="text-xs text-muted-foreground">{d.centre_postcode??"No postcode"} · {d.core_drive_minutes}/{d.shared_drive_minutes}/{d.overflow_drive_minutes} min · target {d.target_population_min??"—"}–{d.target_population_max??"—"}</p></div><StatusBadge status={d.status}/></div><div className="mt-3 flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" disabled={busy==="calc:"+d.territory_id} onClick={()=>run("calc:"+d.territory_id,()=>calculateFn({data:{tenantId,territoryId:d.territory_id}}),"Territory calculation created")}>Calculate polygon</Button>{latest&&<><Badge variant="outline">v{latest.version} · {latest.core_drive_minutes} min</Badge><Badge variant="outline">{latest.protected_population??"ONS pending"} population</Badge>{latest.status==="review"&&<Button size="sm" onClick={()=>run("approve:"+latest.id,()=>approveFn({data:{tenantId,versionId:latest.id}}),"Territory polygon approved")}>Approve polygon</Button>}</>}</div></div>})}{!territoryDesigns.length&&<p className="p-6 text-sm text-muted-foreground">No territory designs yet.</p>}</div></CardContent></Card>
+    </div>
+   </TabsContent>
+
+   <TabsContent value="managed">
+    <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
+     <Card><CardContent className="p-5"><h2 className="font-semibold">Managed investor agreement</h2><p className="mt-1 text-xs text-muted-foreground">Separate operations-company agreement. Management share is calculated after site OPEX and standard franchise charges.</p>
+      <select className="mt-4 h-10 w-full rounded-md border bg-background px-3 text-sm" value={managed.territoryId} onChange={e=>setManaged(v=>({...v,territoryId:e.target.value}))}><option value="">Select territory</option>{territories.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
+      <Input className="mt-3" placeholder="Management provider" value={managed.provider} onChange={e=>setManaged(v=>({...v,provider:e.target.value}))}/>
+      <div className="mt-3 grid grid-cols-2 gap-2"><Input placeholder="Profit share %" value={managed.profitShare} onChange={e=>setManaged(v=>({...v,profitShare:e.target.value}))}/><Input placeholder="Minimum monthly £" value={managed.minimum} onChange={e=>setManaged(v=>({...v,minimum:e.target.value}))}/></div>
+      <Button className="mt-3 w-full" disabled={!programme?.id||!managed.territoryId} onClick={()=>run("managed",()=>agreementFn({data:{tenantId,programmeId:programme.id,territoryId:managed.territoryId,managementProvider:managed.provider,profitShareBps:Math.round(Number(managed.profitShare)*100),minimumMonthlyFeeMinor:Math.round(Number(managed.minimum)*100),effectiveFrom:null,effectiveUntil:null,terms:{basisDefinition:"Managed Operating Profit after site operating costs and standard franchise charges, before management fee, finance costs, corporation tax, depreciation and investor distributions."}}}),"Managed franchise agreement proposed")}>Create proposal</Button>
+     </CardContent></Card>
+     <Card><CardContent className="p-0"><div className="divide-y">{managementAgreements.map(a=><div key={a.id} className="p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><b>{a.territory?.name??a.territory_id}</b><p className="text-xs text-muted-foreground">{a.management_provider} · {Number(a.profit_share_bps)/100}% of managed operating profit{Number(a.minimum_monthly_fee_minor)>0?" · min "+money(a.minimum_monthly_fee_minor)+"/mo":""}</p></div><StatusBadge status={a.status}/></div></div>)}{!managementAgreements.length&&<p className="p-6 text-sm text-muted-foreground">No managed investor agreements yet.</p>}</div></CardContent></Card>
+    </div>
    </TabsContent>
 
    <TabsContent value="acquisition">
