@@ -348,8 +348,10 @@ CREATE TABLE IF NOT EXISTS public.growth_consent_topics(
  channels text[] NOT NULL DEFAULT '{}',
  default_state text NOT NULL DEFAULT 'unknown' CHECK(default_state IN('unknown','granted','denied')),
  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
- UNIQUE(tenant_id,COALESCE(product_key,'__all__'),topic_key)
+ UNIQUE(tenant_id,product_key,topic_key)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS growth_consent_topic_scope_uq
+ ON public.growth_consent_topics(tenant_id,COALESCE(product_key,'__all__'),topic_key);
 
 CREATE TABLE IF NOT EXISTS public.growth_consent_records(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1185,9 +1187,10 @@ CREATE TABLE IF NOT EXISTS public.platform_translation_entries(
  reviewed_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
  reviewed_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now(),
- updated_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(COALESCE(product_key,'__all__'),COALESCE(service_key,'__all__'),locale,translation_key)
+ updated_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS platform_translation_scope_uq
+ ON public.platform_translation_entries(COALESCE(product_key,'__all__'),COALESCE(service_key,'__all__'),locale,translation_key);
 
 CREATE TABLE IF NOT EXISTS public.tenant_translation_overrides(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1203,8 +1206,10 @@ CREATE TABLE IF NOT EXISTS public.tenant_translation_overrides(
  reviewed_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now(),
  updated_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(tenant_id,COALESCE(product_key,'__all__'),locale,translation_key)
+ UNIQUE(tenant_id,product_key,locale,translation_key)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS tenant_translation_scope_uq
+ ON public.tenant_translation_overrides(tenant_id,COALESCE(product_key,'__all__'),locale,translation_key);
 
 CREATE TABLE IF NOT EXISTS public.embedded_surfaces(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
