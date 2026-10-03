@@ -38,7 +38,7 @@ async function context(programmeKey:string){
       offer:{brands:"15+ and growing",featuredMarkets:[
         {name:"Luton",status:"coming_soon"},{name:"St Albans",status:"coming_soon"},
         {name:"Bedford",status:"taken"},{name:"Milton Keynes",status:"taken"},
-        {name:"Islington / Camden",status:"available",note:"Priority London territory near Caledonian Road"}
+        {name:"Islington / Camden",status:"taken",note:"Taken"}
       ]}
     }).select("*").single();
     if(created.error)throw new Error(created.error.message);
