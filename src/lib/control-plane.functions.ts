@@ -53,9 +53,10 @@ export type TenantControlPlane = {
 export const getControlPlaneCatalogue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const db=context.supabase as any;
     const [core,addons]=await Promise.all([
-      context.supabase.rpc("get_control_plane_catalogue" as never),
-      context.supabase.from("ecosystem_addon_catalogue").select("*").neq("status","retired").order("host_product_key").order("name"),
+      db.rpc("get_control_plane_catalogue"),
+      db.from("ecosystem_addon_catalogue").select("*").neq("status","retired").order("host_product_key").order("name"),
     ]);
     if (core.error) throw new Error(core.error.message);
     if (addons.error) throw new Error(addons.error.message);
@@ -74,9 +75,10 @@ export const getTenantControlPlane = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
   .handler(async ({ context, data }) => {
+    const db=context.supabase as any;
     const [core,addons]=await Promise.all([
-      context.supabase.rpc("get_tenant_control_plane" as never,{_tenant:data.tenantId} as never),
-      context.supabase.from("tenant_ecosystem_addons").select("*").eq("tenant_id",data.tenantId).order("host_product_key").order("addon_key"),
+      db.rpc("get_tenant_control_plane",{_tenant:data.tenantId}),
+      db.from("tenant_ecosystem_addons").select("*").eq("tenant_id",data.tenantId).order("host_product_key").order("addon_key"),
     ]);
     if(core.error)throw new Error(core.error.message);
     if(addons.error)throw new Error(addons.error.message);
@@ -321,7 +323,7 @@ export const setTenantEcosystemAddon=createServerFn({method:"POST"})
   .middleware([requireSupabaseAuth])
   .inputValidator((input:z.infer<typeof ecosystemAddonSchema>)=>ecosystemAddonSchema.parse(input))
   .handler(async({context,data})=>{
-    const db=context.supabase;
+    const db=context.supabase as any;
     const{data:addon,error:addonError}=await db.from("ecosystem_addon_catalogue").select("*")
       .eq("addon_key",data.addonKey).eq("host_product_key",data.hostProductKey).maybeSingle();
     if(addonError)throw new Error(addonError.message);
