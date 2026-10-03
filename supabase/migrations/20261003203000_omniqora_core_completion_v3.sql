@@ -717,7 +717,7 @@ BEGIN
  END IF;
  UPDATE public.accounting_ingestion_jobs SET status='posted',updated_at=now() WHERE id=j.id;
  RETURN v_journal_id;
-END; $;
+END; $$;
 REVOKE ALL ON FUNCTION public.accounting_post_ingestion_job(uuid,uuid,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.accounting_post_ingestion_job(uuid,uuid,uuid) TO authenticated,service_role;
 
