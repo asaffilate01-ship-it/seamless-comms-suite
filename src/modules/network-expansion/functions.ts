@@ -48,7 +48,9 @@ export const seedMealDeckNetwork=createServerFn({method:"POST"}).middleware([req
 .handler(async({context,data})=>{
   const{db}=await access(context,data.tenantId,true);
   const r=await db.rpc("network_seed_mealdeck_programme",{_tenant:data.tenantId});
-  if(r.error)throw new Error(r.error.message);return{programmeId:r.data as string};
+  if(r.error)throw new Error(r.error.message);
+  const d=await db.rpc("network_seed_default_territory_designs",{_tenant:data.tenantId});if(d.error)throw new Error(d.error.message);
+  return{programmeId:r.data as string};
 });
 
 const territoryUpdate=scope.extend({
