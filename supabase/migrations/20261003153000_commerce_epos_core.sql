@@ -315,7 +315,7 @@ BEGIN
  PERFORM public.commerce_recalculate_sale(_tenant,_sale);
  RETURN tid;
 END;$$;
-REVOKE ALL ON FUNCTION public.commerce_capture_tender(uuid,uuid,text,bigint,text,text,text,jsonb) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.commerce_capture_tender(uuid,uuid,text,bigint,text,text,text,text,jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.commerce_capture_tender(uuid,uuid,text,bigint,text,text,text,jsonb) TO authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.commerce_ingest_offline_event(
