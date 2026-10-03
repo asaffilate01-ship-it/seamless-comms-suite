@@ -284,7 +284,7 @@ UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus
 WHERE template_key='mealdeck-england-wales' AND name IN('Bedford','Milton Keynes');
 UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"coming_soon","isSellable":false,"publicNote":"Coming soon"}'::jsonb
 WHERE template_key='mealdeck-england-wales' AND name='Luton / Dunstable';
-UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"taken","isSellable":false,"anchor":"Caledonian Road","publicNote":"Taken"}'::jsonb
+UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"taken","isSellable":false,"anchor":"Caledonian Road","publicNote":"Taken","centrePostcode":"N7 8XH","centreLat":51.54323,"centreLng":-0.114474,"territoryDesign":{"coreDriveMinutes":25,"sharedDriveMinutes":30,"overflowMaxMinutes":35,"suggestedCoreAreas":["Barnsbury","Caledonian Road","South Holloway","West Highbury","West Canonbury","North King''s Cross","North Angel","East Camden Town","South Kentish Town","South Tufnell Park"],"rule":"Protected polygon is distinct from operational delivery zones; whole postcode districts are not granted automatically."}}'::jsonb
 WHERE template_key='mealdeck-england-wales' AND name='Islington / Camden';
 
 INSERT INTO public.service_catalogue(service_key,name,description,family,owner_product_key,billable,provisioning_mode,status,implementation_status) VALUES
