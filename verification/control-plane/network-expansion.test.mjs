@@ -28,6 +28,9 @@ assert.equal(programme.rows[0].royalty_bps,550);
 assert.equal(programme.rows[0].marketing_bps,150);
 assert.equal(programme.rows[0].tech_fee_minor_per_order,25);
 assert.equal(programme.rows[0].supply_markup_bps,1000);
+assert.equal(programme.rows[0].managed_franchise_available,true);
+assert.equal(programme.rows[0].managed_profit_share_bps,2000);
+assert.equal(programme.rows[0].managed_profit_basis,"managed_operating_profit");
 
 const count=await db.query("SELECT count(*)::int AS n FROM public.network_territories WHERE programme_id=$1",[programme.rows[0].id]);
 assert.equal(count.rows[0].n,150);
@@ -40,6 +43,23 @@ assert.equal(byName["Luton / Dunstable"].status,"coming_soon");
 assert.equal(byName["Islington / Camden"].status,"taken");
 assert.equal(byName["Islington / Camden"].is_sellable,false);
 assert.equal(byName["Islington / Camden"].metadata.anchor,"Caledonian Road");
+const islington=await db.query("SELECT t.id,d.centre_postcode,d.core_drive_minutes,d.shared_drive_minutes,d.overflow_drive_minutes,d.target_population_min,d.target_population_max FROM public.network_territories t JOIN public.network_territory_designs d ON d.territory_id=t.id WHERE t.programme_id=$1 AND t.name='Islington / Camden'",[programme.rows[0].id]);
+assert.equal(islington.rows.length,1);
+assert.equal(islington.rows[0].centre_postcode,"N7 8XH");
+assert.equal(islington.rows[0].core_drive_minutes,25);
+assert.equal(islington.rows[0].shared_drive_minutes,30);
+assert.equal(islington.rows[0].overflow_drive_minutes,35);
+assert.equal(islington.rows[0].target_population_min,150000);
+assert.equal(islington.rows[0].target_population_max,200000);
+
+await db.query("INSERT INTO public.geo_demographic_cells(geography_code,geography_type,name,centroid_lat,centroid_lng,population,households,population_source,household_source,source_year) VALUES('E010TEST','LSOA21','Test LSOA',51.543,-0.114,1700,720,'ONS test fixture','Census test fixture',2025)");
+const demo=await db.query("SELECT population,households FROM public.geo_demographic_cells WHERE geography_code='E010TEST'");
+assert.equal(demo.rows[0].population,1700);
+assert.equal(demo.rows[0].households,720);
+
+const agreement=await db.query("INSERT INTO public.network_management_agreements(tenant_id,programme_id,territory_id,management_provider,status,profit_share_bps,profit_basis) VALUES($1,$2,$3,'MealDeck Operations','proposed',2000,'managed_operating_profit') RETURNING profit_share_bps,profit_basis",[mealdeck.tenantId,programme.rows[0].id,islington.rows[0].id]);
+assert.equal(agreement.rows[0].profit_share_bps,2000);
+assert.equal(agreement.rows[0].profit_basis,"managed_operating_profit");
 
 const channels=await db.query("SELECT count(*)::int AS n FROM public.growth_channel_catalogue WHERE status='active'");
 assert(channels.rows[0].n>=20);
