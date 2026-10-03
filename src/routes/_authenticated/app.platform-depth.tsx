@@ -22,7 +22,8 @@ function PlatformDepth(){
  const billing=useQuery({queryKey:["depth-billing",tenantId,productKey],queryFn:()=>billingFn({data:{tenantId,productKey}}),enabled:!!tenantId&&!!productKey,retry:false});
  const mobile=useQuery({queryKey:["depth-mobile",tenantId,productKey],queryFn:()=>mobileFn({data:{tenantId,productKey}}),enabled:!!tenantId&&!!productKey,retry:false});
  const depth=useQuery({queryKey:["depth-core",tenantId,productKey],queryFn:()=>depthFn({data:{tenantId,productKey}}),enabled:!!tenantId&&!!productKey,retry:false});
- const[planKey,setPlanKey]=useState(""),[planName,setPlanName]=useState(""),[price,setPrice]=useState("0"),[profileName,setProfileName]=useState("Universal Agent"),[embedName,setEmbedName]=useState("Embedded Portal");\n const firstPlan=(billing.data?.plans??[])[0];
+ const[planKey,setPlanKey]=useState(""),[planName,setPlanName]=useState(""),[price,setPrice]=useState("0"),[profileName,setProfileName]=useState("Universal Agent"),[embedName,setEmbedName]=useState("Embedded Portal");
+ const firstPlan=(billing.data?.plans??[])[0];
  async function run(fn:()=>Promise<unknown>,msg:string){try{await fn();toast.success(msg);await Promise.all([billing.refetch(),mobile.refetch(),depth.refetch()]);}catch(e){toast.error(e instanceof Error?e.message:String(e));}}
  return <AppShell title="Platform Depth" subtitle="Landlord billing/metering, Mobile Core & fleet depth, localisation, embeds, scheduled reports, agent templates and telecom orchestration."
  actions={<Button size="sm" variant="outline" onClick={()=>Promise.all([billing.refetch(),mobile.refetch(),depth.refetch()])}><RefreshCw className="mr-2 h-4 w-4"/>Refresh</Button>}>
