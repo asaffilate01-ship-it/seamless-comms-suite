@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS public.network_territory_versions(
  neighbour_analysis jsonb NOT NULL DEFAULT '{}'::jsonb,
  demographic_analysis jsonb NOT NULL DEFAULT '{}'::jsonb,
  calculation jsonb NOT NULL DEFAULT '{}'::jsonb,
+ contract_reference text,polygon_sha256 text,
  approved_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,approved_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now(),
  UNIQUE(territory_id,version)
