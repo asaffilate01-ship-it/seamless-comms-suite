@@ -663,7 +663,7 @@ AS $$
 DECLARE
  j public.accounting_ingestion_jobs%rowtype;
  line jsonb;
- journal_id uuid;
+ v_journal_id uuid;
  account_id uuid;
  debit_value bigint;
  credit_value bigint;
@@ -703,21 +703,21 @@ BEGIN
         COALESCE(j.extracted->>'description',initcap(j.source_kind)||' ingestion'),'ingestion_job',j.id::text,'posted',_actor,now(),
         jsonb_build_object('documentId',j.document_id))
  ON CONFLICT(tenant_id,product_key,source_type,source_ref) DO UPDATE SET updated_at=now()
- RETURNING id INTO journal_id;
+ RETURNING id INTO v_journal_id;
 
- IF NOT EXISTS(SELECT 1 FROM public.accounting_journal_lines WHERE journal_id=journal_id) THEN
+ IF NOT EXISTS(SELECT 1 FROM public.accounting_journal_lines l0 WHERE l0.journal_id=v_journal_id) THEN
   FOR line IN SELECT * FROM jsonb_array_elements(j.proposed_entries) LOOP
    account_code:=btrim(line->>'accountCode');
    SELECT id INTO account_id FROM public.accounting_nominal_accounts
     WHERE tenant_id=_tenant AND product_key=j.product_key AND client_ref=j.client_ref AND code=account_code AND active=true;
    INSERT INTO public.accounting_journal_lines(tenant_id,journal_id,account_id,description,debit_minor,credit_minor,currency,tax_code,metadata)
-   VALUES(_tenant,journal_id,account_id,NULLIF(line->>'description',''),COALESCE((line->>'debitMinor')::bigint,0),
+   VALUES(_tenant,v_journal_id,account_id,NULLIF(line->>'description',''),COALESCE((line->>'debitMinor')::bigint,0),
           COALESCE((line->>'creditMinor')::bigint,0),currency_code,NULLIF(line->>'taxCode',''),COALESCE(line->'metadata','{}'::jsonb));
   END LOOP;
  END IF;
  UPDATE public.accounting_ingestion_jobs SET status='posted',updated_at=now() WHERE id=j.id;
- RETURN journal_id;
-END; $$;
+ RETURN v_journal_id;
+END; $;
 REVOKE ALL ON FUNCTION public.accounting_post_ingestion_job(uuid,uuid,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.accounting_post_ingestion_job(uuid,uuid,uuid) TO authenticated,service_role;
 
