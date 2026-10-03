@@ -227,10 +227,14 @@ CREATE OR REPLACE FUNCTION public.delivery_create_quote_request(
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE rid uuid;
 BEGIN
-  IF NOT public.can_write(_tenant,auth.uid()) AND NOT public.is_platform_admin(auth.uid()) THEN
+  IF NOT public.can_write(_tenant,auth.uid())
+     AND NOT public.is_platform_admin(auth.uid())
+     AND COALESCE(current_setting('request.jwt.claim.role',true),'')<>'service_role' THEN
     RAISE EXCEPTION 'Delivery broker access denied';
   END IF;
-  IF NOT public.has_tenant_entitlement(_tenant,'omniqora.delivery-broker') AND NOT public.is_platform_admin(auth.uid()) THEN
+  IF NOT public.has_tenant_entitlement(_tenant,'omniqora.delivery-broker')
+     AND NOT public.is_platform_admin(auth.uid())
+     AND COALESCE(current_setting('request.jwt.claim.role',true),'')<>'service_role' THEN
     RAISE EXCEPTION 'Delivery broker entitlement required';
   END IF;
   IF NULLIF(trim(_external_order_ref),'') IS NULL THEN RAISE EXCEPTION 'External order reference required'; END IF;
