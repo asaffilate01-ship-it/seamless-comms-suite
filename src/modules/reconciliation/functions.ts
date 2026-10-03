@@ -138,7 +138,7 @@ export const activateBillingSubscription=createServerFn({method:"POST"}).middlew
 .handler(async({context,data})=>{
  const check=await(context.supabase as any).rpc("is_platform_admin",{_user:context.userId});if(check.error||!check.data)throw new Error("Platform administrator required");
  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
- const r=await admin.rpc("billing_activate_subscription",{_tenant:data.tenantId,_product:data.productKey,_plan:data.planKey,_provider:null,_provider_ref:null});
+ const r=await admin.rpc("billing_activate_subscription",{_tenant:data.tenantId,_product:data.productKey,_plan:data.planKey,_provider:null,_provider_ref:null,_actor:context.userId});
  if(r.error)throw new Error(r.error.message);return{subscriptionId:r.data as string};
 });
 
