@@ -56,6 +56,8 @@ const nav: NavItem[] = [
   { to: "/app/platform-kernel", labelKey: "", label: "Platform Kernel", icon: Cpu },
   { to: "/app/utilities", labelKey: "", label: "Platform Utilities", icon: Wrench },
   { to: "/app/vertical-packages", labelKey: "", label: "Vertical Packages", icon: Boxes },
+  { to: "/app/automotive", labelKey: "", label: "Automotive Intelligence", icon: Truck },
+  { to: "/app/childcare", labelKey: "", label: "Childcare Operations", icon: Users },
   { to: "/app/settings", labelKey: "app.nav.settings", icon: Settings },
 ];
 
