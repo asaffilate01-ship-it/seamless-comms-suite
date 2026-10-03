@@ -143,6 +143,46 @@ GRANT SELECT ON public.network_territory_version_cells TO authenticated;
 CREATE POLICY "territory version cells read" ON public.network_territory_version_cells FOR SELECT TO authenticated
 USING(EXISTS(SELECT 1 FROM public.network_territory_versions v WHERE v.id=version_id AND (public.is_platform_admin(auth.uid()) OR public.is_tenant_member(v.tenant_id,auth.uid()))));
 
+
+CREATE OR REPLACE FUNCTION public.network_apply_mealdeck_managed_defaults()
+RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $
+BEGIN
+ IF NEW.programme_key='mealdeck-england-wales' THEN
+  NEW.managed_franchise_available:=true;
+  NEW.managed_profit_share_bps:=CASE WHEN NEW.managed_profit_share_bps=0 THEN 2000 ELSE NEW.managed_profit_share_bps END;
+  NEW.managed_profit_basis:='managed_operating_profit';
+  NEW.offer:=COALESCE(NEW.offer,'{}'::jsonb)||jsonb_build_object('managedFranchise',jsonb_build_object(
+    'available',true,'defaultProfitSharePercent',20,'basis','Managed Operating Profit after site operating costs and standard franchise charges, before the management fee, financing, corporation tax, depreciation and investor distributions.','publicName','MealDeck Managed Franchise'
+  ));
+ END IF;
+ RETURN NEW;
+END;$;
+DROP TRIGGER IF EXISTS network_mealdeck_managed_defaults ON public.network_programmes;
+CREATE TRIGGER network_mealdeck_managed_defaults
+BEFORE INSERT OR UPDATE ON public.network_programmes
+FOR EACH ROW EXECUTE FUNCTION public.network_apply_mealdeck_managed_defaults();
+
+CREATE OR REPLACE FUNCTION public.network_seed_mealdeck_design_on_territory()
+RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $
+DECLARE pkey text;
+BEGIN
+ SELECT programme_key INTO pkey FROM public.network_programmes WHERE id=NEW.programme_id;
+ IF pkey='mealdeck-england-wales' AND NEW.name='Islington / Camden' THEN
+  INSERT INTO public.network_territory_designs(
+   territory_id,tenant_id,centre_postcode,centre_lat,centre_lng,core_drive_minutes,shared_drive_minutes,overflow_drive_minutes,
+   core_min_minutes,core_max_minutes,target_population_min,target_population_max,max_sample_radius_km,bearings,max_neighbours,rules,status
+  ) VALUES(
+   NEW.id,NEW.tenant_id,'N7 8XH',51.54323,-0.114474,25,30,35,18,28,150000,200000,12,30,4,
+   jsonb_build_object('protectedRule','Use stable road-time baseline, population target and neighbouring territory competition. Approved polygon is the contractual territory.','neighbourRule','Candidate point remains protected only when this kitchen is not slower than competing approved/taken neighbour anchors by the configured tolerance.','demographicRule','Population and households are estimated from imported ONS small-area cells whose centroids fall inside the polygon.'),'ready'
+  ) ON CONFLICT(territory_id) DO NOTHING;
+ END IF;
+ RETURN NEW;
+END;$;
+DROP TRIGGER IF EXISTS network_mealdeck_default_design ON public.network_territories;
+CREATE TRIGGER network_mealdeck_default_design
+AFTER INSERT ON public.network_territories
+FOR EACH ROW EXECUTE FUNCTION public.network_seed_mealdeck_design_on_territory();
+
 UPDATE public.network_programmes
 SET managed_franchise_available=true,managed_profit_share_bps=2000,managed_profit_basis='managed_operating_profit',
     offer=offer||jsonb_build_object('managedFranchise',jsonb_build_object(
