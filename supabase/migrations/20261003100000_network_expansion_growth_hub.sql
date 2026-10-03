@@ -238,7 +238,7 @@ INSERT INTO public.network_territory_templates(template_key,ordinal,territory_co
 ('mealdeck-england-wales',109,'MD-109','Aylesbury','Thames Valley & Home Counties',1250000),
 ('mealdeck-england-wales',110,'MD-110','High Wycombe','Thames Valley & Home Counties',1500000),
 ('mealdeck-england-wales',111,'MD-111','Oxford','Thames Valley & Home Counties',2000000),
-('mealdeck-england-wales',112,'MD-112','Banbury','Thames Valley & Home Counties',1000000),
+('mealdeck-england-wales',112,'MD-112','St Albans','Thames Valley & Home Counties',1750000),
 ('mealdeck-england-wales',113,'MD-113','Reading','Thames Valley & Home Counties',1750000),
 ('mealdeck-england-wales',114,'MD-114','Slough / Maidenhead','Thames Valley & Home Counties',2000000),
 ('mealdeck-england-wales',115,'MD-115','Bracknell / Wokingham','Thames Valley & Home Counties',1500000),
@@ -282,8 +282,10 @@ ON CONFLICT(template_key,territory_code) DO UPDATE SET ordinal=EXCLUDED.ordinal,
 -- Public labels and rollout rules. "Taken" deliberately does not expose ownership type.
 UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"taken","isSellable":false}'::jsonb
 WHERE template_key='mealdeck-england-wales' AND name IN('Bedford','Milton Keynes');
-UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"coming_soon","isSellable":false,"publicNote":"Coming soon"}'::jsonb
+UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"taken","isSellable":false,"publicNote":"Taken","centrePostcode":"LU4 8NU"}'::jsonb
 WHERE template_key='mealdeck-england-wales' AND name='Luton / Dunstable';
+UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"taken","isSellable":false,"publicNote":"Taken","centrePostcode":"AL1 3JU"}'::jsonb
+WHERE template_key='mealdeck-england-wales' AND name='St Albans';
 UPDATE public.network_territory_templates SET metadata=metadata||'{"publicStatus":"taken","isSellable":false,"anchor":"Caledonian Road","publicNote":"Taken","centrePostcode":"N7 8XH","centreLat":51.54323,"centreLng":-0.114474,"territoryDesign":{"coreDriveMinutes":25,"sharedDriveMinutes":30,"overflowMaxMinutes":35,"suggestedCoreAreas":["Barnsbury","Caledonian Road","South Holloway","West Highbury","West Canonbury","North King''s Cross","North Angel","East Camden Town","South Kentish Town","South Tufnell Park"],"rule":"Protected polygon is distinct from operational delivery zones; whole postcode districts are not granted automatically."}}'::jsonb
 WHERE template_key='mealdeck-england-wales' AND name='Islington / Camden';
 
@@ -315,13 +317,13 @@ BEGIN
  jsonb_build_object(
   'brands','15+ and growing','positioning','One kitchen. 15+ brands. One technology platform. One protected territory.',
   'featuredMarkets',jsonb_build_array(
-   jsonb_build_object('name','Luton','status','coming_soon'),
-   jsonb_build_object('name','St Albans','status','coming_soon'),
+   jsonb_build_object('name','Luton','status','taken','note','LU4 8NU'),
+   jsonb_build_object('name','St Albans','status','taken','note','AL1 3JU'),
    jsonb_build_object('name','Bedford','status','taken'),
    jsonb_build_object('name','Milton Keynes','status','taken'),
-   jsonb_build_object('name','Islington / Camden','status','taken','note','Taken')
+   jsonb_build_object('name','Islington / Camden','status','taken','note','N7 8XH')
   ),
-  'franchisorProvides',jsonb_build_array('15+ MealDeck brands','Dishbee hospitality operating system','Omniqora intelligence and control plane','KDS/order orchestration','delivery integrations','national and local marketing','training','admin and ongoing support','central production and supply'),
+  'franchisorProvides',jsonb_build_array('15+ MealDeck brands','Dishbee hospitality operating system','MealDeck proprietary intelligence and control platform','KDS/order orchestration','delivery integrations','national and local marketing','training','admin and ongoing support','central production and supply'),
   'franchiseeFunds',jsonb_build_array('franchise fee','rent and premises costs','staff and payroll','utilities','opening and ongoing stock','food and packaging purchases','missing kitchen equipment','KDS screen and printer where required','local operating costs and working capital')
  ))
  ON CONFLICT(tenant_id,programme_key) DO UPDATE SET status='active',royalty_bps=550,marketing_bps=150,tech_fee_minor_per_order=25,supply_markup_bps=1000,fee_min_minor=750000,fee_max_minor=2500000,offer=EXCLUDED.offer,updated_at=now()
@@ -347,7 +349,7 @@ DO $$ DECLARE tid uuid;BEGIN
  IF tid IS NOT NULL THEN
   INSERT INTO public.network_programmes(tenant_id,product_key,programme_key,name,model_type,status,currency,fee_min_minor,fee_max_minor,royalty_bps,marketing_bps,tech_fee_minor_per_order,supply_markup_bps,offer)
   VALUES(tid,'mealdeck','mealdeck-england-wales','MealDeck England & Wales','franchise','active','GBP',750000,2500000,550,150,25,1000,
-   '{"brands":"15+ and growing","featuredMarkets":[{"name":"Luton","status":"coming_soon"},{"name":"St Albans","status":"coming_soon"},{"name":"Bedford","status":"taken"},{"name":"Milton Keynes","status":"taken"},{"name":"Islington / Camden","status":"taken","note":"Taken"}]}'::jsonb)
+   '{"brands":"15+ and growing","featuredMarkets":[{"name":"Luton","status":"taken","note":"LU4 8NU"},{"name":"St Albans","status":"taken","note":"AL1 3JU"},{"name":"Bedford","status":"taken"},{"name":"Milton Keynes","status":"taken"},{"name":"Islington / Camden","status":"taken","note":"N7 8XH"}]}'::jsonb)
   ON CONFLICT(tenant_id,programme_key) DO NOTHING;
   INSERT INTO public.network_territories(tenant_id,programme_id,territory_code,name,region,status,fee_minor,currency,is_sellable,public_note,metadata)
   SELECT tid,p.id,t.territory_code,t.name,t.region,COALESCE(t.metadata->>'publicStatus','available'),t.fee_minor,t.currency,
