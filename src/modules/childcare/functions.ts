@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto";
 import {createServerFn} from "@tanstack/react-start";
 import {z} from "zod";
 import {requireSupabaseAuth} from "@/integrations/supabase/auth-middleware";
@@ -19,6 +20,42 @@ export const getChildcareWorkspace=createServerFn({method:"POST"}).middleware([r
  ]);
  for(const r of rs)if(r.error)throw new Error(r.error.message);
  return{parents:rs[0].data??[],children:rs[1].data??[],providers:rs[2].data??[],availability:rs[3].data??[],matches:rs[4].data??[],compliance:rs[5].data??[]};
+});
+
+const contact=scope.extend({displayName:z.string().min(1).max(200),email:z.string().email().max(320).nullish(),
+ phoneE164:z.string().regex(/^\+[1-9][0-9]{6,14}$/).nullish(),externalRef:z.string().max(200).nullish(),
+ householdRef:z.string().max(120).nullish(),requirements:z.record(z.string(),z.unknown()).default({})});
+export const createChildcareParentContact=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof contact>)=>contact.parse(i)).handler(async({context,data})=>{
+ const a=await requireService(context,data.tenantId,"omniqora.childcare");requireWriteRole(a.role);const db=context.supabase as any;
+ const externalRef=data.externalRef??"childcare-parent-"+randomUUID();
+ const {data:person,error:personError}=await db.from("crm_people").upsert({tenant_id:data.tenantId,source_product_key:data.productKey,
+  external_ref:externalRef,display_name:data.displayName,email:data.email??null,phone_e164:data.phoneE164??null,lifecycle_stage:"customer",
+  marketing_consent:false,tags:["childcare-parent"],metadata:{}},{onConflict:"tenant_id,source_product_key,external_ref"}).select("*").single();
+ if(personError)throw new Error(personError.message);
+ const {data:profile,error}=await db.from("childcare_parent_profiles").upsert({tenant_id:data.tenantId,product_key:data.productKey,
+  person_id:person.id,household_ref:data.householdRef??null,requirements:data.requirements,status:"active",updated_at:new Date().toISOString()},
+ {onConflict:"tenant_id,product_key,person_id"}).select("*").single();if(error)throw new Error(error.message);
+ return{person,profile};
+});
+
+const providerContact=scope.extend({displayName:z.string().min(1).max(200),email:z.string().email().max(320).nullish(),
+ phoneE164:z.string().regex(/^\+[1-9][0-9]{6,14}$/).nullish(),externalRef:z.string().max(200).nullish(),
+ providerRef:z.string().min(1).max(120),regulatorRef:z.string().max(160).nullish(),serviceArea:z.record(z.string(),z.unknown()).default({}),
+ capacity:z.number().int().min(0).nullish(),ageRanges:z.array(z.unknown()).max(100).default([]),services:z.array(z.unknown()).max(100).default([])});
+export const createChildcareProviderContact=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof providerContact>)=>providerContact.parse(i)).handler(async({context,data})=>{
+ const a=await requireService(context,data.tenantId,"omniqora.childcare");requireWriteRole(a.role);const db=context.supabase as any;
+ const externalRef=data.externalRef??"childcare-provider-"+randomUUID();
+ const {data:person,error:personError}=await db.from("crm_people").upsert({tenant_id:data.tenantId,source_product_key:data.productKey,
+  external_ref:externalRef,display_name:data.displayName,email:data.email??null,phone_e164:data.phoneE164??null,lifecycle_stage:"partner",
+  marketing_consent:false,tags:["childcare-provider"],metadata:{}},{onConflict:"tenant_id,source_product_key,external_ref"}).select("*").single();
+ if(personError)throw new Error(personError.message);
+ const {data:profile,error}=await db.from("childcare_provider_profiles").upsert({tenant_id:data.tenantId,product_key:data.productKey,
+  person_id:person.id,provider_ref:data.providerRef,provider_type:"childminder",regulator_ref:data.regulatorRef??null,service_area:data.serviceArea,
+  capacity:data.capacity??null,age_ranges:data.ageRanges,services:data.services,status:"onboarding",updated_at:new Date().toISOString()},
+ {onConflict:"tenant_id,product_key,provider_ref"}).select("*").single();if(error)throw new Error(error.message);
+ return{person,profile};
 });
 
 const parent=scope.extend({personId:uuid,householdRef:z.string().max(120).nullish(),requirements:z.record(z.string(),z.unknown()).default({})});
