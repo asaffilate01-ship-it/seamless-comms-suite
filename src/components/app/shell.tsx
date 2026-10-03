@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3, ContactRound,
   Handshake, Settings, Search, Bell, Plus, MessageCircle, ShieldCheck,
-  Menu, LogOut, Boxes, Cpu, ShoppingBasket, Truck, Store, Wrench,
+  Menu, LogOut, Boxes, Cpu, ShoppingBasket, Truck, Store, Wrench, MapPinned,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ const nav: NavItem[] = [
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
   { to: "/app/crm", labelKey: "", label: "CRM & Customer 360", icon: ContactRound },
+  { to: "/app/franchise-sales", labelKey: "", label: "Franchise Sales", icon: MapPinned },
   { to: "/app/workflows", labelKey: "app.nav.workflows", icon: GitBranch },
   { to: "/app/campaigns", labelKey: "app.nav.campaigns", icon: Megaphone },
   { to: "/app/feedback", labelKey: "", label: "Feedback & NPS", icon: MessageCircle },
@@ -225,6 +226,19 @@ export function StatusBadge({ status }: { status: string }) {
     draft: "bg-muted text-muted-foreground border-border",
     review: "bg-warning/10 text-warning-foreground border-warning/30",
     sent: "bg-success/10 text-success border-success/20",
+    available: "bg-success/10 text-success border-success/20",
+    coming_soon: "bg-info/10 text-info border-info/20",
+    held: "bg-warning/10 text-warning-foreground border-warning/30",
+    reserved: "bg-warning/10 text-warning-foreground border-warning/30",
+    taken: "bg-muted text-muted-foreground border-border",
+    onboarding: "bg-primary/10 text-primary border-primary/20",
+    operating: "bg-success/10 text-success border-success/20",
+    paused: "bg-warning/10 text-warning-foreground border-warning/30",
+    planned: "bg-info/10 text-info border-info/20",
+    running: "bg-primary/10 text-primary border-primary/20",
+    published: "bg-success/10 text-success border-success/20",
+    idea: "bg-muted text-muted-foreground border-border",
+    producing: "bg-primary/10 text-primary border-primary/20",
   };
   const label = status.replace(/_/g, " ");
   return (
