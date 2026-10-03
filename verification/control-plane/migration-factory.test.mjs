@@ -20,7 +20,7 @@ for(const[,tenantId,workspace]of targets){
  const tid=await asUser(admin,async()=> (await db.query("SELECT public.migration_map_target($1,$2,'dishbee',$3,true) AS id",[asset,tenantId,workspace])).rows[0].id);assert(tid);
 }
 let evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
-assert.equal(evaluation.ready,false);assert(evaluation.blockers.includes("required_targets_not_ready"));assert(evaluation.blockers.includes("shadow_checks_missing"));assert(evaluation.blockers.includes("approved_cutover_plan_missing"));
+assert.equal(evaluation.ready,false);assert(evaluation.blockers.includes("required_targets_not_ready"));assert(evaluation.blockers.includes("shadow_order_parity_missing_for_required_targets"));assert(evaluation.blockers.includes("approved_cutover_plan_missing"));
 
 await asService(async()=>{
  for(const[,tenantId,workspace]of targets){
@@ -29,12 +29,29 @@ await asService(async()=>{
   await db.query("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status) VALUES($1,'dishbee',$2,'connected') ON CONFLICT(tenant_id,product_key,external_tenant_id) DO UPDATE SET status='connected'",[tenantId,workspace]);
  }
 });
+await asService(async()=>{
+ for(const[,tenantId,workspace]of targets){
+  await db.query(`INSERT INTO public.platform_events(
+   tenant_id,product_key,event_type,event_version,source_service,subject_type,subject_id,idempotency_key,data_classification,payload
+  ) VALUES($1,'dishbee','dishbee.runtime.readiness',1,'dishbee.runtime','tenant',$2,$3,'internal',$4::jsonb)`,[
+   tenantId,workspace,"readiness:"+workspace,JSON.stringify({dishbeeTenantId:workspace,ready:true,blockers:[],activeLocations:1,mappedLocations:1,successfulShadowHandoffs:1})
+  ]);
+ }
+});
 const mapped=await asUser(admin,()=>db.query("SELECT id,target_tenant_id FROM public.portfolio_migration_targets WHERE asset_id=$1",[asset]));
 for(const row of mapped.rows){const r=await asUser(admin,async()=> (await db.query("SELECT public.migration_refresh_target($1) AS e",[row.id])).rows[0].e);assert.equal(r.ready,true);}
-await asUser(admin,()=>db.query("INSERT INTO public.portfolio_shadow_checks(tenant_id,asset_id,check_key,check_type,status,evidence) VALUES($1,$2,'orders-parity','order_parity','passed','{\"source\":100,\"target\":100}'::jsonb)",[ownerTenant,asset]));
+await asService(async()=>{
+ for(const[,tenantId,workspace]of targets){
+  await db.query(`INSERT INTO public.platform_events(
+   tenant_id,product_key,event_type,event_version,source_service,subject_type,subject_id,idempotency_key,data_classification,payload
+  ) VALUES($1,'dishbee','dishbee.order.handoff.accepted',1,'dishbee.runtime','order',$2,$3,'confidential',$4::jsonb)`,[
+   tenantId,"dishbee-order-"+workspace,"handoff:"+workspace,JSON.stringify({omniqoraSessionId:workspace+"-session",dishbeeOrderId:workspace+"-order",totalMinor:1299,currency:"GBP"})
+  ]);
+ }
+});
 await asUser(admin,()=>db.query("INSERT INTO public.portfolio_cutover_plans(asset_id,tenant_id,change_window,freeze_strategy,dns_strategy,communication_plan,rollback_strategy,smoke_tests,owner_user_id,approved_by,approved_at) VALUES($1,$2,'overnight','5 minute final delta','switch only after smoke tests','notify operators','Restore source routes and disable target writes','[\"auth\",\"orders\",\"payments\",\"KDS\"]'::jsonb,$3,$3,now())",[asset,ownerTenant,admin]));
 evaluation=await asUser(admin,async()=> (await db.query("SELECT public.migration_evaluate_asset($1) AS e",[asset])).rows[0].e);
-assert.equal(evaluation.ready,true);assert.equal(evaluation.requiredTargets,3);assert.equal(evaluation.readyTargets,3);assert.equal(evaluation.failedShadowChecks,0);assert.equal(evaluation.passedShadowChecks,1);
+assert.equal(evaluation.ready,true);assert.equal(evaluation.requiredTargets,3);assert.equal(evaluation.readyTargets,3);assert.equal(evaluation.failedShadowChecks,0);assert.equal(evaluation.passedShadowChecks,3);assert.equal(evaluation.passedShadowTargets,3);
 await asUser(admin,()=>db.query("SELECT public.migration_mark_cutover_ready($1)",[asset]));
 const stage=await asUser(admin,()=>db.query("SELECT migration_stage,stage_progress FROM public.portfolio_assets WHERE id=$1",[asset]));assert.deepEqual(stage.rows[0],{migration_stage:"cutover_ready",stage_progress:85});
 const cutover=await asUser(admin,async()=> (await db.query("SELECT public.migration_begin_cutover($1) AS id",[asset])).rows[0].id);assert(cutover);
