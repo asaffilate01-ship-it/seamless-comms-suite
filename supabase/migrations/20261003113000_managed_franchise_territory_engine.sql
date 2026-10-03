@@ -149,7 +149,7 @@ WITH CHECK(EXISTS(SELECT 1 FROM public.network_territory_versions v WHERE v.id=v
 
 
 CREATE OR REPLACE FUNCTION public.network_apply_mealdeck_managed_defaults()
-RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $
+RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
 BEGIN
  IF NEW.programme_key='mealdeck-england-wales' THEN
   NEW.managed_franchise_available:=true;
@@ -160,14 +160,14 @@ BEGIN
   ));
  END IF;
  RETURN NEW;
-END;$;
+END;$$;
 DROP TRIGGER IF EXISTS network_mealdeck_managed_defaults ON public.network_programmes;
 CREATE TRIGGER network_mealdeck_managed_defaults
 BEFORE INSERT OR UPDATE ON public.network_programmes
 FOR EACH ROW EXECUTE FUNCTION public.network_apply_mealdeck_managed_defaults();
 
 CREATE OR REPLACE FUNCTION public.network_seed_mealdeck_design_on_territory()
-RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $
+RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
 DECLARE pkey text;
 BEGIN
  SELECT programme_key INTO pkey FROM public.network_programmes WHERE id=NEW.programme_id;
@@ -181,7 +181,7 @@ BEGIN
   ) ON CONFLICT(territory_id) DO NOTHING;
  END IF;
  RETURN NEW;
-END;$;
+END;$$;
 DROP TRIGGER IF EXISTS network_mealdeck_default_design ON public.network_territories;
 CREATE TRIGGER network_mealdeck_default_design
 AFTER INSERT ON public.network_territories
@@ -215,7 +215,7 @@ ON CONFLICT(territory_id) DO UPDATE SET centre_postcode=EXCLUDED.centre_postcode
 
 
 CREATE OR REPLACE FUNCTION public.network_seed_default_territory_designs(_tenant uuid) RETURNS integer
-LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE n integer:=0;tid uuid;
 BEGIN
  IF COALESCE(current_setting('request.jwt.claim.role',true),'')<>'service_role'
@@ -244,7 +244,7 @@ BEGIN
   n:=n+1;
  END IF;
  RETURN n;
-END;$;
+END;$$;
 REVOKE ALL ON FUNCTION public.network_seed_default_territory_designs(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.network_seed_default_territory_designs(uuid) TO authenticated,service_role;
 
