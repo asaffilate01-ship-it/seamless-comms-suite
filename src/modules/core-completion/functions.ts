@@ -286,3 +286,100 @@ export const getTransactionReadiness=createServerFn({method:"POST"})
  const r=await(context.supabase as any).rpc("transaction_readiness",{_programme:data.programmeId});
  if(r.error)throw new Error(r.error.message);return r.data;
 });
+
+
+const childcareHousehold=z.object({
+ tenantId:uuid,productKey:z.string().min(2).max(80),householdRef:z.string().min(1).max(160),
+ crmPersonId:uuid.nullish(),postcode:z.string().max(20).nullish(),latitude:z.number().nullish(),longitude:z.number().nullish(),
+ careRequirements:z.record(z.string(),z.unknown()).default({}),fundingContext:z.record(z.string(),z.unknown()).default({}),
+ consent:z.record(z.string(),z.unknown()).default({})
+});
+export const createChildcareHousehold=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof childcareHousehold>)=>childcareHousehold.parse(i))
+.handler(async({context,data})=>{
+ const{data:row,error}=await(context.supabase as any).from("childcare_households").insert({
+  tenant_id:data.tenantId,product_key:data.productKey,household_ref:data.householdRef,crm_person_id:data.crmPersonId??null,
+  postcode:data.postcode??null,latitude:data.latitude??null,longitude:data.longitude??null,
+  care_requirements:data.careRequirements,funding_context:data.fundingContext,consent:data.consent,status:"active"
+ }).select("*").single();
+ if(error)throw new Error(error.message);return row;
+});
+
+const childcareProvider=z.object({
+ tenantId:uuid,productKey:z.string().min(2).max(80),providerRef:z.string().min(1).max(160),
+ crmPersonId:uuid.nullish(),postcode:z.string().max(20).nullish(),latitude:z.number().nullish(),longitude:z.number().nullish(),
+ capacity:z.record(z.string(),z.unknown()).default({}),availability:z.record(z.string(),z.unknown()).default({}),
+ qualifications:z.array(z.unknown()).max(200).default([]),regulatoryStatus:z.record(z.string(),z.unknown()).default({}),
+ vettingStatus:z.record(z.string(),z.unknown()).default({})
+});
+export const createChildcareProvider=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof childcareProvider>)=>childcareProvider.parse(i))
+.handler(async({context,data})=>{
+ const{data:row,error}=await(context.supabase as any).from("childcare_providers").insert({
+  tenant_id:data.tenantId,product_key:data.productKey,provider_ref:data.providerRef,crm_person_id:data.crmPersonId??null,
+  postcode:data.postcode??null,latitude:data.latitude??null,longitude:data.longitude??null,capacity:data.capacity,
+  availability:data.availability,qualifications:data.qualifications,regulatory_status:data.regulatoryStatus,
+  vetting_status:data.vettingStatus,status:"onboarding"
+ }).select("*").single();
+ if(error)throw new Error(error.message);return row;
+});
+
+const childcareMatch=z.object({
+ tenantId:uuid,productKey:z.string().min(2).max(80),householdId:uuid,providerId:uuid,
+ score:z.number().min(0).max(100),distanceKm:z.number().nonnegative().nullish(),
+ reasons:z.array(z.unknown()).max(200).default([]),blockingReasons:z.array(z.unknown()).max(200).default([])
+});
+export const proposeChildcareMatch=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof childcareMatch>)=>childcareMatch.parse(i))
+.handler(async({context,data})=>{
+ const r=await(context.supabase as any).rpc("childcare_propose_match",{
+  _tenant:data.tenantId,_product:data.productKey,_household:data.householdId,_provider:data.providerId,
+  _score:data.score,_distance:data.distanceKm??null,_reasons:data.reasons,_blockers:data.blockingReasons
+ });
+ if(r.error)throw new Error(r.error.message);return{matchId:r.data as string,humanReviewRequired:true};
+});
+
+const vehicle=z.object({
+ tenantId:uuid,productKey:z.string().min(2).max(80),vehicleRef:z.string().min(1).max(160),
+ vin:z.string().max(40).nullish(),registration:z.string().max(40).nullish(),make:z.string().max(120).nullish(),
+ model:z.string().max(120).nullish(),derivative:z.string().max(160).nullish(),modelYear:z.number().int().min(1885).max(2200).nullish(),
+ fuelType:z.string().max(80).nullish(),transmission:z.string().max(80).nullish(),colour:z.string().max(80).nullish(),
+ mileage:z.number().int().nonnegative().nullish(),sourceRefs:z.array(z.unknown()).max(200).default([])
+});
+export const upsertVehicleProfile=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof vehicle>)=>vehicle.parse(i))
+.handler(async({context,data})=>{
+ const db=context.supabase as any;
+ const values={
+  tenant_id:data.tenantId,product_key:data.productKey,vehicle_ref:data.vehicleRef,vin:data.vin??null,
+  registration:data.registration??null,make:data.make??null,model:data.model??null,derivative:data.derivative??null,
+  model_year:data.modelYear??null,fuel_type:data.fuelType??null,transmission:data.transmission??null,colour:data.colour??null,
+  mileage:data.mileage??null,source_refs:data.sourceRefs,updated_at:new Date().toISOString()
+ };
+ const existing=await db.from("vehicle_profiles").select("id").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).eq("vehicle_ref",data.vehicleRef).maybeSingle();
+ if(existing.error)throw new Error(existing.error.message);
+ const r=existing.data?await db.from("vehicle_profiles").update(values).eq("id",existing.data.id).select("*").single()
+  :await db.from("vehicle_profiles").insert(values).select("*").single();
+ if(r.error)throw new Error(r.error.message);return r.data;
+});
+
+const vehicleEvidence=z.object({
+ tenantId:uuid,vehicleId:uuid,evidenceType:z.string().min(1).max(120),sourceProvider:z.string().max(120).nullish(),
+ sourceRef:z.string().max(500).nullish(),validUntil:z.string().datetime().nullish(),result:z.record(z.string(),z.unknown()).default({}),
+ documentId:uuid.nullish(),confidence:z.number().min(0).max(1).nullish()
+});
+export const recordVehicleEvidence=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof vehicleEvidence>)=>vehicleEvidence.parse(i))
+.handler(async({context,data})=>{
+ const{data:row,error}=await(context.supabase as any).from("vehicle_evidence_records").insert({
+  tenant_id:data.tenantId,vehicle_id:data.vehicleId,evidence_type:data.evidenceType,source_provider:data.sourceProvider??null,
+  source_ref:data.sourceRef??null,valid_until:data.validUntil??null,result:data.result,document_id:data.documentId??null,
+  confidence:data.confidence??null,status:"current"
+ }).select("*").single();
+ if(error)throw new Error(error.message);return row;
+});
