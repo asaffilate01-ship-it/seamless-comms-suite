@@ -1,3 +1,4 @@
+import {createClient} from "npm:@supabase/supabase-js@2.110.8";
 import {
   auctionProviderReadiness,
   getAuctionProviderLot,
@@ -52,6 +53,75 @@ function providerConfig(requested:unknown){
   if(carStack)return {providerKey:"vehicle.auction.carstack" as const,secret:carStack};
   throw new Error("No Japanese auction read provider is configured");
 }
+function serviceDb(){
+  const url=Deno.env.get("SUPABASE_URL")??"";
+  const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
+  if(!url||!key)throw new Error("Omniqora service database is not configured");
+  return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+}
+function autohashiTenant(){
+  const tenantId=Deno.env.get("AUTOHASHI_OMNIQORA_TENANT_ID")??"";
+  if(!/^[0-9a-f-]{36}$/i.test(tenantId))throw new Error("AUTOHASHI_OMNIQORA_TENANT_ID is not configured");
+  return tenantId;
+}
+async function importLot(lot:any){
+  if(!lot||typeof lot!=="object"||!lot.providerKey||!lot.externalLotId||!lot.make||!lot.model)throw new Error("Normalized auction lot is required");
+  const db=serviceDb(),tenantId=autohashiTenant(),productKey="autohashi";
+  let vehicle:any=null;
+  if(lot.chassisNumber){
+    const found=await db.from("automotive_vehicles").select("*").eq("tenant_id",tenantId).eq("product_key",productKey).eq("chassis_number",String(lot.chassisNumber)).limit(1).maybeSingle();
+    if(found.error)throw found.error;
+    vehicle=found.data;
+    if(!vehicle){
+      const created=await db.from("automotive_vehicles").insert({
+        tenant_id:tenantId,product_key:productKey,origin:"japan",chassis_number:String(lot.chassisNumber),model_code:lot.modelCode??null,
+        make:String(lot.make),model:String(lot.model),specification:{year:lot.year??null,grade:lot.grade??null,odometerKm:lot.odometerKm??null},
+        provenance:{sourceProvider:lot.providerKey,sourceSite:lot.sourceSite??null,firstExternalLotId:lot.externalLotId},status:"active"
+      }).select("*").single();
+      if(created.error)throw created.error;vehicle=created.data;
+    }
+  }
+  const saved=await db.from("automotive_auction_lots").upsert({
+    tenant_id:tenantId,product_key:productKey,vehicle_id:vehicle?.id??null,provider_key:String(lot.providerKey),external_lot_id:String(lot.externalLotId),
+    auction_house:lot.auctionHouse??null,auction_at:lot.auctionAt??null,status:String(lot.status??"open")==="ended"?"ended":"open",
+    grade:lot.grade??null,odometer_km:lot.odometerKm??null,starting_price_minor:lot.startingPriceMinor??null,current_price_minor:lot.currentPriceMinor??null,
+    currency:lot.currency??"JPY",auction_sheet:{...(lot.auctionSheet??{}),priceSemantics:lot.priceSemantics??"unknown",provenance:lot.provenance??{},
+      make:lot.make,model:lot.model,year:lot.year??null,chassisNumber:lot.chassisNumber??null,modelCode:lot.modelCode??null,finalPriceMinor:lot.finalPriceMinor??null},
+    images:Array.isArray(lot.images)?lot.images:[],updated_at:new Date().toISOString()
+  },{onConflict:"tenant_id,provider_key,external_lot_id"}).select("*").single();
+  if(saved.error)throw saved.error;
+  const observed=await db.from("automotive_auction_observations").insert({
+    tenant_id:tenantId,product_key:productKey,auction_lot_id:saved.data.id,vehicle_id:vehicle?.id??null,provider_key:String(lot.providerKey),
+    external_lot_id:String(lot.externalLotId),source_site:lot.sourceSite??null,source_vehicle_id:lot.sourceVehicleId??null,chassis_number:lot.chassisNumber??null,
+    model_code:lot.modelCode??null,make:String(lot.make),model:String(lot.model),model_year:lot.year??null,auction_house:lot.auctionHouse??null,
+    auction_at:lot.auctionAt??null,status:String(lot.status??"open"),grade:lot.grade??null,odometer_km:lot.odometerKm??null,
+    starting_price_minor:lot.startingPriceMinor??null,current_price_minor:lot.currentPriceMinor??null,final_price_minor:lot.finalPriceMinor??null,
+    currency:lot.currency??"JPY",price_semantics:lot.priceSemantics??"unknown",source_ref:String(lot.providerKey)+":"+String(lot.externalLotId),
+    observed_at:lot.observedAt??new Date().toISOString()
+  }).select("*").single();
+  if(observed.error)throw observed.error;
+  let job:any=null;
+  if(vehicle?.id){
+    const queued=await db.from("intelligence_jobs").insert({
+      tenant_id:tenantId,product_key:productKey,job_type:"automotive.auction_assessment",subject_type:"vehicle",subject_id:vehicle.id,
+      input:{vehicleId:vehicle.id,auctionLotId:saved.data.id,providerKey:lot.providerKey,externalLotId:lot.externalLotId,
+        goals:["auction_sheet_interpretation","provenance","relisting_detection","mileage_consistency","valuation_factors","max_bid_review"]},
+      requirements:{service:"omniqora.automotive",visionAllowed:true,reviewRequired:true,noGeolocation:true,failClosedOnMissingProviderEvidence:true}
+    }).select("*").single();
+    if(queued.error)throw queued.error;job=queued.data;
+  }
+  return {auctionLotId:saved.data.id,vehicleId:vehicle?.id??null,observationId:observed.data.id,intelligenceJobId:job?.id??null,intelligenceQueued:!!job};
+}
+async function history(chassisNumber:string,days=90){
+  const db=serviceDb(),tenantId=autohashiTenant();
+  const since=new Date(Date.now()-Math.min(3650,Math.max(1,days))*86400000).toISOString();
+  const result=await db.from("automotive_auction_observations").select("*").eq("tenant_id",tenantId).eq("product_key","autohashi")
+    .eq("chassis_number",chassisNumber).gte("observed_at",since).order("observed_at",{ascending:true}).limit(500);
+  if(result.error)throw result.error;
+  const rows=result.data??[];let previous:number|null=null,mileageRegression=false;
+  for(const row of rows){if(typeof row.odometer_km==="number"){if(previous!==null&&row.odometer_km<previous)mileageRegression=true;previous=row.odometer_km;}}
+  return {rows,flags:{relisted:rows.length>1,mileageRegression},days};
+}
 
 Deno.serve(async req=>{
   if(req.method==="OPTIONS")return new Response(null,{headers:corsHeaders});
@@ -67,21 +137,14 @@ Deno.serve(async req=>{
         THECARAPI_API_KEY:Deno.env.get("THECARAPI_API_KEY"),
         CARSTACK_API_TOKEN:Deno.env.get("CARSTACK_API_TOKEN"),
       }).filter(p=>p.stage==="built_read").map(p=>({key:p.key,name:p.name,configured:p.configured,capabilities:p.capabilities}));
-      return json({ok:true,executionEnabled:false,providers:readiness});
+      return json({ok:true,executionEnabled:false,intelligenceImportConfigured:!!Deno.env.get("AUTOHASHI_OMNIQORA_TENANT_ID"),providers:readiness});
     }
     if(body.action==="search"){
       const provider=providerConfig(body.providerKey);
       const result=await searchAuctionProvider({providerKey:provider.providerKey,secret:provider.secret,filters:{
-        query:body.filters?.query??null,
-        make:body.filters?.make??null,
-        model:body.filters?.model??null,
-        yearMin:body.filters?.yearMin??null,
-        yearMax:body.filters?.yearMax??null,
-        odometerMaxKm:body.filters?.odometerMaxKm??null,
-        grade:body.filters?.grade??null,
-        steering:body.filters?.steering??"rhd",
-        page:body.filters?.page??1,
-        pageSize:Math.min(50,body.filters?.pageSize??24),
+        query:body.filters?.query??null,make:body.filters?.make??null,model:body.filters?.model??null,
+        yearMin:body.filters?.yearMin??null,yearMax:body.filters?.yearMax??null,odometerMaxKm:body.filters?.odometerMaxKm??null,
+        grade:body.filters?.grade??null,steering:body.filters?.steering??"rhd",page:body.filters?.page??1,pageSize:Math.min(50,body.filters?.pageSize??24),
       }});
       return json({ok:true,executionEnabled:false,...result});
     }
@@ -90,6 +153,11 @@ Deno.serve(async req=>{
       const provider=providerConfig(body.providerKey);
       const lot=await getAuctionProviderLot({providerKey:provider.providerKey,secret:provider.secret,externalLotId:String(body.externalLotId)});
       return json({ok:true,executionEnabled:false,lot});
+    }
+    if(body.action==="intelligence.import")return json({ok:true,...await importLot(body.lot)});
+    if(body.action==="history"){
+      if(!body.chassisNumber)return json({error:"chassisNumber is required"},400);
+      return json({ok:true,...await history(String(body.chassisNumber),Number(body.days??90))});
     }
     if(String(body.action??"").startsWith("bid.")){
       return json({error:"Live bid execution is disabled until a contracted Japan execution provider passes certification",executionEnabled:false},501);
