@@ -169,6 +169,10 @@ function imageUrls(value: unknown): string[] {
   const rows=Array.isArray(value)?value:[];
   return rows.map((row:any)=>firstText(row?.served_url,row?.url,row?.image_url,row?.src,row)).filter((url):url is string=>!!url);
 }
+function isoDate(value: unknown): string | null {
+  const raw=text(value); if(!raw)return null;
+  const date=new Date(raw); return Number.isNaN(date.getTime())?null:date.toISOString();
+}
 
 export function normaliseTheCarApiLot(input: unknown): NormalizedAuctionLot {
   const row=record(input), vehicle=record(row.vehicle_details), identification=record(row.car_identification);
@@ -187,7 +191,7 @@ export function normaliseTheCarApiLot(input: unknown): NormalizedAuctionLot {
     sourceSite,
     sourceVehicleId:firstText(row.car_id,row.vehicle_id,identification.car_id),
     auctionHouse:firstText(row.auction_house,row.auction_name,row.auction,identification.auction_house),
-    auctionAt:firstText(row.auction_date,row.auction_at,row.end_date,row.end_at,row.date),
+    auctionAt:isoDate(firstText(row.auction_date,row.auction_at,row.end_date,row.end_at,row.date)),
     status:firstText(row.status,row.auction_status,row.is_active===false?"ended":"open") ?? "open",
     make:firstText(row.clean_make,row.make,row.brand,vehicle.make,"Unknown") ?? "Unknown",
     model:firstText(row.clean_model,row.model,vehicle.model,"Unknown") ?? "Unknown",
@@ -201,7 +205,7 @@ export function normaliseTheCarApiLot(input: unknown): NormalizedAuctionLot {
     finalPriceMinor:final===null?null:Math.round(final),
     currency:firstText(row.currency_code_id,row.currency,"JPY") ?? "JPY",
     priceSemantics:final!==null?"reported_result":japan?"opening_bid":"provider_current",
-    images:gallery.length?gallery:imageUrls(row.images),
+    images:gallery.length?gallery:(imageUrls(row.images).length?imageUrls(row.images):([firstText(row.thumbnail_url)].filter((url):url is string=>!!url))),
     auctionSheet:record(row.auction_sheet ?? vehicle.auction_sheet ?? identification.auction_sheet),
     provenance:{source:"thecarapi",site:sourceSite,origin,sourceAuctionId:external,detailsPending:row.details_pending??null},
     observedAt:new Date().toISOString(),
@@ -221,7 +225,7 @@ export function normaliseCarStackLot(input: unknown): NormalizedAuctionLot {
     sourceSite:"carstack",
     sourceVehicleId:firstText(row.id),
     auctionHouse:firstText(auction.house,row.auction_house),
-    auctionAt:firstText(auction.date,row.auction_date),
+    auctionAt:isoDate(firstText(auction.date,row.auction_date)),
     status:firstText(auction.status,row.status,"upcoming") ?? "upcoming",
     make:firstText(row.make,"Unknown") ?? "Unknown",
     model:firstText(row.model,"Unknown") ?? "Unknown",
@@ -296,7 +300,7 @@ export async function searchAuctionProvider(input: {
     const body=await readJson(response);
     const rows=Array.isArray(body.results)?body.results:Array.isArray(body.data)?body.data:[];
     const lots=rows.map(normaliseTheCarApiLot);
-    return {providerKey:input.providerKey,lots,page:int(body.page)??input.filters.page??1,pageSize:int(body.limit)??input.filters.pageSize??24,totalCount:int(body.total_count??body.total),totalPages:int(body.total_pages??body.max_page),requestId:firstText(body.request_id)};
+    return {providerKey:input.providerKey,lots,page:int(body.page)??input.filters.page??1,pageSize:int(body.page_size??body.limit)??input.filters.pageSize??24,totalCount:int(body.total_count??body.total),totalPages:int(body.total_pages??body.max_page),requestId:firstText(body.request_id)};
   }
   const response=await fetch(buildCarStackSearchUrl(input.filters),{headers:{Authorization:"Bearer "+input.secret,Accept:"application/json"},signal:input.signal});
   const body=await readJson(response);
