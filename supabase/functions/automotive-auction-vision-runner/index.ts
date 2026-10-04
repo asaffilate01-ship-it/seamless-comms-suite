@@ -26,12 +26,15 @@ async function providerExtract(job:any){
     schema:job.extractionSchema,
     subject:job.subject,
     sourceEvidence:job.sourceEvidence,
+    learningExamples:Array.isArray(job.learningExamples)?job.learningExamples.slice(0,20):[],
     requirements:{
       structuredJsonOnly:true,
       preserveSourceText:true,
       noPurchaseDecision:true,
       noBidAuthority:true,
       lowerConfidenceWhenUnreadable:true,
+      learningExamplesAreReferenceOnly:true,
+      neverCopyValuesNotVisibleInCurrentEvidence:true,
     }
   };
   const headers:Record<string,string>={"Content-Type":"application/json","Accept":"application/json"};
