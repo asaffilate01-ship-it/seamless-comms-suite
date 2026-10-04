@@ -16,6 +16,7 @@ DECLARE
   active_count integer:=0;
   failed_count integer:=0;
   pending_jobs integer:=0;
+  blocked_jobs integer:=0;
   failed_jobs integer:=0;
   required_services text[]:=ARRAY[
     'haccora.core','haccora.haccp','haccora.allergens','haccora.evidence',
@@ -61,9 +62,10 @@ BEGIN
       AND status NOT IN ('cancelled','failed')
   ) INTO ai_requested;
 
-  SELECT count(*) FILTER (WHERE status IN ('queued','running','blocked'))::integer,
+  SELECT count(*) FILTER (WHERE status IN ('queued','running'))::integer,
+         count(*) FILTER (WHERE status='blocked')::integer,
          count(*) FILTER (WHERE status='failed')::integer
-  INTO pending_jobs,failed_jobs
+  INTO pending_jobs,blocked_jobs,failed_jobs
   FROM public.provisioning_jobs
   WHERE tenant_id=_tenant
     AND (
@@ -92,15 +94,16 @@ BEGIN
     ),
     'jobs',jsonb_build_object(
       'pending',pending_jobs,
+      'blocked',blocked_jobs,
       'failed',failed_jobs
     ),
     'ready',
-      product_row.status='active'
-      AND connection_row.status='connected'
+      COALESCE(product_row.status='active',false)
+      AND COALESCE(connection_row.status='connected',false)
       AND active_count >= cardinality(required_services),
     'aiReady',
       ai_requested
-      AND connection_row.status='connected'
+      AND COALESCE(connection_row.status='connected',false)
       AND (
         SELECT count(*) FROM public.tenant_services
         WHERE tenant_id=_tenant
