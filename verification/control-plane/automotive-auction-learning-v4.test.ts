@@ -59,9 +59,15 @@ assert(gateway.includes('"prediction.refresh"'),"prediction refresh action missi
 assert(gateway.includes('"watch.run"'),"watch run-now action missing");
 assert(gateway.includes("odometerKm must be a non-negative integer"),"server-side correction validation missing");
 assert(gateway.includes("automotive_auction_price_curves"),"price curve snapshots missing from prediction path");
+assert(gateway.includes("resolveAutohashiTenant"),"signed AutoHashi actions must resolve tenant through SaaS Factory mapping");
+assert(gateway.includes('"tenant_products"')&&gateway.includes('"external_tenant_id"'),"AutoHashi external tenant mapping must use tenant_products.external_tenant_id");
+assert(gateway.includes("AutoHashi external tenant is not mapped in Omniqora SaaS Factory"),"missing tenant mapping must fail closed");
 
 assert(webhook.includes("automotive_auction_price_outcomes"),"verified win must feed hammer outcomes");
 assert(webhook.includes("absolute_error_jpy"),"prediction calibration error must be stored");
+assert(webhook.includes("const tenantId=String(instruction.tenant_id"),"auction agent webhook must derive tenant from authoritative bid instruction");
+assert(webhook.includes("Provider reference is ambiguous across AutoHashi tenants"),"provider-reference ambiguity must fail closed");
+assert(!webhook.includes('AUTOHASHI_OMNIQORA_TENANT_ID'),"multi-tenant agent webhook must not rely on the legacy fixed tenant environment");
 
 assert(intelWorker.includes("learningExamples"),"reviewed corrections must feed future extraction jobs");
 assert(intelWorker.includes("Reference only"),"corrections must remain non-authoritative reference examples");
@@ -75,6 +81,8 @@ assert(watchWorker.includes('.limit(50)'),"scheduled watch worker must cap rules
 assert(watchWorker.includes("24*60*60*1000"),"watch worker should deduplicate unchanged daily price-curve snapshots");
 assert(watchWorker.includes("minimum=rule.cadence"),"watch cadence enforcement missing");
 assert(watchWorker.includes("automotive_auction_watch_matches"),"watch match persistence missing");
+assert(watchWorker.includes("watchTenants"),"scheduled watch worker must resolve mapped AutoHashi tenants");
+assert(watchWorker.includes('"tenant_products"')&&watchWorker.includes('"external_tenant_id"'),"scheduled watches must iterate SaaS Factory tenant mappings");
 assert(!watchWorker.includes("bid.submit")&&!watchWorker.includes("automotive_bid_instructions"),"watch worker must never submit or authorise bids");
 
 assert(watchWorkflow.includes("AUTOHASHI_AUCTION_WATCH_WORKER_SECRET"),"watch scheduler secret missing");
