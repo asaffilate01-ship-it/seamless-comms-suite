@@ -104,6 +104,7 @@ export const CONNECT_PRODUCT_MANIFESTS: ConnectProductManifest[] = [
       "nafsi.ai.run.completed",
       "nafsi.ai.safety.signal",
       "nafsi.whatsapp.consent.changed",
+      "nafsi.parity.batch.completed",
       "nafsi.delivery.failed",
     ],
     tools: [

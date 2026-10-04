@@ -135,6 +135,78 @@ const connectEventRequest = z.discriminatedUnion("operation", [
     })
     .strict(),
 ]);
+const fingerprint = z.string().regex(/^[a-f0-9]{64}$/);
+const parityScope = z.enum(["identity", "entitlement", "billing"]);
+const subscriptionStatus = z.enum([
+  "active",
+  "trialing",
+  "grace_period",
+  "cancelled",
+  "canceled",
+  "expired",
+  "incomplete",
+  "incomplete_expired",
+  "past_due",
+  "paused",
+  "unpaid",
+  "billing_issue",
+]);
+const parityRecord = z
+  .object({
+    subjectRef: z.string().regex(/^nafsi-subject:[a-f0-9]{64}$/),
+    identity: z
+      .object({
+        accountState: z.enum(["active", "disabled"]),
+        emailVerified: z.boolean(),
+        authMethod: z.enum(["password", "federated"]),
+        localFingerprint: fingerprint,
+      })
+      .strict(),
+    entitlement: z
+      .object({
+        tier: z.enum(["free", "trial", "basic", "advanced"]),
+        subscribed: z.boolean(),
+        status: z.union([subscriptionStatus, z.literal("free")]),
+        billingInterval: z.enum(["monthly", "yearly"]).nullable(),
+        expiresAt: z.string().datetime().nullable(),
+        cancelAtPeriodEnd: z.boolean(),
+        localFingerprint: fingerprint,
+      })
+      .strict(),
+    billing: z
+      .object({
+        evaluatedAt: z.string().datetime(),
+        trialEndsAt: z.string().datetime().nullable(),
+        subscriptions: z
+          .array(
+            z
+              .object({
+                provider: z.enum(["stripe", "revenuecat", "legacy"]),
+                tier: z.enum(["basic", "advanced"]),
+                interval: z.enum(["monthly", "yearly"]),
+                status: subscriptionStatus,
+                expiresAt: z.string().datetime().nullable(),
+                graceExpiresAt: z.string().datetime().nullable(),
+                cancelAtPeriodEnd: z.boolean(),
+              })
+              .strict(),
+          )
+          .max(3),
+        localFingerprint: fingerprint,
+      })
+      .strict(),
+  })
+  .strict();
+const parityRequest = z
+  .object({
+    schemaVersion: z.literal(1),
+    externalTenantId: id,
+    batchId: z.string().uuid(),
+    releaseSha: z.string().regex(/^[a-f0-9]{40}$/),
+    scopes: z.array(parityScope).min(1).max(3),
+    records: z.array(parityRecord).max(100),
+  })
+  .strict();
 
 const payloadSchemas: Record<string, z.ZodTypeAny> = {
   "nafsi.release.deployed": z
@@ -190,6 +262,17 @@ const payloadSchemas: Record<string, z.ZodTypeAny> = {
     .strict(),
   "nafsi.whatsapp.consent.changed": z
     .object({ status: z.enum(["granted", "withdrawn"]), channel: z.literal("whatsapp") })
+    .strict(),
+  "nafsi.parity.batch.completed": z
+    .object({
+      scopes: z.array(parityScope).min(1).max(3),
+      sampledSubjects: z.number().int().nonnegative(),
+      matchedRecords: z.number().int().nonnegative(),
+      mismatchedRecords: z.number().int().nonnegative(),
+      errorRecords: z.number().int().nonnegative(),
+      releaseSha: z.string().regex(/^[a-f0-9]{40}$/),
+      status: z.enum(["completed", "review_required", "failed"]),
+    })
     .strict(),
   "nafsi.delivery.failed": z
     .object({ channel: z.enum(["email", "whatsapp", "push"]), code: id })
@@ -247,6 +330,18 @@ function privateField(value: unknown): boolean {
   return Object.entries(value as Record<string, unknown>).some(
     ([key, child]) => forbidden.has(key.toLowerCase()) || privateField(child),
   );
+}
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => `${JSON.stringify(key)}:${canonical(child)}`)
+      .join(",")}}`;
+  return JSON.stringify(value);
+}
+function fingerprintOf(value: unknown) {
+  return createHash("sha256").update(canonical(value)).digest("hex");
 }
 async function bodyText(request: Request, max = 65536) {
   if (request.headers.get("content-type")?.split(";")[0] !== "application/json")
@@ -707,6 +802,169 @@ export async function serveNafsiConnectEvents(request: Request) {
       return json({ error: "Invalid Nafsi Connect event contract" }, 422);
     return json(
       { error: error instanceof Error ? error.message : "Nafsi Connect events unavailable" },
+      Number((error as { status?: number })?.status) || 503,
+    );
+  }
+}
+
+type ParsedParityRecord = z.infer<typeof parityRecord>;
+type ParsedSubscription = ParsedParityRecord["billing"]["subscriptions"][number];
+
+function deriveEntitlement(
+  subscriptions: ParsedSubscription[],
+  trialEndsAt: string | null,
+  evaluatedAt: string,
+) {
+  const accessStatuses = new Set([
+    "active",
+    "trialing",
+    "grace_period",
+    "past_due",
+    "billing_issue",
+    "cancelled",
+    "canceled",
+  ]);
+  const paid = [...subscriptions]
+    .filter((subscription) => {
+      if (!accessStatuses.has(subscription.status)) return false;
+      const until = subscription.graceExpiresAt || subscription.expiresAt;
+      return until
+        ? Date.parse(until) > Date.parse(evaluatedAt)
+        : ["active", "trialing"].includes(subscription.status);
+    })
+    .sort((left, right) => Number(right.tier === "advanced") - Number(left.tier === "advanced"))[0];
+  if (paid)
+    return {
+      tier: paid.tier,
+      subscribed: true,
+      status: paid.status,
+      billingInterval: paid.interval,
+      expiresAt: paid.graceExpiresAt || paid.expiresAt,
+      cancelAtPeriodEnd: paid.cancelAtPeriodEnd || ["cancelled", "canceled"].includes(paid.status),
+    };
+  if (trialEndsAt && Date.parse(trialEndsAt) > Date.parse(evaluatedAt))
+    return {
+      tier: "trial",
+      subscribed: false,
+      status: "trialing",
+      billingInterval: null,
+      expiresAt: trialEndsAt,
+      cancelAtPeriodEnd: false,
+    };
+  return {
+    tier: "free",
+    subscribed: false,
+    status: "free",
+    billingInterval: null,
+    expiresAt: null,
+    cancelAtPeriodEnd: false,
+  };
+}
+
+export async function serveNafsiParity(request: Request) {
+  try {
+    const { db, row } = await connection(request);
+    if (!(row.capabilities ?? []).includes("parity"))
+      return json({ error: "Parity capability is not enabled" }, 403);
+    const input = parityRequest.parse(JSON.parse(await bodyText(request, 262144)));
+    if (input.externalTenantId !== row.external_tenant_id)
+      return json({ error: "Tenant binding mismatch" }, 403);
+    if (request.headers.get("idempotency-key") !== input.batchId)
+      return json({ error: "Idempotency key mismatch" }, 422);
+    const [identityEnabled, paymentsEnabled] = await Promise.all([
+      entitled(db, row.tenant_id, "omniqora.identity"),
+      entitled(db, row.tenant_id, "omniqora.payments"),
+    ]);
+    const results: Array<{
+      subjectRef: string;
+      scope: "identity" | "entitlement" | "billing";
+      localFingerprint: string;
+      factoryFingerprint: string | null;
+      status: "matched" | "mismatch" | "error";
+      reasonCodes: string[];
+    }> = [];
+    const receiptRows: Array<Record<string, unknown>> = [];
+    for (const record of input.records) {
+      const subjectHash = fingerprintOf(record.subjectRef);
+      const identityBase = {
+        accountState: record.identity.accountState,
+        emailVerified: record.identity.emailVerified,
+        authMethod: record.identity.authMethod,
+      };
+      const billingBase = {
+        evaluatedAt: record.billing.evaluatedAt,
+        trialEndsAt: record.billing.trialEndsAt,
+        subscriptions: [...record.billing.subscriptions].sort((left, right) =>
+          `${left.provider}:${left.tier}`.localeCompare(`${right.provider}:${right.tier}`),
+        ),
+      };
+      const outputs = {
+        identity: fingerprintOf(identityBase),
+        entitlement: fingerprintOf(
+          deriveEntitlement(
+            billingBase.subscriptions,
+            billingBase.trialEndsAt,
+            billingBase.evaluatedAt,
+          ),
+        ),
+        billing: fingerprintOf(billingBase),
+      };
+      for (const scope of input.scopes) {
+        const localFingerprint = record[scope].localFingerprint;
+        const serviceEnabled = scope === "billing" ? paymentsEnabled : identityEnabled;
+        const reasonCodes = serviceEnabled
+          ? outputs[scope] === localFingerprint
+            ? []
+            : ["fingerprint_mismatch"]
+          : [scope === "billing" ? "payments_service_inactive" : "identity_service_inactive"];
+        const status = serviceEnabled
+          ? outputs[scope] === localFingerprint
+            ? ("matched" as const)
+            : ("mismatch" as const)
+          : ("error" as const);
+        results.push({
+          subjectRef: record.subjectRef,
+          scope,
+          localFingerprint,
+          factoryFingerprint: serviceEnabled ? outputs[scope] : null,
+          status,
+          reasonCodes,
+        });
+        receiptRows.push({
+          tenant_id: row.tenant_id,
+          product_connection_id: row.id,
+          external_tenant_id: row.external_tenant_id,
+          batch_id: input.batchId,
+          subject_hash: subjectHash,
+          scope,
+          input_fingerprint: localFingerprint,
+          output_fingerprint: serviceEnabled ? outputs[scope] : null,
+          status,
+          reason_codes: reasonCodes,
+          release_sha: input.releaseSha,
+        });
+      }
+    }
+    if (receiptRows.length) {
+      // Generated database types intentionally lag this migration-owned evidence table.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const parityDb = db as any;
+      const stored = await parityDb.from("nafsi_parity_receipts").upsert(receiptRows, {
+        onConflict: "tenant_id,batch_id,subject_hash,scope",
+      });
+      if (stored.error) throw new Error("Could not store parity receipts");
+    }
+    return json({
+      receiptId: `nafsi-parity:${input.batchId}`,
+      mode: "shadow",
+      authoritySource: "nafsi",
+      results,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError || error instanceof SyntaxError)
+      return json({ error: "Invalid Nafsi parity contract" }, 422);
+    return json(
+      { error: error instanceof Error ? error.message : "Nafsi parity route unavailable" },
       Number((error as { status?: number })?.status) || 503,
     );
   }

@@ -52,6 +52,7 @@ assert.deepEqual(
     "omniqora.ai",
     "omniqora.analytics",
     "omniqora.connect",
+    "omniqora.identity",
     "omniqora.journeys",
     "omniqora.payments",
   ],
@@ -125,6 +126,8 @@ for (const token of [
   "OMNIQORA_NAFSI_AI_CUTOVER_ENABLED",
   '"request-opt-in"',
   "claim_nafsi_connect_events",
+  "serveNafsiParity",
+  "nafsi_parity_receipts",
 ])
   assert(nafsiServer.includes(token), `Missing Nafsi governed route control: ${token}`);
 assert(!nafsiServer.includes("prompt: z.string"), "Nafsi route must not accept free-form prompts");
@@ -135,6 +138,7 @@ for (const route of [
   "api.control-plane.nafsi.events.ts",
   "api.control-plane.nafsi.connect.ts",
   "api.control-plane.nafsi.connect-events.ts",
+  "api.control-plane.nafsi.parity.ts",
 ]) {
   const source = await readFile(new URL(`../../src/routes/${route}`, import.meta.url), "utf8");
   assert(source.includes("serveNafsi"), `Missing Nafsi route handler: ${route}`);
@@ -157,6 +161,18 @@ const cutoverMigration = await readFile(
 assert(cutoverMigration.includes("nafsi_connect_to_source_privacy"));
 assert(cutoverMigration.includes("maximumInitialCanaryPercent"));
 assert(cutoverMigration.includes("explicit_double_opt_in"));
+
+const parityMigration = await readFile(
+  new URL(
+    "../../supabase/migrations/20261004200000_nafsi_identity_billing_parity.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+assert(parityMigration.includes("shadow_parity_only"));
+assert(parityMigration.includes("storesPaymentIdentifiers',false"));
+assert(parityMigration.includes("automaticMigration',false"));
+assert(manifest.includes("nafsi.parity.batch.completed"));
 
 const webhook = await readFile(
   new URL("../../src/routes/api/public/whatsapp/webhook.ts", import.meta.url),

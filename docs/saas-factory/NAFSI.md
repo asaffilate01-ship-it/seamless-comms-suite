@@ -70,3 +70,17 @@ Required routes:
 - `POST /api/control-plane/nafsi/connect`
 - `POST /api/control-plane/nafsi/connect-events`
 - `POST /api/control-plane/nafsi/intelligence`
+
+## Phases 31–32: identity, entitlement and billing parity
+
+Nafsi remains the source of truth. The `/api/control-plane/nafsi/parity` route
+accepts at most 100 keyed opaque subjects and strict identity/entitlement/billing
+status categories. It stores only a second-order subject hash, input/output
+fingerprints, result codes and exact release evidence in
+`nafsi_parity_receipts`.
+
+Both `omniqora.identity` and `omniqora.payments` stay disabled by default and
+operate in shadow-parity mode only. The contract cannot create accounts, change
+access, charge/refund/cancel subscriptions or store emails, names, provider
+customer/subscription IDs, amounts or wellbeing content. Authority migration
+requires a later, separately approved phase.

@@ -63,6 +63,7 @@ import { Route as ApiControlPlaneNafsiConnectEventsRouteImport } from './routes/
 import { Route as ApiControlPlaneNafsiEventsRouteImport } from './routes/api.control-plane.nafsi.events'
 import { Route as ApiControlPlaneNafsiIntelligenceRouteImport } from './routes/api.control-plane.nafsi.intelligence'
 import { Route as ApiControlPlaneNafsiIntelligenceShadowRouteImport } from './routes/api.control-plane.nafsi.intelligence-shadow'
+import { Route as ApiControlPlaneNafsiParityRouteImport } from './routes/api.control-plane.nafsi.parity'
 import { Route as ApiControlPlaneWorkersProvisioningRouteImport } from './routes/api.control-plane.workers.provisioning'
 import { Route as ApiIntegrationsConnectEventsRouteImport } from './routes/api.integrations.connect.events'
 import { Route as ApiIntegrationsHaccoraConnectionIdRouteImport } from './routes/api.integrations.haccora.$connectionId'
@@ -370,6 +371,12 @@ const ApiControlPlaneNafsiIntelligenceShadowRoute =
     path: '/api/control-plane/nafsi/intelligence-shadow',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiControlPlaneNafsiParityRoute =
+  ApiControlPlaneNafsiParityRouteImport.update({
+    id: '/api/control-plane/nafsi/parity',
+    path: '/api/control-plane/nafsi/parity',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiControlPlaneWorkersProvisioningRoute =
   ApiControlPlaneWorkersProvisioningRouteImport.update({
     id: '/api/control-plane/workers/provisioning',
@@ -471,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
   '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
   '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
@@ -532,6 +540,7 @@ export interface FileRoutesByTo {
   '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
   '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
   '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
@@ -597,6 +606,7 @@ export interface FileRoutesById {
   '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
   '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
   '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
@@ -662,6 +672,7 @@ export interface FileRouteTypes {
     | '/api/control-plane/nafsi/events'
     | '/api/control-plane/nafsi/intelligence'
     | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/api/control-plane/nafsi/events'
     | '/api/control-plane/nafsi/intelligence'
     | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
@@ -787,6 +799,7 @@ export interface FileRouteTypes {
     | '/api/control-plane/nafsi/events'
     | '/api/control-plane/nafsi/intelligence'
     | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
@@ -825,6 +838,7 @@ export interface RootRouteChildren {
   ApiControlPlaneNafsiEventsRoute: typeof ApiControlPlaneNafsiEventsRoute
   ApiControlPlaneNafsiIntelligenceRoute: typeof ApiControlPlaneNafsiIntelligenceRoute
   ApiControlPlaneNafsiIntelligenceShadowRoute: typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  ApiControlPlaneNafsiParityRoute: typeof ApiControlPlaneNafsiParityRoute
   ApiControlPlaneWorkersProvisioningRoute: typeof ApiControlPlaneWorkersProvisioningRoute
   ApiIntegrationsConnectEventsRoute: typeof ApiIntegrationsConnectEventsRoute
   ApiIntegrationsHaccoraConnectionIdRoute: typeof ApiIntegrationsHaccoraConnectionIdRoute
@@ -1214,6 +1228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiControlPlaneNafsiIntelligenceShadowRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/control-plane/nafsi/parity': {
+      id: '/api/control-plane/nafsi/parity'
+      path: '/api/control-plane/nafsi/parity'
+      fullPath: '/api/control-plane/nafsi/parity'
+      preLoaderRoute: typeof ApiControlPlaneNafsiParityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/control-plane/workers/provisioning': {
       id: '/api/control-plane/workers/provisioning'
       path: '/api/control-plane/workers/provisioning'
@@ -1403,6 +1424,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiControlPlaneNafsiIntelligenceRoute: ApiControlPlaneNafsiIntelligenceRoute,
   ApiControlPlaneNafsiIntelligenceShadowRoute:
     ApiControlPlaneNafsiIntelligenceShadowRoute,
+  ApiControlPlaneNafsiParityRoute: ApiControlPlaneNafsiParityRoute,
   ApiControlPlaneWorkersProvisioningRoute:
     ApiControlPlaneWorkersProvisioningRoute,
   ApiIntegrationsConnectEventsRoute: ApiIntegrationsConnectEventsRoute,
