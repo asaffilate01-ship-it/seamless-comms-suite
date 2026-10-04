@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.automotive_auction_review_corrections(
  decision_id uuid REFERENCES public.automotive_auction_decisions(id) ON DELETE SET NULL,
  correction_type text NOT NULL DEFAULT 'sheet_extraction'
   CHECK(correction_type IN('sheet_extraction','decision_note')),
+ context jsonb NOT NULL DEFAULT '{}'::jsonb,
  original_payload jsonb NOT NULL DEFAULT '{}'::jsonb,
  corrected_payload jsonb NOT NULL DEFAULT '{}'::jsonb,
  changed_fields text[] NOT NULL DEFAULT '{}',
