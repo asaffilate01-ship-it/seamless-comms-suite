@@ -145,6 +145,30 @@ export const CONNECT_PRODUCT_MANIFESTS: ConnectProductManifest[] = [
       "create_incident",
     ],
   },
+  {
+    product: "nafsi",
+    name: "Nafsi",
+    events: [
+      "nafsi.release.deployed",
+      "nafsi.service.health.changed",
+      "nafsi.entitlement.summary.changed",
+      "nafsi.dua.review.completed",
+      "nafsi.dua.published",
+      "nafsi.ai.run.completed",
+      "nafsi.ai.safety.signal",
+      "nafsi.whatsapp.consent.changed",
+      "nafsi.parity.batch.completed",
+      "nafsi.delivery.failed",
+    ],
+    tools: [
+      "get_launch_readiness",
+      "get_dua_catalogue_coverage",
+      "retrieve_verified_dua",
+      "retrieve_verified_evidence",
+      "draft_daily_plan",
+      "get_ai_allowance",
+    ],
+  },
 ];
 
 export const connectManifest = (product: string) =>
