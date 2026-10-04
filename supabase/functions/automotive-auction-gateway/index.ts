@@ -90,7 +90,7 @@ async function importLot(lot:any){
     images:Array.isArray(lot.images)?lot.images:[],updated_at:new Date().toISOString()
   },{onConflict:"tenant_id,provider_key,external_lot_id"}).select("*").single();
   if(saved.error)throw saved.error;
-  const observed=await db.from("automotive_auction_observations").insert({
+  const observed=await db.from("automotive_auction_observations").upsert({
     tenant_id:tenantId,product_key:productKey,auction_lot_id:saved.data.id,vehicle_id:vehicle?.id??null,provider_key:String(lot.providerKey),
     external_lot_id:String(lot.externalLotId),source_site:lot.sourceSite??null,source_vehicle_id:lot.sourceVehicleId??null,chassis_number:lot.chassisNumber??null,
     model_code:lot.modelCode??null,make:String(lot.make),model:String(lot.model),model_year:lot.year??null,auction_house:lot.auctionHouse??null,
@@ -98,7 +98,7 @@ async function importLot(lot:any){
     starting_price_minor:lot.startingPriceMinor??null,current_price_minor:lot.currentPriceMinor??null,final_price_minor:lot.finalPriceMinor??null,
     currency:lot.currency??"JPY",price_semantics:lot.priceSemantics??"unknown",source_ref:String(lot.providerKey)+":"+String(lot.externalLotId),
     observed_at:lot.observedAt??new Date().toISOString()
-  }).select("*").single();
+  },{onConflict:"tenant_id,provider_key,external_lot_id,observed_at"}).select("*").single();
   if(observed.error)throw observed.error;
   let job:any=null;
   if(vehicle?.id){
