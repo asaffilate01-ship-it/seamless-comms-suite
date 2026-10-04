@@ -1,4 +1,5 @@
--- Omniqora shared SaaS factory / control plane.
+-- Omniqora shared SaaS factory / control plane. This migration intentionally
+-- follows the portfolio control-plane migration with a unique Supabase version.
 -- Promotes tenant/product/add-on concepts into reusable platform infrastructure without
 -- moving vertical product data into the Omniqora database.
 BEGIN;

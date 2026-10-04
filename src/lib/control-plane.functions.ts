@@ -6,19 +6,39 @@ const uuid = z.string().uuid();
 const tenantInput = z.object({ tenantId: uuid });
 
 export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export type ControlPlaneCatalogue = {
   isPlatformAdmin: boolean;
-  products: Array<{ product_key: string; name: string; description?: string | null; category: string; deployment_mode: string; status: string; product_role?: string; parent_product_key?: string | null; implementation_status?: string }>;
-  services: Array<{ service_key: string; name: string; description?: string | null; family: string; owner_product_key?: string | null; provisioning_mode: string; status: string; implementation_status?: string }>;
+  products: Array<{
+    product_key: string;
+    name: string;
+    description?: string | null;
+    category: string;
+    deployment_mode: string;
+    status: string;
+    product_role?: string;
+    parent_product_key?: string | null;
+    implementation_status?: string;
+  }>;
+  services: Array<{
+    service_key: string;
+    name: string;
+    description?: string | null;
+    family: string;
+    owner_product_key?: string | null;
+    provisioning_mode: string;
+    status: string;
+    implementation_status?: string;
+  }>;
   dependencies: Array<{ service_key: string; depends_on_service_key: string; required: boolean }>;
-  blueprints: Array<{ blueprint_key: string; name: string; description?: string | null; country_code?: string | null; category: string }>;
+  blueprints: Array<{
+    blueprint_key: string;
+    name: string;
+    description?: string | null;
+    country_code?: string | null;
+    category: string;
+  }>;
   ecosystemAddons: Array<{ addon_key:string;host_product_key:string;addon_product_key?:string|null;addon_service_key?:string|null;name:string;category:string;description:string;integration_mode:string;data_boundary:string;capabilities:string[];default_enabled:boolean;status:string }>;
 };
 
@@ -37,16 +57,85 @@ export type PlatformTenantRow = {
 };
 
 export type TenantControlPlane = {
-  tenant: { id: string; name: string; slug: string; organisation_id: string; country_code: string; currency: string; timezone: string; status: string };
-  organisation: { id: string; name: string; slug: string; country_code: string; billing_currency: string } | null;
-  products: Array<{ product_key: string; status: string; external_tenant_id?: string | null; base_url?: string | null; plan_key?: string | null; config?: JsonValue }>;
-  services: Array<{ service_key: string; status: string; source: string; valid_until?: string | null; config?: JsonValue }>;
+  tenant: {
+    id: string;
+    name: string;
+    slug: string;
+    organisation_id: string;
+    country_code: string;
+    currency: string;
+    timezone: string;
+    status: string;
+  };
+  organisation: {
+    id: string;
+    name: string;
+    slug: string;
+    country_code: string;
+    billing_currency: string;
+  } | null;
+  products: Array<{
+    product_key: string;
+    status: string;
+    external_tenant_id?: string | null;
+    base_url?: string | null;
+    plan_key?: string | null;
+    config?: JsonValue;
+  }>;
+  services: Array<{
+    service_key: string;
+    status: string;
+    source: string;
+    valid_until?: string | null;
+    config?: JsonValue;
+  }>;
   branding: JsonValue | null;
-  brands: Array<{ id: string; product_key?: string | null; name: string; slug: string; logo_url?: string | null; theme?: JsonValue; is_primary: boolean }>;
-  locations: Array<{ id: string; brand_id?: string | null; name: string; code: string; timezone: string; address?: JsonValue; status: string }>;
-  domains: Array<{ id: string; product_key?: string | null; domain: string; verification_status: string; ssl_status: string; is_primary: boolean }>;
-  connections: Array<{ id: string; product_key: string; external_tenant_id: string; base_url?: string | null; status: string; capabilities?: string[]; credential_suffix?: string | null; credential_expires_at?: string | null }>;
-  provisioning: Array<{ id: string; target_kind: string; target_key: string; action: string; status: string; attempts: number; last_error?: string | null; created_at: string }>;
+  brands: Array<{
+    id: string;
+    product_key?: string | null;
+    name: string;
+    slug: string;
+    logo_url?: string | null;
+    theme?: JsonValue;
+    is_primary: boolean;
+  }>;
+  locations: Array<{
+    id: string;
+    brand_id?: string | null;
+    name: string;
+    code: string;
+    timezone: string;
+    address?: JsonValue;
+    status: string;
+  }>;
+  domains: Array<{
+    id: string;
+    product_key?: string | null;
+    domain: string;
+    verification_status: string;
+    ssl_status: string;
+    is_primary: boolean;
+  }>;
+  connections: Array<{
+    id: string;
+    product_key: string;
+    external_tenant_id: string;
+    base_url?: string | null;
+    status: string;
+    capabilities?: string[];
+    credential_suffix?: string | null;
+    credential_expires_at?: string | null;
+  }>;
+  provisioning: Array<{
+    id: string;
+    target_kind: string;
+    target_key: string;
+    action: string;
+    status: string;
+    attempts: number;
+    last_error?: string | null;
+    created_at: string;
+  }>;
   ecosystemAddons: Array<{ addon_key:string;host_product_key:string;status:string;config?:JsonValue;external_connection_ref?:string|null;activated_at?:string|null;updated_at:string }>;
 };
 
@@ -89,9 +178,18 @@ const createTenantSchema = z.object({
   organisationId: uuid.nullish(),
   organisationName: z.string().trim().max(160).default(""),
   tenantName: z.string().trim().min(1).max(160),
-  slug: z.string().trim().regex(/^[a-z0-9-]{1,100}$/),
-  countryCode: z.string().regex(/^[A-Z]{2}$/).default("GB"),
-  currency: z.string().regex(/^[A-Z]{3}$/).default("GBP"),
+  slug: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]{1,100}$/),
+  countryCode: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .default("GB"),
+  currency: z
+    .string()
+    .regex(/^[A-Z]{3}$/)
+    .default("GBP"),
   timezone: z.string().min(1).max(80).default("Europe/London"),
   blueprintKey: z.string().min(1).max(100).nullish(),
 });
@@ -100,40 +198,63 @@ export const createPlatformTenant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof createTenantSchema>) => createTenantSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_create_tenant" as never, {
-      _organisation_id: data.organisationId ?? null,
-      _organisation_name: data.organisationName,
-      _tenant_name: data.tenantName,
-      _slug: data.slug,
-      _country_code: data.countryCode,
-      _currency: data.currency,
-      _timezone: data.timezone,
-      _blueprint_key: data.blueprintKey ?? null,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_create_tenant" as never,
+      {
+        _organisation_id: data.organisationId ?? null,
+        _organisation_name: data.organisationName,
+        _tenant_name: data.tenantName,
+        _slug: data.slug,
+        _country_code: data.countryCode,
+        _currency: data.currency,
+        _timezone: data.timezone,
+        _blueprint_key: data.blueprintKey ?? null,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { tenantId: response.data as unknown as string };
   });
 
-const toggleProductSchema = z.object({ tenantId: uuid, productKey: z.string().min(2).max(80), enabled: z.boolean() });
+const toggleProductSchema = z.object({
+  tenantId: uuid,
+  productKey: z.string().min(2).max(80),
+  enabled: z.boolean(),
+});
 export const setTenantProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.infer<typeof toggleProductSchema>) => toggleProductSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_set_tenant_product" as never, {
-      _tenant: data.tenantId, _product: data.productKey, _enabled: data.enabled, _config: {},
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_set_tenant_product" as never,
+      {
+        _tenant: data.tenantId,
+        _product: data.productKey,
+        _enabled: data.enabled,
+        _config: {},
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { ok: true };
   });
 
-const toggleServiceSchema = z.object({ tenantId: uuid, serviceKey: z.string().min(2).max(100), enabled: z.boolean() });
+const toggleServiceSchema = z.object({
+  tenantId: uuid,
+  serviceKey: z.string().min(2).max(100),
+  enabled: z.boolean(),
+});
 export const setTenantService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.infer<typeof toggleServiceSchema>) => toggleServiceSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_set_tenant_service" as never, {
-      _tenant: data.tenantId, _service: data.serviceKey, _enabled: data.enabled, _config: {},
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_set_tenant_service" as never,
+      {
+        _tenant: data.tenantId,
+        _service: data.serviceKey,
+        _enabled: data.enabled,
+        _config: {},
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { ok: true };
   });
@@ -150,13 +271,16 @@ export const linkTenantProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof linkProductSchema>) => linkProductSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_link_product" as never, {
-      _tenant: data.tenantId,
-      _product: data.productKey,
-      _external_tenant_id: data.externalTenantId,
-      _base_url: data.baseUrl || null,
-      _capabilities: data.capabilities,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_link_product" as never,
+      {
+        _tenant: data.tenantId,
+        _product: data.productKey,
+        _external_tenant_id: data.externalTenantId,
+        _base_url: data.baseUrl || null,
+        _capabilities: data.capabilities,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { connectionId: response.data as unknown as string };
   });
@@ -168,22 +292,28 @@ const rotateCredentialSchema = z.object({
 
 export const rotateProductCredential = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: z.input<typeof rotateCredentialSchema>) => rotateCredentialSchema.parse(input))
+  .inputValidator((input: z.input<typeof rotateCredentialSchema>) =>
+    rotateCredentialSchema.parse(input),
+  )
   .handler(async ({ context, data }) => {
     const random = crypto.getRandomValues(new Uint8Array(32));
-    const token = "oqcp_" + Array.from(random, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    const token =
+      "oqcp_" + Array.from(random, (byte) => byte.toString(16).padStart(2, "0")).join("");
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
     const credentialHash = Array.from(new Uint8Array(digest), (byte) =>
       byte.toString(16).padStart(2, "0"),
     ).join("");
     const suffix = token.slice(-8);
 
-    const response = await context.supabase.rpc("platform_set_product_credential" as never, {
-      _connection: data.connectionId,
-      _credential_hash: credentialHash,
-      _suffix: suffix,
-      _valid_days: data.validDays,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_set_product_credential" as never,
+      {
+        _connection: data.connectionId,
+        _credential_hash: credentialHash,
+        _suffix: suffix,
+        _valid_days: data.validDays,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
 
     const stored = response.data as unknown as {
@@ -218,10 +348,13 @@ export const saveTenantBranding = createServerFn({ method: "POST" })
   .inputValidator((input: z.infer<typeof brandingSchema>) => brandingSchema.parse(input))
   .handler(async ({ context, data }) => {
     const { tenantId, ...branding } = data;
-    const response = await context.supabase.rpc("platform_set_branding" as never, {
-      _tenant: tenantId,
-      _branding: branding,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_set_branding" as never,
+      {
+        _tenant: tenantId,
+        _branding: branding,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { ok: true };
   });
@@ -237,12 +370,15 @@ export const upsertTenantDomain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof domainSchema>) => domainSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_upsert_domain" as never, {
-      _tenant: data.tenantId,
-      _product: data.productKey ?? null,
-      _domain: data.domain,
-      _primary: data.primary,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_upsert_domain" as never,
+      {
+        _tenant: data.tenantId,
+        _product: data.productKey ?? null,
+        _domain: data.domain,
+        _primary: data.primary,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { domainId: response.data as unknown as string };
   });
@@ -390,7 +526,12 @@ export const bootstrapDishbeePilot = createServerFn({ method: "POST" })
       organisationId: string;
       organisationSlug: string;
       landlordProductKey: string;
-      tenants: Array<{ tenantId: string; tenantName: string; tenantSlug: string; blueprint: string }>;
+      tenants: Array<{
+        tenantId: string;
+        tenantName: string;
+        tenantSlug: string;
+        blueprint: string;
+      }>;
     };
   });
 
@@ -398,7 +539,10 @@ const brandSchema = z.object({
   tenantId: uuid,
   productKey: z.string().min(2).max(80).nullish(),
   name: z.string().trim().min(1).max(160),
-  slug: z.string().trim().regex(/^[a-z0-9-]{1,100}$/),
+  slug: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]{1,100}$/),
   primary: z.boolean().default(false),
   logoUrl: z.string().trim().max(1000).nullish(),
   theme: z.record(z.string(), z.unknown()).default({}),
@@ -408,15 +552,18 @@ export const upsertTenantBrand = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof brandSchema>) => brandSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_upsert_tenant_brand" as never, {
-      _tenant: data.tenantId,
-      _product: data.productKey ?? null,
-      _name: data.name,
-      _slug: data.slug,
-      _primary: data.primary,
-      _logo_url: data.logoUrl ?? null,
-      _theme: data.theme,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_upsert_tenant_brand" as never,
+      {
+        _tenant: data.tenantId,
+        _product: data.productKey ?? null,
+        _name: data.name,
+        _slug: data.slug,
+        _primary: data.primary,
+        _logo_url: data.logoUrl ?? null,
+        _theme: data.theme,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { brandId: response.data as unknown as string };
   });
@@ -425,7 +572,10 @@ const locationSchema = z.object({
   tenantId: uuid,
   brandId: uuid.nullish(),
   name: z.string().trim().min(1).max(200),
-  code: z.string().trim().regex(/^[a-z0-9-]{1,100}$/),
+  code: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]{1,100}$/),
   timezone: z.string().trim().min(1).max(80).default("Europe/London"),
   address: z.record(z.string(), z.unknown()).default({}),
   status: z.enum(["active", "inactive", "opening", "closed"]).default("active"),
@@ -435,19 +585,259 @@ export const upsertTenantLocation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof locationSchema>) => locationSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_upsert_tenant_location" as never, {
-      _tenant: data.tenantId,
-      _brand: data.brandId ?? null,
-      _name: data.name,
-      _code: data.code,
-      _timezone: data.timezone,
-      _address: data.address,
-      _status: data.status,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_upsert_tenant_location" as never,
+      {
+        _tenant: data.tenantId,
+        _brand: data.brandId ?? null,
+        _name: data.name,
+        _code: data.code,
+        _timezone: data.timezone,
+        _address: data.address,
+        _status: data.status,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { locationId: response.data as unknown as string };
   });
 
+export type FleetoraOperatorState = {
+  featureAuthority: {
+    authoritative: boolean;
+    entitlements: string[];
+  } | null;
+  readiness: {
+    ready: boolean;
+    landlordBound: boolean;
+    migrationMode: "disabled" | "shadow" | "read" | "write";
+    shadowPassed: number;
+    shadowFailed: number;
+    requiredShadowPasses: number;
+    blockingCriticalExceptions: number;
+    readApprovalGranted: boolean;
+    writeApprovalGranted: boolean;
+    readCutoverEligible: boolean;
+    writeCutoverEligible: boolean;
+    blockers?: string[];
+    warnings?: string[];
+  };
+  binding: {
+    landlord_instance_id: string;
+    tenant_id: string;
+    variant_product_key: string;
+    status: string;
+    migration_mode: string;
+    config: JsonValue;
+  } | null;
+  landlords: Array<{
+    id: string;
+    instanceKey: string;
+    name: string;
+    productKey: string;
+    organisationId: string;
+    regionKey: string;
+    status: string;
+    branding: JsonValue;
+  }>;
+  approvals: Array<{
+    id: string;
+    targetMode: "read" | "write";
+    status: string;
+    reason: string;
+    requestedAt: string;
+    reviewedAt?: string | null;
+    reviewNote?: string | null;
+  }>;
+};
+
+const fleetoraTenantSchema = z.object({
+  tenantId: uuid,
+  productKey: z.string().min(2).max(80).default("fleetpulse-uae"),
+});
+
+export const getFleetoraOperatorState = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof fleetoraTenantSchema>) =>
+    fleetoraTenantSchema.parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc(
+      "get_fleetora_operator_state" as never,
+      {
+        _tenant: data.tenantId,
+        _product: data.productKey,
+      } as never,
+    );
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as FleetoraOperatorState;
+  });
+
+const landlordSchema = z.object({
+  instanceKey: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9][a-z0-9-]{1,99}$/),
+  organisationId: uuid,
+  name: z.string().trim().min(2).max(160),
+  regionKey: z.string().trim().min(2).max(80).default("ae"),
+  branding: z.record(z.string(), z.unknown()).default({}),
+});
+
+export const createFleetoraLandlord = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof landlordSchema>) => landlordSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc(
+      "platform_create_landlord_instance" as never,
+      {
+        _instance_key: data.instanceKey,
+        _product: "fleetora",
+        _organisation: data.organisationId,
+        _name: data.name,
+        _region: data.regionKey,
+        _branding: data.branding,
+        _policy: { humanApprovalRequired: true, autonomousDispatch: false },
+      } as never,
+    );
+    if (response.error) throw new Error(response.error.message);
+    return { landlordInstanceId: response.data as unknown as string };
+  });
+
+const bindFleetoraSchema = z.object({
+  landlordInstanceId: uuid,
+  tenantId: uuid,
+  externalTenantId: z.string().trim().min(1).max(200),
+  baseUrl: z.string().url().max(1000),
+  brandName: z.string().trim().min(1).max(160),
+  brandSlug: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]{1,100}$/),
+  blueprintKey: z
+    .enum(["fleetpulse-ae-starter", "fleetpulse-ae-growth"])
+    .default("fleetpulse-ae-starter"),
+});
+
+export const bindFleetoraTenant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof bindFleetoraSchema>) => bindFleetoraSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc(
+      "platform_bind_fleetora_tenant" as never,
+      {
+        _landlord_instance: data.landlordInstanceId,
+        _tenant: data.tenantId,
+        _variant: "fleetpulse-uae",
+        _external_tenant_id: data.externalTenantId,
+        _base_url: data.baseUrl,
+        _brand_name: data.brandName,
+        _brand_slug: data.brandSlug,
+        _blueprint: data.blueprintKey,
+      } as never,
+    );
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as JsonValue;
+  });
+
+const cutoverRequestSchema = fleetoraTenantSchema.extend({
+  targetMode: z.enum(["read", "write"]),
+  reason: z.string().trim().min(10).max(2000),
+});
+export const requestFleetoraCutover = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof cutoverRequestSchema>) =>
+    cutoverRequestSchema.parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc(
+      "platform_request_fleetora_cutover" as never,
+      {
+        _tenant: data.tenantId,
+        _product: data.productKey,
+        _target_mode: data.targetMode,
+        _reason: data.reason,
+      } as never,
+    );
+    if (response.error) throw new Error(response.error.message);
+    return { approvalId: response.data as unknown as string };
+  });
+
+const cutoverReviewSchema = z.object({
+  approvalId: uuid,
+  decision: z.enum(["approved", "rejected"]),
+  note: z.string().trim().min(3).max(2000),
+});
+export const reviewFleetoraCutover = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof cutoverReviewSchema>) => cutoverReviewSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc(
+      "platform_review_fleetora_cutover" as never,
+      {
+        _approval: data.approvalId,
+        _decision: data.decision,
+        _note: data.note,
+      } as never,
+    );
+    if (response.error) throw new Error(response.error.message);
+    return { ok: true };
+  });
+
+const migrationModeSchema = fleetoraTenantSchema.extend({
+  mode: z.enum(["disabled", "shadow", "read", "write"]),
+});
+export const setFleetoraMigrationMode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof migrationModeSchema>) => migrationModeSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc(
+      "platform_set_fleetora_migration_mode" as never,
+      {
+        _tenant: data.tenantId,
+        _product: data.productKey,
+        _mode: data.mode,
+      } as never,
+    );
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as FleetoraOperatorState["readiness"];
+  });
+
+const fleetoraFeatureAuthoritySchema = fleetoraTenantSchema.extend({
+  entitlements: z
+    .array(
+      z.enum([
+        "advanced_scheduling",
+        "advanced_reporting",
+        "compliance_suite",
+        "wps_payroll",
+        "white_label",
+        "custom_domain",
+        "audit",
+        "api_access",
+        "multi_branch",
+      ]),
+    )
+    .max(9),
+  authoritative: z.boolean(),
+});
+export const setFleetoraFeatureAuthority = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof fleetoraFeatureAuthoritySchema>) =>
+    fleetoraFeatureAuthoritySchema.parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc(
+      "platform_set_fleetora_feature_authority" as never,
+      {
+        _tenant: data.tenantId,
+        _product: data.productKey,
+        _entitlements: data.entitlements,
+        _authoritative: data.authoritative,
+      } as never,
+    );
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as FleetoraOperatorState["featureAuthority"];
+  });
 
 const ecosystemAddonSchema=z.object({
   tenantId:uuid,hostProductKey:z.string().min(2).max(80),addonKey:z.string().min(3).max(120),enabled:z.boolean(),
