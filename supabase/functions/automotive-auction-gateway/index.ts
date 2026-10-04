@@ -349,6 +349,15 @@ async function predictionForLot(lotId:string){
     hammerJpy:Number(row.hammer_jpy),outcomeAt:row.outcome_at
   }));
   const result=predictHammerPrice({target,outcomes:rows});
+  if(result.predictedHammerJpy!==null){
+    const curve=await ctx.db.from("automotive_auction_price_curves").insert({
+      tenant_id:ctx.tenantId,product_key:"autohashi",make:target.make,model:target.model,model_code:target.modelCode,
+      model_year:target.year,grade:target.grade,mileage_band_km:typeof target.mileageKm==="number"?Math.floor(target.mileageKm/20000)*20000:null,
+      method:result.method,sample_count:result.sampleCount,p25_jpy:result.lowJpy,median_jpy:result.predictedHammerJpy,p75_jpy:result.highJpy,
+      confidence:result.confidence,source_window_days:730,metadata:{auctionLotId:lotId}
+    });
+    if(curve.error)throw curve.error;
+  }
   await ctx.db.from("automotive_auction_price_predictions").update({status:"superseded"})
     .eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId).eq("status","predicted");
   const saved=await ctx.db.from("automotive_auction_price_predictions").insert({
