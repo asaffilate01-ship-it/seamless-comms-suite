@@ -43,6 +43,7 @@ const nav: NavItem[] = [
   { to: "/app/shared-engines", labelKey: "", label: "Shared Engines", icon: Boxes },
   { to: "/app/contact-centre", labelKey: "", label: "Omniqora Contact", icon: MessageCircle },
   { to: "/app/growth-lab", labelKey: "", label: "Growth Lab", icon: Megaphone },
+  { to: "/app/franchise-sales", labelKey: "", label: "Franchise & Territories", icon: Handshake },
   { to: "/app/decision-intelligence", labelKey: "", label: "Decision Intelligence", icon: Cpu },
   { to: "/app/platform-depth", labelKey: "", label: "Billing, Mobile & Depth", icon: Boxes },
   { to: "/app/daily-brief", labelKey: "", label: "Welcome to your day", icon: BarChart3 },
