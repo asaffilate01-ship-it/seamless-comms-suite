@@ -32,8 +32,8 @@ const esc=(await asUser(admin,()=>db.query(`
  INSERT INTO public.contact_escalations(tenant_id,session_id,escalation_type,reason,requested_by,status)
  VALUES($1,$2,'supervisor_takeover','Customer requested a human',$3,'requested') RETURNING id`,[t.tenantId,session,admin]))).rows[0].id;assert(esc);
 await asUser(admin,()=>db.query(`
- INSERT INTO public.contact_callbacks(tenant_id,product_key,session_id,channel,destination,scheduled_for,status)
- VALUES($1,'mealdeck',$2,'voice','+441234567890',now()+interval '1 hour','scheduled')`,[t.tenantId,session]));
+ INSERT INTO public.contact_callbacks(tenant_id,product_key,session_id,channel,destination,due_at,status)
+ VALUES($1,'mealdeck',$2,'voice','+441234567890',now()+interval '1 hour','queued')`,[t.tenantId,session]));
 await asUser(admin,()=>db.query(`
  INSERT INTO public.contact_masking_sessions(tenant_id,product_key,proxy_number,caller_hash,recipient_hash,context_type,context_id,state,expires_at)
  VALUES($1,'mealdeck','+441111111111','caller-hash','recipient-hash','booking','book-1','active',now()+interval '2 hours')`,[t.tenantId]));
