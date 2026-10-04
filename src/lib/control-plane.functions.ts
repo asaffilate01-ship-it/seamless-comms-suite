@@ -309,6 +309,21 @@ export const enableHaccoraForDishbee = createServerFn({ method: "POST" })
     };
   });
 
+export const getHaccoraRuntimeConfiguration = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const catalogue = await context.supabase.rpc("get_control_plane_catalogue" as never);
+    if (catalogue.error) throw new Error(catalogue.error.message);
+    const access = catalogue.data as unknown as { isPlatformAdmin?: boolean };
+    if (access?.isPlatformAdmin !== true) {
+      throw new Error("Platform administrator access is required for Haccora runtime preflight");
+    }
+    const { getHaccoraRuntimePreflight } = await import(
+      "@/modules/haccora/runtime-preflight.server"
+    );
+    return getHaccoraRuntimePreflight();
+  });
+
 export const runHaccoraSmokeTest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
