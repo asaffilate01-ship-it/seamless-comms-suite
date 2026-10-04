@@ -77,13 +77,22 @@ async function prediction(client:any,tenantId:string,lot:NormalizedAuctionLot,lo
   const target={make:lot.make,model:lot.model,modelCode:lot.modelCode,year:lot.year,grade:lot.grade,mileageKm:lot.odometerKm};
   const result=predictHammerPrice({target,outcomes:rows});
   if(result.predictedHammerJpy!==null){
-    const curve=await client.from("automotive_auction_price_curves").insert({
-      tenant_id:tenantId,product_key:"autohashi",make:lot.make,model:lot.model,model_code:lot.modelCode,
-      model_year:lot.year,grade:lot.grade,mileage_band_km:typeof lot.odometerKm==="number"?Math.floor(lot.odometerKm/20000)*20000:null,
-      method:result.method,sample_count:result.sampleCount,p25_jpy:result.lowJpy,median_jpy:result.predictedHammerJpy,p75_jpy:result.highJpy,
-      confidence:result.confidence,source_window_days:730,metadata:{auctionLotId:lotId,watchWorker:true}
-    });
-    if(curve.error)throw curve.error;
+    let curveQuery=client.from("automotive_auction_price_curves").select("*").eq("tenant_id",tenantId).eq("make",lot.make).eq("model",lot.model)
+      .eq("method",result.method).gte("as_of",new Date(Date.now()-24*60*60*1000).toISOString()).order("as_of",{ascending:false}).limit(1);
+    curveQuery=lot.modelCode?curveQuery.eq("model_code",lot.modelCode):curveQuery.is("model_code",null);
+    const recentCurve=await curveQuery.maybeSingle();if(recentCurve.error)throw recentCurve.error;
+    const same=recentCurve.data&&Number(recentCurve.data.median_jpy)===Number(result.predictedHammerJpy)&&
+      Number(recentCurve.data.p25_jpy)===Number(result.lowJpy)&&Number(recentCurve.data.p75_jpy)===Number(result.highJpy)&&
+      Number(recentCurve.data.sample_count)===Number(result.sampleCount);
+    if(!same){
+      const curve=await client.from("automotive_auction_price_curves").insert({
+        tenant_id:tenantId,product_key:"autohashi",make:lot.make,model:lot.model,model_code:lot.modelCode,
+        model_year:lot.year,grade:lot.grade,mileage_band_km:typeof lot.odometerKm==="number"?Math.floor(lot.odometerKm/20000)*20000:null,
+        method:result.method,sample_count:result.sampleCount,p25_jpy:result.lowJpy,median_jpy:result.predictedHammerJpy,p75_jpy:result.highJpy,
+        confidence:result.confidence,source_window_days:730,metadata:{auctionLotId:lotId,watchWorker:true}
+      });
+      if(curve.error)throw curve.error;
+    }
   }
   const latest=await client.from("automotive_auction_price_predictions").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",lotId)
     .eq("status","predicted").order("created_at",{ascending:false}).limit(1).maybeSingle();
@@ -170,7 +179,7 @@ Deno.serve(async req=>{
     const client=db(),tenantId=tenant();let body:any={};try{body=await req.json();}catch{body={};}
     let q=client.from("automotive_auction_watch_rules").select("*").eq("tenant_id",tenantId).eq("product_key","autohashi").eq("enabled",true);
     if(body.watchRuleId)q=q.eq("id",String(body.watchRuleId));
-    const rules=await q.order("updated_at",{ascending:true});if(rules.error)throw rules.error;
+    const rules=await q.order("updated_at",{ascending:true}).limit(50);if(rules.error)throw rules.error;
     const outputs:any[]=[],manual=!!body.watchRuleId;
     for(const rule of rules.data??[]){
       const now=new Date().toISOString();
