@@ -1,0 +1,70 @@
+name: Supabase staging migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_ref:
+        description: "Omniqora staging Supabase project ref"
+        required: true
+        type: string
+      mode:
+        description: "Preview or apply pending migrations"
+        required: true
+        default: "dry-run"
+        type: choice
+        options:
+          - dry-run
+          - apply
+      confirmation:
+        description: 'Type MIGRATE-STAGING when mode=apply'
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: omniqora-supabase-staging
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ inputs.project_ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Validate staging credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${PROJECT_REF:-}" || { echo "Missing Omniqora staging project ref"; exit 1; }
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "Missing SUPABASE_ACCESS_TOKEN"; exit 1; }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo "Missing SUPABASE_DB_PASSWORD"; exit 1; }
+      - name: Link staging project
+        run: supabase link --project-ref "$PROJECT_REF"
+      - name: Show remote migration status
+        run: supabase migration list --linked
+      - name: Preview pending migrations
+        run: supabase db push --linked --dry-run
+      - name: Require explicit apply confirmation
+        if: ${{ inputs.mode == 'apply' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.confirmation }}" != "MIGRATE-STAGING" ]; then
+            echo "Apply blocked: confirmation must equal MIGRATE-STAGING"
+            exit 1
+          fi
+      - name: Apply pending migrations
+        if: ${{ inputs.mode == 'apply' }}
+        run: supabase db push --linked --yes
+      - name: Verify migration status after apply
+        if: ${{ inputs.mode == 'apply' }}
+        run: supabase migration list --linked
