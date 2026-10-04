@@ -139,7 +139,7 @@ export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middle
  const{error:updateError}=await db.from("routing_optimisation_jobs").update({
   status:"review",score:result.score,warnings:result.warnings,completed_at:new Date().toISOString()
  }).eq("id",opt.id);if(updateError)throw new Error(updateError.message);
- return result;
+ return{routeCount:result.routes.length,unassignedJobIds:result.unassignedJobIds,warnings:result.warnings,score:result.score};
 });
 
 export const applyRoutingOptimisation=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
