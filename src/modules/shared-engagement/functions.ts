@@ -121,7 +121,7 @@ export const registerMobileDevice=createServerFn({method:"POST"}).middleware([re
 .inputValidator((i:z.input<typeof device>)=>device.parse(i)).handler(async({context,data})=>{
  const a=await requireService(context,data.tenantId,"omniqora.mobile");requireWriteRole(a.role);
  const {data:row,error}=await(context.supabase as any).from("mobile_devices").upsert({
-  tenant_id:data.tenantId,product_key:data.productKey??null,user_id:context.userId,device_ref:data.deviceRef,platform:data.platform,
+  tenant_id:data.tenantId,product_key:data.productKey,user_id:context.userId,device_ref:data.deviceRef,platform:data.platform,
   app_version:data.appVersion??null,device_model:data.deviceModel??null,locale:data.locale??null,timezone:data.timezone??null,
   push_enabled:data.pushEnabled,location_permission:data.locationPermission,status:"active",last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()
  },{onConflict:"tenant_id,product_key,device_ref"}).select("*").single();if(error)throw new Error(error.message);return row;
