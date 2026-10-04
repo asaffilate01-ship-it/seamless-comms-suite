@@ -463,7 +463,7 @@ async function runWatchNow(body:any){
   if(!base||secret.length<32)throw new Error("Auction watch worker is not configured");
   const response=await fetch(base+"/functions/v1/automotive-auction-watch-worker",{
     method:"POST",headers:{"Content-Type":"application/json","x-autohashi-watch-secret":secret},
-    body:JSON.stringify({watchRuleId:typeof body.watchRuleId==="string"&&body.watchRuleId?body.watchRuleId:null})
+    body:JSON.stringify({watchRuleId:typeof body.watchRuleId==="string"&&body.watchRuleId?body.watchRuleId:null,tenantId:autohashiTenant(body)})
   });
   const raw=await response.text();let result:any={};
   try{result=raw?JSON.parse(raw):{};}catch{throw new Error("Auction watch worker returned non-JSON");}
