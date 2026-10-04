@@ -243,7 +243,7 @@ async function searchCarStack(input:AuctionProviderSearch){
   const providerKey:ReadOnlyJapanAuctionProvider="vehicle.japan.carstack";
   const token=envRequired(providerKey,"CARSTACK_API_TOKEN");
   const base=process.env["CARSTACK_BASE_URL"]?.trim()||"https://carstack.dev/v1";
-  const url=new URL("/vehicles",base.endsWith("/")?base:base+"/");
+  const url=new URL("vehicles",base.endsWith("/")?base:base+"/");
   url.searchParams.set("per_page",String(Math.min(Math.max(input.limit??24,1),50)));
   url.searchParams.set("page",String(Math.max(input.page??1,1)));
   if(input.make)url.searchParams.append("make",input.make);
