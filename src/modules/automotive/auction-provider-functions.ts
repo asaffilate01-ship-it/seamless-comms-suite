@@ -51,6 +51,37 @@ export const syncJapanAuctionProviderLots=createServerFn({method:"POST"}).middle
   };
 });
 
+const compareInput=z.object({tenantId:uuid,productKey:z.string().min(2).max(80),filters:filters.default({page:1,limit:50})});
+export const compareJapanAuctionProviders=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof compareInput>)=>compareInput.parse(i)).handler(async({context,data})=>{
+  await requireService(context,data.tenantId,"omniqora.automotive");
+  const results=[] as Array<{providerKey:ReadOnlyJapanAuctionProvider;lots:any[];total:number|null;elapsedMs:number}>;
+  for(const providerKey of READ_ONLY_JAPAN_AUCTION_PROVIDERS){
+    const started=Date.now();
+    const response=await searchJapanAuctionProvider(providerKey,data.filters);
+    results.push({providerKey,lots:response.lots,total:response.total??null,elapsedMs:Date.now()-started});
+  }
+  const metrics=results.map(result=>{
+    const n=result.lots.length||1;
+    const count=(predicate:(lot:any)=>boolean)=>result.lots.filter(predicate).length;
+    return{
+      providerKey:result.providerKey,
+      sampleSize:result.lots.length,
+      providerTotal:result.total,
+      elapsedMs:result.elapsedMs,
+      chassisCoverage:count(l=>!!l.chassisNumber)/n,
+      gradeCoverage:count(l=>!!l.grade)/n,
+      imageCoverage:count(l=>Array.isArray(l.images)&&l.images.length>0)/n,
+      auctionHouseCoverage:count(l=>!!l.auctionHouse)/n,
+      auctionDateCoverage:count(l=>!!l.auctionAt)/n,
+      modelCodeCoverage:count(l=>!!l.modelCode)/n,
+    };
+  });
+  const chassisSets=results.map(result=>new Set(result.lots.map(l=>l.chassisNumber).filter(Boolean) as string[]));
+  const overlapExactChassis=chassisSets.length===2?[...chassisSets[0]].filter(chassis=>chassisSets[1].has(chassis)).length:0;
+  return{filters:data.filters,metrics,overlapExactChassis};
+});
+
 const detailInput=z.object({
   tenantId:uuid,
   productKey:z.string().min(2).max(80),
