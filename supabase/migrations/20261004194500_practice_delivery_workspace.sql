@@ -638,6 +638,29 @@ END $$;
 REVOKE ALL ON FUNCTION public.practice_record_provider_signature(uuid,text,text,timestamptz,uuid,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.practice_record_provider_signature(uuid,text,text,timestamptz,uuid,jsonb) TO service_role;
 
+
+CREATE OR REPLACE FUNCTION public.practice_approve_submission(_submission uuid)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $
+DECLARE s public.practice_submissions%rowtype;
+BEGIN
+ SELECT * INTO s FROM public.practice_submissions WHERE id=_submission FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Practice submission not found'; END IF;
+ IF NOT public.is_platform_admin(auth.uid())
+    AND NOT public.has_tenant_role(s.tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]) THEN
+  RAISE EXCEPTION 'Practice submission approval denied';
+ END IF;
+ IF s.status<>'review' THEN RAISE EXCEPTION 'Submission must be in review'; END IF;
+ UPDATE public.practice_submissions
+ SET status='approved',approved_by=auth.uid(),approved_at=now(),updated_at=now()
+ WHERE id=s.id;
+ INSERT INTO public.practice_work_audit(tenant_id,product_key,actor_user_id,operation,entity_type,entity_id)
+ VALUES(s.tenant_id,s.product_key,auth.uid(),'submission.approve','submission',s.id::text);
+END $;
+REVOKE ALL ON FUNCTION public.practice_approve_submission(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.practice_approve_submission(uuid) TO authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.practice_record_provider_submission(
  _submission uuid,_status text,_provider_ref text DEFAULT NULL,_response jsonb DEFAULT '{}'::jsonb,_evidence_document uuid DEFAULT NULL
 ) RETURNS void
