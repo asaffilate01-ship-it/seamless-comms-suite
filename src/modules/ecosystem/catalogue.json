@@ -161,13 +161,7 @@
     "metadata": {
       "previousProductName": "OnynGo",
       "brandFamily": "Dishbee",
-      "categories": [
-        "food",
-        "grocery",
-        "pharmacy",
-        "convenience",
-        "more"
-      ]
+      "categories": ["food", "grocery", "pharmacy", "convenience", "more"]
     }
   },
   {
@@ -374,11 +368,11 @@
     "id": "lessonahead-37",
     "name": "LessonAhead UK",
     "product": "lessonahead",
-    "repository": null,
-    "source": "https://lessonahead-uk.amersaleem.chatgpt.site",
-    "profile": "generic",
-    "boundary": "Resolve customer, user, role and collection access from current source records; inspect domain rules before activation.",
-    "status": "source-adapter-required"
+    "repository": "https://github.com/asaffilate01-ship-it/nectar-design-lab",
+    "source": "https://nectar-design-lab.lovable.app",
+    "profile": "marketplace-operations",
+    "boundary": "LessonAhead owns learners, lessons, progress, verification and consent. Omniqora receives scoped entitlements, minimal events, aggregate analytics, channel references and consented WhatsApp content only.",
+    "status": "integration-ready"
   },
   {
     "id": "loungetech-founders-38",

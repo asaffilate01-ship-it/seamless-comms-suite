@@ -7,6 +7,29 @@ export type ConnectProductManifest = {
 
 export const CONNECT_PRODUCT_MANIFESTS: ConnectProductManifest[] = [
   {
+    product: "lessonahead",
+    name: "LessonAhead",
+    events: [
+      "lesson.requested",
+      "lesson.confirmed",
+      "lesson.reminder",
+      "lesson.cancelled",
+      "enquiry.created",
+      "verification.expiring",
+      "smartfill.offer",
+      "whatsapp.inbound",
+    ],
+    tools: [
+      "search_instructors",
+      "get_availability",
+      "request_lesson",
+      "get_lesson_status",
+      "reply_to_enquiry",
+      "get_notification_preferences",
+      "handoff_to_human",
+    ],
+  },
+  {
     product: "courier-broker",
     name: "Courier Broker OS",
     events: [
@@ -32,19 +55,47 @@ export const CONNECT_PRODUCT_MANIFESTS: ConnectProductManifest[] = [
     product: "sparesgrid",
     name: "SparesGrid",
     events: ["parts.quote.ready", "parts.order.status", "parts.supplier.reply"],
-    tools: ["vehicle_lookup", "identify_part", "check_fitment", "search_suppliers", "request_quote", "create_order", "track_order"],
+    tools: [
+      "vehicle_lookup",
+      "identify_part",
+      "check_fitment",
+      "search_suppliers",
+      "request_quote",
+      "create_order",
+      "track_order",
+    ],
   },
   {
     product: "autohashi",
     name: "AutoHashi",
     events: ["vehicle.match.found", "inspection.updated", "shipping.updated", "document.required"],
-    tools: ["vehicle_search", "auction_search", "inspection_request", "landed_cost", "shipping_status", "document_request"],
+    tools: [
+      "vehicle_search",
+      "auction_search",
+      "inspection_request",
+      "landed_cost",
+      "shipping_status",
+      "document_request",
+    ],
   },
   {
     product: "zivvo",
     name: "Zivvo",
-    events: ["vehicle.lead.created", "valuation.ready", "appointment.reminder", "inspection.updated"],
-    tools: ["vehicle_lookup", "stock_search", "valuation_create", "lead_qualify", "appointment_book", "inspection_request", "crm_update"],
+    events: [
+      "vehicle.lead.created",
+      "valuation.ready",
+      "appointment.reminder",
+      "inspection.updated",
+    ],
+    tools: [
+      "vehicle_lookup",
+      "stock_search",
+      "valuation_create",
+      "lead_qualify",
+      "appointment_book",
+      "inspection_request",
+      "crm_update",
+    ],
   },
   {
     product: "dishbee",
@@ -86,7 +137,13 @@ export const CONNECT_PRODUCT_MANIFESTS: ConnectProductManifest[] = [
     product: "haccora",
     name: "Haccora",
     events: ["compliance.alert", "temperature.alert", "checklist.overdue", "incident.created"],
-    tools: ["get_alerts", "get_compliance_status", "get_temperature", "complete_check", "create_incident"],
+    tools: [
+      "get_alerts",
+      "get_compliance_status",
+      "get_temperature",
+      "complete_check",
+      "create_incident",
+    ],
   },
 ];
 

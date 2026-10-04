@@ -9,117 +9,98 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WorkflowPacksRouteImport } from './routes/workflow-packs'
-import { Route as WebsiteRouteImport } from './routes/website'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as PlatformRouteImport } from './routes/platform'
-import { Route as ImpressumRouteImport } from './routes/impressum'
-import { Route as FeaturesRouteImport } from './routes/features'
-import { Route as DatenschutzRouteImport } from './routes/datenschutz'
-import { Route as CookiesRouteImport } from './routes/cookies'
-import { Route as ComplianceRouteImport } from './routes/compliance'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AgbRouteImport } from './routes/agb'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AgbRouteImport } from './routes/agb'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as CookiesRouteImport } from './routes/cookies'
+import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as FeaturesRouteImport } from './routes/features'
+import { Route as ImpressumRouteImport } from './routes/impressum'
+import { Route as PlatformRouteImport } from './routes/platform'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as WebsiteRouteImport } from './routes/website'
+import { Route as WorkflowPacksRouteImport } from './routes/workflow-packs'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedLandlordRouteImport } from './routes/_authenticated/landlord'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
-import { Route as ApiPlatformRuntimeRouteImport } from './routes/api.platform.runtime'
-import { Route as ApiPlatformOrderIntakeRouteImport } from './routes/api.platform.order-intake'
-import { Route as ApiPlatformCrmRouteImport } from './routes/api.platform.crm'
-import { Route as ApiPlatformAgentRouteImport } from './routes/api.platform.agent'
-import { Route as ApiIntegrationsGatewayRouteImport } from './routes/api.integrations.gateway'
-import { Route as ApiIntegrationsEventsRouteImport } from './routes/api.integrations.events'
-import { Route as ApiControlPlaneTenantSnapshotRouteImport } from './routes/api.control-plane.tenant-snapshot'
-import { Route as AuthenticatedAppWorkflowsRouteImport } from './routes/_authenticated/app.workflows'
-import { Route as AuthenticatedAppWhatsappRouteImport } from './routes/_authenticated/app.whatsapp'
-import { Route as AuthenticatedAppVerticalPackagesRouteImport } from './routes/_authenticated/app.vertical-packages'
-import { Route as AuthenticatedAppUtilitiesRouteImport } from './routes/_authenticated/app.utilities'
-import { Route as AuthenticatedAppTransformationRouteImport } from './routes/_authenticated/app.transformation'
-import { Route as AuthenticatedAppTenantFactoryRouteImport } from './routes/_authenticated/app.tenant-factory'
-import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
-import { Route as AuthenticatedAppProcurementReadinessRouteImport } from './routes/_authenticated/app.procurement-readiness'
-import { Route as AuthenticatedAppPlatformKernelRouteImport } from './routes/_authenticated/app.platform-kernel'
-import { Route as AuthenticatedAppPartnersRouteImport } from './routes/_authenticated/app.partners'
-import { Route as AuthenticatedAppOrderIntakeRouteImport } from './routes/_authenticated/app.order-intake'
-import { Route as AuthenticatedAppMigrationFactoryRouteImport } from './routes/_authenticated/app.migration-factory'
-import { Route as AuthenticatedAppIntegrationsRouteImport } from './routes/_authenticated/app.integrations'
-import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
-import { Route as AuthenticatedAppFeedbackRouteImport } from './routes/_authenticated/app.feedback'
-import { Route as AuthenticatedAppDispatchRouteImport } from './routes/_authenticated/app.dispatch'
-import { Route as AuthenticatedAppCrmRouteImport } from './routes/_authenticated/app.crm'
-import { Route as AuthenticatedAppControlPlaneRouteImport } from './routes/_authenticated/app.control-plane'
-import { Route as AuthenticatedAppContactsRouteImport } from './routes/_authenticated/app.contacts'
-import { Route as AuthenticatedAppComplianceIntelligenceRouteImport } from './routes/_authenticated/app.compliance-intelligence'
-import { Route as AuthenticatedAppCommerceRouteImport } from './routes/_authenticated/app.commerce'
-import { Route as AuthenticatedAppCasesRouteImport } from './routes/_authenticated/app.cases'
-import { Route as AuthenticatedAppCampaignsRouteImport } from './routes/_authenticated/app.campaigns'
+import { Route as AuthenticatedAppAccessControlRouteImport } from './routes/_authenticated/app.access-control'
 import { Route as AuthenticatedAppAnalyticsRouteImport } from './routes/_authenticated/app.analytics'
+import { Route as AuthenticatedAppAutomotiveRouteImport } from './routes/_authenticated/app.automotive'
+import { Route as AuthenticatedAppCampaignsRouteImport } from './routes/_authenticated/app.campaigns'
+import { Route as AuthenticatedAppCasesRouteImport } from './routes/_authenticated/app.cases'
+import { Route as AuthenticatedAppChildcareRouteImport } from './routes/_authenticated/app.childcare'
+import { Route as AuthenticatedAppCommerceRouteImport } from './routes/_authenticated/app.commerce'
+import { Route as AuthenticatedAppComplianceIntelligenceRouteImport } from './routes/_authenticated/app.compliance-intelligence'
+import { Route as AuthenticatedAppConnectedOperationsRouteImport } from './routes/_authenticated/app.connected-operations'
+import { Route as AuthenticatedAppConnectorHubRouteImport } from './routes/_authenticated/app.connector-hub'
+import { Route as AuthenticatedAppContactCentreRouteImport } from './routes/_authenticated/app.contact-centre'
+import { Route as AuthenticatedAppContactsRouteImport } from './routes/_authenticated/app.contacts'
+import { Route as AuthenticatedAppControlPlaneRouteImport } from './routes/_authenticated/app.control-plane'
+import { Route as AuthenticatedAppCreativeStudioRouteImport } from './routes/_authenticated/app.creative-studio'
+import { Route as AuthenticatedAppCrmRouteImport } from './routes/_authenticated/app.crm'
+import { Route as AuthenticatedAppDailyBriefRouteImport } from './routes/_authenticated/app.daily-brief'
+import { Route as AuthenticatedAppDecisionIntelligenceRouteImport } from './routes/_authenticated/app.decision-intelligence'
+import { Route as AuthenticatedAppDispatchRouteImport } from './routes/_authenticated/app.dispatch'
+import { Route as AuthenticatedAppEmbeddedFinanceRouteImport } from './routes/_authenticated/app.embedded-finance'
+import { Route as AuthenticatedAppFeedbackRouteImport } from './routes/_authenticated/app.feedback'
+import { Route as AuthenticatedAppFinanceAiRouteImport } from './routes/_authenticated/app.finance-ai'
+import { Route as AuthenticatedAppFranchiseSalesRouteImport } from './routes/_authenticated/app.franchise-sales'
+import { Route as AuthenticatedAppGrowthLabRouteImport } from './routes/_authenticated/app.growth-lab'
+import { Route as AuthenticatedAppIdentityRouteImport } from './routes/_authenticated/app.identity'
+import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
+import { Route as AuthenticatedAppIntegrationsRouteImport } from './routes/_authenticated/app.integrations'
+import { Route as AuthenticatedAppIntelligenceRouteImport } from './routes/_authenticated/app.intelligence'
+import { Route as AuthenticatedAppMigrationFactoryRouteImport } from './routes/_authenticated/app.migration-factory'
+import { Route as AuthenticatedAppOrderIntakeRouteImport } from './routes/_authenticated/app.order-intake'
+import { Route as AuthenticatedAppPartnersRouteImport } from './routes/_authenticated/app.partners'
+import { Route as AuthenticatedAppPlatformDepthRouteImport } from './routes/_authenticated/app.platform-depth'
+import { Route as AuthenticatedAppPlatformKernelRouteImport } from './routes/_authenticated/app.platform-kernel'
+import { Route as AuthenticatedAppProcurementReadinessRouteImport } from './routes/_authenticated/app.procurement-readiness'
+import { Route as AuthenticatedAppRegulatoryMonitoringRouteImport } from './routes/_authenticated/app.regulatory-monitoring'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
+import { Route as AuthenticatedAppSharedEnginesRouteImport } from './routes/_authenticated/app.shared-engines'
+import { Route as AuthenticatedAppTenantFactoryRouteImport } from './routes/_authenticated/app.tenant-factory'
+import { Route as AuthenticatedAppTransformationRouteImport } from './routes/_authenticated/app.transformation'
+import { Route as AuthenticatedAppUtilitiesRouteImport } from './routes/_authenticated/app.utilities'
+import { Route as AuthenticatedAppVerticalPackagesRouteImport } from './routes/_authenticated/app.vertical-packages'
+import { Route as AuthenticatedAppWhatsappRouteImport } from './routes/_authenticated/app.whatsapp'
+import { Route as AuthenticatedAppWorkflowsRouteImport } from './routes/_authenticated/app.workflows'
+import { Route as ApiControlPlaneTenantSnapshotRouteImport } from './routes/api.control-plane.tenant-snapshot'
+import { Route as ApiHaccoraBridgeRouteImport } from './routes/api.haccora.bridge'
+import { Route as ApiIntegrationsEventsRouteImport } from './routes/api.integrations.events'
+import { Route as ApiIntegrationsGatewayRouteImport } from './routes/api.integrations.gateway'
+import { Route as ApiPlatformAgentRouteImport } from './routes/api.platform.agent'
+import { Route as ApiPlatformBusinessIntelligenceRouteImport } from './routes/api.platform.business-intelligence'
+import { Route as ApiPlatformCrmRouteImport } from './routes/api.platform.crm'
+import { Route as ApiPlatformDeliveryRouteImport } from './routes/api.platform.delivery'
+import { Route as ApiPlatformIntelligenceRouteImport } from './routes/api.platform.intelligence'
+import { Route as ApiPlatformOrderIntakeRouteImport } from './routes/api.platform.order-intake'
+import { Route as ApiPlatformRuntimeRouteImport } from './routes/api.platform.runtime'
+import { Route as ApiPublicFeedbackRouteImport } from './routes/api.public.feedback'
+import { Route as ApiPublicNetworkExpansionRouteImport } from './routes/api.public.network-expansion'
 import { Route as AuthenticatedAppCasesIndexRouteImport } from './routes/_authenticated/app.cases.index'
-import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
-import { Route as ApiPublicTwilioOrderIntakeRouteImport } from './routes/api.public.twilio.order-intake'
-import { Route as ApiPublicTrackTokenRouteImport } from './routes/api.public.track.$token'
-import { Route as ApiIntegrationsRunsRunIdRouteImport } from './routes/api.integrations.runs.$runId'
-import { Route as ApiIntegrationsHaccoraConnectionIdRouteImport } from './routes/api.integrations.haccora.$connectionId'
-import { Route as ApiIntegrationsConnectEventsRouteImport } from './routes/api.integrations.connect.events'
-import { Route as ApiControlPlaneWorkersProvisioningRouteImport } from './routes/api.control-plane.workers.provisioning'
 import { Route as AuthenticatedAppCasesCaseIdRouteImport } from './routes/_authenticated/app.cases.$caseId'
+import { Route as ApiControlPlaneWorkersProvisioningRouteImport } from './routes/api.control-plane.workers.provisioning'
+import { Route as ApiIntegrationsConnectEventsRouteImport } from './routes/api.integrations.connect.events'
+import { Route as ApiIntegrationsHaccoraConnectionIdRouteImport } from './routes/api.integrations.haccora.$connectionId'
+import { Route as ApiIntegrationsRunsRunIdRouteImport } from './routes/api.integrations.runs.$runId'
+import { Route as ApiPlatformWebhooksDrainRouteImport } from './routes/api.platform.webhooks.drain'
+import { Route as ApiPublicTrackTokenRouteImport } from './routes/api.public.track.$token'
+import { Route as ApiPublicTwilioOrderIntakeRouteImport } from './routes/api.public.twilio.order-intake'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
+import { Route as ApiVerticalsLessonaheadRuntimeRouteImport } from './routes/api.verticals.lessonahead.runtime'
 import { Route as ApiIntegrationsRunsRunIdContextRouteImport } from './routes/api.integrations.runs.$runId.context'
 
-const WorkflowPacksRoute = WorkflowPacksRouteImport.update({
-  id: '/workflow-packs',
-  path: '/workflow-packs',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WebsiteRoute = WebsiteRouteImport.update({
-  id: '/website',
-  path: '/website',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlatformRoute = PlatformRouteImport.update({
-  id: '/platform',
-  path: '/platform',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImpressumRoute = ImpressumRouteImport.update({
-  id: '/impressum',
-  path: '/impressum',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesRoute = FeaturesRouteImport.update({
-  id: '/features',
-  path: '/features',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DatenschutzRoute = DatenschutzRouteImport.update({
-  id: '/datenschutz',
-  path: '/datenschutz',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CookiesRoute = CookiesRouteImport.update({
-  id: '/cookies',
-  path: '/cookies',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComplianceRoute = ComplianceRouteImport.update({
-  id: '/compliance',
-  path: '/compliance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgbRoute = AgbRouteImport.update({
@@ -127,13 +108,59 @@ const AgbRoute = AgbRouteImport.update({
   path: '/agb',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ComplianceRoute = ComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DatenschutzRoute = DatenschutzRouteImport.update({
+  id: '/datenschutz',
+  path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesRoute = FeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpressumRoute = ImpressumRouteImport.update({
+  id: '/impressum',
+  path: '/impressum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlatformRoute = PlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WebsiteRoute = WebsiteRouteImport.update({
+  id: '/website',
+  path: '/website',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowPacksRoute = WorkflowPacksRouteImport.update({
+  id: '/workflow-packs',
+  path: '/workflow-packs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -141,180 +168,20 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLandlordRoute = AuthenticatedLandlordRouteImport.update({
+  id: '/landlord',
+  path: '/landlord',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const ApiPlatformRuntimeRoute = ApiPlatformRuntimeRouteImport.update({
-  id: '/api/platform/runtime',
-  path: '/api/platform/runtime',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPlatformOrderIntakeRoute = ApiPlatformOrderIntakeRouteImport.update({
-  id: '/api/platform/order-intake',
-  path: '/api/platform/order-intake',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPlatformCrmRoute = ApiPlatformCrmRouteImport.update({
-  id: '/api/platform/crm',
-  path: '/api/platform/crm',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPlatformAgentRoute = ApiPlatformAgentRouteImport.update({
-  id: '/api/platform/agent',
-  path: '/api/platform/agent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiIntegrationsGatewayRoute = ApiIntegrationsGatewayRouteImport.update({
-  id: '/api/integrations/gateway',
-  path: '/api/integrations/gateway',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiIntegrationsEventsRoute = ApiIntegrationsEventsRouteImport.update({
-  id: '/api/integrations/events',
-  path: '/api/integrations/events',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiControlPlaneTenantSnapshotRoute =
-  ApiControlPlaneTenantSnapshotRouteImport.update({
-    id: '/api/control-plane/tenant-snapshot',
-    path: '/api/control-plane/tenant-snapshot',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AuthenticatedAppWorkflowsRoute =
-  AuthenticatedAppWorkflowsRouteImport.update({
-    id: '/workflows',
-    path: '/workflows',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppWhatsappRoute =
-  AuthenticatedAppWhatsappRouteImport.update({
-    id: '/whatsapp',
-    path: '/whatsapp',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppVerticalPackagesRoute =
-  AuthenticatedAppVerticalPackagesRouteImport.update({
-    id: '/vertical-packages',
-    path: '/vertical-packages',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppUtilitiesRoute =
-  AuthenticatedAppUtilitiesRouteImport.update({
-    id: '/utilities',
-    path: '/utilities',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppTransformationRoute =
-  AuthenticatedAppTransformationRouteImport.update({
-    id: '/transformation',
-    path: '/transformation',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppTenantFactoryRoute =
-  AuthenticatedAppTenantFactoryRouteImport.update({
-    id: '/tenant-factory',
-    path: '/tenant-factory',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppSettingsRoute =
-  AuthenticatedAppSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppProcurementReadinessRoute =
-  AuthenticatedAppProcurementReadinessRouteImport.update({
-    id: '/procurement-readiness',
-    path: '/procurement-readiness',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppPlatformKernelRoute =
-  AuthenticatedAppPlatformKernelRouteImport.update({
-    id: '/platform-kernel',
-    path: '/platform-kernel',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppPartnersRoute =
-  AuthenticatedAppPartnersRouteImport.update({
-    id: '/partners',
-    path: '/partners',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppOrderIntakeRoute =
-  AuthenticatedAppOrderIntakeRouteImport.update({
-    id: '/order-intake',
-    path: '/order-intake',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppMigrationFactoryRoute =
-  AuthenticatedAppMigrationFactoryRouteImport.update({
-    id: '/migration-factory',
-    path: '/migration-factory',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppIntegrationsRoute =
-  AuthenticatedAppIntegrationsRouteImport.update({
-    id: '/integrations',
-    path: '/integrations',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppInboxRoute = AuthenticatedAppInboxRouteImport.update({
-  id: '/inbox',
-  path: '/inbox',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppFeedbackRoute =
-  AuthenticatedAppFeedbackRouteImport.update({
-    id: '/feedback',
-    path: '/feedback',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppDispatchRoute =
-  AuthenticatedAppDispatchRouteImport.update({
-    id: '/dispatch',
-    path: '/dispatch',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppCrmRoute = AuthenticatedAppCrmRouteImport.update({
-  id: '/crm',
-  path: '/crm',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppControlPlaneRoute =
-  AuthenticatedAppControlPlaneRouteImport.update({
-    id: '/control-plane',
-    path: '/control-plane',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppContactsRoute =
-  AuthenticatedAppContactsRouteImport.update({
-    id: '/contacts',
-    path: '/contacts',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppComplianceIntelligenceRoute =
-  AuthenticatedAppComplianceIntelligenceRouteImport.update({
-    id: '/compliance-intelligence',
-    path: '/compliance-intelligence',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppCommerceRoute =
-  AuthenticatedAppCommerceRouteImport.update({
-    id: '/commerce',
-    path: '/commerce',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppCasesRoute = AuthenticatedAppCasesRouteImport.update({
-  id: '/cases',
-  path: '/cases',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppCampaignsRoute =
-  AuthenticatedAppCampaignsRouteImport.update({
-    id: '/campaigns',
-    path: '/campaigns',
+const AuthenticatedAppAccessControlRoute =
+  AuthenticatedAppAccessControlRouteImport.update({
+    id: '/access-control',
+    path: '/access-control',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppAnalyticsRoute =
@@ -323,39 +190,327 @@ const AuthenticatedAppAnalyticsRoute =
     path: '/analytics',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAutomotiveRoute =
+  AuthenticatedAppAutomotiveRouteImport.update({
+    id: '/automotive',
+    path: '/automotive',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCampaignsRoute =
+  AuthenticatedAppCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCasesRoute = AuthenticatedAppCasesRouteImport.update({
+  id: '/cases',
+  path: '/cases',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppChildcareRoute =
+  AuthenticatedAppChildcareRouteImport.update({
+    id: '/childcare',
+    path: '/childcare',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCommerceRoute =
+  AuthenticatedAppCommerceRouteImport.update({
+    id: '/commerce',
+    path: '/commerce',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppComplianceIntelligenceRoute =
+  AuthenticatedAppComplianceIntelligenceRouteImport.update({
+    id: '/compliance-intelligence',
+    path: '/compliance-intelligence',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppConnectedOperationsRoute =
+  AuthenticatedAppConnectedOperationsRouteImport.update({
+    id: '/connected-operations',
+    path: '/connected-operations',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppConnectorHubRoute =
+  AuthenticatedAppConnectorHubRouteImport.update({
+    id: '/connector-hub',
+    path: '/connector-hub',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppContactCentreRoute =
+  AuthenticatedAppContactCentreRouteImport.update({
+    id: '/contact-centre',
+    path: '/contact-centre',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppContactsRoute =
+  AuthenticatedAppContactsRouteImport.update({
+    id: '/contacts',
+    path: '/contacts',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppControlPlaneRoute =
+  AuthenticatedAppControlPlaneRouteImport.update({
+    id: '/control-plane',
+    path: '/control-plane',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCreativeStudioRoute =
+  AuthenticatedAppCreativeStudioRouteImport.update({
+    id: '/creative-studio',
+    path: '/creative-studio',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCrmRoute = AuthenticatedAppCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppDailyBriefRoute =
+  AuthenticatedAppDailyBriefRouteImport.update({
+    id: '/daily-brief',
+    path: '/daily-brief',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDecisionIntelligenceRoute =
+  AuthenticatedAppDecisionIntelligenceRouteImport.update({
+    id: '/decision-intelligence',
+    path: '/decision-intelligence',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDispatchRoute =
+  AuthenticatedAppDispatchRouteImport.update({
+    id: '/dispatch',
+    path: '/dispatch',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppEmbeddedFinanceRoute =
+  AuthenticatedAppEmbeddedFinanceRouteImport.update({
+    id: '/embedded-finance',
+    path: '/embedded-finance',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppFeedbackRoute =
+  AuthenticatedAppFeedbackRouteImport.update({
+    id: '/feedback',
+    path: '/feedback',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppFinanceAiRoute =
+  AuthenticatedAppFinanceAiRouteImport.update({
+    id: '/finance-ai',
+    path: '/finance-ai',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppFranchiseSalesRoute =
+  AuthenticatedAppFranchiseSalesRouteImport.update({
+    id: '/franchise-sales',
+    path: '/franchise-sales',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppGrowthLabRoute =
+  AuthenticatedAppGrowthLabRouteImport.update({
+    id: '/growth-lab',
+    path: '/growth-lab',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppIdentityRoute =
+  AuthenticatedAppIdentityRouteImport.update({
+    id: '/identity',
+    path: '/identity',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppInboxRoute = AuthenticatedAppInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppIntegrationsRoute =
+  AuthenticatedAppIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppIntelligenceRoute =
+  AuthenticatedAppIntelligenceRouteImport.update({
+    id: '/intelligence',
+    path: '/intelligence',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppMigrationFactoryRoute =
+  AuthenticatedAppMigrationFactoryRouteImport.update({
+    id: '/migration-factory',
+    path: '/migration-factory',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppOrderIntakeRoute =
+  AuthenticatedAppOrderIntakeRouteImport.update({
+    id: '/order-intake',
+    path: '/order-intake',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPartnersRoute =
+  AuthenticatedAppPartnersRouteImport.update({
+    id: '/partners',
+    path: '/partners',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPlatformDepthRoute =
+  AuthenticatedAppPlatformDepthRouteImport.update({
+    id: '/platform-depth',
+    path: '/platform-depth',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPlatformKernelRoute =
+  AuthenticatedAppPlatformKernelRouteImport.update({
+    id: '/platform-kernel',
+    path: '/platform-kernel',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppProcurementReadinessRoute =
+  AuthenticatedAppProcurementReadinessRouteImport.update({
+    id: '/procurement-readiness',
+    path: '/procurement-readiness',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppRegulatoryMonitoringRoute =
+  AuthenticatedAppRegulatoryMonitoringRouteImport.update({
+    id: '/regulatory-monitoring',
+    path: '/regulatory-monitoring',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSettingsRoute =
+  AuthenticatedAppSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSharedEnginesRoute =
+  AuthenticatedAppSharedEnginesRouteImport.update({
+    id: '/shared-engines',
+    path: '/shared-engines',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppTenantFactoryRoute =
+  AuthenticatedAppTenantFactoryRouteImport.update({
+    id: '/tenant-factory',
+    path: '/tenant-factory',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppTransformationRoute =
+  AuthenticatedAppTransformationRouteImport.update({
+    id: '/transformation',
+    path: '/transformation',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppUtilitiesRoute =
+  AuthenticatedAppUtilitiesRouteImport.update({
+    id: '/utilities',
+    path: '/utilities',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppVerticalPackagesRoute =
+  AuthenticatedAppVerticalPackagesRouteImport.update({
+    id: '/vertical-packages',
+    path: '/vertical-packages',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppWhatsappRoute =
+  AuthenticatedAppWhatsappRouteImport.update({
+    id: '/whatsapp',
+    path: '/whatsapp',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppWorkflowsRoute =
+  AuthenticatedAppWorkflowsRouteImport.update({
+    id: '/workflows',
+    path: '/workflows',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const ApiControlPlaneTenantSnapshotRoute =
+  ApiControlPlaneTenantSnapshotRouteImport.update({
+    id: '/api/control-plane/tenant-snapshot',
+    path: '/api/control-plane/tenant-snapshot',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiHaccoraBridgeRoute = ApiHaccoraBridgeRouteImport.update({
+  id: '/api/haccora/bridge',
+  path: '/api/haccora/bridge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntegrationsEventsRoute = ApiIntegrationsEventsRouteImport.update({
+  id: '/api/integrations/events',
+  path: '/api/integrations/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntegrationsGatewayRoute = ApiIntegrationsGatewayRouteImport.update({
+  id: '/api/integrations/gateway',
+  path: '/api/integrations/gateway',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlatformAgentRoute = ApiPlatformAgentRouteImport.update({
+  id: '/api/platform/agent',
+  path: '/api/platform/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlatformBusinessIntelligenceRoute =
+  ApiPlatformBusinessIntelligenceRouteImport.update({
+    id: '/api/platform/business-intelligence',
+    path: '/api/platform/business-intelligence',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPlatformCrmRoute = ApiPlatformCrmRouteImport.update({
+  id: '/api/platform/crm',
+  path: '/api/platform/crm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlatformDeliveryRoute = ApiPlatformDeliveryRouteImport.update({
+  id: '/api/platform/delivery',
+  path: '/api/platform/delivery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlatformIntelligenceRoute = ApiPlatformIntelligenceRouteImport.update({
+  id: '/api/platform/intelligence',
+  path: '/api/platform/intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlatformOrderIntakeRoute = ApiPlatformOrderIntakeRouteImport.update({
+  id: '/api/platform/order-intake',
+  path: '/api/platform/order-intake',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlatformRuntimeRoute = ApiPlatformRuntimeRouteImport.update({
+  id: '/api/platform/runtime',
+  path: '/api/platform/runtime',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFeedbackRoute = ApiPublicFeedbackRouteImport.update({
+  id: '/api/public/feedback',
+  path: '/api/public/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicNetworkExpansionRoute =
+  ApiPublicNetworkExpansionRouteImport.update({
+    id: '/api/public/network-expansion',
+    path: '/api/public/network-expansion',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppCasesIndexRoute =
   AuthenticatedAppCasesIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAppCasesRoute,
   } as any)
-const ApiPublicWhatsappWebhookRoute =
-  ApiPublicWhatsappWebhookRouteImport.update({
-    id: '/api/public/whatsapp/webhook',
-    path: '/api/public/whatsapp/webhook',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAppCasesCaseIdRoute =
+  AuthenticatedAppCasesCaseIdRouteImport.update({
+    id: '/$caseId',
+    path: '/$caseId',
+    getParentRoute: () => AuthenticatedAppCasesRoute,
   } as any)
-const ApiPublicTwilioOrderIntakeRoute =
-  ApiPublicTwilioOrderIntakeRouteImport.update({
-    id: '/api/public/twilio/order-intake',
-    path: '/api/public/twilio/order-intake',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicTrackTokenRoute = ApiPublicTrackTokenRouteImport.update({
-  id: '/api/public/track/$token',
-  path: '/api/public/track/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiIntegrationsRunsRunIdRoute =
-  ApiIntegrationsRunsRunIdRouteImport.update({
-    id: '/api/integrations/runs/$runId',
-    path: '/api/integrations/runs/$runId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiIntegrationsHaccoraConnectionIdRoute =
-  ApiIntegrationsHaccoraConnectionIdRouteImport.update({
-    id: '/api/integrations/haccora/$connectionId',
-    path: '/api/integrations/haccora/$connectionId',
+const ApiControlPlaneWorkersProvisioningRoute =
+  ApiControlPlaneWorkersProvisioningRouteImport.update({
+    id: '/api/control-plane/workers/provisioning',
+    path: '/api/control-plane/workers/provisioning',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiIntegrationsConnectEventsRoute =
@@ -364,17 +519,46 @@ const ApiIntegrationsConnectEventsRoute =
     path: '/api/integrations/connect/events',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiControlPlaneWorkersProvisioningRoute =
-  ApiControlPlaneWorkersProvisioningRouteImport.update({
-    id: '/api/control-plane/workers/provisioning',
-    path: '/api/control-plane/workers/provisioning',
+const ApiIntegrationsHaccoraConnectionIdRoute =
+  ApiIntegrationsHaccoraConnectionIdRouteImport.update({
+    id: '/api/integrations/haccora/$connectionId',
+    path: '/api/integrations/haccora/$connectionId',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAppCasesCaseIdRoute =
-  AuthenticatedAppCasesCaseIdRouteImport.update({
-    id: '/$caseId',
-    path: '/$caseId',
-    getParentRoute: () => AuthenticatedAppCasesRoute,
+const ApiIntegrationsRunsRunIdRoute =
+  ApiIntegrationsRunsRunIdRouteImport.update({
+    id: '/api/integrations/runs/$runId',
+    path: '/api/integrations/runs/$runId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPlatformWebhooksDrainRoute =
+  ApiPlatformWebhooksDrainRouteImport.update({
+    id: '/api/platform/webhooks/drain',
+    path: '/api/platform/webhooks/drain',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTrackTokenRoute = ApiPublicTrackTokenRouteImport.update({
+  id: '/api/public/track/$token',
+  path: '/api/public/track/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTwilioOrderIntakeRoute =
+  ApiPublicTwilioOrderIntakeRouteImport.update({
+    id: '/api/public/twilio/order-intake',
+    path: '/api/public/twilio/order-intake',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiVerticalsLessonaheadRuntimeRoute =
+  ApiVerticalsLessonaheadRuntimeRouteImport.update({
+    id: '/api/verticals/lessonahead/runtime',
+    path: '/api/verticals/lessonahead/runtime',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiIntegrationsRunsRunIdContextRoute =
   ApiIntegrationsRunsRunIdContextRouteImport.update({
@@ -398,24 +582,43 @@ export interface FileRoutesByFullPath {
   '/website': typeof WebsiteRoute
   '/workflow-packs': typeof WorkflowPacksRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/landlord': typeof AuthenticatedLandlordRoute
+  '/app/access-control': typeof AuthenticatedAppAccessControlRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/app/campaigns': typeof AuthenticatedAppCampaignsRoute
   '/app/cases': typeof AuthenticatedAppCasesRouteWithChildren
+  '/app/childcare': typeof AuthenticatedAppChildcareRoute
   '/app/commerce': typeof AuthenticatedAppCommerceRoute
   '/app/compliance-intelligence': typeof AuthenticatedAppComplianceIntelligenceRoute
+  '/app/connected-operations': typeof AuthenticatedAppConnectedOperationsRoute
+  '/app/connector-hub': typeof AuthenticatedAppConnectorHubRoute
+  '/app/contact-centre': typeof AuthenticatedAppContactCentreRoute
   '/app/contacts': typeof AuthenticatedAppContactsRoute
   '/app/control-plane': typeof AuthenticatedAppControlPlaneRoute
+  '/app/creative-studio': typeof AuthenticatedAppCreativeStudioRoute
   '/app/crm': typeof AuthenticatedAppCrmRoute
+  '/app/daily-brief': typeof AuthenticatedAppDailyBriefRoute
+  '/app/decision-intelligence': typeof AuthenticatedAppDecisionIntelligenceRoute
   '/app/dispatch': typeof AuthenticatedAppDispatchRoute
+  '/app/embedded-finance': typeof AuthenticatedAppEmbeddedFinanceRoute
   '/app/feedback': typeof AuthenticatedAppFeedbackRoute
+  '/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
+  '/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
+  '/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
+  '/app/identity': typeof AuthenticatedAppIdentityRoute
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
+  '/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
   '/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/app/platform-depth': typeof AuthenticatedAppPlatformDepthRoute
   '/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
+  '/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
   '/app/tenant-factory': typeof AuthenticatedAppTenantFactoryRoute
   '/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/app/utilities': typeof AuthenticatedAppUtilitiesRoute
@@ -423,21 +626,29 @@ export interface FileRoutesByFullPath {
   '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/app/workflows': typeof AuthenticatedAppWorkflowsRoute
   '/api/control-plane/tenant-snapshot': typeof ApiControlPlaneTenantSnapshotRoute
+  '/api/haccora/bridge': typeof ApiHaccoraBridgeRoute
   '/api/integrations/events': typeof ApiIntegrationsEventsRoute
   '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/api/platform/agent': typeof ApiPlatformAgentRoute
+  '/api/platform/business-intelligence': typeof ApiPlatformBusinessIntelligenceRoute
   '/api/platform/crm': typeof ApiPlatformCrmRoute
+  '/api/platform/delivery': typeof ApiPlatformDeliveryRoute
+  '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
+  '/api/public/feedback': typeof ApiPublicFeedbackRoute
+  '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
+  '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
   '/app/cases/': typeof AuthenticatedAppCasesIndexRoute
   '/api/integrations/runs/$runId/context': typeof ApiIntegrationsRunsRunIdContextRoute
 }
@@ -455,23 +666,42 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/website': typeof WebsiteRoute
   '/workflow-packs': typeof WorkflowPacksRoute
+  '/landlord': typeof AuthenticatedLandlordRoute
+  '/app/access-control': typeof AuthenticatedAppAccessControlRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/app/campaigns': typeof AuthenticatedAppCampaignsRoute
+  '/app/childcare': typeof AuthenticatedAppChildcareRoute
   '/app/commerce': typeof AuthenticatedAppCommerceRoute
   '/app/compliance-intelligence': typeof AuthenticatedAppComplianceIntelligenceRoute
+  '/app/connected-operations': typeof AuthenticatedAppConnectedOperationsRoute
+  '/app/connector-hub': typeof AuthenticatedAppConnectorHubRoute
+  '/app/contact-centre': typeof AuthenticatedAppContactCentreRoute
   '/app/contacts': typeof AuthenticatedAppContactsRoute
   '/app/control-plane': typeof AuthenticatedAppControlPlaneRoute
+  '/app/creative-studio': typeof AuthenticatedAppCreativeStudioRoute
   '/app/crm': typeof AuthenticatedAppCrmRoute
+  '/app/daily-brief': typeof AuthenticatedAppDailyBriefRoute
+  '/app/decision-intelligence': typeof AuthenticatedAppDecisionIntelligenceRoute
   '/app/dispatch': typeof AuthenticatedAppDispatchRoute
+  '/app/embedded-finance': typeof AuthenticatedAppEmbeddedFinanceRoute
   '/app/feedback': typeof AuthenticatedAppFeedbackRoute
+  '/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
+  '/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
+  '/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
+  '/app/identity': typeof AuthenticatedAppIdentityRoute
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
+  '/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
   '/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/app/platform-depth': typeof AuthenticatedAppPlatformDepthRoute
   '/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
+  '/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
   '/app/tenant-factory': typeof AuthenticatedAppTenantFactoryRoute
   '/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/app/utilities': typeof AuthenticatedAppUtilitiesRoute
@@ -479,21 +709,29 @@ export interface FileRoutesByTo {
   '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/app/workflows': typeof AuthenticatedAppWorkflowsRoute
   '/api/control-plane/tenant-snapshot': typeof ApiControlPlaneTenantSnapshotRoute
+  '/api/haccora/bridge': typeof ApiHaccoraBridgeRoute
   '/api/integrations/events': typeof ApiIntegrationsEventsRoute
   '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/api/platform/agent': typeof ApiPlatformAgentRoute
+  '/api/platform/business-intelligence': typeof ApiPlatformBusinessIntelligenceRoute
   '/api/platform/crm': typeof ApiPlatformCrmRoute
+  '/api/platform/delivery': typeof ApiPlatformDeliveryRoute
+  '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
+  '/api/public/feedback': typeof ApiPublicFeedbackRoute
+  '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
+  '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
   '/app/cases': typeof AuthenticatedAppCasesIndexRoute
   '/api/integrations/runs/$runId/context': typeof ApiIntegrationsRunsRunIdContextRoute
 }
@@ -514,24 +752,43 @@ export interface FileRoutesById {
   '/website': typeof WebsiteRoute
   '/workflow-packs': typeof WorkflowPacksRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/landlord': typeof AuthenticatedLandlordRoute
+  '/_authenticated/app/access-control': typeof AuthenticatedAppAccessControlRoute
   '/_authenticated/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/_authenticated/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/_authenticated/app/campaigns': typeof AuthenticatedAppCampaignsRoute
   '/_authenticated/app/cases': typeof AuthenticatedAppCasesRouteWithChildren
+  '/_authenticated/app/childcare': typeof AuthenticatedAppChildcareRoute
   '/_authenticated/app/commerce': typeof AuthenticatedAppCommerceRoute
   '/_authenticated/app/compliance-intelligence': typeof AuthenticatedAppComplianceIntelligenceRoute
+  '/_authenticated/app/connected-operations': typeof AuthenticatedAppConnectedOperationsRoute
+  '/_authenticated/app/connector-hub': typeof AuthenticatedAppConnectorHubRoute
+  '/_authenticated/app/contact-centre': typeof AuthenticatedAppContactCentreRoute
   '/_authenticated/app/contacts': typeof AuthenticatedAppContactsRoute
   '/_authenticated/app/control-plane': typeof AuthenticatedAppControlPlaneRoute
+  '/_authenticated/app/creative-studio': typeof AuthenticatedAppCreativeStudioRoute
   '/_authenticated/app/crm': typeof AuthenticatedAppCrmRoute
+  '/_authenticated/app/daily-brief': typeof AuthenticatedAppDailyBriefRoute
+  '/_authenticated/app/decision-intelligence': typeof AuthenticatedAppDecisionIntelligenceRoute
   '/_authenticated/app/dispatch': typeof AuthenticatedAppDispatchRoute
+  '/_authenticated/app/embedded-finance': typeof AuthenticatedAppEmbeddedFinanceRoute
   '/_authenticated/app/feedback': typeof AuthenticatedAppFeedbackRoute
+  '/_authenticated/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
+  '/_authenticated/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
+  '/_authenticated/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
+  '/_authenticated/app/identity': typeof AuthenticatedAppIdentityRoute
   '/_authenticated/app/inbox': typeof AuthenticatedAppInboxRoute
   '/_authenticated/app/integrations': typeof AuthenticatedAppIntegrationsRoute
+  '/_authenticated/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
   '/_authenticated/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/_authenticated/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/_authenticated/app/partners': typeof AuthenticatedAppPartnersRoute
+  '/_authenticated/app/platform-depth': typeof AuthenticatedAppPlatformDepthRoute
   '/_authenticated/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/_authenticated/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
+  '/_authenticated/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
   '/_authenticated/app/tenant-factory': typeof AuthenticatedAppTenantFactoryRoute
   '/_authenticated/app/transformation': typeof AuthenticatedAppTransformationRoute
   '/_authenticated/app/utilities': typeof AuthenticatedAppUtilitiesRoute
@@ -539,21 +796,29 @@ export interface FileRoutesById {
   '/_authenticated/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/_authenticated/app/workflows': typeof AuthenticatedAppWorkflowsRoute
   '/api/control-plane/tenant-snapshot': typeof ApiControlPlaneTenantSnapshotRoute
+  '/api/haccora/bridge': typeof ApiHaccoraBridgeRoute
   '/api/integrations/events': typeof ApiIntegrationsEventsRoute
   '/api/integrations/gateway': typeof ApiIntegrationsGatewayRoute
   '/api/platform/agent': typeof ApiPlatformAgentRoute
+  '/api/platform/business-intelligence': typeof ApiPlatformBusinessIntelligenceRoute
   '/api/platform/crm': typeof ApiPlatformCrmRoute
+  '/api/platform/delivery': typeof ApiPlatformDeliveryRoute
+  '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
+  '/api/public/feedback': typeof ApiPublicFeedbackRoute
+  '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
+  '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
   '/_authenticated/app/cases/': typeof AuthenticatedAppCasesIndexRoute
   '/api/integrations/runs/$runId/context': typeof ApiIntegrationsRunsRunIdContextRoute
 }
@@ -574,24 +839,43 @@ export interface FileRouteTypes {
     | '/website'
     | '/workflow-packs'
     | '/app'
+    | '/landlord'
+    | '/app/access-control'
     | '/app/analytics'
+    | '/app/automotive'
     | '/app/campaigns'
     | '/app/cases'
+    | '/app/childcare'
     | '/app/commerce'
     | '/app/compliance-intelligence'
+    | '/app/connected-operations'
+    | '/app/connector-hub'
+    | '/app/contact-centre'
     | '/app/contacts'
     | '/app/control-plane'
+    | '/app/creative-studio'
     | '/app/crm'
+    | '/app/daily-brief'
+    | '/app/decision-intelligence'
     | '/app/dispatch'
+    | '/app/embedded-finance'
     | '/app/feedback'
+    | '/app/finance-ai'
+    | '/app/franchise-sales'
+    | '/app/growth-lab'
+    | '/app/identity'
     | '/app/inbox'
     | '/app/integrations'
+    | '/app/intelligence'
     | '/app/migration-factory'
     | '/app/order-intake'
     | '/app/partners'
+    | '/app/platform-depth'
     | '/app/platform-kernel'
     | '/app/procurement-readiness'
+    | '/app/regulatory-monitoring'
     | '/app/settings'
+    | '/app/shared-engines'
     | '/app/tenant-factory'
     | '/app/transformation'
     | '/app/utilities'
@@ -599,21 +883,29 @@ export interface FileRouteTypes {
     | '/app/whatsapp'
     | '/app/workflows'
     | '/api/control-plane/tenant-snapshot'
+    | '/api/haccora/bridge'
     | '/api/integrations/events'
     | '/api/integrations/gateway'
     | '/api/platform/agent'
+    | '/api/platform/business-intelligence'
     | '/api/platform/crm'
+    | '/api/platform/delivery'
+    | '/api/platform/intelligence'
     | '/api/platform/order-intake'
     | '/api/platform/runtime'
+    | '/api/public/feedback'
+    | '/api/public/network-expansion'
     | '/app/'
     | '/app/cases/$caseId'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
+    | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
+    | '/api/verticals/lessonahead/runtime'
     | '/app/cases/'
     | '/api/integrations/runs/$runId/context'
   fileRoutesByTo: FileRoutesByTo
@@ -631,23 +923,42 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/website'
     | '/workflow-packs'
+    | '/landlord'
+    | '/app/access-control'
     | '/app/analytics'
+    | '/app/automotive'
     | '/app/campaigns'
+    | '/app/childcare'
     | '/app/commerce'
     | '/app/compliance-intelligence'
+    | '/app/connected-operations'
+    | '/app/connector-hub'
+    | '/app/contact-centre'
     | '/app/contacts'
     | '/app/control-plane'
+    | '/app/creative-studio'
     | '/app/crm'
+    | '/app/daily-brief'
+    | '/app/decision-intelligence'
     | '/app/dispatch'
+    | '/app/embedded-finance'
     | '/app/feedback'
+    | '/app/finance-ai'
+    | '/app/franchise-sales'
+    | '/app/growth-lab'
+    | '/app/identity'
     | '/app/inbox'
     | '/app/integrations'
+    | '/app/intelligence'
     | '/app/migration-factory'
     | '/app/order-intake'
     | '/app/partners'
+    | '/app/platform-depth'
     | '/app/platform-kernel'
     | '/app/procurement-readiness'
+    | '/app/regulatory-monitoring'
     | '/app/settings'
+    | '/app/shared-engines'
     | '/app/tenant-factory'
     | '/app/transformation'
     | '/app/utilities'
@@ -655,21 +966,29 @@ export interface FileRouteTypes {
     | '/app/whatsapp'
     | '/app/workflows'
     | '/api/control-plane/tenant-snapshot'
+    | '/api/haccora/bridge'
     | '/api/integrations/events'
     | '/api/integrations/gateway'
     | '/api/platform/agent'
+    | '/api/platform/business-intelligence'
     | '/api/platform/crm'
+    | '/api/platform/delivery'
+    | '/api/platform/intelligence'
     | '/api/platform/order-intake'
     | '/api/platform/runtime'
+    | '/api/public/feedback'
+    | '/api/public/network-expansion'
     | '/app'
     | '/app/cases/$caseId'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
+    | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
+    | '/api/verticals/lessonahead/runtime'
     | '/app/cases'
     | '/api/integrations/runs/$runId/context'
   id:
@@ -689,24 +1008,43 @@ export interface FileRouteTypes {
     | '/website'
     | '/workflow-packs'
     | '/_authenticated/app'
+    | '/_authenticated/landlord'
+    | '/_authenticated/app/access-control'
     | '/_authenticated/app/analytics'
+    | '/_authenticated/app/automotive'
     | '/_authenticated/app/campaigns'
     | '/_authenticated/app/cases'
+    | '/_authenticated/app/childcare'
     | '/_authenticated/app/commerce'
     | '/_authenticated/app/compliance-intelligence'
+    | '/_authenticated/app/connected-operations'
+    | '/_authenticated/app/connector-hub'
+    | '/_authenticated/app/contact-centre'
     | '/_authenticated/app/contacts'
     | '/_authenticated/app/control-plane'
+    | '/_authenticated/app/creative-studio'
     | '/_authenticated/app/crm'
+    | '/_authenticated/app/daily-brief'
+    | '/_authenticated/app/decision-intelligence'
     | '/_authenticated/app/dispatch'
+    | '/_authenticated/app/embedded-finance'
     | '/_authenticated/app/feedback'
+    | '/_authenticated/app/finance-ai'
+    | '/_authenticated/app/franchise-sales'
+    | '/_authenticated/app/growth-lab'
+    | '/_authenticated/app/identity'
     | '/_authenticated/app/inbox'
     | '/_authenticated/app/integrations'
+    | '/_authenticated/app/intelligence'
     | '/_authenticated/app/migration-factory'
     | '/_authenticated/app/order-intake'
     | '/_authenticated/app/partners'
+    | '/_authenticated/app/platform-depth'
     | '/_authenticated/app/platform-kernel'
     | '/_authenticated/app/procurement-readiness'
+    | '/_authenticated/app/regulatory-monitoring'
     | '/_authenticated/app/settings'
+    | '/_authenticated/app/shared-engines'
     | '/_authenticated/app/tenant-factory'
     | '/_authenticated/app/transformation'
     | '/_authenticated/app/utilities'
@@ -714,21 +1052,29 @@ export interface FileRouteTypes {
     | '/_authenticated/app/whatsapp'
     | '/_authenticated/app/workflows'
     | '/api/control-plane/tenant-snapshot'
+    | '/api/haccora/bridge'
     | '/api/integrations/events'
     | '/api/integrations/gateway'
     | '/api/platform/agent'
+    | '/api/platform/business-intelligence'
     | '/api/platform/crm'
+    | '/api/platform/delivery'
+    | '/api/platform/intelligence'
     | '/api/platform/order-intake'
     | '/api/platform/runtime'
+    | '/api/public/feedback'
+    | '/api/public/network-expansion'
     | '/_authenticated/app/'
     | '/_authenticated/app/cases/$caseId'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
+    | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
+    | '/api/verticals/lessonahead/runtime'
     | '/_authenticated/app/cases/'
     | '/api/integrations/runs/$runId/context'
   fileRoutesById: FileRoutesById
@@ -749,105 +1095,36 @@ export interface RootRouteChildren {
   WebsiteRoute: typeof WebsiteRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
   ApiControlPlaneTenantSnapshotRoute: typeof ApiControlPlaneTenantSnapshotRoute
+  ApiHaccoraBridgeRoute: typeof ApiHaccoraBridgeRoute
   ApiIntegrationsEventsRoute: typeof ApiIntegrationsEventsRoute
   ApiIntegrationsGatewayRoute: typeof ApiIntegrationsGatewayRoute
   ApiPlatformAgentRoute: typeof ApiPlatformAgentRoute
+  ApiPlatformBusinessIntelligenceRoute: typeof ApiPlatformBusinessIntelligenceRoute
   ApiPlatformCrmRoute: typeof ApiPlatformCrmRoute
+  ApiPlatformDeliveryRoute: typeof ApiPlatformDeliveryRoute
+  ApiPlatformIntelligenceRoute: typeof ApiPlatformIntelligenceRoute
   ApiPlatformOrderIntakeRoute: typeof ApiPlatformOrderIntakeRoute
   ApiPlatformRuntimeRoute: typeof ApiPlatformRuntimeRoute
+  ApiPublicFeedbackRoute: typeof ApiPublicFeedbackRoute
+  ApiPublicNetworkExpansionRoute: typeof ApiPublicNetworkExpansionRoute
   ApiControlPlaneWorkersProvisioningRoute: typeof ApiControlPlaneWorkersProvisioningRoute
   ApiIntegrationsConnectEventsRoute: typeof ApiIntegrationsConnectEventsRoute
   ApiIntegrationsHaccoraConnectionIdRoute: typeof ApiIntegrationsHaccoraConnectionIdRoute
   ApiIntegrationsRunsRunIdRoute: typeof ApiIntegrationsRunsRunIdRouteWithChildren
+  ApiPlatformWebhooksDrainRoute: typeof ApiPlatformWebhooksDrainRoute
   ApiPublicTrackTokenRoute: typeof ApiPublicTrackTokenRoute
   ApiPublicTwilioOrderIntakeRoute: typeof ApiPublicTwilioOrderIntakeRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
+  ApiVerticalsLessonaheadRuntimeRoute: typeof ApiVerticalsLessonaheadRuntimeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/workflow-packs': {
-      id: '/workflow-packs'
-      path: '/workflow-packs'
-      fullPath: '/workflow-packs'
-      preLoaderRoute: typeof WorkflowPacksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/website': {
-      id: '/website'
-      path: '/website'
-      fullPath: '/website'
-      preLoaderRoute: typeof WebsiteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/platform': {
-      id: '/platform'
-      path: '/platform'
-      fullPath: '/platform'
-      preLoaderRoute: typeof PlatformRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/impressum': {
-      id: '/impressum'
-      path: '/impressum'
-      fullPath: '/impressum'
-      preLoaderRoute: typeof ImpressumRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features': {
-      id: '/features'
-      path: '/features'
-      fullPath: '/features'
-      preLoaderRoute: typeof FeaturesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/datenschutz': {
-      id: '/datenschutz'
-      path: '/datenschutz'
-      fullPath: '/datenschutz'
-      preLoaderRoute: typeof DatenschutzRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cookies': {
-      id: '/cookies'
-      path: '/cookies'
-      fullPath: '/cookies'
-      preLoaderRoute: typeof CookiesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/compliance': {
-      id: '/compliance'
-      path: '/compliance'
-      fullPath: '/compliance'
-      preLoaderRoute: typeof ComplianceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agb': {
-      id: '/agb'
-      path: '/agb'
-      fullPath: '/agb'
-      preLoaderRoute: typeof AgbRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -857,11 +1134,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/agb': {
+      id: '/agb'
+      path: '/agb'
+      fullPath: '/agb'
+      preLoaderRoute: typeof AgbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compliance': {
+      id: '/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/datenschutz': {
+      id: '/datenschutz'
+      path: '/datenschutz'
+      fullPath: '/datenschutz'
+      preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features': {
+      id: '/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof FeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impressum': {
+      id: '/impressum'
+      path: '/impressum'
+      fullPath: '/impressum'
+      preLoaderRoute: typeof ImpressumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/platform': {
+      id: '/platform'
+      path: '/platform'
+      fullPath: '/platform'
+      preLoaderRoute: typeof PlatformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/website': {
+      id: '/website'
+      path: '/website'
+      fullPath: '/website'
+      preLoaderRoute: typeof WebsiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflow-packs': {
+      id: '/workflow-packs'
+      path: '/workflow-packs'
+      fullPath: '/workflow-packs'
+      preLoaderRoute: typeof WorkflowPacksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app': {
@@ -871,6 +1225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/landlord': {
+      id: '/_authenticated/landlord'
+      path: '/landlord'
+      fullPath: '/landlord'
+      preLoaderRoute: typeof AuthenticatedLandlordRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/'
@@ -878,214 +1239,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/platform/runtime': {
-      id: '/api/platform/runtime'
-      path: '/api/platform/runtime'
-      fullPath: '/api/platform/runtime'
-      preLoaderRoute: typeof ApiPlatformRuntimeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/platform/order-intake': {
-      id: '/api/platform/order-intake'
-      path: '/api/platform/order-intake'
-      fullPath: '/api/platform/order-intake'
-      preLoaderRoute: typeof ApiPlatformOrderIntakeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/platform/crm': {
-      id: '/api/platform/crm'
-      path: '/api/platform/crm'
-      fullPath: '/api/platform/crm'
-      preLoaderRoute: typeof ApiPlatformCrmRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/platform/agent': {
-      id: '/api/platform/agent'
-      path: '/api/platform/agent'
-      fullPath: '/api/platform/agent'
-      preLoaderRoute: typeof ApiPlatformAgentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/integrations/gateway': {
-      id: '/api/integrations/gateway'
-      path: '/api/integrations/gateway'
-      fullPath: '/api/integrations/gateway'
-      preLoaderRoute: typeof ApiIntegrationsGatewayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/integrations/events': {
-      id: '/api/integrations/events'
-      path: '/api/integrations/events'
-      fullPath: '/api/integrations/events'
-      preLoaderRoute: typeof ApiIntegrationsEventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/control-plane/tenant-snapshot': {
-      id: '/api/control-plane/tenant-snapshot'
-      path: '/api/control-plane/tenant-snapshot'
-      fullPath: '/api/control-plane/tenant-snapshot'
-      preLoaderRoute: typeof ApiControlPlaneTenantSnapshotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/app/workflows': {
-      id: '/_authenticated/app/workflows'
-      path: '/workflows'
-      fullPath: '/app/workflows'
-      preLoaderRoute: typeof AuthenticatedAppWorkflowsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/whatsapp': {
-      id: '/_authenticated/app/whatsapp'
-      path: '/whatsapp'
-      fullPath: '/app/whatsapp'
-      preLoaderRoute: typeof AuthenticatedAppWhatsappRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/vertical-packages': {
-      id: '/_authenticated/app/vertical-packages'
-      path: '/vertical-packages'
-      fullPath: '/app/vertical-packages'
-      preLoaderRoute: typeof AuthenticatedAppVerticalPackagesRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/utilities': {
-      id: '/_authenticated/app/utilities'
-      path: '/utilities'
-      fullPath: '/app/utilities'
-      preLoaderRoute: typeof AuthenticatedAppUtilitiesRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/transformation': {
-      id: '/_authenticated/app/transformation'
-      path: '/transformation'
-      fullPath: '/app/transformation'
-      preLoaderRoute: typeof AuthenticatedAppTransformationRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/tenant-factory': {
-      id: '/_authenticated/app/tenant-factory'
-      path: '/tenant-factory'
-      fullPath: '/app/tenant-factory'
-      preLoaderRoute: typeof AuthenticatedAppTenantFactoryRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/settings': {
-      id: '/_authenticated/app/settings'
-      path: '/settings'
-      fullPath: '/app/settings'
-      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/procurement-readiness': {
-      id: '/_authenticated/app/procurement-readiness'
-      path: '/procurement-readiness'
-      fullPath: '/app/procurement-readiness'
-      preLoaderRoute: typeof AuthenticatedAppProcurementReadinessRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/platform-kernel': {
-      id: '/_authenticated/app/platform-kernel'
-      path: '/platform-kernel'
-      fullPath: '/app/platform-kernel'
-      preLoaderRoute: typeof AuthenticatedAppPlatformKernelRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/partners': {
-      id: '/_authenticated/app/partners'
-      path: '/partners'
-      fullPath: '/app/partners'
-      preLoaderRoute: typeof AuthenticatedAppPartnersRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/order-intake': {
-      id: '/_authenticated/app/order-intake'
-      path: '/order-intake'
-      fullPath: '/app/order-intake'
-      preLoaderRoute: typeof AuthenticatedAppOrderIntakeRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/migration-factory': {
-      id: '/_authenticated/app/migration-factory'
-      path: '/migration-factory'
-      fullPath: '/app/migration-factory'
-      preLoaderRoute: typeof AuthenticatedAppMigrationFactoryRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/integrations': {
-      id: '/_authenticated/app/integrations'
-      path: '/integrations'
-      fullPath: '/app/integrations'
-      preLoaderRoute: typeof AuthenticatedAppIntegrationsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/inbox': {
-      id: '/_authenticated/app/inbox'
-      path: '/inbox'
-      fullPath: '/app/inbox'
-      preLoaderRoute: typeof AuthenticatedAppInboxRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/feedback': {
-      id: '/_authenticated/app/feedback'
-      path: '/feedback'
-      fullPath: '/app/feedback'
-      preLoaderRoute: typeof AuthenticatedAppFeedbackRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/dispatch': {
-      id: '/_authenticated/app/dispatch'
-      path: '/dispatch'
-      fullPath: '/app/dispatch'
-      preLoaderRoute: typeof AuthenticatedAppDispatchRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/crm': {
-      id: '/_authenticated/app/crm'
-      path: '/crm'
-      fullPath: '/app/crm'
-      preLoaderRoute: typeof AuthenticatedAppCrmRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/control-plane': {
-      id: '/_authenticated/app/control-plane'
-      path: '/control-plane'
-      fullPath: '/app/control-plane'
-      preLoaderRoute: typeof AuthenticatedAppControlPlaneRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/contacts': {
-      id: '/_authenticated/app/contacts'
-      path: '/contacts'
-      fullPath: '/app/contacts'
-      preLoaderRoute: typeof AuthenticatedAppContactsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/compliance-intelligence': {
-      id: '/_authenticated/app/compliance-intelligence'
-      path: '/compliance-intelligence'
-      fullPath: '/app/compliance-intelligence'
-      preLoaderRoute: typeof AuthenticatedAppComplianceIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/commerce': {
-      id: '/_authenticated/app/commerce'
-      path: '/commerce'
-      fullPath: '/app/commerce'
-      preLoaderRoute: typeof AuthenticatedAppCommerceRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/cases': {
-      id: '/_authenticated/app/cases'
-      path: '/cases'
-      fullPath: '/app/cases'
-      preLoaderRoute: typeof AuthenticatedAppCasesRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/campaigns': {
-      id: '/_authenticated/app/campaigns'
-      path: '/campaigns'
-      fullPath: '/app/campaigns'
-      preLoaderRoute: typeof AuthenticatedAppCampaignsRouteImport
+    '/_authenticated/app/access-control': {
+      id: '/_authenticated/app/access-control'
+      path: '/access-control'
+      fullPath: '/app/access-control'
+      preLoaderRoute: typeof AuthenticatedAppAccessControlRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/analytics': {
@@ -1095,6 +1253,377 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAnalyticsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/automotive': {
+      id: '/_authenticated/app/automotive'
+      path: '/automotive'
+      fullPath: '/app/automotive'
+      preLoaderRoute: typeof AuthenticatedAppAutomotiveRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/campaigns': {
+      id: '/_authenticated/app/campaigns'
+      path: '/campaigns'
+      fullPath: '/app/campaigns'
+      preLoaderRoute: typeof AuthenticatedAppCampaignsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/cases': {
+      id: '/_authenticated/app/cases'
+      path: '/cases'
+      fullPath: '/app/cases'
+      preLoaderRoute: typeof AuthenticatedAppCasesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/childcare': {
+      id: '/_authenticated/app/childcare'
+      path: '/childcare'
+      fullPath: '/app/childcare'
+      preLoaderRoute: typeof AuthenticatedAppChildcareRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/commerce': {
+      id: '/_authenticated/app/commerce'
+      path: '/commerce'
+      fullPath: '/app/commerce'
+      preLoaderRoute: typeof AuthenticatedAppCommerceRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/compliance-intelligence': {
+      id: '/_authenticated/app/compliance-intelligence'
+      path: '/compliance-intelligence'
+      fullPath: '/app/compliance-intelligence'
+      preLoaderRoute: typeof AuthenticatedAppComplianceIntelligenceRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/connected-operations': {
+      id: '/_authenticated/app/connected-operations'
+      path: '/connected-operations'
+      fullPath: '/app/connected-operations'
+      preLoaderRoute: typeof AuthenticatedAppConnectedOperationsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/connector-hub': {
+      id: '/_authenticated/app/connector-hub'
+      path: '/connector-hub'
+      fullPath: '/app/connector-hub'
+      preLoaderRoute: typeof AuthenticatedAppConnectorHubRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/contact-centre': {
+      id: '/_authenticated/app/contact-centre'
+      path: '/contact-centre'
+      fullPath: '/app/contact-centre'
+      preLoaderRoute: typeof AuthenticatedAppContactCentreRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/contacts': {
+      id: '/_authenticated/app/contacts'
+      path: '/contacts'
+      fullPath: '/app/contacts'
+      preLoaderRoute: typeof AuthenticatedAppContactsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/control-plane': {
+      id: '/_authenticated/app/control-plane'
+      path: '/control-plane'
+      fullPath: '/app/control-plane'
+      preLoaderRoute: typeof AuthenticatedAppControlPlaneRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/creative-studio': {
+      id: '/_authenticated/app/creative-studio'
+      path: '/creative-studio'
+      fullPath: '/app/creative-studio'
+      preLoaderRoute: typeof AuthenticatedAppCreativeStudioRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/crm': {
+      id: '/_authenticated/app/crm'
+      path: '/crm'
+      fullPath: '/app/crm'
+      preLoaderRoute: typeof AuthenticatedAppCrmRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/daily-brief': {
+      id: '/_authenticated/app/daily-brief'
+      path: '/daily-brief'
+      fullPath: '/app/daily-brief'
+      preLoaderRoute: typeof AuthenticatedAppDailyBriefRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/decision-intelligence': {
+      id: '/_authenticated/app/decision-intelligence'
+      path: '/decision-intelligence'
+      fullPath: '/app/decision-intelligence'
+      preLoaderRoute: typeof AuthenticatedAppDecisionIntelligenceRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/dispatch': {
+      id: '/_authenticated/app/dispatch'
+      path: '/dispatch'
+      fullPath: '/app/dispatch'
+      preLoaderRoute: typeof AuthenticatedAppDispatchRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/embedded-finance': {
+      id: '/_authenticated/app/embedded-finance'
+      path: '/embedded-finance'
+      fullPath: '/app/embedded-finance'
+      preLoaderRoute: typeof AuthenticatedAppEmbeddedFinanceRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/feedback': {
+      id: '/_authenticated/app/feedback'
+      path: '/feedback'
+      fullPath: '/app/feedback'
+      preLoaderRoute: typeof AuthenticatedAppFeedbackRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/finance-ai': {
+      id: '/_authenticated/app/finance-ai'
+      path: '/finance-ai'
+      fullPath: '/app/finance-ai'
+      preLoaderRoute: typeof AuthenticatedAppFinanceAiRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/franchise-sales': {
+      id: '/_authenticated/app/franchise-sales'
+      path: '/franchise-sales'
+      fullPath: '/app/franchise-sales'
+      preLoaderRoute: typeof AuthenticatedAppFranchiseSalesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/growth-lab': {
+      id: '/_authenticated/app/growth-lab'
+      path: '/growth-lab'
+      fullPath: '/app/growth-lab'
+      preLoaderRoute: typeof AuthenticatedAppGrowthLabRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/identity': {
+      id: '/_authenticated/app/identity'
+      path: '/identity'
+      fullPath: '/app/identity'
+      preLoaderRoute: typeof AuthenticatedAppIdentityRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/inbox': {
+      id: '/_authenticated/app/inbox'
+      path: '/inbox'
+      fullPath: '/app/inbox'
+      preLoaderRoute: typeof AuthenticatedAppInboxRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/integrations': {
+      id: '/_authenticated/app/integrations'
+      path: '/integrations'
+      fullPath: '/app/integrations'
+      preLoaderRoute: typeof AuthenticatedAppIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/intelligence': {
+      id: '/_authenticated/app/intelligence'
+      path: '/intelligence'
+      fullPath: '/app/intelligence'
+      preLoaderRoute: typeof AuthenticatedAppIntelligenceRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/migration-factory': {
+      id: '/_authenticated/app/migration-factory'
+      path: '/migration-factory'
+      fullPath: '/app/migration-factory'
+      preLoaderRoute: typeof AuthenticatedAppMigrationFactoryRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/order-intake': {
+      id: '/_authenticated/app/order-intake'
+      path: '/order-intake'
+      fullPath: '/app/order-intake'
+      preLoaderRoute: typeof AuthenticatedAppOrderIntakeRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/partners': {
+      id: '/_authenticated/app/partners'
+      path: '/partners'
+      fullPath: '/app/partners'
+      preLoaderRoute: typeof AuthenticatedAppPartnersRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/platform-depth': {
+      id: '/_authenticated/app/platform-depth'
+      path: '/platform-depth'
+      fullPath: '/app/platform-depth'
+      preLoaderRoute: typeof AuthenticatedAppPlatformDepthRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/platform-kernel': {
+      id: '/_authenticated/app/platform-kernel'
+      path: '/platform-kernel'
+      fullPath: '/app/platform-kernel'
+      preLoaderRoute: typeof AuthenticatedAppPlatformKernelRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/procurement-readiness': {
+      id: '/_authenticated/app/procurement-readiness'
+      path: '/procurement-readiness'
+      fullPath: '/app/procurement-readiness'
+      preLoaderRoute: typeof AuthenticatedAppProcurementReadinessRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/regulatory-monitoring': {
+      id: '/_authenticated/app/regulatory-monitoring'
+      path: '/regulatory-monitoring'
+      fullPath: '/app/regulatory-monitoring'
+      preLoaderRoute: typeof AuthenticatedAppRegulatoryMonitoringRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/settings': {
+      id: '/_authenticated/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/shared-engines': {
+      id: '/_authenticated/app/shared-engines'
+      path: '/shared-engines'
+      fullPath: '/app/shared-engines'
+      preLoaderRoute: typeof AuthenticatedAppSharedEnginesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/tenant-factory': {
+      id: '/_authenticated/app/tenant-factory'
+      path: '/tenant-factory'
+      fullPath: '/app/tenant-factory'
+      preLoaderRoute: typeof AuthenticatedAppTenantFactoryRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/transformation': {
+      id: '/_authenticated/app/transformation'
+      path: '/transformation'
+      fullPath: '/app/transformation'
+      preLoaderRoute: typeof AuthenticatedAppTransformationRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/utilities': {
+      id: '/_authenticated/app/utilities'
+      path: '/utilities'
+      fullPath: '/app/utilities'
+      preLoaderRoute: typeof AuthenticatedAppUtilitiesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/vertical-packages': {
+      id: '/_authenticated/app/vertical-packages'
+      path: '/vertical-packages'
+      fullPath: '/app/vertical-packages'
+      preLoaderRoute: typeof AuthenticatedAppVerticalPackagesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/whatsapp': {
+      id: '/_authenticated/app/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/app/whatsapp'
+      preLoaderRoute: typeof AuthenticatedAppWhatsappRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/workflows': {
+      id: '/_authenticated/app/workflows'
+      path: '/workflows'
+      fullPath: '/app/workflows'
+      preLoaderRoute: typeof AuthenticatedAppWorkflowsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/api/control-plane/tenant-snapshot': {
+      id: '/api/control-plane/tenant-snapshot'
+      path: '/api/control-plane/tenant-snapshot'
+      fullPath: '/api/control-plane/tenant-snapshot'
+      preLoaderRoute: typeof ApiControlPlaneTenantSnapshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/haccora/bridge': {
+      id: '/api/haccora/bridge'
+      path: '/api/haccora/bridge'
+      fullPath: '/api/haccora/bridge'
+      preLoaderRoute: typeof ApiHaccoraBridgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/events': {
+      id: '/api/integrations/events'
+      path: '/api/integrations/events'
+      fullPath: '/api/integrations/events'
+      preLoaderRoute: typeof ApiIntegrationsEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/gateway': {
+      id: '/api/integrations/gateway'
+      path: '/api/integrations/gateway'
+      fullPath: '/api/integrations/gateway'
+      preLoaderRoute: typeof ApiIntegrationsGatewayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/agent': {
+      id: '/api/platform/agent'
+      path: '/api/platform/agent'
+      fullPath: '/api/platform/agent'
+      preLoaderRoute: typeof ApiPlatformAgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/business-intelligence': {
+      id: '/api/platform/business-intelligence'
+      path: '/api/platform/business-intelligence'
+      fullPath: '/api/platform/business-intelligence'
+      preLoaderRoute: typeof ApiPlatformBusinessIntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/crm': {
+      id: '/api/platform/crm'
+      path: '/api/platform/crm'
+      fullPath: '/api/platform/crm'
+      preLoaderRoute: typeof ApiPlatformCrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/delivery': {
+      id: '/api/platform/delivery'
+      path: '/api/platform/delivery'
+      fullPath: '/api/platform/delivery'
+      preLoaderRoute: typeof ApiPlatformDeliveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/intelligence': {
+      id: '/api/platform/intelligence'
+      path: '/api/platform/intelligence'
+      fullPath: '/api/platform/intelligence'
+      preLoaderRoute: typeof ApiPlatformIntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/order-intake': {
+      id: '/api/platform/order-intake'
+      path: '/api/platform/order-intake'
+      fullPath: '/api/platform/order-intake'
+      preLoaderRoute: typeof ApiPlatformOrderIntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/runtime': {
+      id: '/api/platform/runtime'
+      path: '/api/platform/runtime'
+      fullPath: '/api/platform/runtime'
+      preLoaderRoute: typeof ApiPlatformRuntimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/feedback': {
+      id: '/api/public/feedback'
+      path: '/api/public/feedback'
+      fullPath: '/api/public/feedback'
+      preLoaderRoute: typeof ApiPublicFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/network-expansion': {
+      id: '/api/public/network-expansion'
+      path: '/api/public/network-expansion'
+      fullPath: '/api/public/network-expansion'
+      preLoaderRoute: typeof ApiPublicNetworkExpansionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/cases/': {
       id: '/_authenticated/app/cases/'
       path: '/'
@@ -1102,39 +1631,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCasesIndexRouteImport
       parentRoute: typeof AuthenticatedAppCasesRoute
     }
-    '/api/public/whatsapp/webhook': {
-      id: '/api/public/whatsapp/webhook'
-      path: '/api/public/whatsapp/webhook'
-      fullPath: '/api/public/whatsapp/webhook'
-      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/cases/$caseId': {
+      id: '/_authenticated/app/cases/$caseId'
+      path: '/$caseId'
+      fullPath: '/app/cases/$caseId'
+      preLoaderRoute: typeof AuthenticatedAppCasesCaseIdRouteImport
+      parentRoute: typeof AuthenticatedAppCasesRoute
     }
-    '/api/public/twilio/order-intake': {
-      id: '/api/public/twilio/order-intake'
-      path: '/api/public/twilio/order-intake'
-      fullPath: '/api/public/twilio/order-intake'
-      preLoaderRoute: typeof ApiPublicTwilioOrderIntakeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/track/$token': {
-      id: '/api/public/track/$token'
-      path: '/api/public/track/$token'
-      fullPath: '/api/public/track/$token'
-      preLoaderRoute: typeof ApiPublicTrackTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/integrations/runs/$runId': {
-      id: '/api/integrations/runs/$runId'
-      path: '/api/integrations/runs/$runId'
-      fullPath: '/api/integrations/runs/$runId'
-      preLoaderRoute: typeof ApiIntegrationsRunsRunIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/integrations/haccora/$connectionId': {
-      id: '/api/integrations/haccora/$connectionId'
-      path: '/api/integrations/haccora/$connectionId'
-      fullPath: '/api/integrations/haccora/$connectionId'
-      preLoaderRoute: typeof ApiIntegrationsHaccoraConnectionIdRouteImport
+    '/api/control-plane/workers/provisioning': {
+      id: '/api/control-plane/workers/provisioning'
+      path: '/api/control-plane/workers/provisioning'
+      fullPath: '/api/control-plane/workers/provisioning'
+      preLoaderRoute: typeof ApiControlPlaneWorkersProvisioningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/connect/events': {
@@ -1144,19 +1652,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsConnectEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/control-plane/workers/provisioning': {
-      id: '/api/control-plane/workers/provisioning'
-      path: '/api/control-plane/workers/provisioning'
-      fullPath: '/api/control-plane/workers/provisioning'
-      preLoaderRoute: typeof ApiControlPlaneWorkersProvisioningRouteImport
+    '/api/integrations/haccora/$connectionId': {
+      id: '/api/integrations/haccora/$connectionId'
+      path: '/api/integrations/haccora/$connectionId'
+      fullPath: '/api/integrations/haccora/$connectionId'
+      preLoaderRoute: typeof ApiIntegrationsHaccoraConnectionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/app/cases/$caseId': {
-      id: '/_authenticated/app/cases/$caseId'
-      path: '/$caseId'
-      fullPath: '/app/cases/$caseId'
-      preLoaderRoute: typeof AuthenticatedAppCasesCaseIdRouteImport
-      parentRoute: typeof AuthenticatedAppCasesRoute
+    '/api/integrations/runs/$runId': {
+      id: '/api/integrations/runs/$runId'
+      path: '/api/integrations/runs/$runId'
+      fullPath: '/api/integrations/runs/$runId'
+      preLoaderRoute: typeof ApiIntegrationsRunsRunIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/webhooks/drain': {
+      id: '/api/platform/webhooks/drain'
+      path: '/api/platform/webhooks/drain'
+      fullPath: '/api/platform/webhooks/drain'
+      preLoaderRoute: typeof ApiPlatformWebhooksDrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/track/$token': {
+      id: '/api/public/track/$token'
+      path: '/api/public/track/$token'
+      fullPath: '/api/public/track/$token'
+      preLoaderRoute: typeof ApiPublicTrackTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/twilio/order-intake': {
+      id: '/api/public/twilio/order-intake'
+      path: '/api/public/twilio/order-intake'
+      fullPath: '/api/public/twilio/order-intake'
+      preLoaderRoute: typeof ApiPublicTwilioOrderIntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/verticals/lessonahead/runtime': {
+      id: '/api/verticals/lessonahead/runtime'
+      path: '/api/verticals/lessonahead/runtime'
+      fullPath: '/api/verticals/lessonahead/runtime'
+      preLoaderRoute: typeof ApiVerticalsLessonaheadRuntimeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/integrations/runs/$runId/context': {
       id: '/api/integrations/runs/$runId/context'
@@ -1184,24 +1727,42 @@ const AuthenticatedAppCasesRouteWithChildren =
   )
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAccessControlRoute: typeof AuthenticatedAppAccessControlRoute
   AuthenticatedAppAnalyticsRoute: typeof AuthenticatedAppAnalyticsRoute
+  AuthenticatedAppAutomotiveRoute: typeof AuthenticatedAppAutomotiveRoute
   AuthenticatedAppCampaignsRoute: typeof AuthenticatedAppCampaignsRoute
   AuthenticatedAppCasesRoute: typeof AuthenticatedAppCasesRouteWithChildren
+  AuthenticatedAppChildcareRoute: typeof AuthenticatedAppChildcareRoute
   AuthenticatedAppCommerceRoute: typeof AuthenticatedAppCommerceRoute
   AuthenticatedAppComplianceIntelligenceRoute: typeof AuthenticatedAppComplianceIntelligenceRoute
+  AuthenticatedAppConnectedOperationsRoute: typeof AuthenticatedAppConnectedOperationsRoute
+  AuthenticatedAppConnectorHubRoute: typeof AuthenticatedAppConnectorHubRoute
+  AuthenticatedAppContactCentreRoute: typeof AuthenticatedAppContactCentreRoute
   AuthenticatedAppContactsRoute: typeof AuthenticatedAppContactsRoute
   AuthenticatedAppControlPlaneRoute: typeof AuthenticatedAppControlPlaneRoute
+  AuthenticatedAppCreativeStudioRoute: typeof AuthenticatedAppCreativeStudioRoute
   AuthenticatedAppCrmRoute: typeof AuthenticatedAppCrmRoute
+  AuthenticatedAppDailyBriefRoute: typeof AuthenticatedAppDailyBriefRoute
+  AuthenticatedAppDecisionIntelligenceRoute: typeof AuthenticatedAppDecisionIntelligenceRoute
   AuthenticatedAppDispatchRoute: typeof AuthenticatedAppDispatchRoute
+  AuthenticatedAppEmbeddedFinanceRoute: typeof AuthenticatedAppEmbeddedFinanceRoute
   AuthenticatedAppFeedbackRoute: typeof AuthenticatedAppFeedbackRoute
+  AuthenticatedAppFinanceAiRoute: typeof AuthenticatedAppFinanceAiRoute
+  AuthenticatedAppFranchiseSalesRoute: typeof AuthenticatedAppFranchiseSalesRoute
+  AuthenticatedAppGrowthLabRoute: typeof AuthenticatedAppGrowthLabRoute
+  AuthenticatedAppIdentityRoute: typeof AuthenticatedAppIdentityRoute
   AuthenticatedAppInboxRoute: typeof AuthenticatedAppInboxRoute
   AuthenticatedAppIntegrationsRoute: typeof AuthenticatedAppIntegrationsRoute
+  AuthenticatedAppIntelligenceRoute: typeof AuthenticatedAppIntelligenceRoute
   AuthenticatedAppMigrationFactoryRoute: typeof AuthenticatedAppMigrationFactoryRoute
   AuthenticatedAppOrderIntakeRoute: typeof AuthenticatedAppOrderIntakeRoute
   AuthenticatedAppPartnersRoute: typeof AuthenticatedAppPartnersRoute
+  AuthenticatedAppPlatformDepthRoute: typeof AuthenticatedAppPlatformDepthRoute
   AuthenticatedAppPlatformKernelRoute: typeof AuthenticatedAppPlatformKernelRoute
   AuthenticatedAppProcurementReadinessRoute: typeof AuthenticatedAppProcurementReadinessRoute
+  AuthenticatedAppRegulatoryMonitoringRoute: typeof AuthenticatedAppRegulatoryMonitoringRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppSharedEnginesRoute: typeof AuthenticatedAppSharedEnginesRoute
   AuthenticatedAppTenantFactoryRoute: typeof AuthenticatedAppTenantFactoryRoute
   AuthenticatedAppTransformationRoute: typeof AuthenticatedAppTransformationRoute
   AuthenticatedAppUtilitiesRoute: typeof AuthenticatedAppUtilitiesRoute
@@ -1212,26 +1773,47 @@ interface AuthenticatedAppRouteChildren {
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAccessControlRoute: AuthenticatedAppAccessControlRoute,
   AuthenticatedAppAnalyticsRoute: AuthenticatedAppAnalyticsRoute,
+  AuthenticatedAppAutomotiveRoute: AuthenticatedAppAutomotiveRoute,
   AuthenticatedAppCampaignsRoute: AuthenticatedAppCampaignsRoute,
   AuthenticatedAppCasesRoute: AuthenticatedAppCasesRouteWithChildren,
+  AuthenticatedAppChildcareRoute: AuthenticatedAppChildcareRoute,
   AuthenticatedAppCommerceRoute: AuthenticatedAppCommerceRoute,
   AuthenticatedAppComplianceIntelligenceRoute:
     AuthenticatedAppComplianceIntelligenceRoute,
+  AuthenticatedAppConnectedOperationsRoute:
+    AuthenticatedAppConnectedOperationsRoute,
+  AuthenticatedAppConnectorHubRoute: AuthenticatedAppConnectorHubRoute,
+  AuthenticatedAppContactCentreRoute: AuthenticatedAppContactCentreRoute,
   AuthenticatedAppContactsRoute: AuthenticatedAppContactsRoute,
   AuthenticatedAppControlPlaneRoute: AuthenticatedAppControlPlaneRoute,
+  AuthenticatedAppCreativeStudioRoute: AuthenticatedAppCreativeStudioRoute,
   AuthenticatedAppCrmRoute: AuthenticatedAppCrmRoute,
+  AuthenticatedAppDailyBriefRoute: AuthenticatedAppDailyBriefRoute,
+  AuthenticatedAppDecisionIntelligenceRoute:
+    AuthenticatedAppDecisionIntelligenceRoute,
   AuthenticatedAppDispatchRoute: AuthenticatedAppDispatchRoute,
+  AuthenticatedAppEmbeddedFinanceRoute: AuthenticatedAppEmbeddedFinanceRoute,
   AuthenticatedAppFeedbackRoute: AuthenticatedAppFeedbackRoute,
+  AuthenticatedAppFinanceAiRoute: AuthenticatedAppFinanceAiRoute,
+  AuthenticatedAppFranchiseSalesRoute: AuthenticatedAppFranchiseSalesRoute,
+  AuthenticatedAppGrowthLabRoute: AuthenticatedAppGrowthLabRoute,
+  AuthenticatedAppIdentityRoute: AuthenticatedAppIdentityRoute,
   AuthenticatedAppInboxRoute: AuthenticatedAppInboxRoute,
   AuthenticatedAppIntegrationsRoute: AuthenticatedAppIntegrationsRoute,
+  AuthenticatedAppIntelligenceRoute: AuthenticatedAppIntelligenceRoute,
   AuthenticatedAppMigrationFactoryRoute: AuthenticatedAppMigrationFactoryRoute,
   AuthenticatedAppOrderIntakeRoute: AuthenticatedAppOrderIntakeRoute,
   AuthenticatedAppPartnersRoute: AuthenticatedAppPartnersRoute,
+  AuthenticatedAppPlatformDepthRoute: AuthenticatedAppPlatformDepthRoute,
   AuthenticatedAppPlatformKernelRoute: AuthenticatedAppPlatformKernelRoute,
   AuthenticatedAppProcurementReadinessRoute:
     AuthenticatedAppProcurementReadinessRoute,
+  AuthenticatedAppRegulatoryMonitoringRoute:
+    AuthenticatedAppRegulatoryMonitoringRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppSharedEnginesRoute: AuthenticatedAppSharedEnginesRoute,
   AuthenticatedAppTenantFactoryRoute: AuthenticatedAppTenantFactoryRoute,
   AuthenticatedAppTransformationRoute: AuthenticatedAppTransformationRoute,
   AuthenticatedAppUtilitiesRoute: AuthenticatedAppUtilitiesRoute,
@@ -1246,10 +1828,12 @@ const AuthenticatedAppRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+  AuthenticatedLandlordRoute: typeof AuthenticatedLandlordRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+  AuthenticatedLandlordRoute: AuthenticatedLandlordRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -1285,21 +1869,29 @@ const rootRouteChildren: RootRouteChildren = {
   WebsiteRoute: WebsiteRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,
   ApiControlPlaneTenantSnapshotRoute: ApiControlPlaneTenantSnapshotRoute,
+  ApiHaccoraBridgeRoute: ApiHaccoraBridgeRoute,
   ApiIntegrationsEventsRoute: ApiIntegrationsEventsRoute,
   ApiIntegrationsGatewayRoute: ApiIntegrationsGatewayRoute,
   ApiPlatformAgentRoute: ApiPlatformAgentRoute,
+  ApiPlatformBusinessIntelligenceRoute: ApiPlatformBusinessIntelligenceRoute,
   ApiPlatformCrmRoute: ApiPlatformCrmRoute,
+  ApiPlatformDeliveryRoute: ApiPlatformDeliveryRoute,
+  ApiPlatformIntelligenceRoute: ApiPlatformIntelligenceRoute,
   ApiPlatformOrderIntakeRoute: ApiPlatformOrderIntakeRoute,
   ApiPlatformRuntimeRoute: ApiPlatformRuntimeRoute,
+  ApiPublicFeedbackRoute: ApiPublicFeedbackRoute,
+  ApiPublicNetworkExpansionRoute: ApiPublicNetworkExpansionRoute,
   ApiControlPlaneWorkersProvisioningRoute:
     ApiControlPlaneWorkersProvisioningRoute,
   ApiIntegrationsConnectEventsRoute: ApiIntegrationsConnectEventsRoute,
   ApiIntegrationsHaccoraConnectionIdRoute:
     ApiIntegrationsHaccoraConnectionIdRoute,
   ApiIntegrationsRunsRunIdRoute: ApiIntegrationsRunsRunIdRouteWithChildren,
+  ApiPlatformWebhooksDrainRoute: ApiPlatformWebhooksDrainRoute,
   ApiPublicTrackTokenRoute: ApiPublicTrackTokenRoute,
   ApiPublicTwilioOrderIntakeRoute: ApiPublicTwilioOrderIntakeRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
+  ApiVerticalsLessonaheadRuntimeRoute: ApiVerticalsLessonaheadRuntimeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
