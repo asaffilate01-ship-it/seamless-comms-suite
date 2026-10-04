@@ -567,6 +567,8 @@ CREATE INDEX IF NOT EXISTS sales_prospect_member_score_idx ON public.sales_prosp
 CREATE INDEX IF NOT EXISTS contact_centre_session_queue_idx ON public.contact_centre_sessions(tenant_id,status,started_at DESC);
 CREATE INDEX IF NOT EXISTS attribution_person_time_idx ON public.marketing_attribution_touchpoints(tenant_id,person_id,occurred_at DESC);
 CREATE INDEX IF NOT EXISTS company_memory_subject_idx ON public.company_memory_facts(tenant_id,subject_type,subject_ref,fact_key);
+ALTER TABLE public.education_students
+ ADD COLUMN IF NOT EXISTS risk_score numeric CHECK(risk_score IS NULL OR (risk_score>=0 AND risk_score<=100));
 CREATE INDEX IF NOT EXISTS education_student_status_idx ON public.education_students(tenant_id,product_key,status,risk_score DESC);
 
 -- Seed 38 reusable agent templates discussed in the original agent-library design.
