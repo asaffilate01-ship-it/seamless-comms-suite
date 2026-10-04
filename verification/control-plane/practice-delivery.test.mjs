@@ -69,7 +69,9 @@ await asService(()=>db.query("SELECT public.practice_record_provider_signature($
 const sigState=await asUser(portal,()=>db.query("SELECT status,signed_at FROM public.practice_signature_requests WHERE id=$1",[signature]));assert.equal(sigState.rows[0].status,"signed");assert(sigState.rows[0].signed_at);
 
 const deadline=(await asUser(admin,()=>db.query("INSERT INTO public.practice_deadlines(tenant_id,product_key,client_id,engagement_id,deadline_type,due_at,status,authority_ref) VALUES($1,'mealdeck',$2,$3,'accounts-filing',now()+interval '10 days','due','Authority') RETURNING id",[tenant.tenantId,client,engagement]))).rows[0].id;
-const submission=(await asUser(admin,()=>db.query("INSERT INTO public.practice_submissions(tenant_id,product_key,client_id,engagement_id,deadline_id,submission_type,authority,status,approved_by,approved_at) VALUES($1,'mealdeck',$2,$3,$4,'accounts','Authority','approved',$5,now()) RETURNING id",[tenant.tenantId,client,engagement,deadline,admin]))).rows[0].id;
+const submission=(await asUser(admin,()=>db.query("INSERT INTO public.practice_submissions(tenant_id,product_key,client_id,engagement_id,deadline_id,submission_type,authority,status) VALUES($1,'mealdeck',$2,$3,$4,'accounts','Authority','review') RETURNING id",[tenant.tenantId,client,engagement,deadline]))).rows[0].id;
+await assert.rejects(()=>asUser(admin,()=>db.query("UPDATE public.practice_submissions SET status='approved' WHERE id=$1",[submission])),e=>e.code==="42501");
+await asUser(admin,()=>db.query("SELECT public.practice_approve_submission($1)",[submission]));
 await assert.rejects(()=>asUser(admin,()=>db.query("UPDATE public.practice_submissions SET status='accepted' WHERE id=$1",[submission])),e=>e.code==="42501");
 await asService(()=>db.query("SELECT public.practice_record_provider_submission($1,'submitted','provider-file-1','{}'::jsonb,NULL)",[submission]));
 await asService(()=>db.query("SELECT public.practice_record_provider_submission($1,'accepted','provider-file-1','{\"accepted\":true}'::jsonb,NULL)",[submission]));
