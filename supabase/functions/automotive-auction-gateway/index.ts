@@ -697,6 +697,13 @@ Deno.serve(async req=>{
     if(body.action==="intelligence.evaluate")return json({ok:true,...await recalculateAuctionDecision(String(body.auctionLotId??""))});
     if(body.action==="intelligence.requeue")return json({ok:true,...await requeueAuctionIntelligence(body)});
     if(body.action==="intelligence.review")return json({ok:true,decision:await reviewAuctionDecision(body)});
+    if(body.action==="learning.correct_extraction")return json({ok:true,...await correctAuctionExtraction(body)});
+    if(body.action==="prediction.refresh")return json({ok:true,...await predictionForLot(String(body.auctionLotId??""))});
+    if(body.action==="watch.save")return json({ok:true,watch:await saveWatchRule(body)});
+    if(body.action==="watch.list")return json({ok:true,watches:await listWatchRules()});
+    if(body.action==="watch.update")return json({ok:true,watch:await updateWatchRule(body)});
+    if(body.action==="watch.matches")return json({ok:true,matches:await listWatchMatches(body)});
+    if(body.action==="watch.match_status")return json({ok:true,match:await markWatchMatch(body)});
     if(body.action==="history"){
       if(!body.chassisNumber)return json({error:"chassisNumber is required"},400);
       return json({ok:true,...await history(String(body.chassisNumber),Number(body.days??90))});
