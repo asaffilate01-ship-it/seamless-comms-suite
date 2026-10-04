@@ -138,24 +138,39 @@ export const upsertAuctionLot=createServerFn({method:"POST"}).middleware([requir
 });
 
 const bid=scope.extend({auctionLotId:uuid,destinationCountry:z.string().min(2).max(3),currency:z.string().regex(/^[A-Z]{3}$/),
+ sourceCurrency:z.string().regex(/^[A-Z]{3}$/).nullish(),
  auctionFeesMinor:z.number().int().min(0).default(0),inlandTransportMinor:z.number().int().min(0).default(0),
  freightMinor:z.number().int().min(0).default(0),insuranceMinor:z.number().int().min(0).default(0),dutyMinor:z.number().int().min(0).default(0),
  taxMinor:z.number().int().min(0).default(0),registrationMinor:z.number().int().min(0).default(0),otherMinor:z.number().int().min(0).default(0),
  targetMarginMinor:z.number().int().min(0).default(0),targetRetailMinor:z.number().int().min(0),fxRate:z.number().positive().nullish(),
  fxSource:z.string().max(160).nullish(),fxAsOf:z.string().datetime().nullish(),assumptions:z.record(z.string(),z.unknown()).default({})});
+const currencyExponent=(currency:string)=>currency==="JPY"?0:2;
 export const createBidModel=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:z.input<typeof bid>)=>bid.parse(i)).handler(async({context,data})=>{
  const a=await requireService(context,data.tenantId,"omniqora.automotive");requireWriteRole(a.role);
  const nonPurchase=data.auctionFeesMinor+data.inlandTransportMinor+data.freightMinor+data.insuranceMinor+data.dutyMinor+data.taxMinor+
   data.registrationMinor+data.otherMinor+data.targetMarginMinor;
  const maxBid=Math.max(0,data.targetRetailMinor-nonPurchase);
+ const sourceCurrency=data.sourceCurrency??data.currency;
+ let maxBidSourceMinor:number|null=maxBid;
+ if(sourceCurrency!==data.currency){
+  if(!data.fxRate)maxBidSourceMinor=null;
+  else{
+   const settlementMajor=maxBid/10**currencyExponent(data.currency);
+   const sourceMajor=settlementMajor*data.fxRate;
+   maxBidSourceMinor=Math.max(0,Math.round(sourceMajor*10**currencyExponent(sourceCurrency)));
+  }
+ }
+ const modelStatus=sourceCurrency===data.currency||maxBidSourceMinor!==null?"review":"draft";
+ const assumptions={...data.assumptions,fxDirection:"source_per_settlement",settlementCurrency:data.currency,sourceCurrency};
  const {data:row,error}=await(context.supabase as any).from("automotive_bid_models").insert({tenant_id:data.tenantId,product_key:data.productKey,
   auction_lot_id:data.auctionLotId,destination_country:data.destinationCountry,fx_rate:data.fxRate??null,fx_source:data.fxSource??null,
   fx_as_of:data.fxAsOf??null,purchase_cost_minor:0,auction_fees_minor:data.auctionFeesMinor,inland_transport_minor:data.inlandTransportMinor,
   freight_minor:data.freightMinor,insurance_minor:data.insuranceMinor,duty_minor:data.dutyMinor,tax_minor:data.taxMinor,
   registration_minor:data.registrationMinor,other_minor:data.otherMinor,target_margin_minor:data.targetMarginMinor,target_retail_minor:data.targetRetailMinor,
-  max_bid_minor:maxBid,currency:data.currency,assumptions:data.assumptions,status:"review"}).select("*").single();if(error)throw new Error(error.message);
- return{...row,computedMaxBidMinor:maxBid};
+  max_bid_minor:maxBid,max_bid_source_minor:maxBidSourceMinor,source_currency:sourceCurrency,currency:data.currency,assumptions,status:modelStatus}).select("*").single();
+ if(error)throw new Error(error.message);
+ return{...row,computedMaxBidMinor:maxBid,computedMaxBidSourceMinor:maxBidSourceMinor,fxDirection:"source_per_settlement"};
 });
 
 const fitment=scope.extend({partRef:z.string().min(1).max(160),vehicleId:uuid.nullish(),make:z.string().max(120).nullish(),
