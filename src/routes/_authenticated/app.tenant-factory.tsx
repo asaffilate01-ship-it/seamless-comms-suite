@@ -20,6 +20,7 @@ import {
   linkTenantProduct,
   rotateProductCredential,
   retryHaccoraProvisioning,
+  requestTenantDomainVerification,
   runHaccoraPilotSmokeTest,
   runHaccoraSmokeTest,
   saveTenantBranding,
@@ -79,6 +80,7 @@ function ControlPlane() {
   const rotateCredentialRequest = useServerFn(rotateProductCredential);
   const saveBrandingRequest = useServerFn(saveTenantBranding);
   const saveDomainRequest = useServerFn(upsertTenantDomain);
+  const verifyDomainRequest = useServerFn(requestTenantDomainVerification);
 
   const catalogue = useQuery({
     queryKey: ["control-plane-catalogue"],
@@ -131,8 +133,12 @@ function ControlPlane() {
   const [creating, setCreating] = useState(false);
   const [bootstrappingDishbee, setBootstrappingDishbee] = useState(false);
   const [bootstrappingHaccora, setBootstrappingHaccora] = useState(false);
-  const [haccoraSmoke, setHaccoraSmoke] = useState<Awaited<ReturnType<typeof haccoraSmokeRequest>> | null>(null);
-  const [pilotSmoke, setPilotSmoke] = useState<Awaited<ReturnType<typeof haccoraPilotSmokeRequest>> | null>(null);
+  const [haccoraSmoke, setHaccoraSmoke] = useState<Awaited<
+    ReturnType<typeof haccoraSmokeRequest>
+  > | null>(null);
+  const [pilotSmoke, setPilotSmoke] = useState<Awaited<
+    ReturnType<typeof haccoraPilotSmokeRequest>
+  > | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const enabledProducts = useMemo(
@@ -153,8 +159,13 @@ function ControlPlane() {
       ),
     [detail.data?.services],
   );
-  const enabledEcosystemAddons=useMemo(
-    ()=>new Set((detail.data?.ecosystemAddons??[]).filter(a=>!["cancelled","suspended"].includes(a.status)).map(a=>a.addon_key)),
+  const enabledEcosystemAddons = useMemo(
+    () =>
+      new Set(
+        (detail.data?.ecosystemAddons ?? [])
+          .filter((a) => !["cancelled", "suspended"].includes(a.status))
+          .map((a) => a.addon_key),
+      ),
     [detail.data?.ecosystemAddons],
   );
 
@@ -220,7 +231,8 @@ function ControlPlane() {
     try {
       const result = await haccoraPilotSmokeRequest();
       setPilotSmoke(result);
-      if (result.overall === "pass") toast.success("All three Haccora pilot tenants passed live checks");
+      if (result.overall === "pass")
+        toast.success("All three Haccora pilot tenants passed live checks");
       else toast.warning("One or more Haccora pilot tenants still have rollout blockers");
     } catch (e) {
       setPilotSmoke(null);
@@ -249,7 +261,11 @@ function ControlPlane() {
     setBusyKey("haccora:retry");
     try {
       const result = await retryHaccoraRequest({ data: { tenantId: selectedTenantId } });
-      toast.success(result.queued ? `Requeued ${result.queued} Haccora job(s)` : "No failed Haccora jobs to retry");
+      toast.success(
+        result.queued
+          ? `Requeued ${result.queued} Haccora job(s)`
+          : "No failed Haccora jobs to retry",
+      );
       await refreshTenant();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Haccora retry failed");
@@ -301,14 +317,21 @@ function ControlPlane() {
     }
   }
 
-  async function toggleEcosystemAddon(hostProductKey:string,addonKey:string,enabled:boolean){
+  async function toggleEcosystemAddon(hostProductKey: string, addonKey: string, enabled: boolean) {
     setBusyKey(`ecosystem:${addonKey}`);
-    try{
-      await setEcosystemAddonRequest({data:{tenantId:selectedTenantId,hostProductKey,addonKey,enabled}});
-      toast.success(enabled?"Ecosystem add-on requested":"Ecosystem add-on removed from this product");
+    try {
+      await setEcosystemAddonRequest({
+        data: { tenantId: selectedTenantId, hostProductKey, addonKey, enabled },
+      });
+      toast.success(
+        enabled ? "Ecosystem add-on requested" : "Ecosystem add-on removed from this product",
+      );
       await refreshTenant();
-    }catch(e){toast.error(e instanceof Error?e.message:"Ecosystem add-on update failed")}
-    finally{setBusyKey(null)}
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ecosystem add-on update failed");
+    } finally {
+      setBusyKey(null);
+    }
   }
 
   const tenantLabel = detail.data?.tenant?.name ?? current.name ?? "Workspace";
@@ -353,42 +376,81 @@ function ControlPlane() {
           <CardContent className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-primary/10 p-2"><ShieldCheck className="h-4 w-4 text-primary" /></div>
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                </div>
                 <div>
                   <h2 className="font-display text-lg font-semibold">Haccora readiness</h2>
                   <p className="text-sm text-muted-foreground">
-                    Dishbee add-on provisioning, connector verification, compliance services and governed AI readiness.
+                    Dishbee add-on provisioning, connector verification, compliance services and
+                    governed AI readiness.
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={runSelectedHaccoraSmoke} disabled={busyKey === "haccora:smoke"}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={runSelectedHaccoraSmoke}
+                  disabled={busyKey === "haccora:smoke"}
+                >
                   {busyKey === "haccora:smoke" ? "Checking…" : "Run live check"}
                 </Button>
                 {isPlatformAdmin && haccoraReadiness.data?.productStatus === "not_requested" && (
-                  <Button size="sm" onClick={enableSelectedHaccora} disabled={busyKey === "haccora:enable"}>
+                  <Button
+                    size="sm"
+                    onClick={enableSelectedHaccora}
+                    disabled={busyKey === "haccora:enable"}
+                  >
                     Enable Haccora + AI
                   </Button>
                 )}
-                {isPlatformAdmin && ((haccoraReadiness.data?.jobs.failed ?? 0) > 0 || (haccoraReadiness.data?.jobs.blocked ?? 0) > 0) && (
-                  <Button size="sm" variant="outline" onClick={retrySelectedHaccora} disabled={busyKey === "haccora:retry"}>
-                    Retry failed / blocked
-                  </Button>
-                )}
+                {isPlatformAdmin &&
+                  ((haccoraReadiness.data?.jobs.failed ?? 0) > 0 ||
+                    (haccoraReadiness.data?.jobs.blocked ?? 0) > 0) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={retrySelectedHaccora}
+                      disabled={busyKey === "haccora:retry"}
+                    >
+                      Retry failed / blocked
+                    </Button>
+                  )}
               </div>
             </div>
             {haccoraReadiness.isLoading ? (
               <p className="mt-4 text-sm text-muted-foreground">Checking Haccora rollout…</p>
             ) : haccoraReadiness.error ? (
-              <p role="alert" className="mt-4 text-sm text-destructive">{haccoraReadiness.error.message}</p>
+              <p role="alert" className="mt-4 text-sm text-destructive">
+                {haccoraReadiness.error.message}
+              </p>
             ) : haccoraReadiness.data ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 <ReadinessStat label="Product" value={haccoraReadiness.data.productStatus} />
                 <ReadinessStat label="Connection" value={haccoraReadiness.data.connectionStatus} />
-                <ReadinessStat label="Compliance" value={haccoraReadiness.data.ready ? "ready" : "not ready"} />
-                <ReadinessStat label="AI" value={haccoraReadiness.data.aiReady ? "ready" : haccoraReadiness.data.services.aiRequested ? "provisioning" : "not requested"} />
-                <ReadinessStat label="Active services" value={`${haccoraReadiness.data.services.active}/${haccoraReadiness.data.services.requested}`} />
-                <ReadinessStat label="Jobs" value={`${haccoraReadiness.data.jobs.pending} pending · ${haccoraReadiness.data.jobs.blocked} blocked · ${haccoraReadiness.data.jobs.failed} failed`} />
+                <ReadinessStat
+                  label="Compliance"
+                  value={haccoraReadiness.data.ready ? "ready" : "not ready"}
+                />
+                <ReadinessStat
+                  label="AI"
+                  value={
+                    haccoraReadiness.data.aiReady
+                      ? "ready"
+                      : haccoraReadiness.data.services.aiRequested
+                        ? "provisioning"
+                        : "not requested"
+                  }
+                />
+                <ReadinessStat
+                  label="Active services"
+                  value={`${haccoraReadiness.data.services.active}/${haccoraReadiness.data.services.requested}`}
+                />
+                <ReadinessStat
+                  label="Jobs"
+                  value={`${haccoraReadiness.data.jobs.pending} pending · ${haccoraReadiness.data.jobs.blocked} blocked · ${haccoraReadiness.data.jobs.failed} failed`}
+                />
               </div>
             ) : null}
             {haccoraSmoke && (
@@ -396,7 +458,10 @@ function ControlPlane() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="text-sm font-semibold">Live smoke check</div>
-                    <div className="text-xs text-muted-foreground">{new Date(haccoraSmoke.checkedAt).toLocaleString()} · {haccoraSmoke.countryCode}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(haccoraSmoke.checkedAt).toLocaleString()} ·{" "}
+                      {haccoraSmoke.countryCode}
+                    </div>
                   </div>
                   <StatusBadge status={haccoraSmoke.overall === "pass" ? "active" : "blocked"} />
                 </div>
@@ -405,7 +470,9 @@ function ControlPlane() {
                     <div key={item.key} className="rounded-md border bg-background p-3 text-xs">
                       <div className="flex items-center justify-between gap-2">
                         <b>{item.key.replaceAll("-", " ")}</b>
-                        <span className={item.ok ? "text-primary" : "text-destructive"}>{item.ok ? "PASS" : "FAIL"}</span>
+                        <span className={item.ok ? "text-primary" : "text-destructive"}>
+                          {item.ok ? "PASS" : "FAIL"}
+                        </span>
                       </div>
                       <p className="mt-1 text-muted-foreground">{item.detail}</p>
                     </div>
@@ -476,11 +543,23 @@ function ControlPlane() {
                 >
                   {bootstrappingDishbee ? "Reconciling…" : "Create / reconcile Dishbee pilot"}
                 </Button>
-                <Button className="mt-2 w-full" variant="outline" disabled={bootstrappingHaccora} onClick={bootstrapHaccoraPilot}>
+                <Button
+                  className="mt-2 w-full"
+                  variant="outline"
+                  disabled={bootstrappingHaccora}
+                  onClick={bootstrapHaccoraPilot}
+                >
                   {bootstrappingHaccora ? "Queuing Haccora…" : "Enable Haccora + AI for pilot"}
                 </Button>
-                <Button className="mt-2 w-full" variant="outline" disabled={busyKey === "haccora:pilot-smoke"} onClick={runPilotHaccoraSmoke}>
-                  {busyKey === "haccora:pilot-smoke" ? "Checking all three…" : "Run Haccora pilot live checks"}
+                <Button
+                  className="mt-2 w-full"
+                  variant="outline"
+                  disabled={busyKey === "haccora:pilot-smoke"}
+                  onClick={runPilotHaccoraSmoke}
+                >
+                  {busyKey === "haccora:pilot-smoke"
+                    ? "Checking all three…"
+                    : "Run Haccora pilot live checks"}
                 </Button>
                 {pilotSmoke && (
                   <div className="mt-3 space-y-2 rounded-lg border bg-muted/30 p-3">
@@ -492,12 +571,17 @@ function ControlPlane() {
                       <div key={tenant.tenantId} className="rounded-md bg-background p-2 text-xs">
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-medium">{tenant.tenantName}</span>
-                          <span className={tenant.overall === "pass" ? "text-primary" : "text-destructive"}>
+                          <span
+                            className={
+                              tenant.overall === "pass" ? "text-primary" : "text-destructive"
+                            }
+                          >
                             {tenant.overall.toUpperCase()}
                           </span>
                         </div>
                         <p className="mt-1 text-muted-foreground">
-                          {tenant.checks.filter((item) => item.ok).length}/{tenant.checks.length} checks passed
+                          {tenant.checks.filter((item) => item.ok).length}/{tenant.checks.length}{" "}
+                          checks passed
                         </p>
                       </div>
                     ))}
@@ -717,27 +801,83 @@ function ControlPlane() {
           </section>
 
           <section>
-            <SectionTitle icon={GitBranchIcon} title="Ecosystem add-ons" description="Attach another SaaS capability without copying its authoritative data. Each card shows the integration mode and data boundary." />
+            <SectionTitle
+              icon={GitBranchIcon}
+              title="Ecosystem add-ons"
+              description="Attach another SaaS capability without copying its authoritative data. Each card shows the integration mode and data boundary."
+            />
             <div className="mt-3 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-              {(catalogue.data?.ecosystemAddons??[])
-                .filter((addon)=>enabledProducts.has(addon.host_product_key))
-                .map((addon)=>{
-                  const active=enabledEcosystemAddons.has(addon.addon_key);
-                  const tenantAddon=detail.data?.ecosystemAddons?.find(a=>a.addon_key===addon.addon_key&&a.host_product_key===addon.host_product_key);
-                  return <Card key={addon.addon_key} className={active?"border-primary/40":""}>
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div><p className="text-[10px] font-black uppercase tracking-wide text-primary">{addon.host_product_key} · {addon.category}</p><h3 className="mt-1 font-semibold">{addon.name}</h3><p className="mt-1 text-xs text-muted-foreground">{addon.description}</p></div>
-                        <input type="checkbox" aria-label={`Enable ${addon.name}`} checked={active} disabled={!isPlatformAdmin||busyKey===`ecosystem:${addon.addon_key}`} onChange={e=>toggleEcosystemAddon(addon.host_product_key,addon.addon_key,e.target.checked)}/>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2"><Badge variant="outline">{addon.integration_mode.replaceAll("_"," ")}</Badge>{addon.addon_product_key&&<Badge variant="secondary">{addon.addon_product_key}</Badge>}{addon.addon_service_key&&<Badge variant="secondary">{addon.addon_service_key}</Badge>}{tenantAddon&&<StatusBadge status={tenantAddon.status}/>}</div>
-                      <p className="mt-3 rounded-lg bg-muted p-2 text-[11px] leading-5 text-muted-foreground"><b>Data boundary:</b> {addon.data_boundary}</p>
-                      {!!addon.capabilities?.length&&<p className="mt-2 text-[11px] text-muted-foreground">Capabilities: {addon.capabilities.join(", ")}</p>}
-                    </CardContent>
-                  </Card>;
+              {(catalogue.data?.ecosystemAddons ?? [])
+                .filter((addon) => enabledProducts.has(addon.host_product_key))
+                .map((addon) => {
+                  const active = enabledEcosystemAddons.has(addon.addon_key);
+                  const tenantAddon = detail.data?.ecosystemAddons?.find(
+                    (a) =>
+                      a.addon_key === addon.addon_key &&
+                      a.host_product_key === addon.host_product_key,
+                  );
+                  return (
+                    <Card key={addon.addon_key} className={active ? "border-primary/40" : ""}>
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-wide text-primary">
+                              {addon.host_product_key} · {addon.category}
+                            </p>
+                            <h3 className="mt-1 font-semibold">{addon.name}</h3>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {addon.description}
+                            </p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            aria-label={`Enable ${addon.name}`}
+                            checked={active}
+                            disabled={
+                              !isPlatformAdmin || busyKey === `ecosystem:${addon.addon_key}`
+                            }
+                            onChange={(e) =>
+                              toggleEcosystemAddon(
+                                addon.host_product_key,
+                                addon.addon_key,
+                                e.target.checked,
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Badge variant="outline">
+                            {addon.integration_mode.replaceAll("_", " ")}
+                          </Badge>
+                          {addon.addon_product_key && (
+                            <Badge variant="secondary">{addon.addon_product_key}</Badge>
+                          )}
+                          {addon.addon_service_key && (
+                            <Badge variant="secondary">{addon.addon_service_key}</Badge>
+                          )}
+                          {tenantAddon && <StatusBadge status={tenantAddon.status} />}
+                        </div>
+                        <p className="mt-3 rounded-lg bg-muted p-2 text-[11px] leading-5 text-muted-foreground">
+                          <b>Data boundary:</b> {addon.data_boundary}
+                        </p>
+                        {!!addon.capabilities?.length && (
+                          <p className="mt-2 text-[11px] text-muted-foreground">
+                            Capabilities: {addon.capabilities.join(", ")}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
                 })}
-              {!(catalogue.data?.ecosystemAddons??[]).some(addon=>enabledProducts.has(addon.host_product_key))&&
-                <Card><CardContent className="p-5 text-sm text-muted-foreground">Enable a host product to see its compatible ecosystem add-ons.</CardContent></Card>}
+              {!(catalogue.data?.ecosystemAddons ?? []).some((addon) =>
+                enabledProducts.has(addon.host_product_key),
+              ) && (
+                <Card>
+                  <CardContent className="p-5 text-sm text-muted-foreground">
+                    Enable a host product to see its compatible ecosystem add-ons.
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </section>
 
@@ -808,6 +948,15 @@ function ControlPlane() {
                 await detail.refetch();
               } catch (e) {
                 toast.error(e instanceof Error ? e.message : "Domain update failed");
+              }
+            }}
+            verifyDomain={async (domain) => {
+              try {
+                await verifyDomainRequest({ data: { tenantId: selectedTenantId, domain } });
+                toast.success("Domain verification queued");
+                await detail.refetch();
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Domain verification failed");
               }
             }}
           />
@@ -915,7 +1064,9 @@ function ControlPlane() {
 function ReadinessStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-muted p-3">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 truncate text-sm font-semibold">{value.replaceAll("_", " ")}</div>
     </div>
   );
@@ -1123,6 +1274,7 @@ function BrandingAndDomains({
   canEdit,
   saveBranding,
   saveDomain,
+  verifyDomain,
 }: {
   tenantId: string;
   detail: TenantControlPlane | undefined;
@@ -1130,6 +1282,7 @@ function BrandingAndDomains({
   canEdit: boolean;
   saveBranding: (payload: Record<string, string>) => Promise<void>;
   saveDomain: (productKey: string, domain: string) => Promise<void>;
+  verifyDomain: (domain: string) => Promise<void>;
 }) {
   const branding =
     detail?.branding && typeof detail.branding === "object" && !Array.isArray(detail.branding)
@@ -1141,6 +1294,7 @@ function BrandingAndDomains({
   const [supportEmail, setSupportEmail] = useState("");
   const [domain, setDomain] = useState("");
   const [productKey, setProductKey] = useState("");
+  const [checkingDomain, setCheckingDomain] = useState<string | null>(null);
 
   useEffect(() => {
     setBrandName(String(branding.brand_name ?? detail?.tenant?.name ?? ""));
@@ -1216,21 +1370,57 @@ function BrandingAndDomains({
               onChange={(e) => setDomain(e.target.value.toLowerCase().trim())}
             />
             <Button disabled={!canEdit || !domain} onClick={() => saveDomain(productKey, domain)}>
-              Add & verify domain
+              Add domain
             </Button>
             <div className="space-y-2">
               {(detail?.domains ?? []).map((d) => (
-                <div
-                  key={d.id}
-                  className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm"
-                >
-                  <div>
-                    <b>{d.domain}</b>
-                    <p className="text-xs text-muted-foreground">
-                      {d.product_key ?? "tenant"} · SSL {d.ssl_status}
-                    </p>
+                <div key={d.id} className="rounded-lg bg-muted p-3 text-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <b>{d.domain}</b>
+                      <p className="text-xs text-muted-foreground">
+                        {d.product_key ?? "tenant"} · SSL {d.ssl_status}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={d.verification_status} />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!canEdit || checkingDomain === d.domain}
+                        onClick={async () => {
+                          setCheckingDomain(d.domain);
+                          try {
+                            await verifyDomain(d.domain);
+                          } finally {
+                            setCheckingDomain(null);
+                          }
+                        }}
+                      >
+                        {checkingDomain === d.domain ? "Checking…" : "Check again"}
+                      </Button>
+                    </div>
                   </div>
-                  <StatusBadge status={d.verification_status} />
+                  {d.verification_record_name && d.verification_record_value && (
+                    <div className="mt-3 rounded-md border bg-background p-3 text-xs">
+                      <p className="font-medium">DNS TXT record</p>
+                      <p className="mt-1 break-all text-muted-foreground">
+                        Name: <code>{d.verification_record_name}</code>
+                      </p>
+                      <p className="mt-1 break-all text-muted-foreground">
+                        Value: <code>{d.verification_record_value}</code>
+                      </p>
+                    </div>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    <span>Attempts: {d.verification_attempts ?? 0}</span>
+                    {d.last_checked_at && (
+                      <span>Last checked: {new Date(d.last_checked_at).toLocaleString()}</span>
+                    )}
+                  </div>
+                  {d.failure_reason && (
+                    <p className="mt-2 text-xs text-destructive">{d.failure_reason}</p>
+                  )}
                 </div>
               ))}
             </div>

@@ -12,20 +12,22 @@ This avoids a country fork. A future UK or partner brand is another experience/l
 
 ## Provisioning order
 
-1. Apply Omniqora migrations through `20261004152000_fleetora_operator_state_v9.sql` and FleetPulse migrations through `20261004163000_omniqora_hierarchy_mapping.sql`.
+1. Apply Omniqora migrations through `20261004220000_tenant_domain_authority_v10.sql` and FleetPulse migrations through `20261004163000_omniqora_hierarchy_mapping.sql`.
 2. Create or select the landlord organisation.
 3. Call `platform_create_landlord_instance(...)` with product `fleetora` and region `ae`.
 4. Create the customer tenant with `platform_create_tenant(...)` and blueprint `fleetpulse-ae-starter` or `fleetpulse-ae-growth`.
 5. Call `platform_bind_fleetora_tenant(...)`. This applies the blueprint, sets UAE runtime defaults, creates the product connection, creates the tenant brand and starts in `shadow` mode.
 6. Issue the connection token with `platform_set_product_credential(...)` and a service credential with `events.write`, `usage.write`, `routing.execute` and `operations.maintain` scope. Add `intelligence.propose` only when the tenant enables governed AI recommendations. Store raw values only in FleetPulse Edge Function secrets.
-7. Complete provisioning jobs and verify the version 3 tenant snapshot from FleetPulse. It includes the product-scoped brand and operating-location hierarchy.
+7. Complete provisioning jobs and verify the version 4 tenant snapshot from FleetPulse. It includes the product-scoped brand, operating-location hierarchy and domain verification state.
 8. In FleetPulse **Branches / Locations**, map each active/opening Omniqora location to exactly one local branch. An exact code match is suggested but never applied automatically. FleetPulse branch records and operational data remain local.
 9. Run at least ten representative routing shadow comparisons. Any failed comparison blocks cutover eligibility.
 10. Request and separately approve the `read` cutover, operate the pilot in read mode, then repeat the request/review process for `write`. The database only permits `shadow → read → write`; either `disabled` or `shadow` remains an immediate rollback target. Tenant Factory exposes these landlord, binding, evidence, approval, feature-authority and rollback controls.
 
 ## White-label model
 
-Landlord defaults live in `landlord_instances.branding` and `policy`. Per-customer overrides remain in `tenant_branding`, `tenant_brands` and `tenant_domains`. Domain verification and SSL must complete before switching the customer's primary hostname. Tenant-specific business data and customisation do not enter the landlord row.
+Landlord defaults live in `landlord_instances.branding` and `policy`. Per-customer overrides remain in `tenant_branding`, `tenant_brands` and `tenant_domains`. Tenant-specific business data and customisation do not enter the landlord row.
+
+Tenant Factory now creates a unique `_omniqora-verification.<domain>` DNS TXT challenge. The provisioning worker resolves the public record, compares the complete TXT value, then probes the original hostname over HTTPS. Every observation is appended to `tenant_domain_verification_attempts`; DNS and TLS status cannot be asserted by an authenticated browser client. A domain already claimed by another tenant cannot be reassigned by upsert. Rotate the challenge after a suspected leak or ownership change, then re-run verification. DNS ownership and active HTTPS must both pass before switching the customer's primary hostname.
 
 ## Native Omniqora routing and delivery
 

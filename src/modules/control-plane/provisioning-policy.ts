@@ -24,34 +24,60 @@ export type ConnectionLike = {
   status: string;
 };
 
-export type ProvisioningDecision =
-  | { outcome: "succeed"; reason: string }
-  | { outcome: "block"; reason: string };
+export type DomainLike = {
+  domain: string;
+  verification_status: string;
+  ssl_status: string;
+  failure_reason?: string | null;
+};
 
-const implemented = (status?: string | null) =>
-  status === "live_main" || status === "built_main";
+export type ProvisioningDecision =
+  { outcome: "succeed"; reason: string } | { outcome: "block"; reason: string };
+
+const implemented = (status?: string | null) => status === "live_main" || status === "built_main";
 
 export function decideProvisioning(input: {
   job: ProvisioningJobLike;
   product?: ProductCatalogueLike | null;
   service?: ServiceCatalogueLike | null;
   connection?: ConnectionLike | null;
+  domain?: DomainLike | null;
 }): ProvisioningDecision {
-  const { job, product, service, connection } = input;
+  const { job, product, service, connection, domain } = input;
 
   if (job.target_kind === "branding") {
-    return { outcome: "succeed", reason: "Branding is authoritative in the Omniqora control plane." };
+    return {
+      outcome: "succeed",
+      reason: "Branding is authoritative in the Omniqora control plane.",
+    };
   }
 
   if (job.target_kind === "domain") {
-    return { outcome: "block", reason: "DNS ownership and SSL verification adapter is not configured yet." };
+    if (domain?.verification_status === "verified" && domain.ssl_status === "active") {
+      return { outcome: "succeed", reason: "DNS ownership and HTTPS certificate were verified." };
+    }
+    if (domain?.verification_status === "verified") {
+      return {
+        outcome: "block",
+        reason:
+          domain.failure_reason ??
+          "DNS ownership is verified; HTTPS certificate or route is pending.",
+      };
+    }
+    return {
+      outcome: "block",
+      reason: domain?.failure_reason ?? "DNS TXT ownership challenge is pending.",
+    };
   }
 
   if (job.target_kind === "integration") {
     if (connection?.status === "connected") {
       return { outcome: "succeed", reason: "Product connector has been live-verified." };
     }
-    return { outcome: "block", reason: "External product connector must be verified before activation." };
+    return {
+      outcome: "block",
+      reason: "External product connector must be verified before activation.",
+    };
   }
 
   if (job.target_kind === "product") {
@@ -60,11 +86,15 @@ export function decideProvisioning(input: {
       return { outcome: "succeed", reason: "Hosted product is implemented on current main." };
     }
     if (connection?.status === "connected") {
-      return { outcome: "succeed", reason: "External product workspace is connected and verified." };
+      return {
+        outcome: "succeed",
+        reason: "External product workspace is connected and verified.",
+      };
     }
     return {
       outcome: "block",
-      reason: "External product needs a connected workspace or product-specific provisioning adapter.",
+      reason:
+        "External product needs a connected workspace or product-specific provisioning adapter.",
     };
   }
 
@@ -79,10 +109,16 @@ export function decideProvisioning(input: {
     };
   }
   if (service.owner_product_key === "haccora" && connection?.status === "connected") {
-    return { outcome: "succeed", reason: "Haccora service is backed by a connected, verified Haccora workspace." };
+    return {
+      outcome: "succeed",
+      reason: "Haccora service is backed by a connected, verified Haccora workspace.",
+    };
   }
   if (service.provisioning_mode === "automatic" && service.owner_product_key === "omniqora") {
-    return { outcome: "succeed", reason: "Shared Omniqora service is implemented and automatically provisionable." };
+    return {
+      outcome: "succeed",
+      reason: "Shared Omniqora service is implemented and automatically provisionable.",
+    };
   }
   return {
     outcome: "block",

@@ -39,7 +39,20 @@ export type ControlPlaneCatalogue = {
     country_code?: string | null;
     category: string;
   }>;
-  ecosystemAddons: Array<{ addon_key:string;host_product_key:string;addon_product_key?:string|null;addon_service_key?:string|null;name:string;category:string;description:string;integration_mode:string;data_boundary:string;capabilities:string[];default_enabled:boolean;status:string }>;
+  ecosystemAddons: Array<{
+    addon_key: string;
+    host_product_key: string;
+    addon_product_key?: string | null;
+    addon_service_key?: string | null;
+    name: string;
+    category: string;
+    description: string;
+    integration_mode: string;
+    data_boundary: string;
+    capabilities: string[];
+    default_enabled: boolean;
+    status: string;
+  }>;
 };
 
 export type PlatformTenantRow = {
@@ -115,6 +128,14 @@ export type TenantControlPlane = {
     verification_status: string;
     ssl_status: string;
     is_primary: boolean;
+    verification_method?: string;
+    verification_record_name?: string;
+    verification_record_value?: string;
+    verification_attempts?: number;
+    last_checked_at?: string | null;
+    verified_at?: string | null;
+    ssl_activated_at?: string | null;
+    failure_reason?: string | null;
   }>;
   connections: Array<{
     id: string;
@@ -136,20 +157,36 @@ export type TenantControlPlane = {
     last_error?: string | null;
     created_at: string;
   }>;
-  ecosystemAddons: Array<{ addon_key:string;host_product_key:string;status:string;config?:JsonValue;external_connection_ref?:string|null;activated_at?:string|null;updated_at:string }>;
+  ecosystemAddons: Array<{
+    addon_key: string;
+    host_product_key: string;
+    status: string;
+    config?: JsonValue;
+    external_connection_ref?: string | null;
+    activated_at?: string | null;
+    updated_at: string;
+  }>;
 };
 
 export const getControlPlaneCatalogue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const db=context.supabase as any;
-    const [core,addons]=await Promise.all([
+    const db = context.supabase as any;
+    const [core, addons] = await Promise.all([
       db.rpc("get_control_plane_catalogue"),
-      db.from("ecosystem_addon_catalogue").select("*").neq("status","retired").order("host_product_key").order("name"),
+      db
+        .from("ecosystem_addon_catalogue")
+        .select("*")
+        .neq("status", "retired")
+        .order("host_product_key")
+        .order("name"),
     ]);
     if (core.error) throw new Error(core.error.message);
     if (addons.error) throw new Error(addons.error.message);
-    return {...(core.data as unknown as Omit<ControlPlaneCatalogue,"ecosystemAddons">),ecosystemAddons:(addons.data??[])} as ControlPlaneCatalogue;
+    return {
+      ...(core.data as unknown as Omit<ControlPlaneCatalogue, "ecosystemAddons">),
+      ecosystemAddons: addons.data ?? [],
+    } as ControlPlaneCatalogue;
   });
 
 export const listPlatformTenants = createServerFn({ method: "GET" })
@@ -164,14 +201,22 @@ export const getTenantControlPlane = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
   .handler(async ({ context, data }) => {
-    const db=context.supabase as any;
-    const [core,addons]=await Promise.all([
-      db.rpc("get_tenant_control_plane",{_tenant:data.tenantId}),
-      db.from("tenant_ecosystem_addons").select("*").eq("tenant_id",data.tenantId).order("host_product_key").order("addon_key"),
+    const db = context.supabase as any;
+    const [core, addons] = await Promise.all([
+      db.rpc("get_tenant_control_plane", { _tenant: data.tenantId }),
+      db
+        .from("tenant_ecosystem_addons")
+        .select("*")
+        .eq("tenant_id", data.tenantId)
+        .order("host_product_key")
+        .order("addon_key"),
     ]);
-    if(core.error)throw new Error(core.error.message);
-    if(addons.error)throw new Error(addons.error.message);
-    return {...(core.data as unknown as Omit<TenantControlPlane,"ecosystemAddons">),ecosystemAddons:(addons.data??[])} as TenantControlPlane;
+    if (core.error) throw new Error(core.error.message);
+    if (addons.error) throw new Error(addons.error.message);
+    return {
+      ...(core.data as unknown as Omit<TenantControlPlane, "ecosystemAddons">),
+      ecosystemAddons: addons.data ?? [],
+    } as TenantControlPlane;
   });
 
 const createTenantSchema = z.object({
@@ -383,7 +428,24 @@ export const upsertTenantDomain = createServerFn({ method: "POST" })
     return { domainId: response.data as unknown as string };
   });
 
+const domainVerificationSchema = z.object({
+  tenantId: uuid,
+  domain: z.string().trim().min(4).max(253),
+});
 
+export const requestTenantDomainVerification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.infer<typeof domainVerificationSchema>) =>
+    domainVerificationSchema.parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc(
+      "platform_request_domain_verification" as never,
+      { _tenant: data.tenantId, _domain: data.domain } as never,
+    );
+    if (response.error) throw new Error(response.error.message);
+    return { jobId: response.data as unknown as string };
+  });
 
 export type HaccoraReadiness = {
   tenantId: string;
@@ -413,9 +475,12 @@ export const getHaccoraReadiness = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_haccora_readiness" as never, {
-      _tenant: data.tenantId,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_haccora_readiness" as never,
+      {
+        _tenant: data.tenantId,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return response.data as unknown as HaccoraReadiness;
   });
@@ -429,10 +494,13 @@ export const enableHaccoraForDishbee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof haccoraEnableSchema>) => haccoraEnableSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_enable_haccora_for_dishbee" as never, {
-      _tenant: data.tenantId,
-      _enable_ai: data.enableAi,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_enable_haccora_for_dishbee" as never,
+      {
+        _tenant: data.tenantId,
+        _enable_ai: data.enableAi,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return response.data as unknown as {
       tenantId: string;
@@ -449,9 +517,12 @@ export const runHaccoraSmokeTest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
   .handler(async ({ context, data }) => {
-    const permission = await context.supabase.rpc("platform_haccora_readiness" as never, {
-      _tenant: data.tenantId,
-    } as never);
+    const permission = await context.supabase.rpc(
+      "platform_haccora_readiness" as never,
+      {
+        _tenant: data.tenantId,
+      } as never,
+    );
     if (permission.error) throw new Error(permission.error.message);
     const [{ supabaseAdmin }, { runHaccoraReadOnlySmoke }] = await Promise.all([
       import("@/integrations/supabase/client.server"),
@@ -466,11 +537,22 @@ export const runHaccoraPilotSmokeTest = createServerFn({ method: "POST" })
     const readiness = await context.supabase.rpc("platform_haccora_pilot_readiness" as never);
     if (readiness.error) throw new Error(readiness.error.message);
     const pilot = readiness.data as unknown as {
-      tenants?: Array<{ tenantId?: string; tenantSlug?: string; tenantName?: string; missing?: boolean }>;
+      tenants?: Array<{
+        tenantId?: string;
+        tenantSlug?: string;
+        tenantName?: string;
+        missing?: boolean;
+      }>;
     };
     const targets = (pilot.tenants ?? []).filter(
-      (tenant): tenant is { tenantId: string; tenantSlug?: string; tenantName?: string; missing?: boolean } =>
-        !tenant.missing && typeof tenant.tenantId === "string",
+      (
+        tenant,
+      ): tenant is {
+        tenantId: string;
+        tenantSlug?: string;
+        tenantName?: string;
+        missing?: boolean;
+      } => !tenant.missing && typeof tenant.tenantId === "string",
     );
     const [{ supabaseAdmin }, { runHaccoraReadOnlySmoke }] = await Promise.all([
       import("@/integrations/supabase/client.server"),
@@ -487,7 +569,10 @@ export const runHaccoraPilotSmokeTest = createServerFn({ method: "POST" })
     }
     return {
       checkedAt: new Date().toISOString(),
-      overall: tenants.length === 3 && tenants.every((tenant) => tenant.overall === "pass") ? "pass" as const : "fail" as const,
+      overall:
+        tenants.length === 3 && tenants.every((tenant) => tenant.overall === "pass")
+          ? ("pass" as const)
+          : ("fail" as const),
       tenants,
     };
   });
@@ -496,9 +581,12 @@ export const retryHaccoraProvisioning = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
   .handler(async ({ context, data }) => {
-    const response = await context.supabase.rpc("platform_retry_haccora_provisioning" as never, {
-      _tenant: data.tenantId,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_retry_haccora_provisioning" as never,
+      {
+        _tenant: data.tenantId,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return { queued: Number(response.data ?? 0) };
   });
@@ -506,9 +594,12 @@ export const retryHaccoraProvisioning = createServerFn({ method: "POST" })
 export const enableHaccoraDishbeePilot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const response = await context.supabase.rpc("platform_enable_haccora_dishbee_pilot" as never, {
-      _enable_ai: true,
-    } as never);
+    const response = await context.supabase.rpc(
+      "platform_enable_haccora_dishbee_pilot" as never,
+      {
+        _enable_ai: true,
+      } as never,
+    );
     if (response.error) throw new Error(response.error.message);
     return response.data as unknown as {
       pilot: string;
@@ -839,40 +930,72 @@ export const setFleetoraFeatureAuthority = createServerFn({ method: "POST" })
     return response.data as unknown as FleetoraOperatorState["featureAuthority"];
   });
 
-const ecosystemAddonSchema=z.object({
-  tenantId:uuid,hostProductKey:z.string().min(2).max(80),addonKey:z.string().min(3).max(120),enabled:z.boolean(),
+const ecosystemAddonSchema = z.object({
+  tenantId: uuid,
+  hostProductKey: z.string().min(2).max(80),
+  addonKey: z.string().min(3).max(120),
+  enabled: z.boolean(),
 });
-export const setTenantEcosystemAddon=createServerFn({method:"POST"})
+export const setTenantEcosystemAddon = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input:z.infer<typeof ecosystemAddonSchema>)=>ecosystemAddonSchema.parse(input))
-  .handler(async({context,data})=>{
-    const db=context.supabase as any;
-    const{data:addon,error:addonError}=await db.from("ecosystem_addon_catalogue").select("*")
-      .eq("addon_key",data.addonKey).eq("host_product_key",data.hostProductKey).maybeSingle();
-    if(addonError)throw new Error(addonError.message);
-    if(!addon)throw new Error("Ecosystem add-on not found");
+  .inputValidator((input: z.infer<typeof ecosystemAddonSchema>) =>
+    ecosystemAddonSchema.parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as any;
+    const { data: addon, error: addonError } = await db
+      .from("ecosystem_addon_catalogue")
+      .select("*")
+      .eq("addon_key", data.addonKey)
+      .eq("host_product_key", data.hostProductKey)
+      .maybeSingle();
+    if (addonError) throw new Error(addonError.message);
+    if (!addon) throw new Error("Ecosystem add-on not found");
 
-    if(data.enabled){
-      const{error}=await db.from("tenant_ecosystem_addons").upsert({
-        tenant_id:data.tenantId,host_product_key:data.hostProductKey,addon_key:data.addonKey,
-        status:"requested",config:{},updated_at:new Date().toISOString(),
-      },{onConflict:"tenant_id,host_product_key,addon_key"});
-      if(error)throw new Error(error.message);
-      if(addon.addon_product_key){
-        const r=await db.rpc("platform_set_tenant_product" as never,{
-          _tenant:data.tenantId,_product:addon.addon_product_key,_enabled:true,_config:{ecosystemAddon:data.addonKey},
-        } as never);
-        if(r.error)throw new Error(r.error.message);
-      }else if(addon.addon_service_key){
-        const r=await db.rpc("platform_set_tenant_service" as never,{
-          _tenant:data.tenantId,_service:addon.addon_service_key,_enabled:true,_config:{ecosystemAddon:data.addonKey},
-        } as never);
-        if(r.error)throw new Error(r.error.message);
+    if (data.enabled) {
+      const { error } = await db.from("tenant_ecosystem_addons").upsert(
+        {
+          tenant_id: data.tenantId,
+          host_product_key: data.hostProductKey,
+          addon_key: data.addonKey,
+          status: "requested",
+          config: {},
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "tenant_id,host_product_key,addon_key" },
+      );
+      if (error) throw new Error(error.message);
+      if (addon.addon_product_key) {
+        const r = await db.rpc(
+          "platform_set_tenant_product" as never,
+          {
+            _tenant: data.tenantId,
+            _product: addon.addon_product_key,
+            _enabled: true,
+            _config: { ecosystemAddon: data.addonKey },
+          } as never,
+        );
+        if (r.error) throw new Error(r.error.message);
+      } else if (addon.addon_service_key) {
+        const r = await db.rpc(
+          "platform_set_tenant_service" as never,
+          {
+            _tenant: data.tenantId,
+            _service: addon.addon_service_key,
+            _enabled: true,
+            _config: { ecosystemAddon: data.addonKey },
+          } as never,
+        );
+        if (r.error) throw new Error(r.error.message);
       }
-    }else{
-      const{error}=await db.from("tenant_ecosystem_addons").update({status:"cancelled",updated_at:new Date().toISOString()})
-        .eq("tenant_id",data.tenantId).eq("host_product_key",data.hostProductKey).eq("addon_key",data.addonKey);
-      if(error)throw new Error(error.message);
+    } else {
+      const { error } = await db
+        .from("tenant_ecosystem_addons")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("tenant_id", data.tenantId)
+        .eq("host_product_key", data.hostProductKey)
+        .eq("addon_key", data.addonKey);
+      if (error) throw new Error(error.message);
     }
-    return{ok:true};
+    return { ok: true };
   });

@@ -1,5 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { decideProvisioning } from "./provisioning-policy";
+import { verifyDomainOwnership } from "./domain-verification.server";
 
 function secureEqual(a: string, b: string) {
   const aa = createHash("sha256").update(a).digest();
@@ -18,21 +19,27 @@ function requiredHttps(name: string) {
 }
 
 function haccoraEnvironment(countryCode: string) {
-  if (countryCode === "GB") return {
-    functionUrl: requiredHttps("HACCORA_UK_FUNCTION_URL"),
-    appUrl: requiredHttps("HACCORA_UK_APP_URL"),
-    secret: process.env.HACCORA_UK_PROVISIONING_SECRET ?? "",
-  };
-  if (countryCode === "DE") return {
-    functionUrl: requiredHttps("HACCORA_DE_FUNCTION_URL"),
-    appUrl: requiredHttps("HACCORA_DE_APP_URL"),
-    secret: process.env.HACCORA_DE_PROVISIONING_SECRET ?? "",
-  };
+  if (countryCode === "GB")
+    return {
+      functionUrl: requiredHttps("HACCORA_UK_FUNCTION_URL"),
+      appUrl: requiredHttps("HACCORA_UK_APP_URL"),
+      secret: process.env.HACCORA_UK_PROVISIONING_SECRET ?? "",
+    };
+  if (countryCode === "DE")
+    return {
+      functionUrl: requiredHttps("HACCORA_DE_FUNCTION_URL"),
+      appUrl: requiredHttps("HACCORA_DE_APP_URL"),
+      secret: process.env.HACCORA_DE_PROVISIONING_SECRET ?? "",
+    };
   throw new ProvisioningBlock(`Haccora country ${countryCode} is not supported`);
 }
 
-async function haccoraRequest(config: ReturnType<typeof haccoraEnvironment>, body: Record<string, unknown>) {
-  if (config.secret.length < 32) throw new ProvisioningBlock("Haccora provisioning secret is not configured");
+async function haccoraRequest(
+  config: ReturnType<typeof haccoraEnvironment>,
+  body: Record<string, unknown>,
+) {
+  if (config.secret.length < 32)
+    throw new ProvisioningBlock("Haccora provisioning secret is not configured");
   const response = await fetch(config.functionUrl, {
     method: "POST",
     headers: {
@@ -51,31 +58,50 @@ async function haccoraRequest(config: ReturnType<typeof haccoraEnvironment>, bod
 }
 
 async function provisionHaccora(db: any, job: any) {
-  const tenantResult = await db.from("tenants")
+  const tenantResult = await db
+    .from("tenants")
     .select("id,name,slug,country_code,metadata")
-    .eq("id", job.tenant_id).maybeSingle();
+    .eq("id", job.tenant_id)
+    .maybeSingle();
   if (tenantResult.error || !tenantResult.data) throw new Error("Tenant is unavailable");
   const tenant = tenantResult.data;
   const config = haccoraEnvironment(tenant.country_code);
   const origin = requiredHttps("OMNIQORA_PUBLIC_URL");
   const [stateResult, dishbeeResult, connectionResult] = await Promise.all([
-    db.from("tenant_products").select("status,external_tenant_id,config")
-      .eq("tenant_id", job.tenant_id).eq("product_key", "haccora").maybeSingle(),
-    db.from("tenant_products").select("status")
-      .eq("tenant_id", job.tenant_id).eq("product_key", "dishbee").maybeSingle(),
-    db.from("product_connections").select("*")
-      .eq("tenant_id", job.tenant_id).eq("product_key", "haccora")
-      .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    db
+      .from("tenant_products")
+      .select("status,external_tenant_id,config")
+      .eq("tenant_id", job.tenant_id)
+      .eq("product_key", "haccora")
+      .maybeSingle(),
+    db
+      .from("tenant_products")
+      .select("status")
+      .eq("tenant_id", job.tenant_id)
+      .eq("product_key", "dishbee")
+      .maybeSingle(),
+    db
+      .from("product_connections")
+      .select("*")
+      .eq("tenant_id", job.tenant_id)
+      .eq("product_key", "haccora")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
-  if (stateResult.error || connectionResult.error) throw new Error("Haccora tenant state is unavailable");
+  if (stateResult.error || connectionResult.error)
+    throw new Error("Haccora tenant state is unavailable");
   if (connectionResult.data?.status === "connected") return connectionResult.data;
 
-  const mode = dishbeeResult.data && !["failed","cancelled"].includes(dishbeeResult.data.status)
-    ? "dishbee-addon" : "standalone";
-  let organizationId = connectionResult.data?.external_tenant_id
-    ?? stateResult.data?.external_tenant_id
-    ?? stateResult.data?.config?.haccoraOrganizationId
-    ?? null;
+  const mode =
+    dishbeeResult.data && !["failed", "cancelled"].includes(dishbeeResult.data.status)
+      ? "dishbee-addon"
+      : "standalone";
+  let organizationId =
+    connectionResult.data?.external_tenant_id ??
+    stateResult.data?.external_tenant_id ??
+    stateResult.data?.config?.haccoraOrganizationId ??
+    null;
 
   if (!organizationId) {
     const provisioned = await haccoraRequest(config, {
@@ -84,7 +110,8 @@ async function provisionHaccora(db: any, job: any) {
       businessName: tenant.name,
       slug: tenant.slug,
       mode,
-      existingOrganizationId: mode === "standalone" ? stateResult.data?.config?.haccoraOrganizationId ?? null : null,
+      existingOrganizationId:
+        mode === "standalone" ? (stateResult.data?.config?.haccoraOrganizationId ?? null) : null,
       locationName: tenant.metadata?.locationName ?? tenant.name,
       address: tenant.metadata?.address ?? {},
     });
@@ -116,12 +143,20 @@ async function provisionHaccora(db: any, job: any) {
   };
   let connection = connectionResult.data;
   if (connection) {
-    const updated = await db.from("product_connections").update(connectionValues)
-      .eq("id", connection.id).select("*").single();
+    const updated = await db
+      .from("product_connections")
+      .update(connectionValues)
+      .eq("id", connection.id)
+      .select("*")
+      .single();
     if (updated.error) throw new Error(updated.error.message);
     connection = updated.data;
   } else {
-    const inserted = await db.from("product_connections").insert(connectionValues).select("*").single();
+    const inserted = await db
+      .from("product_connections")
+      .insert(connectionValues)
+      .select("*")
+      .single();
     if (inserted.error) throw new Error(inserted.error.message);
     connection = inserted.data;
   }
@@ -136,18 +171,27 @@ async function provisionHaccora(db: any, job: any) {
   });
   if (bind.status !== "connected") throw new Error("Haccora control-plane bind was not confirmed");
 
-  const verified = await db.from("product_connections").update({
-    status: "connected",
-    last_verified_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq("id", connection.id).select("product_key,external_tenant_id,status").single();
+  const verified = await db
+    .from("product_connections")
+    .update({
+      status: "connected",
+      last_verified_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", connection.id)
+    .select("product_key,external_tenant_id,status")
+    .single();
   if (verified.error) throw new Error(verified.error.message);
-  await db.from("tenant_products").update({
-    external_tenant_id: organizationId,
-    base_url: config.appUrl,
-    config: { ...(stateResult.data?.config ?? {}), mode, countryPack: tenant.country_code },
-    updated_at: new Date().toISOString(),
-  }).eq("tenant_id", job.tenant_id).eq("product_key", "haccora");
+  await db
+    .from("tenant_products")
+    .update({
+      external_tenant_id: organizationId,
+      base_url: config.appUrl,
+      config: { ...(stateResult.data?.config ?? {}), mode, countryPack: tenant.country_code },
+      updated_at: new Date().toISOString(),
+    })
+    .eq("tenant_id", job.tenant_id)
+    .eq("product_key", "haccora");
   return verified.data;
 }
 
@@ -164,14 +208,17 @@ function json(body: unknown, status = 200) {
 export async function serveProvisioningWorker(request: Request) {
   const expected = process.env.CONTROL_PLANE_WORKER_SECRET;
   const auth = request.headers.get("authorization") ?? "";
-  if (!expected || expected.length < 32) return json({ error: "Provisioning worker is not configured" }, 503);
+  if (!expected || expected.length < 32)
+    return json({ error: "Provisioning worker is not configured" }, 503);
   if (!auth.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
   if (!secureEqual(auth.slice(7), expected)) return json({ error: "Unauthorized" }, 401);
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
 
-  const { data: claimed, error: claimError } = await db.rpc("server_claim_provisioning_jobs", { _limit: 20 });
+  const { data: claimed, error: claimError } = await db.rpc("server_claim_provisioning_jobs", {
+    _limit: 20,
+  });
   if (claimError) return json({ error: claimError.message }, 503);
 
   const results: Array<{ id: string; outcome: string; reason: string }> = [];
@@ -181,39 +228,61 @@ export async function serveProvisioningWorker(request: Request) {
       let product: any = null;
       let service: any = null;
       let connection: any = null;
+      let domain: any = null;
 
       if (job.target_kind === "product") {
-        const response = await db.from("product_catalogue")
+        const response = await db
+          .from("product_catalogue")
           .select("product_key,deployment_mode,implementation_status,product_role")
-          .eq("product_key", job.target_key).maybeSingle();
+          .eq("product_key", job.target_key)
+          .maybeSingle();
         if (response.error) throw new Error(response.error.message);
         product = response.data;
-        const link = await db.from("product_connections")
+        const link = await db
+          .from("product_connections")
           .select("product_key,external_tenant_id,status")
-          .eq("tenant_id", job.tenant_id).eq("product_key", job.target_key)
-          .eq("status", "connected").limit(1).maybeSingle();
+          .eq("tenant_id", job.tenant_id)
+          .eq("product_key", job.target_key)
+          .eq("status", "connected")
+          .limit(1)
+          .maybeSingle();
         if (link.error) throw new Error(link.error.message);
         connection = link.data;
-        if (job.target_key === "haccora" && !connection && ["provision","update","resume","verify"].includes(job.action)) {
+        if (
+          job.target_key === "haccora" &&
+          !connection &&
+          ["provision", "update", "resume", "verify"].includes(job.action)
+        ) {
           connection = await provisionHaccora(db, job);
         }
       } else if (job.target_kind === "service") {
-        const response = await db.from("service_catalogue")
+        const response = await db
+          .from("service_catalogue")
           .select("service_key,provisioning_mode,implementation_status,owner_product_key")
-          .eq("service_key", job.target_key).maybeSingle();
+          .eq("service_key", job.target_key)
+          .maybeSingle();
         if (response.error) throw new Error(response.error.message);
         service = response.data;
         if (service?.owner_product_key === "haccora") {
-          const haccoraLink = await db.from("product_connections")
+          const haccoraLink = await db
+            .from("product_connections")
             .select("product_key,external_tenant_id,status")
-            .eq("tenant_id", job.tenant_id).eq("product_key", "haccora")
-            .eq("status", "connected").limit(1).maybeSingle();
+            .eq("tenant_id", job.tenant_id)
+            .eq("product_key", "haccora")
+            .eq("status", "connected")
+            .limit(1)
+            .maybeSingle();
           if (haccoraLink.error) throw new Error(haccoraLink.error.message);
           connection = haccoraLink.data;
           if (job.target_key === "haccora.dishbee-sync") {
-            const dishbeeLink = await db.from("product_connections")
-              .select("id").eq("tenant_id", job.tenant_id).eq("product_key", "dishbee")
-              .eq("status", "connected").limit(1).maybeSingle();
+            const dishbeeLink = await db
+              .from("product_connections")
+              .select("id")
+              .eq("tenant_id", job.tenant_id)
+              .eq("product_key", "dishbee")
+              .eq("status", "connected")
+              .limit(1)
+              .maybeSingle();
             if (dishbeeLink.error) throw new Error(dishbeeLink.error.message);
             if (!dishbeeLink.data) connection = null;
           }
@@ -221,7 +290,8 @@ export async function serveProvisioningWorker(request: Request) {
       } else if (job.target_kind === "integration") {
         const [productKey, ...externalParts] = String(job.target_key).split(":");
         const externalTenantId = externalParts.join(":");
-        const response = await db.from("product_connections")
+        const response = await db
+          .from("product_connections")
           .select("product_key,external_tenant_id,status")
           .eq("tenant_id", job.tenant_id)
           .eq("product_key", productKey)
@@ -229,9 +299,41 @@ export async function serveProvisioningWorker(request: Request) {
           .maybeSingle();
         if (response.error) throw new Error(response.error.message);
         connection = response.data;
+      } else if (job.target_kind === "domain") {
+        const response = await db
+          .from("tenant_domains")
+          .select(
+            "id,domain,verification_record_name,verification_record_value,verification_status,ssl_status,failure_reason",
+          )
+          .eq("tenant_id", job.tenant_id)
+          .eq("domain", job.target_key)
+          .maybeSingle();
+        if (response.error) throw new Error(response.error.message);
+        if (!response.data) throw new ProvisioningBlock("Tenant domain is unavailable");
+        const evidence = await verifyDomainOwnership({
+          domain: response.data.domain,
+          recordName: response.data.verification_record_name,
+          recordValue: response.data.verification_record_value,
+        });
+        const report = await db.rpc("service_report_domain_verification", {
+          _tenant: job.tenant_id,
+          _domain: response.data.domain,
+          _dns_verified: evidence.dnsVerified,
+          _ssl_active: evidence.sslActive,
+          _observed_txt: evidence.observedTxt,
+          _http_status: evidence.httpStatus,
+          _failure_reason: evidence.failureReason,
+        });
+        if (report.error) throw new Error(report.error.message);
+        domain = {
+          ...response.data,
+          verification_status: report.data.verificationStatus,
+          ssl_status: report.data.sslStatus,
+          failure_reason: evidence.failureReason,
+        };
       }
 
-      const decision = decideProvisioning({ job, product, service, connection });
+      const decision = decideProvisioning({ job, product, service, connection, domain });
       if (decision.outcome === "succeed") {
         const complete = await db.rpc("server_complete_provisioning_job", {
           _job: job.id,
