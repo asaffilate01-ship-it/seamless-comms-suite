@@ -102,6 +102,11 @@ async function latestDecision(client:any,tenantId:string,lotId:string){
     .neq("status","superseded").order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(r.error)throw r.error;return r.data;
 }
+function watchEvidenceScore(decision:any){
+  const s=decision?.subscores??{};
+  if(typeof s.condition!=="number"||typeof s.provenance!=="number"||typeof s.evidence!=="number")return null;
+  return Math.round(s.condition*.45+s.provenance*.4+s.evidence*.15);
+}
 async function ensureIntelligence(client:any,tenantId:string,lot:any,vehicle:any){
   if(!vehicle?.id)return null;
   const existing=await client.from("intelligence_jobs").select("*").eq("tenant_id",tenantId).eq("job_type","automotive.auction_assessment")
@@ -118,7 +123,7 @@ async function ensureIntelligence(client:any,tenantId:string,lot:any,vehicle:any
 function filters(criteria:any){
   return {
     make:criteria.make??null,model:criteria.model??null,yearMin:criteria.yearMin??null,yearMax:criteria.yearMax??null,
-    odometerMaxKm:criteria.odometerMaxKm??null,grade:criteria.gradeMin?String(criteria.gradeMin):null,steering:"rhd" as const,page:1,pageSize:50
+    odometerMaxKm:criteria.odometerMaxKm??null,grade:null,steering:"rhd" as const,page:1,pageSize:50
   };
 }
 async function runRule(client:any,tenantId:string,rule:any){
@@ -138,8 +143,9 @@ async function runRule(client:any,tenantId:string,rule:any){
     const basic={...criteria,minScore:null,maxPredictedHammerJpy:null};
     if(!matchesWatchCriteria(basic,{make:lot.make,model:lot.model,modelCode:lot.modelCode,year:lot.year,grade:lot.grade,odometerKm:lot.odometerKm,openingJpy:lot.startingPriceMinor??lot.currentPriceMinor}))continue;
     const saved=await upsertLot(client,tenantId,lot),pred=await prediction(client,tenantId,lot,saved.lot.id),decision=await latestDecision(client,tenantId,saved.lot.id);
+    const evidenceScore=watchEvidenceScore(decision);
     const candidate={make:lot.make,model:lot.model,modelCode:lot.modelCode,year:lot.year,grade:lot.grade,odometerKm:lot.odometerKm,
-      openingJpy:lot.startingPriceMinor??lot.currentPriceMinor,predictedHammerJpy:pred.predicted_hammer_jpy===null?null:Number(pred.predicted_hammer_jpy),score:decision?.score??null};
+      openingJpy:lot.startingPriceMinor??lot.currentPriceMinor,predictedHammerJpy:pred.predicted_hammer_jpy===null?null:Number(pred.predicted_hammer_jpy),score:evidenceScore};
     let stage="disqualified";
     if(typeof criteria.minScore==="number"&&!decision){
       await ensureIntelligence(client,tenantId,saved.lot,saved.vehicle);stage="pending_intelligence";pending++;
@@ -147,9 +153,10 @@ async function runRule(client:any,tenantId:string,rule:any){
     const matchKey=lot.providerKey+":"+lot.externalLotId;
     const match=await client.from("automotive_auction_watch_matches").upsert({
       tenant_id:tenantId,product_key:"autohashi",watch_rule_id:rule.id,auction_lot_id:saved.lot.id,match_key:matchKey,
-      provider_key:lot.providerKey,external_lot_id:lot.externalLotId,stage,score:decision?.score??null,recommendation:decision?.recommendation??null,
+      provider_key:lot.providerKey,external_lot_id:lot.externalLotId,stage,score:evidenceScore,recommendation:decision?.recommendation??null,
       predicted_hammer_jpy:pred.predicted_hammer_jpy,predicted_low_jpy:pred.low_jpy,predicted_high_jpy:pred.high_jpy,
-      snapshot:{lot,prediction:{predictedHammerJpy:pred.predicted_hammer_jpy,lowJpy:pred.low_jpy,highJpy:pred.high_jpy,confidence:pred.confidence,method:pred.method},criteria},
+      snapshot:{lot,prediction:{predictedHammerJpy:pred.predicted_hammer_jpy,lowJpy:pred.low_jpy,highJpy:pred.high_jpy,confidence:pred.confidence,method:pred.method},criteria,
+        watchEvidenceScore:evidenceScore,fullDecisionScore:decision?.score??null},
       last_seen_at:new Date().toISOString()
     },{onConflict:"tenant_id,watch_rule_id,match_key"});
     if(match.error)throw match.error;seen++;
