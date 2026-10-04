@@ -116,8 +116,8 @@ DO $$ DECLARE t text;BEGIN
 END $$;
 
 DROP POLICY IF EXISTS "regulatory monitor admin mutation" ON public.regulatory_source_monitors;
-CREATE POLICY "regulatory monitor admin mutation" AS RESTRICTIVE
- ON public.regulatory_source_monitors FOR UPDATE TO authenticated
+CREATE POLICY "regulatory monitor admin mutation"
+ ON public.regulatory_source_monitors AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 
