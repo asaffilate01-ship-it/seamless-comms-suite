@@ -1,3 +1,4 @@
+import {createHash} from "node:crypto";
 import {createServerFn} from "@tanstack/react-start";
 import {z} from "zod";
 import {requireSupabaseAuth} from "@/integrations/supabase/auth-middleware";
@@ -94,12 +95,17 @@ const mask=z.object({tenantId:uuid,productKey:product.nullish(),providerKey:z.st
 export const createCallMaskingSession=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:z.input<typeof mask>)=>mask.parse(i)).handler(async({context,data})=>{
  const a=await requireService(context,data.tenantId,"omniqora.contact");requireWriteRole(a.role);
+ if(!data.productKey)throw new Error("Product key required for call masking");
  if(Date.parse(data.expiresAt)<=Date.now())throw new Error("Masking expiry must be in the future");
- const {data:row,error}=await(context.supabase as any).from("call_masking_sessions").insert({
-  tenant_id:data.tenantId,product_key:data.productKey??null,provider_key:data.providerKey??null,subject_type:data.subjectType,
-  subject_id:data.subjectId,party_a_ref:data.partyARef,party_b_ref:data.partyBRef,masked_number:data.maskedNumber,
-  status:"active",expires_at:data.expiresAt,provider_ref:data.providerRef??null
- }).select("*").single();if(error)throw new Error(error.message);return row;
+ const hash=(value:string)=>createHash("sha256").update(value).digest("hex");
+ const {data:row,error}=await(context.supabase as any).from("contact_masking_sessions").insert({
+  tenant_id:data.tenantId,product_key:data.productKey,provider_key:data.providerKey??null,
+  proxy_number:data.maskedNumber,caller_hash:hash(data.partyARef),recipient_hash:hash(data.partyBRef),
+  context_type:data.subjectType,context_id:data.subjectId,recording_policy:"disabled",state:"active",
+  expires_at:data.expiresAt,started_at:new Date().toISOString(),
+  metadata:{providerRef:data.providerRef??null}
+ }).select("*").single();
+ if(error)throw new Error(error.message);return row;
 });
 
 const media=z.object({tenantId:uuid,productKey:product.nullish(),documentId:uuid.nullish(),mediaType:z.enum(["image","pdf","audio","video","scan","other"]),
