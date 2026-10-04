@@ -76,6 +76,7 @@ assert(visionRunner.includes("noBidAuthority:true"),"vision provider must have n
 assert(visionRunner.includes("Math.min(10"),"vision runner batch must be bounded");
 
 assert(watchWorker.includes("pending_intelligence"),"score-threshold watches must support two-stage intelligence");
+assert(watchWorker.includes('decision?.recommendation==="do_not_bid"||decision?.status==="rejected"'),"DO NOT BID or human-rejected watch lots must never qualify");
 assert(watchWorker.includes("watchEvidenceScore"),"saved watches must use pre-bid evidence score rather than full economics score");
 assert(watchWorker.includes('.limit(50)'),"scheduled watch worker must cap rules per run");
 assert(watchWorker.includes("24*60*60*1000"),"watch worker should deduplicate unchanged daily price-curve snapshots");
