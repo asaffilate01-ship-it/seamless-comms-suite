@@ -112,7 +112,7 @@ Deno.serve(async req=>{
     if(action==="claim"){
       const claimed=await db.rpc("automotive_claim_auction_intelligence_job",{_worker_key:workerKey});
       if(claimed.error)throw claimed.error;
-      const job=claimed.data;
+      const job=Array.isArray(claimed.data)?claimed.data[0]:claimed.data;
       if(!job?.id)return json({ok:true,job:null});
       const ctx=await contextForJob(db,job);
       return json({ok:true,job:{
@@ -141,6 +141,10 @@ Deno.serve(async req=>{
       }).select("*").single();
       if(inserted.error)throw inserted.error;
       const result=evaluateAuctionDecision(decisionInput(ctx,structured));
+      const revoked=await db.from("automotive_bid_instructions").update({
+        status:"draft",authorised_actor_ref:null,authorised_at:null,admin_approval_note:null,updated_at:new Date().toISOString()
+      }).eq("tenant_id",job.data.tenant_id).eq("auction_lot_id",ctx.lot.id).eq("status","authorised");
+      if(revoked.error)throw revoked.error;
       await db.from("automotive_auction_decisions").update({status:"superseded",updated_at:new Date().toISOString()})
         .eq("tenant_id",job.data.tenant_id).eq("auction_lot_id",ctx.lot.id).in("status",["proposed","reviewed"]);
       const decision=await db.from("automotive_auction_decisions").insert({
