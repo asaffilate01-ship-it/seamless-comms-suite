@@ -76,9 +76,14 @@ async function contextForJob(db:any,job:any){
   const cost=await db.from("automotive_bid_cost_models_v2").select("*").eq("tenant_id",job.tenant_id).eq("auction_lot_id",lotId)
     .in("status",["approved","review","draft"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(cost.error)throw cost.error;
-  const corrections=await db.from("automotive_auction_review_corrections")
-    .select("changed_fields,original_payload,corrected_payload,note,created_at")
-    .eq("tenant_id",job.tenant_id).eq("product_key",job.product_key).order("created_at",{ascending:false}).limit(20);
+  const make=String(lot.data.auction_sheet?.make??vehicle?.make??"").trim();
+  const model=String(lot.data.auction_sheet?.model??vehicle?.model??"").trim();
+  let correctionQuery=db.from("automotive_auction_review_corrections")
+    .select("changed_fields,original_payload,corrected_payload,note,created_at,context")
+    .eq("tenant_id",job.tenant_id).eq("product_key",job.product_key);
+  if(make)correctionQuery=correctionQuery.filter("context->>make","ilike",make);
+  if(model)correctionQuery=correctionQuery.filter("context->>model","ilike",model);
+  const corrections=await correctionQuery.order("created_at",{ascending:false}).limit(20);
   if(corrections.error)throw corrections.error;
   return {lot:lot.data,vehicle,history,comparables:comps.data??[],costModel:cost.data,learningExamples:corrections.data??[]};
 }
