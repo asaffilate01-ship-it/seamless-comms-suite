@@ -111,5 +111,40 @@ const nafsi = ecosystem.find((entry) => entry.product === "nafsi");
 assert.equal(nafsi?.id, "nafsi-gb");
 assert.match(nafsi?.boundary ?? "", /no prompt, journal, mood or free-text wellbeing content/i);
 
+const nafsiServer = await readFile(
+  new URL("../../src/modules/control-plane/nafsi.server.ts", import.meta.url),
+  "utf8",
+);
+for (const token of [
+  '"daily-plan"',
+  '"flow-ai-slot"',
+  '"weekly-report"',
+  'createHmac("sha256", token)',
+  "privateField(envelope.event.payload)",
+  'service_key: "omniqora.ai"',
+])
+  assert(nafsiServer.includes(token), `Missing Nafsi governed route control: ${token}`);
+assert(!nafsiServer.includes("prompt: z.string"), "Nafsi route must not accept free-form prompts");
+
+for (const route of [
+  "api.control-plane.nafsi.intelligence-shadow.ts",
+  "api.control-plane.nafsi.events.ts",
+]) {
+  const source = await readFile(new URL(`../../src/routes/${route}`, import.meta.url), "utf8");
+  assert(source.includes("serveNafsi"), `Missing Nafsi route handler: ${route}`);
+}
+
+const routeMigration = await readFile(
+  new URL(
+    "../../supabase/migrations/20261004160000_nafsi_intelligence_event_routes.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+assert(routeMigration.includes("shadow_intelligence_and_signed_events"));
+assert(routeMigration.includes("operational_metadata_only"));
+
 await db.close();
-console.log("Nafsi Factory catalogue, blueprint, connector boundary and Connect manifest verified");
+console.log(
+  "Nafsi Factory catalogue, governed Intelligence routes, signed events and Connect manifest verified",
+);

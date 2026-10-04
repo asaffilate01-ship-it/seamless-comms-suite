@@ -45,3 +45,14 @@ The rollout order is `local authority -> shadow comparison -> reviewed parity ->
 ## Connect contract
 
 The Connect manifest exposes operational events and read/draft tools only. It intentionally excludes raw personal wellbeing text. Publishing a dua, accepting recitation rights, or approving disputed religious content remains a Nafsi human-review action.
+
+## Phase 27–28 routes
+
+- `POST /api/control-plane/nafsi/intelligence-shadow` accepts only the first three low-risk capabilities: `daily-plan`, `flow-ai-slot` and `weekly-report`.
+- The request is structured and bounded. Free-form journal, mood, prompt and wellbeing text is not accepted.
+- The configured private runtime returns a review-only draft. Omniqora verifies the evidence references and refuses Arabic output, fatwa/medical authority and external actions.
+- `POST /api/control-plane/nafsi/events` accepts only manifest-listed operational events with a five-minute HMAC replay window and idempotency key.
+- Event payloads are validated per event type and recursively rejected if they include prompt, message, journal, mood, content, transcript, contact or response fields.
+- Intelligence usage is metered without storing draft text. Human parity approval remains mandatory before cutover.
+
+Omniqora deployment also requires `OMNIQORA_NAFSI_AI_SHADOW_URL`, `OMNIQORA_NAFSI_AI_SHADOW_KEY`, `OMNIQORA_NAFSI_AI_PROVIDER`, `OMNIQORA_NAFSI_AI_MODEL` and `OMNIQORA_NAFSI_AI_POLICY_VERSION` on the Factory server. The runtime URL must be HTTPS.
