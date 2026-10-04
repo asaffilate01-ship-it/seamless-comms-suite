@@ -259,8 +259,11 @@ CREATE OR REPLACE FUNCTION public.routing_rank_providers(
  provider_key text,success_rate numeric,avg_latency_ms numeric,avg_cost_minor numeric,observation_count bigint,score numeric
 )
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
-AS $$
- WITH candidates AS(
+AS $
+ WITH scope AS(
+  SELECT 1 AS ok
+  WHERE public.is_platform_admin(auth.uid()) OR public.is_tenant_member(_tenant,auth.uid())
+ ), candidates AS(
   SELECT unnest(COALESCE(
     (SELECT p.provider_order FROM public.routing_policies p
      WHERE p.tenant_id=_tenant AND p.product_key=_product AND p.status='active'
@@ -293,6 +296,7 @@ AS $$
           + (1-LEAST(COALESCE(s.avg_cost_minor,0)/m.max_cost,1))*20
         )::numeric,4) score
  FROM candidates c
+ CROSS JOIN scope
  LEFT JOIN stats s USING(provider_key)
  CROSS JOIN maxes m
  WHERE EXISTS(
