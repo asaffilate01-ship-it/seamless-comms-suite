@@ -74,7 +74,17 @@ async function prediction(client:any,tenantId:string,lot:NormalizedAuctionLot,lo
     make:r.make,model:r.model,modelCode:r.model_code,year:r.model_year,grade:r.grade,mileageKm:r.mileage_km,
     hammerJpy:Number(r.hammer_jpy),outcomeAt:r.outcome_at
   }));
-  const result=predictHammerPrice({target:{make:lot.make,model:lot.model,modelCode:lot.modelCode,year:lot.year,grade:lot.grade,mileageKm:lot.odometerKm},outcomes:rows});
+  const target={make:lot.make,model:lot.model,modelCode:lot.modelCode,year:lot.year,grade:lot.grade,mileageKm:lot.odometerKm};
+  const result=predictHammerPrice({target,outcomes:rows});
+  if(result.predictedHammerJpy!==null){
+    const curve=await client.from("automotive_auction_price_curves").insert({
+      tenant_id:tenantId,product_key:"autohashi",make:lot.make,model:lot.model,model_code:lot.modelCode,
+      model_year:lot.year,grade:lot.grade,mileage_band_km:typeof lot.odometerKm==="number"?Math.floor(lot.odometerKm/20000)*20000:null,
+      method:result.method,sample_count:result.sampleCount,p25_jpy:result.lowJpy,median_jpy:result.predictedHammerJpy,p75_jpy:result.highJpy,
+      confidence:result.confidence,source_window_days:730,metadata:{auctionLotId:lotId,watchWorker:true}
+    });
+    if(curve.error)throw curve.error;
+  }
   const latest=await client.from("automotive_auction_price_predictions").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",lotId)
     .eq("status","predicted").order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(latest.error)throw latest.error;
