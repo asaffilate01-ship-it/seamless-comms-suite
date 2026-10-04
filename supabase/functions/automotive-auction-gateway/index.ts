@@ -204,7 +204,14 @@ async function intelligenceStatus(body:any){
   const decision=await ctx.db.from("automotive_auction_decisions").select("*").eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId)
     .neq("status","superseded").order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(decision.error)throw decision.error;
-  return {job:job.data,extraction:ctx.extraction,decision:decision.data,comparables:ctx.comparables,costModel:ctx.costModel};
+  const prediction=await ctx.db.from("automotive_auction_price_predictions").select("*").eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId)
+    .neq("status","superseded").order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(prediction.error)throw prediction.error;
+  const corrections=await ctx.db.from("automotive_auction_review_corrections").select("id,changed_fields,note,created_at,reviewed_actor_ref")
+    .eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId).order("created_at",{ascending:false}).limit(20);
+  if(corrections.error)throw corrections.error;
+  return {job:job.data,extraction:ctx.extraction,decision:decision.data,comparables:ctx.comparables,costModel:ctx.costModel,
+    prediction:prediction.data,corrections:corrections.data??[]};
 }
 async function syncMarketEvidence(body:any){
   const lotId=String(body.auctionLotId??"");if(!lotId)throw new Error("auctionLotId is required");
