@@ -8,10 +8,22 @@ function db(){
   if(!url||!key)throw new Error("Service database is not configured");
   return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
 }
-function tenant(){
-  const id=Deno.env.get("AUTOHASHI_OMNIQORA_TENANT_ID")??"";
-  if(!/^[0-9a-f-]{36}$/i.test(id))throw new Error("AUTOHASHI_OMNIQORA_TENANT_ID is not configured");
-  return id;
+async function watchTenants(client:any,requested:unknown){
+  const explicit=String(requested??"");
+  if(/^[0-9a-f-]{36}$/i.test(explicit)){
+    const allowed=await client.from("tenant_products").select("tenant_id").eq("tenant_id",explicit).eq("product_key","autohashi")
+      .in("status",["requested","provisioning","active"]).maybeSingle();
+    if(allowed.error)throw allowed.error;
+    if(!allowed.data)throw new Error("Requested tenant is not an enabled AutoHashi tenant");
+    return [explicit];
+  }
+  const mapped=await client.from("tenant_products").select("tenant_id").eq("product_key","autohashi")
+    .in("status",["requested","provisioning","active"]).not("external_tenant_id","is",null).limit(50);
+  if(mapped.error)throw mapped.error;
+  const ids=[...new Set((mapped.data??[]).map((row:any)=>String(row.tenant_id)).filter(Boolean))];
+  if(ids.length)return ids;
+  const fallback=Deno.env.get("AUTOHASHI_OMNIQORA_TENANT_ID")??"";
+  return /^[0-9a-f-]{36}$/i.test(fallback)?[fallback]:[];
 }
 function auth(req:Request){
   const expected=Deno.env.get("AUTOHASHI_AUCTION_WATCH_WORKER_SECRET")??"";
@@ -176,28 +188,30 @@ Deno.serve(async req=>{
   if(req.method!=="POST")return json({error:"Method not allowed"},405);
   if(!auth(req))return json({error:"Watch worker authentication failed"},401);
   try{
-    const client=db(),tenantId=tenant();let body:any={};try{body=await req.json();}catch{body={};}
-    let q=client.from("automotive_auction_watch_rules").select("*").eq("tenant_id",tenantId).eq("product_key","autohashi").eq("enabled",true);
-    if(body.watchRuleId)q=q.eq("id",String(body.watchRuleId));
-    const rules=await q.order("updated_at",{ascending:true}).limit(50);if(rules.error)throw rules.error;
-    const outputs:any[]=[],manual=!!body.watchRuleId;
-    for(const rule of rules.data??[]){
-      const now=new Date().toISOString();
-      if(!manual&&rule.last_run_at){
-        const age=Date.now()-new Date(rule.last_run_at).getTime();
-        const minimum=rule.cadence==="daily"?20*60*60*1000:45*60*1000;
-        if(age<minimum){outputs.push({watchRuleId:rule.id,name:rule.name,ok:true,skipped:"not_due"});continue;}
-      }
-      try{
-        const result=await runRule(client,tenantId,rule);
-        await client.from("automotive_auction_watch_rules").update({last_run_at:now,last_success_at:now,last_error:null}).eq("id",rule.id);
-        outputs.push({watchRuleId:rule.id,name:rule.name,ok:true,...result});
-      }catch(error){
-        const message=error instanceof Error?error.message:String(error);
-        await client.from("automotive_auction_watch_rules").update({last_run_at:now,last_error:message.slice(0,2000)}).eq("id",rule.id);
-        outputs.push({watchRuleId:rule.id,name:rule.name,ok:false,error:message});
+    const client=db();let body:any={};try{body=await req.json();}catch{body={};}
+    const tenantIds=await watchTenants(client,body.tenantId),outputs:any[]=[],manual=!!body.watchRuleId;
+    for(const tenantId of tenantIds){
+      let q=client.from("automotive_auction_watch_rules").select("*").eq("tenant_id",tenantId).eq("product_key","autohashi").eq("enabled",true);
+      if(body.watchRuleId)q=q.eq("id",String(body.watchRuleId));
+      const rules=await q.order("updated_at",{ascending:true}).limit(50);if(rules.error)throw rules.error;
+      for(const rule of rules.data??[]){
+        const now=new Date().toISOString();
+        if(!manual&&rule.last_run_at){
+          const age=Date.now()-new Date(rule.last_run_at).getTime();
+          const minimum=rule.cadence==="daily"?20*60*60*1000:45*60*1000;
+          if(age<minimum){outputs.push({tenantId,watchRuleId:rule.id,name:rule.name,ok:true,skipped:"not_due"});continue;}
+        }
+        try{
+          const result=await runRule(client,tenantId,rule);
+          await client.from("automotive_auction_watch_rules").update({last_run_at:now,last_success_at:now,last_error:null}).eq("id",rule.id);
+          outputs.push({tenantId,watchRuleId:rule.id,name:rule.name,ok:true,...result});
+        }catch(error){
+          const message=error instanceof Error?error.message:String(error);
+          await client.from("automotive_auction_watch_rules").update({last_run_at:now,last_error:message.slice(0,2000)}).eq("id",rule.id);
+          outputs.push({tenantId,watchRuleId:rule.id,name:rule.name,ok:false,error:message});
+        }
       }
     }
-    return json({ok:true,processed:outputs.length,results:outputs});
+    return json({ok:true,tenants:tenantIds.length,processed:outputs.length,results:outputs});
   }catch(error){return json({error:error instanceof Error?error.message:String(error)},500);}
 });
