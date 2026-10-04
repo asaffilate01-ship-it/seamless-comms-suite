@@ -77,6 +77,7 @@ function publicLot(row:any){
     vehicleId:row.vehicle_id,
     providerKey:row.provider_key,
     externalLotId:row.external_lot_id,
+    lotNumber:metadata.lot_number??null,
     auctionHouse:row.auction_house,
     auctionAt:row.auction_at,
     status:row.status,
