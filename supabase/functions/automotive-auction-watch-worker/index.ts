@@ -80,7 +80,7 @@ async function upsertLot(client:any,tenantId:string,lot:NormalizedAuctionLot){
 }
 async function prediction(client:any,tenantId:string,lot:NormalizedAuctionLot,lotId:string){
   const outcomes=await client.from("automotive_auction_price_outcomes").select("*").eq("tenant_id",tenantId)
-    .eq("make",lot.make).eq("model",lot.model).order("outcome_at",{ascending:false}).limit(1000);
+    .ilike("make",lot.make).ilike("model",lot.model).order("outcome_at",{ascending:false}).limit(1000);
   if(outcomes.error)throw outcomes.error;
   const rows:AuctionOutcome[]=(outcomes.data??[]).map((r:any)=>({
     make:r.make,model:r.model,modelCode:r.model_code,year:r.model_year,grade:r.grade,mileageKm:r.mileage_km,
