@@ -828,5 +828,15 @@
     "profile": "automotive",
     "boundary": "Vehicle sourcing, auction, inspection, landed-cost and shipping records remain authoritative in AutoHashi; Omniqora Connect handles authorised communications only.",
     "status": "connect-manifest-implemented"
+  },
+  {
+    "id": "nafsi-gb",
+    "name": "Nafsi UK",
+    "product": "nafsi",
+    "repository": "asaffilate01-ship-it/nafsiapp",
+    "source": "https://github.com/asaffilate01-ship-it/nafsiapp",
+    "profile": "wellbeing",
+    "boundary": "Nafsi remains authoritative for consumer wellbeing data, reviewed Islamic content and recitation. Omniqora receives no prompt, journal, mood or free-text wellbeing content through operational events.",
+    "status": "source-adapter-in-progress"
   }
 ]
