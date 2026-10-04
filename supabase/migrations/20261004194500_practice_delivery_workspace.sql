@@ -315,6 +315,33 @@ CREATE POLICY "practice proposal portal read" ON public.practice_proposals
     AND a.user_id=auth.uid() AND a.status='active'
  ));
 
+CREATE POLICY "practice portal access self read" ON public.practice_client_portal_access
+ FOR SELECT TO authenticated USING(user_id=auth.uid() AND status='active');
+CREATE POLICY "practice client portal read" ON public.practice_clients
+ FOR SELECT TO authenticated USING(EXISTS(
+  SELECT 1 FROM public.practice_client_portal_access a
+  WHERE a.tenant_id=practice_clients.tenant_id
+    AND a.product_key=practice_clients.product_key
+    AND a.client_id=practice_clients.id
+    AND a.user_id=auth.uid() AND a.status='active'
+ ));
+CREATE POLICY "practice engagement portal read" ON public.practice_engagements
+ FOR SELECT TO authenticated USING(EXISTS(
+  SELECT 1 FROM public.practice_client_portal_access a
+  WHERE a.tenant_id=practice_engagements.tenant_id
+    AND a.product_key=practice_engagements.product_key
+    AND a.client_id=practice_engagements.client_id
+    AND a.user_id=auth.uid() AND a.status='active'
+ ));
+CREATE POLICY "practice signature portal read" ON public.practice_signature_requests
+ FOR SELECT TO authenticated USING(EXISTS(
+  SELECT 1 FROM public.practice_client_portal_access a
+  WHERE a.tenant_id=practice_signature_requests.tenant_id
+    AND a.product_key=practice_signature_requests.product_key
+    AND a.client_id=practice_signature_requests.client_id
+    AND a.user_id=auth.uid() AND a.status='active'
+ ));
+
 -- Provider terminal states cannot be fabricated through direct tenant writes.
 DROP POLICY IF EXISTS "practice signature provider-state update" ON public.practice_signature_requests;
 CREATE POLICY "practice signature provider-state update" AS RESTRICTIVE
@@ -343,7 +370,9 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $$
 DECLARE tpl public.practice_service_templates%rowtype;cid public.practice_clients%rowtype;eid uuid;phase jsonb;pos integer:=0;
 BEGIN
- IF NOT public.is_platform_admin(auth.uid()) AND NOT public.can_write(_tenant,auth.uid()) THEN
+ IF auth.uid() IS NOT NULL
+    AND NOT public.is_platform_admin(auth.uid())
+    AND NOT public.can_write(_tenant,auth.uid()) THEN
   RAISE EXCEPTION 'Practice write access denied';
  END IF;
  SELECT * INTO tpl FROM public.practice_service_templates
@@ -634,5 +663,44 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.practice_record_provider_submission(uuid,text,text,jsonb,uuid) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.practice_record_provider_submission(uuid,text,text,jsonb,uuid) TO service_role;
+
+
+CREATE OR REPLACE FUNCTION public.practice_enqueue_due_reminders(_limit integer DEFAULT 100)
+RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $
+DECLARE r record;n integer:=0;event_key text;
+BEGIN
+ FOR r IN
+  SELECT q.*
+  FROM public.practice_document_requests q
+  JOIN public.practice_engagements e ON e.id=q.engagement_id
+  WHERE q.status='outstanding'
+    AND q.due_at IS NOT NULL AND q.due_at<now()
+    AND e.status NOT IN('complete','closed','cancelled')
+    AND q.reminder_count<3
+    AND (q.last_reminder_at IS NULL OR q.last_reminder_at<=now()-interval '3 days')
+  ORDER BY q.due_at
+  LIMIT LEAST(GREATEST(_limit,1),500)
+  FOR UPDATE OF q SKIP LOCKED
+ LOOP
+  event_key:='practice-reminder:'||r.id::text||':'||(r.reminder_count+1)::text;
+  INSERT INTO public.platform_events(
+   tenant_id,product_key,event_type,event_version,source_service,subject_type,subject_id,
+   idempotency_key,data_classification,payload
+  ) VALUES(
+   r.tenant_id,r.product_key,'practice.request.reminder_due',1,'omniqora.practice-delivery',
+   'practice_document_request',r.id::text,event_key,'confidential',
+   jsonb_build_object('requestId',r.id,'clientId',r.client_id,'engagementId',r.engagement_id,'title',r.title,'dueAt',r.due_at)
+  ) ON CONFLICT(tenant_id,product_key,idempotency_key) DO NOTHING;
+  UPDATE public.practice_document_requests
+  SET reminder_count=reminder_count+1,last_reminder_at=now(),updated_at=now()
+  WHERE id=r.id;
+  n:=n+1;
+ END LOOP;
+ RETURN n;
+END $;
+REVOKE ALL ON FUNCTION public.practice_enqueue_due_reminders(integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.practice_enqueue_due_reminders(integer) TO service_role;
 
 COMMIT;
