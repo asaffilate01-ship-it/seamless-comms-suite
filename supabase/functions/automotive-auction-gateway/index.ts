@@ -359,7 +359,7 @@ async function correctAuctionExtraction(body:any){
   const recalculated=await recalculateAuctionDecision(lotId,body);
   return {correction:correction.data,extraction:human.data,...recalculated};
 }
-async function predictionForLot(lotId:string){
+async function predictionForLot(lotId:string,body:any){
   const ctx=await auctionIntelligenceContext(lotId,body);
   const sheet=ctx.lot.auction_sheet??{};
   const target={
@@ -763,7 +763,7 @@ Deno.serve(async req=>{
     if(body.action==="intelligence.requeue")return json({ok:true,...await requeueAuctionIntelligence(body)});
     if(body.action==="intelligence.review")return json({ok:true,decision:await reviewAuctionDecision(body)});
     if(body.action==="learning.correct_extraction")return json({ok:true,...await correctAuctionExtraction(body)});
-    if(body.action==="prediction.refresh")return json({ok:true,...await predictionForLot(String(body.auctionLotId??""))});
+    if(body.action==="prediction.refresh")return json({ok:true,...await predictionForLot(String(body.auctionLotId??""),body)});
     if(body.action==="watch.save")return json({ok:true,watch:await saveWatchRule(body)});
     if(body.action==="watch.list")return json({ok:true,watches:await listWatchRules(body)});
     if(body.action==="watch.update")return json({ok:true,watch:await updateWatchRule(body)});
