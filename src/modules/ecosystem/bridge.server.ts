@@ -16,13 +16,24 @@ async function access(b: Binding) {
   if (error || !data || !['owner','admin','manager','member','agent'].includes(data.role)) throw new BridgeError(403,'Source principal is no longer an active workspace member');
   return {tenant:b.tenant,user:b.serviceUser,tenant_role:data.role};
 }
-async function command(b: Binding, name: string, data: Record<string,unknown>) {
+async function command<T = Receipt>(b: Binding, name: string, data: Record<string,unknown>) {
   const credentialDigest = createHash('sha256').update(process.env[b.secretEnv] ?? '').digest('hex');
   const identity=await access(b);
-  const result=await callTransformation(identity,{command:name,project_id:b.project,data:{...data,connection:b.id}}) as Receipt;
+  const result=await callTransformation(identity,{command:name,project_id:b.project,data:{...data,connection:b.id}}) as T;
   const current=await access(b);
   if(createHash('sha256').update(process.env[b.secretEnv] ?? '').digest('hex')!==credentialDigest)throw new BridgeError(403,'Connection credential changed');
   if(current.tenant_role!==identity.tenant_role)throw new BridgeError(403,'Workspace access changed');
+  return result;
+}
+const readinessSchema = z.object({
+  connection:z.string(), checkedAt:z.string().datetime({offset:true}), readyForTest:z.boolean(), liveVerified:z.literal(false),
+  checks:z.array(z.object({code:z.enum(['project_active','ai_enabled','data_sharing_approved','profile_authorised','model_bound','provider_configuration_present']),passed:z.boolean()})).length(6),
+});
+export async function checkBridgeReadiness(b: Binding) {
+  const result = readinessSchema.parse(await command<unknown>(b,'bridges.readiness',{profile:b.profile}));
+  if(result.connection!==b.id || new Set(result.checks.map(c=>c.code)).size!==6 || result.readyForTest!==result.checks.every(c=>c.passed)) {
+    throw new BridgeError(503,'Invalid readiness response');
+  }
   return result;
 }
 async function submit(b:Binding,input:BridgeInput,id:string) {
