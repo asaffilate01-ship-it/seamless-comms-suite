@@ -16,6 +16,9 @@ export type AuctionProviderSearch = {
   limit?: number;
 };
 
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key:string]: JsonValue };
+export type JsonObject = { [key:string]: JsonValue };
+
 export type NormalizedAuctionLot = {
   providerKey: ReadOnlyJapanAuctionProvider;
   externalLotId: string;
@@ -33,9 +36,9 @@ export type NormalizedAuctionLot = {
   chassisNumber: string | null;
   modelCode: string | null;
   sourceUrl: string | null;
-  images: unknown[];
-  auctionSheet: Record<string, unknown>;
-  metadata: Record<string, unknown>;
+  images: JsonValue[];
+  auctionSheet: JsonObject;
+  metadata: JsonObject;
 };
 
 export class AuctionProviderConfigError extends Error {
@@ -47,6 +50,21 @@ export class AuctionProviderConfigError extends Error {
 
 function rec(value:unknown):Record<string,unknown>{
   return value&&typeof value==="object"&&!Array.isArray(value)?value as Record<string,unknown>:{};
+}
+function jsonValue(value:unknown):JsonValue{
+  if(value===null||typeof value==="string"||typeof value==="boolean")return value;
+  if(typeof value==="number")return Number.isFinite(value)?value:null;
+  if(Array.isArray(value))return value.map(jsonValue);
+  if(value&&typeof value==="object"){
+    const out:JsonObject={};
+    for(const [key,item] of Object.entries(value as Record<string,unknown>))out[key]=jsonValue(item);
+    return out;
+  }
+  return null;
+}
+function jsonObject(value:unknown):JsonObject{
+  const converted=jsonValue(value);
+  return converted&&typeof converted==="object"&&!Array.isArray(converted)?converted:{};
 }
 function arr(value:unknown):unknown[]{return Array.isArray(value)?value:[]}
 function str(value:unknown):string|null{
@@ -72,20 +90,21 @@ function iso(value:unknown):string|null{
   const d=new Date(s);
   return Number.isNaN(d.getTime())?null:d.toISOString();
 }
-function imageObjects(value:unknown):unknown[]{
-  if(Array.isArray(value))return value.slice(0,200);
+function imageObjects(value:unknown):JsonValue[]{
+  if(Array.isArray(value))return value.slice(0,200).map(jsonValue);
   const o=rec(value);
-  if(Array.isArray(o.items))return o.items.slice(0,200);
-  if(Array.isArray(o.images))return o.images.slice(0,200);
+  if(Array.isArray(o.items))return o.items.slice(0,200).map(jsonValue);
+  if(Array.isArray(o.images))return o.images.slice(0,200).map(jsonValue);
   return [];
 }
-function uniqueImages(...values:unknown[]):unknown[]{
-  const out:unknown[]=[];
+function uniqueImages(...values:unknown[]):JsonValue[]{
+  const out:JsonValue[]=[];
   const seen=new Set<string>();
   for(const value of values){
     for(const item of imageObjects(value)){
-      const key=typeof item==="string"?item:JSON.stringify(item);
-      if(!seen.has(key)){seen.add(key);out.push(item)}
+      const safe=jsonValue(item);
+      const key=typeof safe==="string"?safe:JSON.stringify(safe);
+      if(!seen.has(key)){seen.add(key);out.push(safe)}
       if(out.length>=200)return out;
     }
   }
@@ -160,19 +179,19 @@ function normalizeTheCarApi(rowValue:unknown,detail=false):NormalizedAuctionLot|
     modelCode,
     sourceUrl:str(row.offer_link),
     images,
-    auctionSheet:{
+    auctionSheet:jsonObject({
       vehicle_details:vehicleDetails,
       car_identification:identification,
       condition:rec(row.condition),
-    },
-    metadata:{
+    }),
+    metadata:jsonObject({
       source_site:site,
       provider_contract_version:str(envelope.contract_version)??str(row.contract_version),
       price_semantics:site==="japan"?"opening_bid_not_hammer":"provider_current_price",
       final_price_unverified:site==="japan"&&row.final_price!=null,
       id_precision_unsafe:idInfo.precisionUnsafe,
       raw_status:str(row.status),
-    },
+    }),
   };
 }
 
@@ -200,13 +219,13 @@ function normalizeCarStack(rowValue:unknown):NormalizedAuctionLot|null{
     modelCode:str(row.chassis_code)??str(row.model_code),
     sourceUrl:null,
     images:uniqueImages(imagesObj.items,imagesObj.primary_url?[{url:imagesObj.primary_url,kind:"primary"}]:[]),
-    auctionSheet:{specs},
-    metadata:{
+    auctionSheet:jsonObject({specs}),
+    metadata:jsonObject({
       lot_number:str(row.lot_number),
       title:str(row.title),
       image_total:int(imagesObj.total),
       price_semantics:"auction_price_as_supplied",
-    },
+    }),
   };
 }
 
