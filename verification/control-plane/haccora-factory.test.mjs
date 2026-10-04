@@ -21,7 +21,7 @@ assert(product.rows[0].metadata.countryPacks.includes("GB"));
 assert(product.rows[0].metadata.countryPacks.includes("DE"));
 
 const services=await db.query("SELECT service_key FROM public.service_catalogue WHERE service_key LIKE 'haccora.%' ORDER BY service_key");
-assert.equal(services.rows.length,15);
+assert.equal(services.rows.length,16);
 for(const key of ["haccora.core","haccora.ai-copilot","haccora.rag","haccora.graphrag","haccora.regulatory-intelligence","haccora.dishbee-sync"])
   assert(services.rows.some(row=>row.service_key===key),key);
 
