@@ -68,6 +68,8 @@ CREATE INDEX IF NOT EXISTS automotive_auction_observations_identity_idx
  WHERE chassis_number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS automotive_auction_observations_provider_idx
  ON public.automotive_auction_observations(tenant_id,provider_key,external_lot_id,observed_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS automotive_auction_observations_exact_seen_idx
+ ON public.automotive_auction_observations(tenant_id,provider_key,external_lot_id,observed_at);
 
 CREATE TABLE IF NOT EXISTS public.automotive_provider_sync_runs(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
