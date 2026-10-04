@@ -132,25 +132,6 @@ CREATE TABLE IF NOT EXISTS public.contact_transcripts(
  created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS public.call_masking_sessions(
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
- product_key text REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
- provider_key text REFERENCES public.provider_catalogue(provider_key) ON DELETE SET NULL,
- subject_type text NOT NULL,
- subject_id text NOT NULL,
- party_a_ref text NOT NULL,
- party_b_ref text NOT NULL,
- masked_number text NOT NULL,
- status text NOT NULL DEFAULT 'active' CHECK(status IN('reserved','active','expired','released','failed')),
- starts_at timestamptz NOT NULL DEFAULT now(),
- expires_at timestamptz NOT NULL,
- provider_ref text,
- metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
- CHECK(expires_at>starts_at)
-);
-CREATE INDEX IF NOT EXISTS call_masking_subject_idx ON public.call_masking_sessions(tenant_id,product_key,subject_type,subject_id,status);
-
 CREATE TABLE IF NOT EXISTS public.media_analysis_jobs(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
@@ -353,7 +334,7 @@ CREATE TABLE IF NOT EXISTS public.ai_candidate_model_tests(
 DO $$ DECLARE t text; BEGIN
  FOREACH t IN ARRAY ARRAY[
   'contact_sessions','contact_session_participants','contact_escalations','contact_callbacks','contact_recordings',
-  'contact_transcripts','call_masking_sessions','media_analysis_jobs','mobile_devices','mobile_push_endpoints',
+  'contact_transcripts','media_analysis_jobs','mobile_devices','mobile_push_endpoints',
   'mobile_location_events','sales_prospect_profiles','sales_proposals','signature_envelopes','cross_sell_recommendations',
   'ai_outcome_reviews','ai_reviewed_lessons','ai_candidate_model_tests'
  ] LOOP
