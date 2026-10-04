@@ -3,6 +3,7 @@ No source callbacks or external tool execution. A failed model call is never ret
 """
 import hashlib
 import json
+import os
 import uuid
 from knowledge_core.types import APIError, fields, identifier, integer
 from .ai_hub import encode, now, WRITERS
@@ -21,6 +22,37 @@ class Bridges:
         self.e = engine
         if not engine.postgres:
             with engine.connection() as db: db.executescript(SCHEMA)
+
+    def readiness(self, actor, project, data):
+        """Read-only preflight, never a provider probe or permission to activate."""
+        fields(data, {'connection', 'profile'}, {'connection', 'profile'})
+        identifier(data['connection'], 'connection')
+        from .ai_hub import PROFILES
+        if not isinstance(data['profile'], str) or data['profile'] not in PROFILES:
+            raise APIError(422, 'Unknown specialist profile')
+        with self.e.connection() as db:
+            p = self.e._access(db, actor, project, WRITERS)
+            # Fail closed if migrations/RLS prevent this principal using the table.
+            db.execute('SELECT id FROM bridge_jobs WHERE tenant=? AND project=? AND creator=? LIMIT 0',
+                       (actor.tenant, project, actor.user)).fetchall()
+            policy, _ = self.e.ai._setting(db, actor, project)
+            checks = [
+                {'code':'project_active', 'passed':not bool(p['paused'])},
+                {'code':'ai_enabled', 'passed':bool(policy['enabled'])},
+                {'code':'data_sharing_approved', 'passed':bool(policy['data_sharing_approved'])},
+                {'code':'profile_authorised', 'passed':p['project_role'] != 'finance' or data['profile'] == 'finance'},
+            ]
+            try:
+                model = self.e.ai._entry('models', policy['routes'].get(data['profile']), actor, project)
+            except APIError:
+                model = None
+            checks.append({'code':'model_bound', 'passed':model is not None})
+            # Presence only: provider authentication and reachability remain unverified.
+            credential = bool(model and (model['provider'] in {'ollama','bedrock'} or
+                              os.environ.get(model.get('credential_env', ''), '').strip()))
+            checks.append({'code':'provider_configuration_present', 'passed':credential})
+        return {'connection':data['connection'], 'checkedAt':now(), 'checks':checks,
+                'readyForTest':all(c['passed'] for c in checks), 'liveVerified':False}
 
     def row(self, db, actor, project, data):
         connection, rid = identifier(data['connection'], 'connection'), identifier(data['id'], 'id')
