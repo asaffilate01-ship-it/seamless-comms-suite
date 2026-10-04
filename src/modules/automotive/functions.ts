@@ -21,6 +21,9 @@ export const getAutomotiveWorkspace=createServerFn({method:"POST"}).middleware([
   db.from("automotive_bid_cost_models_v2").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
   db.from("automotive_bid_instructions").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
   db.from("automotive_bid_provider_events").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("received_at",{ascending:false}).limit(300),
+  db.from("automotive_auction_sheet_extractions").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
+  db.from("automotive_auction_comparables").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("observed_at",{ascending:false}).limit(300),
+  db.from("automotive_auction_decisions").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
   db.from("automotive_parts_fitment").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
   db.from("automotive_compliance_checks").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("checked_at",{ascending:false}).limit(200)
  ]);
@@ -28,7 +31,8 @@ export const getAutomotiveWorkspace=createServerFn({method:"POST"}).middleware([
  return{vehicles:rs[0].data??[],appraisals:rs[1].data??[],evidence:rs[2].data??[],passports:rs[3].data??[],
   findings:rs[4].data??[],valuations:rs[5].data??[],auctionLots:rs[6].data??[],bidModels:rs[7].data??[],
   bidCostModelsV2:rs[8].data??[],bidInstructions:rs[9].data??[],bidProviderEvents:rs[10].data??[],
-  fitments:rs[11].data??[],compliance:rs[12].data??[]};
+  auctionSheetExtractions:rs[11].data??[],auctionComparables:rs[12].data??[],auctionDecisions:rs[13].data??[],
+  fitments:rs[14].data??[],compliance:rs[15].data??[]};
 });
 
 const vehicle=scope.extend({
