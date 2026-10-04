@@ -94,6 +94,7 @@ def metrics(r):
 
 def report(objects, base, as_of, company_id=None):
     iso_date(as_of,'as_of')
+    if company_id is not None: identifier(company_id,'company_id')
     companies=[o['data'] for o in objects if o['kind']=='company' and (not company_id or o['id']==company_id)]
     if company_id and not companies: raise APIError(404,'Company not found')
     ids={c['id'] for c in companies}
@@ -105,9 +106,9 @@ def report(objects, base, as_of, company_id=None):
             found=[a for a in answers if a['company_id']==c['id'] and a['domain']==domain]
             status='verified' if found and all(a['evidence_status']=='verified' for a in found) else 'disputed' if any(a['evidence_status']=='disputed' for a in found) else 'unknown' if found and all(a['evidence_status']=='unknown' for a in found) else 'reported' if found else 'unassessed'
             coverage.append({'company_id':c['id'],'company':c['name'],'domain':domain,'status':status,'question':QUESTIONS[domain],'source_ids':[a['id'] for a in found]})
-            if status!='verified': actions.append({'id':f'discover-{c["id"]}-{domain}','title':f'Confirm {domain} for {c["name"]}','owner':c['owner'],'phase':'Discover','due_date':(date.fromisoformat(as_of)+timedelta(days=7)).isoformat(),'acceptance':QUESTIONS[domain]+' Record and review supporting evidence.','source_ids':[a['id'] for a in found] or [c['id']],'status':'proposed'})
+            if status!='verified': actions.append({'id':f'discover-{c["id"]}-{domain}','company_id':c['id'],'title':f'Confirm {domain} for {c["name"]}','owner':c['owner'],'phase':'Discover','due_date':(date.fromisoformat(as_of)+timedelta(days=7)).isoformat(),'acceptance':QUESTIONS[domain]+' Record and review supporting evidence.','source_ids':[a['id'] for a in found] or [c['id']],'status':'proposed'})
     for issue in rows('stakeholder_issue'):
-        if issue['status']!='closed': actions.append({'id':'issue-'+issue['id'],'title':issue['recommendation'],'owner':issue['owner'],'phase':'Improve','due_date':(date.fromisoformat(as_of)+timedelta(days=30)).isoformat(),'acceptance':'Validate the suspected cause, agree an outcome measure and compare results with the baseline.','source_ids':[issue['id']],'status':'proposed'})
+        if issue['status']!='closed': actions.append({'id':'issue-'+issue['id'],'company_id':issue['company_id'],'title':issue['recommendation'],'owner':issue['owner'],'phase':'Improve','due_date':(date.fromisoformat(as_of)+timedelta(days=30)).isoformat(),'acceptance':'Validate the suspected cause, agree an outcome measure and compare results with the baseline.','source_ids':[issue['id']],'status':'proposed'})
     improvements=rows('improvement'); groups={}; estimates=[]
     for r in improvements:
         group=(r['company_id'],r['overlap_group'])
@@ -117,7 +118,29 @@ def report(objects, base, as_of, company_id=None):
         annual=Decimal(r['amount'])*12 if recurring else None
         first=annual-Decimal(r['recurring_cost'])*12-Decimal(r['implementation_cost']) if recurring and economic else None
         estimates.append({**r,'annual_gross':money(annual) if annual is not None else None,'first_year_net':money(first) if first is not None else None,'overlap':len(groups[(r['company_id'],r['overlap_group'])])>1,'status':'estimate_not_realised'})
-        actions.append({'id':'improve-'+r['id'],'title':r['action'],'owner':r['owner'],'phase':'Implement','due_date':r['target_date'],'acceptance':r['assumptions']+' Validate benefits separately from forecast values.','source_ids':[r['id']],'status':'proposed'})
-    receivables=rows('receivable'); overdue=[r for r in receivables if r['due_date']<as_of and Decimal(r['outstanding'])>0]
+        actions.append({'id':'improve-'+r['id'],'company_id':r['company_id'],'title':r['action'],'owner':r['owner'],'phase':'Implement','due_date':r['target_date'],'acceptance':r['assumptions']+' Validate benefits separately from forecast values.','source_ids':[r['id']],'status':'proposed'})
+    receivables=rows('receivable')
+    collections=collection_summary(receivables, as_of)
+    collections_by_company=[{'company_id':c['id'], **collection_summary([r for r in receivables if r['company_id']==c['id']],as_of)} for c in companies]
+    audit_readiness=[]
+    for c in companies:
+        own_coverage=[v for v in coverage if v['company_id']==c['id']]
+        checks=[]
+        for kind,label in [('department','Departments recorded'),('person','People recorded'),('stakeholder','Stakeholders recorded'),('business_process','Processes mapped')]:
+            found=[r for r in rows(kind) if r['company_id']==c['id']]
+            checks.append({'code':kind,'label':label,'complete':bool(found),'source_ids':[r['id'] for r in found]})
+        financials=[r for r in rows('business_financials') if r['company_id']==c['id']]
+        complete_financials=[r for r in financials if all(k in r for k in ('revenue','cogs','opex')) and r['period_end']<=as_of]
+        checks.append({'code':'financial_baseline','label':'Completed-period revenue and cost baseline recorded','complete':bool(complete_financials),'source_ids':[r['id'] for r in complete_financials]})
+        checks.append({'code':'discovery_verified','label':'All 12 discovery domains verified','complete':all(v['status']=='verified' for v in own_coverage),'source_ids':[sid for v in own_coverage for sid in v['source_ids']]})
+        audit_readiness.append({'company_id':c['id'],'checks':checks,'completed':sum(v['complete'] for v in checks),'total':len(checks),'ready_for_review':all(v['complete'] for v in checks),'basis':'Preparation checklist only. Recorded structure and verified discovery do not constitute audit assurance, legal clearance or transaction readiness.'})
+    return {'as_of':as_of,'currency':base,'companies':companies,'coverage':coverage,'coverage_summary':{s:sum(c['status']==s for c in coverage) for s in ['verified','reported','disputed','unknown','unassessed']},'departments':rows('department'),'people':rows('person'),'stakeholders':rows('stakeholder'),'metrics':[metrics(r) for r in rows('business_financials')],'processes':rows('business_process'),'issues':rows('stakeholder_issue'),'opportunities':estimates,'overlap_groups':[{'company_id':k[0],'group':k[1],'ids':v} for k,v in groups.items() if len(v)>1],'collections':collections,'collections_by_company':collections_by_company,'audit_readiness':audit_readiness,'actions':actions,'generation':'deterministic_rules','status':'draft_for_review','benefit_basis':'Amounts retain their benefit category. No grand total mixes cash recovery, profit, working capital and hours; overlapping opportunities are flagged. All opportunity figures are estimates.'}
+
+
+def collection_summary(receivables, as_of):
+    overdue=[r for r in receivables if r['due_date']<as_of and Decimal(r['outstanding'])>0]
     eligible=[r for r in overdue if not r['disputed'] and not r['collection_hold'] and r['last_verified']==as_of]
-    return {'as_of':as_of,'currency':base,'companies':companies,'coverage':coverage,'coverage_summary':{s:sum(c['status']==s for c in coverage) for s in ['verified','reported','disputed','unknown','unassessed']},'departments':rows('department'),'people':rows('person'),'stakeholders':rows('stakeholder'),'metrics':[metrics(r) for r in rows('business_financials')],'processes':rows('business_process'),'issues':rows('stakeholder_issue'),'opportunities':estimates,'overlap_groups':[{'company_id':k[0],'group':k[1],'ids':v} for k,v in groups.items() if len(v)>1],'collections':{'overdue_total':money(sum((Decimal(r['outstanding']) for r in overdue),Decimal(0))),'overdue_count':len(overdue),'eligible_draft_count':len(eligible),'eligible_invoice_ids':[r['id'] for r in eligible],'basis':'Draft candidates only. Balance must be checked today; disputed, held, not-due and zero balances are excluded. No customer is contacted.'},'actions':actions,'generation':'deterministic_rules','status':'draft_for_review','benefit_basis':'Amounts retain their benefit category. No grand total mixes cash recovery, profit, working capital and hours; overlapping opportunities are flagged. All opportunity figures are estimates.'}
+    return {'overdue_total':money(sum((Decimal(r['outstanding']) for r in overdue),Decimal(0))),
+            'overdue_count':len(overdue),'eligible_draft_count':len(eligible),
+            'eligible_invoice_ids':[r['id'] for r in eligible],
+            'basis':'Draft candidates only. Balance must be checked today; disputed, held, not-due and zero balances are excluded. No customer is contacted.'}
