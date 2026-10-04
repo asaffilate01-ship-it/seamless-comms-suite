@@ -44,6 +44,8 @@ assert(gateway.includes("acceptedMax>Number(current.data.max_bid_minor)"),"provi
 assert(webhook.includes("hammer>Number(instruction.max_bid_minor)"),"won-event max-bid safety guard missing");
 assert(webhook.includes("x-auction-signature")&&webhook.includes("x-auction-timestamp"),"signed webhook verification missing");
 assert(webhook.includes("duplicate:true"),"webhook replay handling missing");
+assert(webhook.includes("terminalStates.has"),"terminal webhook states must not regress");
+assert(gateway.includes('providerStatus==="rejected"?"rejected"'),"explicit provider rejection must remain rejected");
 assert(migration.includes("automotive_bid_cost_models_v2"),"v2 mixed-currency model table missing");
 assert(migration.includes("automotive_bid_provider_events"),"provider event audit table missing");
 assert(migration.includes("ENABLE ROW LEVEL SECURITY"),"v2 bid tables must use RLS");
