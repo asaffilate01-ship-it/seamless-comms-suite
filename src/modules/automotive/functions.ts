@@ -18,13 +18,17 @@ export const getAutomotiveWorkspace=createServerFn({method:"POST"}).middleware([
   db.from("automotive_valuations").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("as_of",{ascending:false}).limit(200),
   db.from("automotive_auction_lots").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("auction_at",{ascending:false}).limit(200),
   db.from("automotive_bid_models").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
+  db.from("automotive_bid_cost_models_v2").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
+  db.from("automotive_bid_instructions").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
+  db.from("automotive_bid_provider_events").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("received_at",{ascending:false}).limit(300),
   db.from("automotive_parts_fitment").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
   db.from("automotive_compliance_checks").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("checked_at",{ascending:false}).limit(200)
  ]);
  for(const r of rs)if(r.error)throw new Error(r.error.message);
  return{vehicles:rs[0].data??[],appraisals:rs[1].data??[],evidence:rs[2].data??[],passports:rs[3].data??[],
   findings:rs[4].data??[],valuations:rs[5].data??[],auctionLots:rs[6].data??[],bidModels:rs[7].data??[],
-  fitments:rs[8].data??[],compliance:rs[9].data??[]};
+  bidCostModelsV2:rs[8].data??[],bidInstructions:rs[9].data??[],bidProviderEvents:rs[10].data??[],
+  fitments:rs[11].data??[],compliance:rs[12].data??[]};
 });
 
 const vehicle=scope.extend({
