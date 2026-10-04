@@ -159,10 +159,8 @@ export const createPracticeSubmission=createServerFn({method:"POST"}).middleware
 export const approvePracticeSubmission=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:{tenantId:string;submissionId:string})=>z.object({tenantId:uuid,submissionId:uuid}).parse(i)).handler(async({context,data})=>{
  await admin(context,data.tenantId);
- const{data:row,error}=await(context.supabase as any).from("practice_submissions").update({
-  status:"approved",approved_by:context.userId,approved_at:new Date().toISOString(),updated_at:new Date().toISOString()
- }).eq("tenant_id",data.tenantId).eq("id",data.submissionId).eq("status","review").select("*").single();
- if(error)throw new Error(error.message);return row;
+ const r=await(context.supabase as any).rpc("practice_approve_submission",{_submission:data.submissionId});
+ if(r.error)throw new Error(r.error.message);return{ok:true};
 });
 
 const recurring=scope.extend({clientId:uuid,templateId:uuid,recurrence:z.enum(["monthly","quarterly","annual"]),
