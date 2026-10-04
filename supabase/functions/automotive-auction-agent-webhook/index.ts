@@ -53,7 +53,9 @@ Deno.serve(async req=>{
     const duplicate=await client.from("automotive_bid_provider_events").select("id,processing_status")
       .eq("provider_key",providerKey).eq("provider_event_id",eventId).maybeSingle();
     if(duplicate.error)throw duplicate.error;
-    if(duplicate.data)return json({ok:true,duplicate:true,eventId,status:duplicate.data.processing_status});
+    if(duplicate.data&&["processed","ignored"].includes(duplicate.data.processing_status)){
+      return json({ok:true,duplicate:true,eventId,status:duplicate.data.processing_status});
+    }
 
     let instruction:any=null;
     const instructionId=typeof body.instruction_id==="string"?body.instruction_id:"";
@@ -68,12 +70,16 @@ Deno.serve(async req=>{
     }
     if(!instruction)return json({error:"Bid instruction not found"},404);
 
-    const inserted=await client.from("automotive_bid_provider_events").insert({
-      tenant_id:tenantId,product_key:"autohashi",bid_instruction_id:instruction.id,provider_key:providerKey,
-      provider_event_id:eventId,idempotency_key:idempotencyKey,event_type:eventType,provider_reference:providerReference||instruction.provider_reference,
-      payload:body,signature_valid:true,processing_status:"received"
-    }).select("*").single();
-    if(inserted.error)throw inserted.error;
+    let eventRow=duplicate.data;
+    if(!eventRow){
+      const inserted=await client.from("automotive_bid_provider_events").insert({
+        tenant_id:tenantId,product_key:"autohashi",bid_instruction_id:instruction.id,provider_key:providerKey,
+        provider_event_id:eventId,idempotency_key:idempotencyKey,event_type:eventType,provider_reference:providerReference||instruction.provider_reference,
+        payload:body,signature_valid:true,processing_status:"received"
+      }).select("*").single();
+      if(inserted.error)throw inserted.error;
+      eventRow=inserted.data;
+    }
 
     const now=new Date().toISOString();
     let nextStatus:string|null=null,processingNote="Event recorded",limitViolation=false;
@@ -88,6 +94,13 @@ Deno.serve(async req=>{
         nextStatus="error";limitViolation=true;
         processingNote="Provider reported hammer price above authorised maximum";
       }else nextStatus="won";
+    }
+
+    const terminalStates=new Set(["won","lost","rejected","cancelled"]);
+    if(instruction.limit_violation){
+      nextStatus=null;processingNote="Ignored because the bid instruction is safety-locked after a maximum-bid violation";
+    }else if(nextStatus&&terminalStates.has(String(instruction.status))&&nextStatus!==instruction.status){
+      nextStatus=null;processingNote="Ignored out-of-order event because the bid instruction is already terminal";
     }
 
     if(nextStatus){
@@ -114,7 +127,7 @@ Deno.serve(async req=>{
 
     const processed=await client.from("automotive_bid_provider_events").update({
       processed_at:now,processing_status:nextStatus?"processed":"ignored",processing_note:processingNote
-    }).eq("id",inserted.data.id);
+    }).eq("id",eventRow.id);
     if(processed.error)throw processed.error;
     return json({ok:true,eventId,instructionId:instruction.id,eventType,status:nextStatus??instruction.status,limitViolation});
   }catch(error){
