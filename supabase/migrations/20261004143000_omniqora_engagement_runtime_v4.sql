@@ -88,26 +88,15 @@ CREATE TABLE IF NOT EXISTS public.contact_escalations(
  outcome jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 
-CREATE TABLE IF NOT EXISTS public.contact_callbacks(
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
- product_key text REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
- session_id uuid REFERENCES public.contact_sessions(id) ON DELETE SET NULL,
- person_id uuid REFERENCES public.crm_people(id) ON DELETE SET NULL,
- channel text NOT NULL DEFAULT 'voice',
- destination text NOT NULL,
- scheduled_for timestamptz NOT NULL,
- timezone text,
- priority text NOT NULL DEFAULT 'normal' CHECK(priority IN('low','normal','high','urgent')),
- status text NOT NULL DEFAULT 'scheduled'
-   CHECK(status IN('scheduled','queued','attempting','completed','failed','cancelled','no_answer')),
- attempts integer NOT NULL DEFAULT 0,
- assigned_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
- outcome jsonb NOT NULL DEFAULT '{}'::jsonb,
- created_at timestamptz NOT NULL DEFAULT now(),
- updated_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS contact_callbacks_due_idx ON public.contact_callbacks(tenant_id,status,scheduled_for);
+ALTER TABLE public.contact_callbacks
+ ADD COLUMN IF NOT EXISTS session_id uuid REFERENCES public.contact_sessions(id) ON DELETE SET NULL,
+ ADD COLUMN IF NOT EXISTS channel text NOT NULL DEFAULT 'voice',
+ ADD COLUMN IF NOT EXISTS destination text,
+ ADD COLUMN IF NOT EXISTS timezone text,
+ ADD COLUMN IF NOT EXISTS priority text NOT NULL DEFAULT 'normal',
+ ADD COLUMN IF NOT EXISTS assigned_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+ ADD COLUMN IF NOT EXISTS outcome jsonb NOT NULL DEFAULT '{}'::jsonb;
+CREATE INDEX IF NOT EXISTS contact_callbacks_due_v4_idx ON public.contact_callbacks(tenant_id,status,due_at);
 
 CREATE TABLE IF NOT EXISTS public.contact_recordings(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -186,27 +175,16 @@ CREATE TABLE IF NOT EXISTS public.media_analysis_jobs(
  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS public.mobile_devices(
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
- product_key text REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
- user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
- device_ref text NOT NULL,
- platform text NOT NULL CHECK(platform IN('ios','android','web','other')),
- app_version text,
- device_model text,
- locale text,
- timezone text,
- push_enabled boolean NOT NULL DEFAULT false,
- location_permission text NOT NULL DEFAULT 'unknown'
-   CHECK(location_permission IN('unknown','denied','foreground','background')),
- status text NOT NULL DEFAULT 'active' CHECK(status IN('active','inactive','revoked')),
- last_seen_at timestamptz,
- metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
- created_at timestamptz NOT NULL DEFAULT now(),
- updated_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(tenant_id,product_key,device_ref)
-);
+ALTER TABLE public.mobile_devices
+ ADD COLUMN IF NOT EXISTS app_version text,
+ ADD COLUMN IF NOT EXISTS device_model text,
+ ADD COLUMN IF NOT EXISTS locale text,
+ ADD COLUMN IF NOT EXISTS timezone text,
+ ADD COLUMN IF NOT EXISTS push_enabled boolean NOT NULL DEFAULT false,
+ ADD COLUMN IF NOT EXISTS location_permission text NOT NULL DEFAULT 'unknown';
+ALTER TABLE public.mobile_devices DROP CONSTRAINT IF EXISTS mobile_devices_location_permission_check;
+ALTER TABLE public.mobile_devices ADD CONSTRAINT mobile_devices_location_permission_check
+ CHECK(location_permission IN('unknown','denied','foreground','background'));
 
 CREATE TABLE IF NOT EXISTS public.mobile_push_endpoints(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
