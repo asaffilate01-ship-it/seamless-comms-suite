@@ -1,8 +1,10 @@
 import {createClient} from "npm:@supabase/supabase-js@2.110.8";
 import {
   auctionProviderReadiness,
+  compareAuctionLotSamples,
   getAuctionProviderLot,
   searchAuctionProvider,
+  searchAuctionProvidersWithFailover,
 } from "../../../src/modules/automotive/auction-providers.ts";
 
 const corsHeaders={
@@ -36,23 +38,24 @@ async function verify(req:Request,raw:string){
   if(!signature||!constantTimeEqual(expected,signature.toLowerCase()))return {ok:false,error:"Bridge signature is invalid"};
   return {ok:true as const};
 }
-function providerConfig(requested:unknown){
+type ReadProvider={providerKey:"vehicle.auction.thecarapi"|"vehicle.auction.carstack";secret:string};
+function providerCandidates(requested:unknown):ReadProvider[]{
   const wanted=typeof requested==="string"?requested:"auto";
+  const providers:ReadProvider[]=[];
   const theCar=Deno.env.get("THECARAPI_API_KEY")??"";
   const carStack=Deno.env.get("CARSTACK_API_TOKEN")??"";
-  if(wanted==="vehicle.auction.thecarapi"){
-    if(!theCar)throw new Error("TheCarAPI is not configured");
-    return {providerKey:wanted as const,secret:theCar};
+  if(theCar)providers.push({providerKey:"vehicle.auction.thecarapi",secret:theCar});
+  if(carStack)providers.push({providerKey:"vehicle.auction.carstack",secret:carStack});
+  if(wanted==="auto"){
+    if(!providers.length)throw new Error("No Japanese auction read provider is configured");
+    return providers;
   }
-  if(wanted==="vehicle.auction.carstack"){
-    if(!carStack)throw new Error("CarStack is not configured");
-    return {providerKey:wanted as const,secret:carStack};
-  }
-  if(wanted!=="auto")throw new Error("Unsupported auction read provider");
-  if(theCar)return {providerKey:"vehicle.auction.thecarapi" as const,secret:theCar};
-  if(carStack)return {providerKey:"vehicle.auction.carstack" as const,secret:carStack};
-  throw new Error("No Japanese auction read provider is configured");
+  if(wanted!=="vehicle.auction.thecarapi"&&wanted!=="vehicle.auction.carstack")throw new Error("Unsupported auction read provider");
+  const match=providers.find(provider=>provider.providerKey===wanted);
+  if(!match)throw new Error((wanted==="vehicle.auction.thecarapi"?"TheCarAPI":"CarStack")+" is not configured");
+  return [match];
 }
+function providerConfig(requested:unknown){return providerCandidates(requested)[0];}
 function serviceDb(){
   const url=Deno.env.get("SUPABASE_URL")??"";
   const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
@@ -140,13 +143,39 @@ Deno.serve(async req=>{
       return json({ok:true,executionEnabled:false,intelligenceImportConfigured:!!Deno.env.get("AUTOHASHI_OMNIQORA_TENANT_ID"),providers:readiness});
     }
     if(body.action==="search"){
-      const provider=providerConfig(body.providerKey);
-      const result=await searchAuctionProvider({providerKey:provider.providerKey,secret:provider.secret,filters:{
+      const candidates=providerCandidates(body.providerKey);
+      const filters={
         query:body.filters?.query??null,make:body.filters?.make??null,model:body.filters?.model??null,
         yearMin:body.filters?.yearMin??null,yearMax:body.filters?.yearMax??null,odometerMaxKm:body.filters?.odometerMaxKm??null,
         grade:body.filters?.grade??null,steering:body.filters?.steering??"rhd",page:body.filters?.page??1,pageSize:Math.min(50,body.filters?.pageSize??24),
-      }});
+      };
+      const result=body.providerKey==="auto"||!body.providerKey
+        ? await searchAuctionProvidersWithFailover({candidates,filters})
+        : await searchAuctionProvider({providerKey:candidates[0].providerKey,secret:candidates[0].secret,filters});
       return json({ok:true,executionEnabled:false,...result});
+    }
+    if(body.action==="compare"){
+      const candidates=providerCandidates("auto");
+      const theCar=candidates.find(p=>p.providerKey==="vehicle.auction.thecarapi"),carStack=candidates.find(p=>p.providerKey==="vehicle.auction.carstack");
+      if(!theCar||!carStack)return json({error:"Comparison requires both TheCarAPI and CarStack credentials"},409);
+      const sampleSize=Math.min(500,Math.max(100,Number(body.sampleSize??200)));
+      const filters={query:body.filters?.query??null,make:body.filters?.make??null,model:body.filters?.model??null,
+        yearMin:body.filters?.yearMin??null,yearMax:body.filters?.yearMax??null,odometerMaxKm:body.filters?.odometerMaxKm??null,
+        grade:body.filters?.grade??null,steering:body.filters?.steering??"rhd"};
+      async function collect(provider:ReadProvider){
+        const lots:any[]=[];const started=Date.now();let page=1,totalPages:number|null=null;
+        while(lots.length<sampleSize){
+          const result=await searchAuctionProvider({providerKey:provider.providerKey,secret:provider.secret,filters:{...filters,page,pageSize:Math.min(50,sampleSize-lots.length)}});
+          lots.push(...result.lots);totalPages=result.totalPages;
+          if(!result.lots.length||(totalPages!==null&&page>=totalPages))break;page++;
+        }
+        return {lots:lots.slice(0,sampleSize),latencyMs:Date.now()-started,pagesRead:page};
+      }
+      const a=await collect(theCar),b=await collect(carStack);
+      return json({ok:true,requestedSampleSize:sampleSize,collected:{thecarapi:a.lots.length,carstack:b.lots.length},
+        latencyMs:{thecarapi:a.latencyMs,carstack:b.latencyMs},pagesRead:{thecarapi:a.pagesRead,carstack:b.pagesRead},
+        comparison:compareAuctionLotSamples(a.lots,b.lots),
+        note:"Comparison reports coverage and overlap only; Japanese opening/current prices are not treated as verified hammer prices."});
     }
     if(body.action==="detail"){
       if(!body.externalLotId)return json({error:"externalLotId is required"},400);
