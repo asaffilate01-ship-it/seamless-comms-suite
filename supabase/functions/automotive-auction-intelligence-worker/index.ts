@@ -133,7 +133,7 @@ Deno.serve(async req=>{
       const structured=extraction(body.extraction);
       const ctx=await contextForJob(db,job.data);
       await db.from("automotive_auction_sheet_extractions").update({status:"superseded",updated_at:new Date().toISOString()})
-        .eq("tenant_id",job.data.tenant_id).eq("auction_lot_id",ctx.lot.id).in("status",["proposed","reviewed"]);
+        .eq("tenant_id",job.data.tenant_id).eq("auction_lot_id",ctx.lot.id).in("status",["proposed","reviewed","approved"]);
       const inserted=await db.from("automotive_auction_sheet_extractions").insert({
         tenant_id:job.data.tenant_id,product_key:job.data.product_key,auction_lot_id:ctx.lot.id,vehicle_id:ctx.vehicle?.id??null,
         intelligence_job_id:job.data.id,source_kind:"ai_vision",source_ref:String(body.sourceRef??workerKey),schema_version:AUCTION_EXTRACTION_SCHEMA.version,
