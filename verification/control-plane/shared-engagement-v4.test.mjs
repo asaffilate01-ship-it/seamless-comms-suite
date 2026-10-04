@@ -60,8 +60,8 @@ await asUser(admin,()=>db.query(`
  VALUES($1,'mealdeck','omniqora','Shared CRM/AI opportunity',80,'suggested')`,[t.tenantId]));
 
 const useCase=(await asUser(admin,()=>db.query(`
- INSERT INTO public.ai_use_cases(tenant_id,product_key,name,description,owner_user_id,status,risk_level)
- VALUES($1,'mealdeck','Fixture learning','Review outcomes before changing any model',$2,'approved','low') RETURNING id`,[t.tenantId,admin]))).rows[0].id;
+ INSERT INTO public.ai_use_cases(tenant_id,product_key,use_case_key,name,owner_user_id,purpose,status,risk_level)
+ VALUES($1,'mealdeck','fixture-learning','Fixture learning',$2,'Review outcomes before changing any model','approved','low') RETURNING id`,[t.tenantId,admin]))).rows[0].id;
 const review=(await asUser(admin,()=>db.query(`
  INSERT INTO public.ai_outcome_reviews(tenant_id,product_key,use_case_id,review_summary,evidence_refs,reviewed_by)
  VALUES($1,'mealdeck',$2,'Observed result reviewed by human','["evidence-1"]'::jsonb,$3) RETURNING id`,[t.tenantId,useCase,admin]))).rows[0].id;
