@@ -255,16 +255,21 @@ async function reviewAuctionDecision(body:any){
     status:review,reviewed_actor_ref:"autohashi:user:"+who.userId,reviewed_at:now,review_note:typeof body.note==="string"?body.note:null,updated_at:now
   }).eq("id",decisionId).select("*").single();
   if(updated.error)throw updated.error;
+  let reviewedJobId:string|null=null;
   if(current.data.extraction_id){
+    const extraction=await db.from("automotive_auction_sheet_extractions").select("intelligence_job_id").eq("tenant_id",tenantId).eq("id",current.data.extraction_id).single();
+    if(extraction.error)throw extraction.error;reviewedJobId=extraction.data.intelligence_job_id??null;
     const ex=await db.from("automotive_auction_sheet_extractions").update({
       status:review==="approved"?"approved":"reviewed",reviewed_at:now,review_note:typeof body.note==="string"?body.note:null,updated_at:now
     }).eq("tenant_id",tenantId).eq("id",current.data.extraction_id);
     if(ex.error)throw ex.error;
   }
-  const jobs=await db.from("intelligence_jobs").update({
-    status:"completed",completed_at:now,updated_at:now,result:{decisionId,recommendation:current.data.recommendation,score:current.data.score,humanReview:review}
-  }).eq("tenant_id",tenantId).eq("job_type","automotive.auction_assessment").filter("input->>auctionLotId","eq",lotId).eq("status","waiting_review");
-  if(jobs.error)throw jobs.error;
+  if(reviewedJobId){
+    const jobs=await db.from("intelligence_jobs").update({
+      status:"completed",completed_at:now,updated_at:now,result:{decisionId,recommendation:current.data.recommendation,score:current.data.score,humanReview:review}
+    }).eq("tenant_id",tenantId).eq("id",reviewedJobId).eq("status","waiting_review");
+    if(jobs.error)throw jobs.error;
+  }
   return updated.data;
 }
 
