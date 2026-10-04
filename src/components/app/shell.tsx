@@ -33,6 +33,7 @@ const nav: NavItem[] = [
   { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle, badge: "LIVE" },
   { to: "/app/order-intake", labelKey: "", label: "Assisted Ordering", icon: ShoppingBasket },
   { to: "/app/dispatch", labelKey: "", label: "Dispatch & Tracking", icon: Truck },
+  { to: "/app/routing", labelKey: "", label: "Native Routing & VRP", icon: GitBranch },
   { to: "/app/commerce", labelKey: "", label: "Syndriva Commerce", icon: Store },
   { to: "/app/connected-operations", labelKey: "", label: "Connected Operations", icon: Wrench },
   { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox, badge: "12" },
