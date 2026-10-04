@@ -35,8 +35,8 @@ await asUser(admin,()=>db.query(`
  INSERT INTO public.contact_callbacks(tenant_id,product_key,session_id,channel,destination,scheduled_for,status)
  VALUES($1,'mealdeck',$2,'voice','+441234567890',now()+interval '1 hour','scheduled')`,[t.tenantId,session]));
 await asUser(admin,()=>db.query(`
- INSERT INTO public.call_masking_sessions(tenant_id,product_key,subject_type,subject_id,party_a_ref,party_b_ref,masked_number,expires_at)
- VALUES($1,'mealdeck','booking','book-1','cust-1','provider-1','+441111111111',now()+interval '2 hours')`,[t.tenantId]));
+ INSERT INTO public.contact_masking_sessions(tenant_id,product_key,proxy_number,caller_hash,recipient_hash,context_type,context_id,state,expires_at)
+ VALUES($1,'mealdeck','+441111111111','caller-hash','recipient-hash','booking','book-1','active',now()+interval '2 hours')`,[t.tenantId]));
 
 const media=(await asUser(admin,()=>db.query(`
  INSERT INTO public.media_analysis_jobs(tenant_id,product_key,media_type,storage_ref,purpose,status,created_by)
