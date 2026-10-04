@@ -314,7 +314,7 @@ async function submitBid(body:any){
     const raw=await response.text();let result:any={};
     try{result=raw?JSON.parse(raw):{};}catch{result={message:raw.slice(0,1000)}}
     const providerStatus=String(result.status??(response.ok?"accepted":"rejected")).toLowerCase();
-    const acceptedMax=result.max_bid_jpy==null?Number(current.data.max_bid_minor):Number(result.max_bid_jpy);
+    const acceptedMax=(result.accepted_max_bid_jpy??result.max_bid_jpy)==null?Number(current.data.max_bid_minor):Number(result.accepted_max_bid_jpy??result.max_bid_jpy);
     if(!Number.isFinite(acceptedMax)||acceptedMax>Number(current.data.max_bid_minor)){
       const violated=await db.from("automotive_bid_instructions").update({
         status:"error",limit_violation:true,last_error:"Execution provider acknowledged a bid ceiling above the authorised maximum",
@@ -323,7 +323,7 @@ async function submitBid(body:any){
       if(violated.error)throw violated.error;
       throw new Error("Execution provider maximum-bid safety violation");
     }
-    const nextStatus=response.ok&&providerStatus==="accepted"?"accepted":response.ok?"submitted":"rejected";
+    const nextStatus=providerStatus==="rejected"?"rejected":response.ok&&providerStatus==="accepted"?"accepted":response.ok?"submitted":"rejected";
     const updated=await db.from("automotive_bid_instructions").update({
       status:nextStatus,provider_reference:typeof result.provider_reference==="string"?result.provider_reference:current.data.provider_reference,
       submitted_at:current.data.submitted_at??now,result_payload:{...current.data.result_payload,submissionResponse:result},
@@ -331,7 +331,6 @@ async function submitBid(body:any){
       updated_at:now
     }).eq("tenant_id",tenantId).eq("id",instructionId).select("*").single();
     if(updated.error)throw updated.error;
-    if(!response.ok)throw new Error(updated.data.last_error||"Auction execution provider rejected bid");
     return updated.data;
   }catch(error){
     const message=error instanceof Error?error.message:String(error);
