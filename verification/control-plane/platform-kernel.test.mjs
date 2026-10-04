@@ -48,7 +48,7 @@ const luton = pilot.tenants.find((row) => row.tenantSlug === "cafe1-luton");
 assert(luton?.tenantId);
 
 const regions = await asUser(admin, () => db.query("SELECT region_key FROM public.region_packs ORDER BY region_key"));
-assert.deepEqual(regions.rows.map((r) => r.region_key), ["ae","de","gb","pk","us"]);
+assert.deepEqual(regions.rows.map((r) => r.region_key), ["ae","de","gb","pk","sa","us"]);
 
 await asUser(admin, () => db.query(
   "SELECT public.platform_set_tenant_product_runtime($1,$2,$3,$4,$5::jsonb)",

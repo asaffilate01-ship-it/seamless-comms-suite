@@ -20,8 +20,8 @@ const research=(await asUser(admin,()=>db.query("INSERT INTO public.tax_research
 await asUser(admin,()=>db.query("INSERT INTO public.tenant_compliance_pack_status(tenant_id,product_key,pack_key,status) VALUES($1,'mealdeck','uk-companies-house','in_progress')",[md.tenantId]));
 const hidden=await asUser(stranger,()=>db.query("SELECT * FROM public.payroll_runs WHERE tenant_id=$1",[md.tenantId]));assert.equal(hidden.rows.length,0);
 const cat=await db.query("SELECT package_key,implementation_status FROM public.vertical_package_catalogue WHERE package_key IN('kindelo.childcare','automotive.shared','payroll.core','formation.secretarial') ORDER BY package_key");
-assert.equal(cat.rows.find(r=>r.package_key==="kindelo.childcare").implementation_status,"catalogue_only");
-assert.equal(cat.rows.find(r=>r.package_key==="automotive.shared").implementation_status,"draft_branch");
+assert.equal(cat.rows.find(r=>r.package_key==="kindelo.childcare").implementation_status,"built_main");
+assert.equal(cat.rows.find(r=>r.package_key==="automotive.shared").implementation_status,"built_main");
 assert.equal(cat.rows.find(r=>r.package_key==="payroll.core").implementation_status,"built_main");
 assert.equal(cat.rows.find(r=>r.package_key==="formation.secretarial").implementation_status,"built_main");
 await db.close();console.log("Vertical package dependencies, payroll, accounting, tax, secretarial and compliance verified");
