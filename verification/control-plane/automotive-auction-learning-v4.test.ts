@@ -53,11 +53,14 @@ for(const table of [
   "automotive_auction_price_predictions","automotive_auction_watch_rules","automotive_auction_watch_matches"
 ]) assert(migration.includes(table),table+" missing from v4 migration");
 assert(migration.includes("ENABLE ROW LEVEL SECURITY"),"v4 learning tables must use RLS");
+assert(migration.includes("context jsonb NOT NULL DEFAULT '{}'::jsonb"),"correction context must be persisted for scoped learning examples");
 
 assert(gateway.includes('"learning.correct_extraction"'),"correction action missing");
 assert(gateway.includes('"prediction.refresh"'),"prediction refresh action missing");
 assert(gateway.includes('"watch.run"'),"watch run-now action missing");
 assert(gateway.includes("odometerKm must be a non-negative integer"),"server-side correction validation missing");
+assert(gateway.includes("yearMin cannot exceed yearMax"),"saved-search year bounds validation missing");
+assert(gateway.includes('minScore",0,100,true'),"saved-search score range validation missing");
 assert(gateway.includes("automotive_auction_price_curves"),"price curve snapshots missing from prediction path");
 assert(gateway.includes("resolveAutohashiTenant"),"signed AutoHashi actions must resolve tenant through SaaS Factory mapping");
 assert(gateway.includes('"tenant_products"')&&gateway.includes('"external_tenant_id"'),"AutoHashi external tenant mapping must use tenant_products.external_tenant_id");
@@ -71,6 +74,7 @@ assert(!webhook.includes('AUTOHASHI_OMNIQORA_TENANT_ID'),"multi-tenant agent web
 
 assert(intelWorker.includes("learningExamples"),"reviewed corrections must feed future extraction jobs");
 assert(intelWorker.includes("Reference only"),"corrections must remain non-authoritative reference examples");
+assert(intelWorker.includes('context->>make')&&intelWorker.includes('context->>model'),"learning examples must be scoped to the same vehicle family");
 assert(visionRunner.includes("learningExamplesAreReferenceOnly"),"vision runner must mark learning examples as reference only");
 assert(visionRunner.includes("noBidAuthority:true"),"vision provider must have no bid authority");
 assert(visionRunner.includes("Math.min(10"),"vision runner batch must be bounded");
