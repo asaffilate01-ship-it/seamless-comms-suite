@@ -41,6 +41,11 @@ INSERT INTO public.service_dependencies(service_key,depends_on_service_key) VALU
  ('omniqora.food-safety','omniqora.ai')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.product_catalogue(product_key,name,description,category,deployment_mode,status) VALUES
+ ('unipathway','UniPathway','Education delivery, pathway and student-success platform.','education','external','active'),
+ ('haccora','Haccora','Food-safety and compliance workspace with country packs and shared Omniqora intelligence.','compliance','external','active')
+ON CONFLICT(product_key) DO UPDATE SET description=EXCLUDED.description,status='active';
+
 INSERT INTO public.product_services(product_key,service_key,default_enabled,required) VALUES
  ('omniqora','omniqora.sales-engagement',true,false),
  ('omniqora','omniqora.contact-centre',true,false),
