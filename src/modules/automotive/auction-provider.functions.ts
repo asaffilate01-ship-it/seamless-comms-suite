@@ -73,7 +73,7 @@ export const searchJapaneseAuctionInventory=createServerFn({method:"POST"}).midd
       await db.from("automotive_provider_sync_runs").update({
         status:"succeeded",request_id:result.requestId,items_seen:result.lots.length,completed_at:new Date().toISOString()
       }).eq("id",run.id);
-      return {...result,fallbackUsed:index>0,attemptedProviders:attempted,providerErrors};
+      return JSON.parse(JSON.stringify({...result,fallbackUsed:index>0,attemptedProviders:attempted,providerErrors}));
     }catch(error){
       const message=error instanceof Error?error.message:String(error);
       providerErrors.push({providerKey:provider.providerKey,error:message});
