@@ -93,3 +93,16 @@ Ask each candidate agent for:
 8. Service levels, support hours and disaster recovery.
 9. Data-processing/security terms.
 10. A sandbox account before production approval.
+
+
+## Webhook signature profile
+
+Provider webhooks POST the exact JSON request body to the callback URL with:
+
+- `x-auction-timestamp`: Unix epoch milliseconds
+- `x-auction-signature`: lower-case hex HMAC-SHA256 of `<timestamp>.<raw-body>`
+- shared secret: `AUTOHASHI_AUCTION_AGENT_WEBHOOK_SECRET`
+
+The receiver rejects timestamps outside a five-minute window and de-duplicates by both provider event ID and idempotency key.
+
+A reported `auction.bid.won` hammer price above the authorised `max_bid_jpy` is treated as a provider safety violation and must not be silently accepted as a valid win.
