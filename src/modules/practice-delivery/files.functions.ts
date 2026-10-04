@@ -56,7 +56,7 @@ export const uploadPracticeRequestDocument=createServerFn({method:"POST"}).middl
   const linked=await admin.from("practice_request_documents").insert({
    tenant_id:request.tenant_id,request_id:request.id,document_id:doc.id,submitted_by:context.userId,status:"submitted"
   });if(linked.error)throw new Error(linked.error.message);
-  const responded=await admin.rpc("practice_portal_respond_request",{_request:request.id,_response:data.response,_document:doc.id});
+  const responded=await db.rpc("practice_portal_respond_request",{_request:request.id,_response:data.response,_document:doc.id});
   if(responded.error)throw new Error(responded.error.message);
   return{documentId:doc.id,fileName:safeName};
  }catch(e){
@@ -68,11 +68,12 @@ export const uploadPracticeRequestDocument=createServerFn({method:"POST"}).middl
 export const getPracticeRequestDocumentDownload=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:{linkId:string})=>z.object({linkId:uuid}).parse(i)).handler(async({context,data})=>{
  const db=context.supabase as any;
- const{data:link,error}=await db.from("practice_request_documents").select("document_id,request_id,document:document_records(id,title,metadata)").eq("id",data.linkId).maybeSingle();
+ const{data:link,error}=await db.from("practice_request_documents").select("document_id,request_id").eq("id",data.linkId).maybeSingle();
  if(error||!link)throw new Error("Practice document unavailable");
- const doc:any=link.document;if(!doc)throw new Error("Practice document unavailable");
- const metadata=doc.metadata??{},path=metadata.storagePath;
  const{supabaseAdmin}=await import("@/integrations/supabase/client.server");const admin=supabaseAdmin as any;
+ const{data:doc,error:docError}=await admin.from("document_records").select("id,title,metadata").eq("id",link.document_id).maybeSingle();
+ if(docError||!doc)throw new Error("Practice document unavailable");
+ const metadata=doc.metadata??{},path=metadata.storagePath;
  if(!path)throw new Error("Practice document storage reference unavailable");
  const signed=await admin.storage.from(bucket).createSignedUrl(path,60,{download:doc.title});
  if(signed.error)throw new Error("Practice document download unavailable");
