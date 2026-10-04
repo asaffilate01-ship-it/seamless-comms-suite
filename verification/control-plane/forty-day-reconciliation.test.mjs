@@ -76,7 +76,7 @@ const line=(await asUser(admin,()=>db.query("INSERT INTO public.telecom_lines(te
 const documentId=(await asUser(admin,()=>db.query("INSERT INTO public.document_records(tenant_id,product_key,document_type,title,status,created_by) VALUES($1,'mealdeck','private_note','Restricted document','active',$2) RETURNING id",[tenant.tenantId,admin]))).rows[0].id;
 await asUser(admin,()=>db.query("INSERT INTO public.document_versions(document_id,tenant_id,version,storage_ref,created_by) VALUES($1,$2,1,'urn:fixture:restricted',$3)",[documentId,tenant.tenantId,admin]));
 const beforeAcl=await asUser(member,()=>db.query("SELECT id FROM public.document_records WHERE id=$1",[documentId]));assert.equal(beforeAcl.rows.length,1);
-await asUser(admin,()=>db.query("INSERT INTO public.resource_access_rules(tenant_id,product_key,resource_type,resource_id,principal_type,principal_ref,permission,effect,created_by) VALUES($1,'mealdeck','document',$2,'user',$3,'read','allow',$3)",[tenant.tenantId,documentId,admin]));
+await asUser(admin,()=>db.query("INSERT INTO public.resource_access_rules(tenant_id,product_key,resource_type,resource_id,principal_type,principal_ref,permission,effect,created_by) VALUES($1::uuid,'mealdeck','document',$2::text,'user',$3::text,'read','allow',$3::uuid)",[tenant.tenantId,documentId,admin]));
 const afterAcl=await asUser(member,()=>db.query("SELECT id FROM public.document_records WHERE id=$1",[documentId]));assert.equal(afterAcl.rows.length,0);
 const adminDoc=await asUser(admin,()=>db.query("SELECT id FROM public.document_records WHERE id=$1",[documentId]));assert.equal(adminDoc.rows.length,1);
 
