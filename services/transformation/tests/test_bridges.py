@@ -54,6 +54,51 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(result['status'],'failed');self.assertIsNone(result['result'])
         with self.assertRaises(APIError):self.process()
         self.assertEqual(len(self.calls),1)
+    def assert_cached_draft_denied(self, status):
+        for operation in ('bridges.get', 'bridges.process', 'bridges.submit'):
+            with self.subTest(operation=operation):
+                with self.assertRaises(APIError) as caught:
+                    self.e.dispatch(self.actor, operation, self.project,
+                                    self.input if operation == 'bridges.submit' else self.ref)
+                self.assertEqual(caught.exception.status, status)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_cached_draft_blocked_when_project_paused(self):
+        self.submit(); self.process()
+        self.e.policy(self.owner, self.project, {'mode':'approval', 'paused':True})
+        self.assert_cached_draft_denied(409)
+
+    def test_cached_draft_blocked_when_ai_or_sharing_disabled(self):
+        self.submit(); self.process()
+        for revision, switch in enumerate(('enabled', 'data_sharing_approved'), start=1):
+            self.e.ai.save_policy(self.owner, self.project,
+                {'policy':{**self.policy, switch:False}, 'expected_revision':revision})
+            self.assert_cached_draft_denied(409)
+
+    def test_cached_draft_blocked_when_route_removed(self):
+        self.submit(); self.process()
+        self.e.ai.save_policy(self.owner, self.project,
+            {'policy':{**self.policy, 'routes':{}}, 'expected_revision':1})
+        self.assert_cached_draft_denied(403)
+
+    def test_cached_draft_blocked_when_model_binding_revoked(self):
+        self.submit(); self.process()
+        self.e.ai.config['models'][0]['bindings'] = []
+        self.assert_cached_draft_denied(403)
+
+    def test_cached_draft_respects_finance_role_change(self):
+        self.submit(); self.process()
+        self.e.add_member(self.owner, self.project, {'user_id':self.actor.user, 'role':'finance'})
+        self.assert_cached_draft_denied(403)
+
+    def test_allowed_cached_reads_do_not_consume_model_quota(self):
+        self.submit(); expected = self.process()
+        before = self.e.ai.status(self.actor, self.project)['usage_today']
+        self.assertEqual(self.process(), {k:v for k,v in expected.items() if k not in ('error','created')})
+        self.assertEqual(self.submit()['result'], expected['result'])
+        self.assertEqual(self.e.dispatch(self.actor, 'bridges.get', self.project, self.ref)['result'], expected['result'])
+        self.assertEqual(self.e.ai.status(self.actor, self.project)['usage_today'], before)
+        self.assertEqual(len(self.calls), 1)
     def test_revoked_project_member_cannot_process_or_read(self):
         self.submit();self.e.remove_member(self.owner,self.project,{'user_id':self.actor.user})
         with self.assertRaises(APIError):self.process()
