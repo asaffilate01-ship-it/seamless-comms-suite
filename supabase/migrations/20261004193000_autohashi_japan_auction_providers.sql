@@ -1,7 +1,6 @@
 BEGIN;
 
--- Replace the old ambiguous Japan-auction provider with a virtual router.
--- Data feeds and bid execution are deliberately separate capabilities.
+-- Separate Japanese auction inventory feeds from authorised bid execution.
 UPDATE public.provider_catalogue
 SET name='Japan Auction Router',
     provider_kind='vehicle-auction-router',
@@ -72,63 +71,14 @@ ALTER TABLE public.automotive_bid_models
   ADD COLUMN IF NOT EXISTS source_currency text,
   ADD COLUMN IF NOT EXISTS max_bid_source_minor bigint;
 
-DO $ BEGIN
+DO $do$
+BEGIN
   ALTER TABLE public.automotive_bid_models
     ADD CONSTRAINT automotive_bid_models_source_currency_check
-    CHECK(source_currency IS NULL OR source_currency ~ '^[A-Z]{3}
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
- product_key text NOT NULL REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
- provider_key text NOT NULL REFERENCES public.provider_catalogue(provider_key) ON DELETE RESTRICT,
- status text NOT NULL DEFAULT 'running' CHECK(status IN('running','succeeded','failed')),
- filters jsonb NOT NULL DEFAULT '{}'::jsonb,
- fetched_count integer NOT NULL DEFAULT 0 CHECK(fetched_count>=0),
- upserted_count integer NOT NULL DEFAULT 0 CHECK(upserted_count>=0),
- provider_total integer,
- provider_request_id text,
- started_at timestamptz NOT NULL DEFAULT now(),
- finished_at timestamptz,
- last_error text,
- initiated_by uuid REFERENCES auth.users(id) ON DELETE SET NULL
-);
-
-CREATE INDEX IF NOT EXISTS automotive_auction_provider_syncs_tenant_idx
- ON public.automotive_auction_provider_syncs(tenant_id,product_key,provider_key,started_at DESC);
-
-CREATE INDEX IF NOT EXISTS automotive_auction_lots_vehicle_history_idx
- ON public.automotive_auction_lots(tenant_id,product_key,vehicle_id,auction_at DESC)
- WHERE vehicle_id IS NOT NULL;
-
-ALTER TABLE public.automotive_auction_provider_syncs ENABLE ROW LEVEL SECURITY;
-GRANT SELECT,INSERT,UPDATE,DELETE ON public.automotive_auction_provider_syncs TO authenticated;
-GRANT ALL ON public.automotive_auction_provider_syncs TO service_role;
-
-DROP POLICY IF EXISTS "automotive auction provider sync read" ON public.automotive_auction_provider_syncs;
-CREATE POLICY "automotive auction provider sync read"
- ON public.automotive_auction_provider_syncs FOR SELECT TO authenticated
- USING(public.is_platform_admin(auth.uid()) OR public.is_tenant_member(tenant_id,auth.uid()));
-
-DROP POLICY IF EXISTS "automotive auction provider sync write" ON public.automotive_auction_provider_syncs;
-CREATE POLICY "automotive auction provider sync write"
- ON public.automotive_auction_provider_syncs FOR ALL TO authenticated
- USING(public.can_write(tenant_id,auth.uid()))
- WITH CHECK(public.can_write(tenant_id,auth.uid()));
-
-
-CREATE TABLE IF NOT EXISTS public.automotive_auction_bid_requests(
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
- product_key text NOT NULL REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
- auction_lot_id uuid NOT NULL REFERENCES public.automotive_auction_lots(id) ON DELETE CASCADE,
- source_system text NOT NULL DEFAULT 'autohashi',
- source_request_ref text NOT NULL,
- provider_key text NOT NULL REFERENCES public.provider_catalogue(provider_key) ON DELETE RESTRICT,
- execution_mode text NOT NULL DEFAULT 'manual' CHECK(execution_mode IN('manual','api')),
- max_bid_minor bigint NOT NULL CHECK(max_bid_minor>0),
- currency text NOT NULL CHECK(currency ~ '^[A-Z]{3}
-);
+    CHECK(source_currency IS NULL OR source_currency ~ '^[A-Z]{3}$');
 EXCEPTION WHEN duplicate_object THEN NULL;
-END $;
+END
+$do$;
 
 CREATE TABLE IF NOT EXISTS public.automotive_auction_provider_syncs(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -169,8 +119,17 @@ CREATE POLICY "automotive auction provider sync write"
  USING(public.can_write(tenant_id,auth.uid()))
  WITH CHECK(public.can_write(tenant_id,auth.uid()));
 
-COMMIT;
-),
+CREATE TABLE IF NOT EXISTS public.automotive_auction_bid_requests(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+ product_key text NOT NULL REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
+ auction_lot_id uuid NOT NULL REFERENCES public.automotive_auction_lots(id) ON DELETE CASCADE,
+ source_system text NOT NULL DEFAULT 'autohashi',
+ source_request_ref text NOT NULL,
+ provider_key text NOT NULL REFERENCES public.provider_catalogue(provider_key) ON DELETE RESTRICT,
+ execution_mode text NOT NULL DEFAULT 'manual' CHECK(execution_mode IN('manual','api')),
+ max_bid_minor bigint NOT NULL CHECK(max_bid_minor>0),
+ currency text NOT NULL CHECK(currency ~ '^[A-Z]{3}$'),
  status text NOT NULL DEFAULT 'pending_partner'
   CHECK(status IN('pending_partner','submitted','accepted','won','lost','cancelled','failed')),
  external_bid_ref text,
@@ -200,50 +159,6 @@ CREATE POLICY "automotive auction bid request read"
 DROP POLICY IF EXISTS "automotive auction bid request write" ON public.automotive_auction_bid_requests;
 CREATE POLICY "automotive auction bid request write"
  ON public.automotive_auction_bid_requests FOR ALL TO authenticated
- USING(public.can_write(tenant_id,auth.uid()))
- WITH CHECK(public.can_write(tenant_id,auth.uid()));
-
-COMMIT;
-);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $;
-
-CREATE TABLE IF NOT EXISTS public.automotive_auction_provider_syncs(
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
- product_key text NOT NULL REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
- provider_key text NOT NULL REFERENCES public.provider_catalogue(provider_key) ON DELETE RESTRICT,
- status text NOT NULL DEFAULT 'running' CHECK(status IN('running','succeeded','failed')),
- filters jsonb NOT NULL DEFAULT '{}'::jsonb,
- fetched_count integer NOT NULL DEFAULT 0 CHECK(fetched_count>=0),
- upserted_count integer NOT NULL DEFAULT 0 CHECK(upserted_count>=0),
- provider_total integer,
- provider_request_id text,
- started_at timestamptz NOT NULL DEFAULT now(),
- finished_at timestamptz,
- last_error text,
- initiated_by uuid REFERENCES auth.users(id) ON DELETE SET NULL
-);
-
-CREATE INDEX IF NOT EXISTS automotive_auction_provider_syncs_tenant_idx
- ON public.automotive_auction_provider_syncs(tenant_id,product_key,provider_key,started_at DESC);
-
-CREATE INDEX IF NOT EXISTS automotive_auction_lots_vehicle_history_idx
- ON public.automotive_auction_lots(tenant_id,product_key,vehicle_id,auction_at DESC)
- WHERE vehicle_id IS NOT NULL;
-
-ALTER TABLE public.automotive_auction_provider_syncs ENABLE ROW LEVEL SECURITY;
-GRANT SELECT,INSERT,UPDATE,DELETE ON public.automotive_auction_provider_syncs TO authenticated;
-GRANT ALL ON public.automotive_auction_provider_syncs TO service_role;
-
-DROP POLICY IF EXISTS "automotive auction provider sync read" ON public.automotive_auction_provider_syncs;
-CREATE POLICY "automotive auction provider sync read"
- ON public.automotive_auction_provider_syncs FOR SELECT TO authenticated
- USING(public.is_platform_admin(auth.uid()) OR public.is_tenant_member(tenant_id,auth.uid()));
-
-DROP POLICY IF EXISTS "automotive auction provider sync write" ON public.automotive_auction_provider_syncs;
-CREATE POLICY "automotive auction provider sync write"
- ON public.automotive_auction_provider_syncs FOR ALL TO authenticated
  USING(public.can_write(tenant_id,auth.uid()))
  WITH CHECK(public.can_write(tenant_id,auth.uid()));
 
