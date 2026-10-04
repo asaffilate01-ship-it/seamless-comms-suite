@@ -112,3 +112,20 @@ GitHub schedule: `.github/workflows/autohashi-auction-watches.yml`.
 9. Create an hourly watch and validate candidate → pending intelligence → qualified.
 10. Confirm qualified matches appear in the existing AutoHashi notification bell.
 11. Confirm none of the v4 workers can authorise or submit a bid.
+
+
+## SaaS Factory tenant mapping
+
+Interactive AutoHashi auction actions are multi-tenant. The signed bridge carries the authenticated AutoHashi tenant ID, and Omniqora resolves it through:
+
+- `tenant_products.product_key = 'autohashi'`
+- `tenant_products.external_tenant_id = <AutoHashi local tenant UUID>`
+- tenant-product status in `requested | provisioning | active`
+
+Exactly one mapping must exist. Missing or ambiguous mappings fail closed.
+
+Scheduled auction watches iterate enabled AutoHashi tenant-product mappings independently. A manual watch run carries the already-resolved Omniqora tenant ID to the worker.
+
+The signed Japan-agent webhook does not rely on a global tenant mapping: it resolves the authoritative bid instruction first and takes `tenant_id` from that instruction. Ambiguous provider references fail closed.
+
+`AUTOHASHI_OMNIQORA_TENANT_ID` remains only as a legacy fallback for a request that has no external AutoHashi tenant context. It is not used to override a missing mapping for an authenticated external tenant.
