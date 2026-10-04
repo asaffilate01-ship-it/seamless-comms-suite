@@ -34,6 +34,7 @@ const nav: NavItem[] = [
   { to: "/app/order-intake", labelKey: "", label: "Assisted Ordering", icon: ShoppingBasket },
   { to: "/app/dispatch", labelKey: "", label: "Dispatch & Tracking", icon: Truck },
   { to: "/app/commerce", labelKey: "", label: "Syndriva Commerce", icon: Store },
+  { to: "/app/connected-operations", labelKey: "", label: "Connected Operations", icon: Wrench },
   { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox, badge: "12" },
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
