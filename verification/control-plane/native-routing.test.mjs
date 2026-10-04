@@ -24,7 +24,8 @@ const tenant=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(tenant?.ten
 await asUser(admin,()=>db.query("INSERT INTO public.routing_policies(tenant_id,product_key,policy_key,objective,status) VALUES($1,'mealdeck','default','balanced','active')",[tenant.tenantId]));
 await asService(()=>db.query("INSERT INTO public.routing_provider_observations(tenant_id,product_key,provider_key,operation,succeeded,latency_ms,estimated_cost_minor,currency) VALUES($1,'mealdeck','maps.google','matrix',true,110,2,'GBP'),($1,'mealdeck','maps.mapbox','matrix',true,350,1,'GBP'),($1,'mealdeck','maps.openrouteservice','matrix',false,800,0,'GBP')",[tenant.tenantId]));
 const ranked=await asUser(admin,()=>db.query("SELECT provider_key,score FROM public.routing_rank_providers($1,'mealdeck','matrix',168)",[tenant.tenantId]));
-assert.equal(ranked.rows[0].provider_key,"maps.google");
+assert.equal(ranked.rows[0].provider_key,"maps.mapbox");
+assert.equal(ranked.rows.at(-1).provider_key,"maps.openrouteservice");
 const hiddenRank=await asUser(stranger,()=>db.query("SELECT * FROM public.routing_rank_providers($1,'mealdeck','matrix',168)",[tenant.tenantId]));
 assert.equal(hiddenRank.rows.length,0);
 
