@@ -1,6 +1,7 @@
 import {createClient} from "npm:@supabase/supabase-js@2.110.8";
 import {calculateJapanUkBidCost} from "../../../src/modules/automotive/landed-cost-v2.ts";
 import {evaluateAuctionDecision,type AuctionComparable,type AuctionHistoryRow,type AuctionSheetExtraction} from "../../../src/modules/automotive/auction-intelligence.ts";
+import {extractionDiff,matchesWatchCriteria,predictHammerPrice,type AuctionOutcome} from "../../../src/modules/automotive/auction-learning.ts";
 import {
   auctionProviderReadiness,
   compareAuctionLotSamples,
