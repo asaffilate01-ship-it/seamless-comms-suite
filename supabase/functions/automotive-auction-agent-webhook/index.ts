@@ -20,11 +20,6 @@ function db(){
   if(!url||!key)throw new Error("Service database is not configured");
   return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
 }
-function tenant(){
-  const id=Deno.env.get("AUTOHASHI_OMNIQORA_TENANT_ID")??"";
-  if(!/^[0-9a-f-]{36}$/i.test(id))throw new Error("AUTOHASHI_OMNIQORA_TENANT_ID is not configured");
-  return id;
-}
 async function verify(req:Request,raw:string){
   const secret=Deno.env.get("AUTOHASHI_AUCTION_AGENT_WEBHOOK_SECRET")??"";
   if(secret.length<32)return {ok:false,error:"Webhook secret is not configured"};
@@ -49,7 +44,7 @@ Deno.serve(async req=>{
   if(eventId.length<4||idempotencyKey.length<4||eventType.length<4)return json({error:"event_id, idempotency_key and event_type are required"},400);
 
   try{
-    const client=db(),tenantId=tenant();
+    const client=db();
     const duplicate=await client.from("automotive_bid_provider_events").select("id,processing_status")
       .eq("provider_key",providerKey).eq("provider_event_id",eventId).maybeSingle();
     if(duplicate.error)throw duplicate.error;
@@ -61,14 +56,19 @@ Deno.serve(async req=>{
     const instructionId=typeof body.instruction_id==="string"?body.instruction_id:"";
     const providerReference=typeof body.provider_reference==="string"?body.provider_reference:"";
     if(instructionId){
-      const found=await client.from("automotive_bid_instructions").select("*").eq("tenant_id",tenantId).eq("id",instructionId).maybeSingle();
+      const found=await client.from("automotive_bid_instructions").select("*").eq("id",instructionId).maybeSingle();
       if(found.error)throw found.error;instruction=found.data;
     }
     if(!instruction&&providerReference){
-      const found=await client.from("automotive_bid_instructions").select("*").eq("tenant_id",tenantId).eq("provider_reference",providerReference).order("created_at",{ascending:false}).limit(1).maybeSingle();
-      if(found.error)throw found.error;instruction=found.data;
+      const found=await client.from("automotive_bid_instructions").select("*").eq("provider_reference",providerReference)
+        .order("created_at",{ascending:false}).limit(2);
+      if(found.error)throw found.error;
+      if((found.data??[]).length>1)throw new Error("Provider reference is ambiguous across AutoHashi tenants");
+      instruction=found.data?.[0]??null;
     }
     if(!instruction)return json({error:"Bid instruction not found"},404);
+    const tenantId=String(instruction.tenant_id??"");
+    if(!/^[0-9a-f-]{36}$/i.test(tenantId))throw new Error("Bid instruction tenant is invalid");
 
     let eventRow=duplicate.data;
     if(!eventRow){
