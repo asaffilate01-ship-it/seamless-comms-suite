@@ -99,7 +99,7 @@ export function TransformationWorkspace({ api, standalone = false }: { api: Api;
       const result = await api(command, projectId || undefined, data);
       if (current !== generation.current) return undefined;
       if (refresh && projectId) setSnapshot(await api("snapshot", projectId) as Snapshot);
-      setNotice("Saved and checked against your current project permissions.");
+      setNotice(command === "business.report" ? "Business report prepared using your current project permissions." : "Saved and checked against your current project permissions.");
       return result;
     } catch (e) { setError(e instanceof Error ? e.message : "Request failed"); return undefined; }
     finally { setBusy(false); }
