@@ -407,7 +407,7 @@ CREATE OR REPLACE FUNCTION public.daily_brief_generate(_tenant uuid,_product tex
 RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $$
-DECLARE rid uuid:=gen_random_uuid();n_tasks integer:=0;n_approvals integer:=0;n_blockers integer:=0;n_deadlines integer:=0;caller uuid:=auth.uid();
+DECLARE rid uuid:=gen_random_uuid();n_tasks integer:=0;n_approvals integer:=0;n_added integer:=0;n_blockers integer:=0;n_deadlines integer:=0;caller uuid:=auth.uid();
 BEGIN
  IF _user IS NULL OR (
    NOT public.is_platform_admin(_user)
@@ -448,7 +448,8 @@ BEGIN
    AND (_product IS NULL OR p.product_key=_product)
  ORDER BY p.created_at
  LIMIT 30;
- GET DIAGNOSTICS n_approvals=n_approvals+ROW_COUNT;
+ GET DIAGNOSTICS n_added=ROW_COUNT;
+ n_approvals:=n_approvals+n_added;
 
  INSERT INTO public.daily_brief_items(tenant_id,run_id,category,source_type,source_id,title,detail,priority,due_at,action_ref)
  SELECT _tenant,rid,'blocker','support_ticket',s.id::text,s.subject,s.description,s.priority,s.sla_due_at,'/app/utilities'
