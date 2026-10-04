@@ -703,4 +703,94 @@ END $;
 REVOKE ALL ON FUNCTION public.practice_enqueue_due_reminders(integer) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.practice_enqueue_due_reminders(integer) TO service_role;
 
+
+-- Direct-table mutation hardening. Security-definer workflow RPCs remain the
+-- controlled path for gated/terminal transitions.
+CREATE POLICY "practice template admin insert" AS RESTRICTIVE ON public.practice_service_templates
+ FOR INSERT TO authenticated WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+CREATE POLICY "practice template admin update" AS RESTRICTIVE ON public.practice_service_templates
+ FOR UPDATE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+CREATE POLICY "practice template admin delete" AS RESTRICTIVE ON public.practice_service_templates
+ FOR DELETE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+
+CREATE POLICY "practice recurring admin insert" AS RESTRICTIVE ON public.practice_recurring_work
+ FOR INSERT TO authenticated WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+CREATE POLICY "practice recurring admin update" AS RESTRICTIVE ON public.practice_recurring_work
+ FOR UPDATE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+CREATE POLICY "practice recurring admin delete" AS RESTRICTIVE ON public.practice_recurring_work
+ FOR DELETE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+
+CREATE POLICY "practice portal grant admin insert" AS RESTRICTIVE ON public.practice_client_portal_access
+ FOR INSERT TO authenticated WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+CREATE POLICY "practice portal grant admin update" AS RESTRICTIVE ON public.practice_client_portal_access
+ FOR UPDATE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+CREATE POLICY "practice portal grant admin delete" AS RESTRICTIVE ON public.practice_client_portal_access
+ FOR DELETE TO authenticated
+ USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+
+CREATE POLICY "practice time actor insert" AS RESTRICTIVE ON public.practice_time_entries
+ FOR INSERT TO authenticated
+ WITH CHECK(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+CREATE POLICY "practice time actor update" AS RESTRICTIVE ON public.practice_time_entries
+ FOR UPDATE TO authenticated
+ USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ WITH CHECK(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+CREATE POLICY "practice time actor delete" AS RESTRICTIVE ON public.practice_time_entries
+ FOR DELETE TO authenticated
+ USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
+
+CREATE POLICY "practice phase controlled update" AS RESTRICTIVE ON public.practice_job_phases
+ FOR UPDATE TO authenticated
+ USING(status<>'completed')
+ WITH CHECK(status<>'completed');
+
+CREATE POLICY "practice proposal draft update only" AS RESTRICTIVE ON public.practice_proposals
+ FOR UPDATE TO authenticated
+ USING(status IN('draft','review'))
+ WITH CHECK(status IN('draft','review'));
+CREATE POLICY "practice proposal draft delete only" AS RESTRICTIVE ON public.practice_proposals
+ FOR DELETE TO authenticated USING(status IN('draft','review'));
+CREATE POLICY "practice proposal safe insert" AS RESTRICTIVE ON public.practice_proposals
+ FOR INSERT TO authenticated WITH CHECK(status IN('draft','review'));
+
+CREATE POLICY "practice signature safe insert" AS RESTRICTIVE ON public.practice_signature_requests
+ FOR INSERT TO authenticated
+ WITH CHECK(
+  status IN('draft','review','approved')
+  AND (public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
+ );
+
+DROP POLICY IF EXISTS "practice submission provider-state update" ON public.practice_submissions;
+CREATE POLICY "practice submission controlled update" AS RESTRICTIVE
+ ON public.practice_submissions FOR UPDATE TO authenticated
+ USING(status IN('draft','review'))
+ WITH CHECK(status IN('draft','review'));
+CREATE POLICY "practice submission safe insert" AS RESTRICTIVE
+ ON public.practice_submissions FOR INSERT TO authenticated
+ WITH CHECK(status IN('draft','review'));
+
+CREATE POLICY "practice fee approval control insert" AS RESTRICTIVE ON public.practice_fee_items
+ FOR INSERT TO authenticated
+ WITH CHECK(
+   status='draft'
+   OR public.is_platform_admin(auth.uid())
+   OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[])
+ );
+CREATE POLICY "practice fee approval control update" AS RESTRICTIVE ON public.practice_fee_items
+ FOR UPDATE TO authenticated
+ USING(true)
+ WITH CHECK(
+   status NOT IN('approved','invoiced')
+   OR public.is_platform_admin(auth.uid())
+   OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[])
+ );
+
 COMMIT;
