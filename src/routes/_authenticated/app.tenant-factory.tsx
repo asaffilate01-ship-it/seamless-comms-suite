@@ -20,6 +20,7 @@ import {
   linkTenantProduct,
   rotateProductCredential,
   retryHaccoraProvisioning,
+  runHaccoraSmokeTest,
   saveTenantBranding,
   setTenantProduct,
   setTenantService,
@@ -51,6 +52,7 @@ function ControlPlane() {
   const enableHaccoraRequest = useServerFn(enableHaccoraForDishbee);
   const haccoraReadinessRequest = useServerFn(getHaccoraReadiness);
   const retryHaccoraRequest = useServerFn(retryHaccoraProvisioning);
+  const haccoraSmokeRequest = useServerFn(runHaccoraSmokeTest);
   const setProductRequest = useServerFn(setTenantProduct);
   const setServiceRequest = useServerFn(setTenantService);
   const setEcosystemAddonRequest = useServerFn(setTenantEcosystemAddon);
@@ -74,6 +76,10 @@ function ControlPlane() {
   });
 
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+  useEffect(() => {
+    setHaccoraSmoke(null);
+  }, [selectedTenantId]);
+
   useEffect(() => {
     if (selectedTenantId) return;
     if (current.tenantId) setSelectedTenantId(current.tenantId);
@@ -106,6 +112,7 @@ function ControlPlane() {
   const [creating, setCreating] = useState(false);
   const [bootstrappingDishbee, setBootstrappingDishbee] = useState(false);
   const [bootstrappingHaccora, setBootstrappingHaccora] = useState(false);
+  const [haccoraSmoke, setHaccoraSmoke] = useState<Awaited<ReturnType<typeof haccoraSmokeRequest>> | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const enabledProducts = useMemo(
@@ -206,6 +213,23 @@ function ControlPlane() {
     }
   }
 
+  async function runSelectedHaccoraSmoke() {
+    if (!selectedTenantId) return;
+    setBusyKey("haccora:smoke");
+    try {
+      const result = await haccoraSmokeRequest({ data: { tenantId: selectedTenantId } });
+      setHaccoraSmoke(result);
+      if (result.overall === "pass") toast.success("Haccora live smoke check passed");
+      else toast.warning("Haccora smoke check found rollout blockers");
+      await haccoraReadiness.refetch();
+    } catch (e) {
+      setHaccoraSmoke(null);
+      toast.error(e instanceof Error ? e.message : "Haccora smoke check failed");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
   async function toggleProduct(productKey: string, enabled: boolean) {
     setBusyKey(`product:${productKey}`);
     try {
@@ -277,6 +301,9 @@ function ControlPlane() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={runSelectedHaccoraSmoke} disabled={busyKey === "haccora:smoke"}>
+                  {busyKey === "haccora:smoke" ? "Checking…" : "Run live check"}
+                </Button>
                 {isPlatformAdmin && haccoraReadiness.data?.productStatus === "not_requested" && (
                   <Button size="sm" onClick={enableSelectedHaccora} disabled={busyKey === "haccora:enable"}>
                     Enable Haccora + AI
@@ -303,6 +330,28 @@ function ControlPlane() {
                 <ReadinessStat label="Jobs" value={`${haccoraReadiness.data.jobs.pending} pending · ${haccoraReadiness.data.jobs.blocked} blocked · ${haccoraReadiness.data.jobs.failed} failed`} />
               </div>
             ) : null}
+            {haccoraSmoke && (
+              <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold">Live smoke check</div>
+                    <div className="text-xs text-muted-foreground">{new Date(haccoraSmoke.checkedAt).toLocaleString()} · {haccoraSmoke.countryCode}</div>
+                  </div>
+                  <StatusBadge status={haccoraSmoke.overall === "pass" ? "active" : "blocked"} />
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {haccoraSmoke.checks.map((item) => (
+                    <div key={item.key} className="rounded-md border bg-background p-3 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <b>{item.key.replaceAll("-", " ")}</b>
+                        <span className={item.ok ? "text-primary" : "text-destructive"}>{item.ok ? "PASS" : "FAIL"}</span>
+                      </div>
+                      <p className="mt-1 text-muted-foreground">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
