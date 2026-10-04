@@ -66,3 +66,55 @@ class Business360Tests(unittest.TestCase):
   baseline={**self.base('numbers'),'period_start':'2026-09-01','period_end':'2026-09-30','currency':'GBP','revenue':'1000','new_customers':'3'}
   with self.assertRaises(APIError):self.save('business_financials',baseline,reviewer)
   with self.assertRaises(APIError):self.save('business_financials',{**baseline,'new_customers':'3.5'})
+
+ def test_business_report_scopes_actions_collections_and_preparation(self):
+  self.save('company',{'id':'other-business','name':'Other Business','company_role':'operating','sector':'Services','countries':['GB'],'owner':'Other Director'})
+  for company,amount in [('business','100'),('other-business','900')]:
+   self.save('receivable',{**self.base('invoice-'+company),'company_id':company,'customer_ref':'customer','invoice_ref':company,'currency':'GBP','outstanding':amount,'due_date':'2026-09-01','disputed':False,'collection_hold':False,'last_verified':'2026-09-16'})
+   self.save('stakeholder_issue',{**self.base('issue-'+company),'company_id':company,'name':'Delay','party':'customer','domain':'processes','problem':'Waiting','impact':'Slow response','recommendation':'Review handoff','severity':'high','status':'open'})
+   self.save('improvement',{**self.base('improvement-'+company),'company_id':company,'name':'Licence review','benefit_type':'cost_saving','amount':'100','frequency':'monthly','implementation_cost':'10','recurring_cost':'0','overlap_group':'licences','assumptions':'Confirm contract','action':'Review licences','target_date':'2026-10-16'})
+  overall=self.engine.dispatch(self.owner,'business.report',self.p,{'as_of':'2026-09-16'})
+  self.assertEqual(overall['collections']['overdue_total'],'1000.00')
+  self.assertEqual({r['company_id']:r['overdue_total'] for r in overall['collections_by_company']},{'business':'100.00','other-business':'900.00'})
+  scoped=self.engine.dispatch(self.owner,'business.report',self.p,{'as_of':'2026-09-16','company_id':'business'})
+  self.assertEqual(scoped['collections']['overdue_total'],'100.00')
+  self.assertEqual(scoped['collections']['eligible_invoice_ids'],['invoice-business'])
+  self.assertEqual({a['company_id'] for a in scoped['actions']},{'business'})
+  self.assertEqual({a['phase'] for a in scoped['actions']},{'Discover','Improve','Implement'})
+  self.assertNotIn('other-business',str(scoped));self.assertIn('data_version',scoped)
+
+ def test_invalid_company_selector_cannot_expand_report_to_whole_workspace(self):
+  for value in ['',[],0,'missing']:
+   with self.subTest(value=value):
+    with self.assertRaises(APIError):self.engine.dispatch(self.owner,'business.report',self.p,{'company_id':value})
+
+ def test_preparation_does_not_count_empty_or_future_financial_baseline(self):
+  baseline={**self.base('empty-baseline'),'period_start':'2026-09-01','period_end':'2026-09-30','currency':'GBP'}
+  self.save('business_financials',baseline)
+  self.save('business_financials',{**baseline,'id':'future','period_start':'2026-10-01','period_end':'2026-10-31','revenue':'100','cogs':'50','opex':'20'})
+  r=self.engine.dispatch(self.owner,'business.report',self.p,{'as_of':'2026-09-30'})['audit_readiness'][0]
+  self.assertEqual(r['completed'],0);self.assertFalse(r['ready_for_review'])
+  self.assertFalse(next(c['complete'] for c in r['checks'] if c['code']=='financial_baseline'))
+
+ def test_preparation_requires_all_domains_verified_and_supporting_registers(self):
+  from transformation.business import DOMAINS
+  self.test_onboarding_requires_business_then_department_then_person()
+  self.save('stakeholder',{**self.base('customer'),'name':'Customer','party':'customer','organisation':'Customer Ltd','interest':'Reliable delivery'})
+  self.save('business_process',{**self.base('delivery'),'name':'Delivery','trigger':'Order','steps':['Confirm','Deliver'],'outcome':'Delivered'})
+  self.save('business_financials',{**self.base('baseline'),'period_start':'2026-09-01','period_end':'2026-09-30','currency':'GBP','revenue':'0','cogs':'0','opex':'0'})
+  for domain in DOMAINS:
+   self.save('discovery_answer',{**self.base('answer-'+domain),'domain':domain,'question':'Confirm '+domain,'answer':'Reviewed evidence','source_kind':'document','evidence_status':'verified'})
+  query={'as_of':'2026-09-30','company_id':'business'}
+  r=self.engine.dispatch(self.owner,'business.report',self.p,query)['audit_readiness'][0]
+  self.assertEqual(r['completed'],6);self.assertTrue(r['ready_for_review'])
+  self.assertIn('do not constitute audit assurance',r['basis'])
+  self.save('discovery_answer',{**self.base('disputed-purpose'),'domain':'purpose','question':'Confirm purpose','answer':'Conflicting evidence','source_kind':'inspection','evidence_status':'disputed'})
+  r=self.engine.dispatch(self.owner,'business.report',self.p,query)['audit_readiness'][0]
+  self.assertEqual(r['completed'],5);self.assertFalse(r['ready_for_review'])
+
+ def test_scoped_report_does_not_expose_private_pay_or_bypass_project_membership(self):
+  self.test_restricted_pay_hidden_from_viewer_and_analyst_exports()
+  report=self.engine.dispatch(self.viewer,'business.report',self.p,{'company_id':'business'})
+  self.assertNotIn('50000',str(report));self.assertNotIn('annual_salary',str(report))
+  self.engine.remove_member(self.owner,self.p,{'user_id':self.viewer.user})
+  with self.assertRaises(APIError):self.engine.dispatch(self.viewer,'business.report',self.p,{'company_id':'business'})

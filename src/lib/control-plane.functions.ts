@@ -248,6 +248,139 @@ export const upsertTenantDomain = createServerFn({ method: "POST" })
   });
 
 
+
+export type HaccoraReadiness = {
+  tenantId: string;
+  tenantSlug: string;
+  tenantName: string;
+  countryPack: string;
+  productStatus: string;
+  mode: string;
+  connectionStatus: string;
+  externalTenantId?: string | null;
+  baseUrl?: string | null;
+  lastVerifiedAt?: string | null;
+  services: {
+    requested: number;
+    active: number;
+    failed: number;
+    requiredTotal: number;
+    aiRequested: boolean;
+    aiTotal: number;
+  };
+  jobs: { pending: number; blocked: number; failed: number };
+  ready: boolean;
+  aiReady: boolean;
+};
+
+export const getHaccoraReadiness = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc("platform_haccora_readiness" as never, {
+      _tenant: data.tenantId,
+    } as never);
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as HaccoraReadiness;
+  });
+
+const haccoraEnableSchema = z.object({
+  tenantId: uuid,
+  enableAi: z.boolean().default(true),
+});
+
+export const enableHaccoraForDishbee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof haccoraEnableSchema>) => haccoraEnableSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc("platform_enable_haccora_for_dishbee" as never, {
+      _tenant: data.tenantId,
+      _enable_ai: data.enableAi,
+    } as never);
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as {
+      tenantId: string;
+      tenantSlug: string;
+      countryPack: string;
+      product: string;
+      mode: string;
+      aiEnabled: boolean;
+      requestedServices: string[];
+    };
+  });
+
+export const runHaccoraSmokeTest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const permission = await context.supabase.rpc("platform_haccora_readiness" as never, {
+      _tenant: data.tenantId,
+    } as never);
+    if (permission.error) throw new Error(permission.error.message);
+    const [{ supabaseAdmin }, { runHaccoraReadOnlySmoke }] = await Promise.all([
+      import("@/integrations/supabase/client.server"),
+      import("@/modules/haccora/haccora-smoke.server"),
+    ]);
+    return runHaccoraReadOnlySmoke(supabaseAdmin as any, data.tenantId);
+  });
+
+export const runHaccoraPilotSmokeTest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const readiness = await context.supabase.rpc("platform_haccora_pilot_readiness" as never);
+    if (readiness.error) throw new Error(readiness.error.message);
+    const pilot = readiness.data as unknown as {
+      tenants?: Array<{ tenantId?: string; tenantSlug?: string; tenantName?: string; missing?: boolean }>;
+    };
+    const targets = (pilot.tenants ?? []).filter(
+      (tenant): tenant is { tenantId: string; tenantSlug?: string; tenantName?: string; missing?: boolean } =>
+        !tenant.missing && typeof tenant.tenantId === "string",
+    );
+    const [{ supabaseAdmin }, { runHaccoraReadOnlySmoke }] = await Promise.all([
+      import("@/integrations/supabase/client.server"),
+      import("@/modules/haccora/haccora-smoke.server"),
+    ]);
+    const tenants = [];
+    for (const target of targets) {
+      const result = await runHaccoraReadOnlySmoke(supabaseAdmin as any, target.tenantId);
+      tenants.push({
+        ...result,
+        tenantSlug: target.tenantSlug ?? target.tenantId,
+        tenantName: target.tenantName ?? target.tenantSlug ?? target.tenantId,
+      });
+    }
+    return {
+      checkedAt: new Date().toISOString(),
+      overall: tenants.length === 3 && tenants.every((tenant) => tenant.overall === "pass") ? "pass" as const : "fail" as const,
+      tenants,
+    };
+  });
+
+export const retryHaccoraProvisioning = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const response = await context.supabase.rpc("platform_retry_haccora_provisioning" as never, {
+      _tenant: data.tenantId,
+    } as never);
+    if (response.error) throw new Error(response.error.message);
+    return { queued: Number(response.data ?? 0) };
+  });
+
+export const enableHaccoraDishbeePilot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const response = await context.supabase.rpc("platform_enable_haccora_dishbee_pilot" as never, {
+      _enable_ai: true,
+    } as never);
+    if (response.error) throw new Error(response.error.message);
+    return response.data as unknown as {
+      pilot: string;
+      aiEnabled: boolean;
+      tenants: Array<{ tenantId: string; tenantSlug: string }>;
+    };
+  });
+
 export const bootstrapDishbeePilot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

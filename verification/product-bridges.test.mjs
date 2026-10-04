@@ -54,3 +54,74 @@ test('source adapter rechecks access after generation and keeps credentials off 
  assert.equal(posted.tenantId,'source-a');assert.equal(posted.key,undefined);
  assert.throws(()=>createProductBridge({url:'http://gateway.invalid',key,resolveAccess:()=>current}),/HTTPS/);
 });
+
+// Exercise the actual server-side preflight with offline identity/RPC adapters.
+const serverSource=await readFile(new URL('../src/modules/ecosystem/bridge.server.ts',import.meta.url),'utf8');
+const coreUrl='data:text/javascript;base64,'+Buffer.from(compiled).toString('base64');
+const harness={binding:base,role:'member',calls:[],after:null,result:null};
+globalThis.__bridgeReadinessTest=harness;
+const serverPrepared=serverSource
+ .replace("from 'zod'",'from '+JSON.stringify(import.meta.resolve('zod')))
+ .replace("import { createClient } from '@supabase/supabase-js';",`const h=globalThis.__bridgeReadinessTest;
+ const createClient=()=>({from:()=>({select:()=>({eq:()=>({eq:()=>({maybeSingle:async()=>({data:{role:h.role},error:null})})})})})});`)
+ .replace("import { callTransformation, TransformationError } from '../transformation/transformation.server';",`class TransformationError extends Error {}
+ const callTransformation=async(identity,request)=>{h.calls.push({identity,request});if(h.after)h.after();return h.result;};`)
+ .replace("from './bridge-core'",'from '+JSON.stringify(coreUrl));
+const serverCompiled=ts.transpileModule(serverPrepared,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {checkBridgeReadiness}=await import('data:text/javascript;base64,'+Buffer.from(serverCompiled).toString('base64'));
+const codes=['project_active','ai_enabled','data_sharing_approved','profile_authorised','model_bound','provider_configuration_present'];
+async function preflightFixture(run){
+ const values={...env,BUSINESS360_ENABLED_TENANTS:base.tenant,SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'offline-fixture'};
+ const prior=Object.fromEntries(Object.keys(values).map(k=>[k,process.env[k]]));
+ Object.assign(process.env,values);
+ harness.role='member';harness.calls=[];harness.after=null;
+ harness.result={connection:base.id,checkedAt:'2026-10-04T00:00:00Z',readyForTest:true,liveVerified:false,checks:codes.map(code=>({code,passed:true}))};
+ try{await run();}finally{for(const [k,v]of Object.entries(prior)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
+}
+test('readiness uses the fixed service identity and sends no source context',()=>preflightFixture(async()=>{
+ const result=await checkBridgeReadiness(base);assert.equal(result.liveVerified,false);
+ assert.deepEqual(harness.calls,[{identity:{tenant:base.tenant,user:base.serviceUser,tenant_role:'member'},request:{command:'bridges.readiness',project_id:base.project,data:{profile:base.profile,connection:base.id}}}]);
+}));
+test('readiness rejects disabled entitlement and revoked source membership before RPC',()=>preflightFixture(async()=>{
+ process.env.BUSINESS360_ENABLED_TENANTS='';await assert.rejects(checkBridgeReadiness(base));
+ process.env.BUSINESS360_ENABLED_TENANTS=base.tenant;harness.role='viewer';await assert.rejects(checkBridgeReadiness(base));
+ assert.equal(harness.calls.length,0);
+}));
+test('readiness discards a result when credentials or membership change during RPC',()=>preflightFixture(async()=>{
+ harness.after=()=>{process.env.OQ_BRIDGE_TEST='a-different-long-credential-for-offline-check';};
+ await assert.rejects(checkBridgeReadiness(base));
+ process.env.OQ_BRIDGE_TEST=key;harness.after=()=>{harness.role='viewer';};
+ await assert.rejects(checkBridgeReadiness(base));
+}));
+test('readiness rejects foreign, incomplete and falsely live responses',()=>preflightFixture(async()=>{
+ const valid=structuredClone(harness.result);
+ for(const change of [{connection:'foreign'},{liveVerified:true},{checks:[]},{checks:codes.map(()=>({code:'model_bound',passed:true}))},{readyForTest:false}]){
+  harness.result={...valid,...change};await assert.rejects(checkBridgeReadiness(base));
+ }
+}));
+
+harness.core=await import(coreUrl);
+harness.checkBridgeReadiness=checkBridgeReadiness;
+const functionsSource=await readFile(new URL('../src/modules/ecosystem/ecosystem.functions.ts',import.meta.url),'utf8');
+const functionsPrepared=functionsSource
+ .replace("import { createServerFn } from '@tanstack/react-start';",`const h=globalThis.__bridgeReadinessTest;
+ const createServerFn=()=>({middleware(){return this},inputValidator(){return this},handler(fn){return fn}});`)
+ .replace("from 'zod'",'from '+JSON.stringify(import.meta.resolve('zod')))
+ .replace("import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';",'const requireSupabaseAuth={};')
+ .replaceAll("import('./bridge-core')",'Promise.resolve(h.core)')
+ .replace("import('./bridge.server')",'Promise.resolve({checkBridgeReadiness:h.checkBridgeReadiness})')
+ .replace("import('../transformation/transformation.server')",'Promise.resolve({TransformationError:class extends Error {}})');
+const functionsCompiled=ts.transpileModule(functionsPrepared,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {checkConnectionReadiness}=await import('data:text/javascript;base64,'+Buffer.from(functionsCompiled).toString('base64'));
+const adminContext=()=>({userId:'admin-fixture',supabase:{from:()=>({select:()=>({eq:()=>({eq:()=>({maybeSingle:async()=>({data:{role:harness.adminRole},error:null})})})})})}});
+const checkAsAdmin=(tenantId=base.tenant)=>checkConnectionReadiness({context:adminContext(),data:{tenantId,connectionId:base.id}});
+test('readiness endpoint rejects non-admins and cross-workspace bindings',()=>preflightFixture(async()=>{
+ harness.adminRole='member';await assert.rejects(checkAsAdmin());
+ harness.adminRole='admin';await assert.rejects(checkAsAdmin('dddddddd-dddd-4ddd-8ddd-dddddddddddd'));
+ assert.equal(harness.calls.length,0);
+ assert.equal((await checkAsAdmin()).readyForTest,true);
+}));
+test('readiness endpoint rechecks administrator access before returning results',()=>preflightFixture(async()=>{
+ harness.adminRole='admin';harness.after=()=>{harness.adminRole='member';};
+ await assert.rejects(checkAsAdmin());assert.equal(harness.calls.length,1);
+}));

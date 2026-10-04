@@ -11,18 +11,24 @@ import { useTenant } from "@/hooks/useTenant";
 import {
   bootstrapDishbeePilot,
   createPlatformTenant,
+  enableHaccoraDishbeePilot,
+  enableHaccoraForDishbee,
+  getHaccoraReadiness,
   getControlPlaneCatalogue,
   getTenantControlPlane,
   listPlatformTenants,
   linkTenantProduct,
   rotateProductCredential,
+  retryHaccoraProvisioning,
+  runHaccoraPilotSmokeTest,
+  runHaccoraSmokeTest,
   saveTenantBranding,
   setTenantProduct,
   setTenantService,
   setTenantEcosystemAddon,
   upsertTenantDomain,
 } from "@/lib/control-plane.functions";
-import { Building2, Boxes, GitBranch as GitBranchIcon, Globe2, Layers3, Plus, RefreshCw, Settings2, Sparkles } from "lucide-react";
+import { Building2, Boxes, GitBranch as GitBranchIcon, Globe2, Layers3, Plus, RefreshCw, Settings2, ShieldCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/tenant-factory")({
@@ -43,6 +49,12 @@ function ControlPlane() {
   const tenantRequest = useServerFn(getTenantControlPlane);
   const createTenantRequest = useServerFn(createPlatformTenant);
   const bootstrapDishbeeRequest = useServerFn(bootstrapDishbeePilot);
+  const enableHaccoraPilotRequest = useServerFn(enableHaccoraDishbeePilot);
+  const enableHaccoraRequest = useServerFn(enableHaccoraForDishbee);
+  const haccoraReadinessRequest = useServerFn(getHaccoraReadiness);
+  const retryHaccoraRequest = useServerFn(retryHaccoraProvisioning);
+  const haccoraSmokeRequest = useServerFn(runHaccoraSmokeTest);
+  const haccoraPilotSmokeRequest = useServerFn(runHaccoraPilotSmokeTest);
   const setProductRequest = useServerFn(setTenantProduct);
   const setServiceRequest = useServerFn(setTenantService);
   const setEcosystemAddonRequest = useServerFn(setTenantEcosystemAddon);
@@ -67,6 +79,10 @@ function ControlPlane() {
 
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   useEffect(() => {
+    setHaccoraSmoke(null);
+  }, [selectedTenantId]);
+
+  useEffect(() => {
     if (selectedTenantId) return;
     if (current.tenantId) setSelectedTenantId(current.tenantId);
     else if (isPlatformAdmin && tenants.data?.[0]?.id) setSelectedTenantId(tenants.data[0].id);
@@ -75,6 +91,13 @@ function ControlPlane() {
   const detail = useQuery({
     queryKey: ["tenant-control-plane", selectedTenantId],
     queryFn: () => tenantRequest({ data: { tenantId: selectedTenantId } }),
+    enabled: !!selectedTenantId,
+    retry: false,
+  });
+
+  const haccoraReadiness = useQuery({
+    queryKey: ["haccora-readiness", selectedTenantId],
+    queryFn: () => haccoraReadinessRequest({ data: { tenantId: selectedTenantId } }),
     enabled: !!selectedTenantId,
     retry: false,
   });
@@ -90,6 +113,9 @@ function ControlPlane() {
   });
   const [creating, setCreating] = useState(false);
   const [bootstrappingDishbee, setBootstrappingDishbee] = useState(false);
+  const [bootstrappingHaccora, setBootstrappingHaccora] = useState(false);
+  const [haccoraSmoke, setHaccoraSmoke] = useState<Awaited<ReturnType<typeof haccoraSmokeRequest>> | null>(null);
+  const [pilotSmoke, setPilotSmoke] = useState<Awaited<ReturnType<typeof haccoraPilotSmokeRequest>> | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const enabledProducts = useMemo(
@@ -106,7 +132,7 @@ function ControlPlane() {
   );
 
   async function refreshTenant() {
-    await Promise.all([detail.refetch(), tenants.refetch()]);
+    await Promise.all([detail.refetch(), tenants.refetch(), haccoraReadiness.refetch()]);
   }
 
   async function createTenant() {
@@ -146,6 +172,79 @@ function ControlPlane() {
       toast.error(e instanceof Error ? e.message : "Dishbee pilot bootstrap failed");
     } finally {
       setBootstrappingDishbee(false);
+    }
+  }
+
+  async function bootstrapHaccoraPilot() {
+    setBootstrappingHaccora(true);
+    try {
+      await enableHaccoraPilotRequest();
+      toast.success("Haccora requested for Cafe 1 Luton, Cafe 1 St Albans and MealDeck");
+      await refreshTenant();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Haccora pilot rollout failed");
+    } finally {
+      setBootstrappingHaccora(false);
+    }
+  }
+
+  async function runPilotHaccoraSmoke() {
+    setBusyKey("haccora:pilot-smoke");
+    try {
+      const result = await haccoraPilotSmokeRequest();
+      setPilotSmoke(result);
+      if (result.overall === "pass") toast.success("All three Haccora pilot tenants passed live checks");
+      else toast.warning("One or more Haccora pilot tenants still have rollout blockers");
+    } catch (e) {
+      setPilotSmoke(null);
+      toast.error(e instanceof Error ? e.message : "Haccora pilot smoke check failed");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function enableSelectedHaccora() {
+    if (!selectedTenantId) return;
+    setBusyKey("haccora:enable");
+    try {
+      await enableHaccoraRequest({ data: { tenantId: selectedTenantId, enableAi: true } });
+      toast.success("Haccora compliance + AI rollout queued");
+      await refreshTenant();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Haccora rollout failed");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function retrySelectedHaccora() {
+    if (!selectedTenantId) return;
+    setBusyKey("haccora:retry");
+    try {
+      const result = await retryHaccoraRequest({ data: { tenantId: selectedTenantId } });
+      toast.success(result.queued ? `Requeued ${result.queued} Haccora job(s)` : "No failed Haccora jobs to retry");
+      await refreshTenant();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Haccora retry failed");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function runSelectedHaccoraSmoke() {
+    if (!selectedTenantId) return;
+    setBusyKey("haccora:smoke");
+    try {
+      const result = await haccoraSmokeRequest({ data: { tenantId: selectedTenantId } });
+      setHaccoraSmoke(result);
+      if (result.overall === "pass") toast.success("Haccora live smoke check passed");
+      else toast.warning("Haccora smoke check found rollout blockers");
+      await haccoraReadiness.refetch();
+    } catch (e) {
+      setHaccoraSmoke(null);
+      toast.error(e instanceof Error ? e.message : "Haccora smoke check failed");
+    } finally {
+      setBusyKey(null);
     }
   }
 
@@ -206,6 +305,75 @@ function ControlPlane() {
         <Metric icon={Sparkles} label="Provisioning jobs" value={String(detail.data?.provisioning?.length ?? 0)} />
       </div>
 
+      {selectedTenantId && (
+        <Card className="mt-6">
+          <CardContent className="p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-primary/10 p-2"><ShieldCheck className="h-4 w-4 text-primary" /></div>
+                <div>
+                  <h2 className="font-display text-lg font-semibold">Haccora readiness</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Dishbee add-on provisioning, connector verification, compliance services and governed AI readiness.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={runSelectedHaccoraSmoke} disabled={busyKey === "haccora:smoke"}>
+                  {busyKey === "haccora:smoke" ? "Checking…" : "Run live check"}
+                </Button>
+                {isPlatformAdmin && haccoraReadiness.data?.productStatus === "not_requested" && (
+                  <Button size="sm" onClick={enableSelectedHaccora} disabled={busyKey === "haccora:enable"}>
+                    Enable Haccora + AI
+                  </Button>
+                )}
+                {isPlatformAdmin && ((haccoraReadiness.data?.jobs.failed ?? 0) > 0 || (haccoraReadiness.data?.jobs.blocked ?? 0) > 0) && (
+                  <Button size="sm" variant="outline" onClick={retrySelectedHaccora} disabled={busyKey === "haccora:retry"}>
+                    Retry failed / blocked
+                  </Button>
+                )}
+              </div>
+            </div>
+            {haccoraReadiness.isLoading ? (
+              <p className="mt-4 text-sm text-muted-foreground">Checking Haccora rollout…</p>
+            ) : haccoraReadiness.error ? (
+              <p role="alert" className="mt-4 text-sm text-destructive">{haccoraReadiness.error.message}</p>
+            ) : haccoraReadiness.data ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                <ReadinessStat label="Product" value={haccoraReadiness.data.productStatus} />
+                <ReadinessStat label="Connection" value={haccoraReadiness.data.connectionStatus} />
+                <ReadinessStat label="Compliance" value={haccoraReadiness.data.ready ? "ready" : "not ready"} />
+                <ReadinessStat label="AI" value={haccoraReadiness.data.aiReady ? "ready" : haccoraReadiness.data.services.aiRequested ? "provisioning" : "not requested"} />
+                <ReadinessStat label="Active services" value={`${haccoraReadiness.data.services.active}/${haccoraReadiness.data.services.requested}`} />
+                <ReadinessStat label="Jobs" value={`${haccoraReadiness.data.jobs.pending} pending · ${haccoraReadiness.data.jobs.blocked} blocked · ${haccoraReadiness.data.jobs.failed} failed`} />
+              </div>
+            ) : null}
+            {haccoraSmoke && (
+              <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold">Live smoke check</div>
+                    <div className="text-xs text-muted-foreground">{new Date(haccoraSmoke.checkedAt).toLocaleString()} · {haccoraSmoke.countryCode}</div>
+                  </div>
+                  <StatusBadge status={haccoraSmoke.overall === "pass" ? "active" : "blocked"} />
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {haccoraSmoke.checks.map((item) => (
+                    <div key={item.key} className="rounded-md border bg-background p-3 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <b>{item.key.replaceAll("-", " ")}</b>
+                        <span className={item.ok ? "text-primary" : "text-destructive"}>{item.ok ? "PASS" : "FAIL"}</span>
+                      </div>
+                      <p className="mt-1 text-muted-foreground">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="mt-6 grid gap-6 xl:grid-cols-[320px_1fr]">
         <div className="space-y-6">
           <Card>
@@ -247,6 +415,33 @@ function ControlPlane() {
                 <Button className="mt-4 w-full" variant="outline" disabled={bootstrappingDishbee} onClick={bootstrapDishbee}>
                   {bootstrappingDishbee ? "Reconciling…" : "Create / reconcile Dishbee pilot"}
                 </Button>
+                <Button className="mt-2 w-full" variant="outline" disabled={bootstrappingHaccora} onClick={bootstrapHaccoraPilot}>
+                  {bootstrappingHaccora ? "Queuing Haccora…" : "Enable Haccora + AI for pilot"}
+                </Button>
+                <Button className="mt-2 w-full" variant="outline" disabled={busyKey === "haccora:pilot-smoke"} onClick={runPilotHaccoraSmoke}>
+                  {busyKey === "haccora:pilot-smoke" ? "Checking all three…" : "Run Haccora pilot live checks"}
+                </Button>
+                {pilotSmoke && (
+                  <div className="mt-3 space-y-2 rounded-lg border bg-muted/30 p-3">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <b>Pilot smoke result</b>
+                      <StatusBadge status={pilotSmoke.overall === "pass" ? "active" : "blocked"} />
+                    </div>
+                    {pilotSmoke.tenants.map((tenant) => (
+                      <div key={tenant.tenantId} className="rounded-md bg-background p-2 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium">{tenant.tenantName}</span>
+                          <span className={tenant.overall === "pass" ? "text-primary" : "text-destructive"}>
+                            {tenant.overall.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-muted-foreground">
+                          {tenant.checks.filter((item) => item.ok).length}/{tenant.checks.length} checks passed
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -446,6 +641,15 @@ function ControlPlane() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function ReadinessStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-muted p-3">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1 truncate text-sm font-semibold">{value.replaceAll("_", " ")}</div>
+    </div>
   );
 }
 

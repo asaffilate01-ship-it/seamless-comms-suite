@@ -2,6 +2,7 @@ from copy import deepcopy
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 from transformation.engine import Engine, Actor
 from transformation.ai_hub import AIHub, DEFAULT_POLICY
 from transformation.bridge_contracts import prepare, validate_result, epos_totals
@@ -30,6 +31,46 @@ class BridgeTests(unittest.TestCase):
     def tearDown(self):self.tmp.cleanup()
     def submit(self,value=None,actor=None):return self.e.dispatch(actor or self.actor,'bridges.submit',self.project,value or self.input)
     def process(self,data=None):return self.e.dispatch(self.actor,'bridges.process',self.project,data or self.ref)
+    def readiness(self, actor=None, **changes):
+        return self.e.dispatch(actor or self.actor, 'bridges.readiness', self.project,
+            {'connection':'spares-a','profile':'product',**changes})
+
+    def test_readiness_is_read_only_and_never_claims_live_verification(self):
+        before=self.e.ai.status(self.actor,self.project)['usage_today']
+        with patch.dict('os.environ', {'OQ_SECRET_TEST':'test-only-placeholder'}):
+            result=self.readiness()
+        self.assertTrue(result['readyForTest']); self.assertFalse(result['liveVerified'])
+        self.assertEqual(len(result['checks']),6)
+        self.assertEqual(self.calls,[])
+        self.assertEqual(before,self.e.ai.status(self.actor,self.project)['usage_today'])
+        with self.e.connection() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM bridge_jobs').fetchone()[0],0)
+        self.assertNotIn('test-only-placeholder',str(result))
+        self.assertNotIn('OQ_SECRET_TEST',str(result))
+
+    def test_readiness_reports_missing_provider_credential(self):
+        with patch.dict('os.environ', {'OQ_SECRET_TEST':''}): result=self.readiness()
+        self.assertFalse(result['readyForTest'])
+        self.assertFalse(next(c['passed'] for c in result['checks'] if c['code']=='provider_configuration_present'))
+
+    def test_readiness_rechecks_policy_role_and_binding(self):
+        self.e.policy(self.owner,self.project,{'mode':'approval','paused':True})
+        self.e.ai.save_policy(self.owner,self.project,{'policy':{**self.policy,'enabled':False,'data_sharing_approved':False,'routes':{}},'expected_revision':1})
+        self.e.add_member(self.owner,self.project,{'user_id':self.actor.user,'role':'finance'})
+        result=self.readiness()
+        self.assertFalse(result['readyForTest'])
+        self.assertTrue(all(not c['passed'] for c in result['checks']))
+
+    def test_readiness_denies_foreign_revoked_and_viewer_principals(self):
+        with self.assertRaises(APIError): self.readiness(self.other)
+        self.e.add_member(self.owner,self.project,{'user_id':self.actor.user,'role':'viewer'})
+        with self.assertRaises(APIError): self.readiness()
+        self.e.remove_member(self.owner,self.project,{'user_id':self.actor.user})
+        with self.assertRaises(APIError): self.readiness()
+
+    def test_readiness_rejects_unknown_profile_and_injected_context(self):
+        for changes in ({'profile':'unknown'},{'profile':[]},{'context':{'customer':'private'}}):
+            with self.assertRaises(APIError): self.readiness(**changes)
     def test_duplicate_is_single_receipt_and_changed_payload_rejected(self):
         self.assertEqual(self.submit(),self.submit())
         changed=deepcopy(self.input);changed['payload']['question']='Different'
@@ -54,6 +95,51 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(result['status'],'failed');self.assertIsNone(result['result'])
         with self.assertRaises(APIError):self.process()
         self.assertEqual(len(self.calls),1)
+    def assert_cached_draft_denied(self, status):
+        for operation in ('bridges.get', 'bridges.process', 'bridges.submit'):
+            with self.subTest(operation=operation):
+                with self.assertRaises(APIError) as caught:
+                    self.e.dispatch(self.actor, operation, self.project,
+                                    self.input if operation == 'bridges.submit' else self.ref)
+                self.assertEqual(caught.exception.status, status)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_cached_draft_blocked_when_project_paused(self):
+        self.submit(); self.process()
+        self.e.policy(self.owner, self.project, {'mode':'approval', 'paused':True})
+        self.assert_cached_draft_denied(409)
+
+    def test_cached_draft_blocked_when_ai_or_sharing_disabled(self):
+        self.submit(); self.process()
+        for revision, switch in enumerate(('enabled', 'data_sharing_approved'), start=1):
+            self.e.ai.save_policy(self.owner, self.project,
+                {'policy':{**self.policy, switch:False}, 'expected_revision':revision})
+            self.assert_cached_draft_denied(409)
+
+    def test_cached_draft_blocked_when_route_removed(self):
+        self.submit(); self.process()
+        self.e.ai.save_policy(self.owner, self.project,
+            {'policy':{**self.policy, 'routes':{}}, 'expected_revision':1})
+        self.assert_cached_draft_denied(403)
+
+    def test_cached_draft_blocked_when_model_binding_revoked(self):
+        self.submit(); self.process()
+        self.e.ai.config['models'][0]['bindings'] = []
+        self.assert_cached_draft_denied(403)
+
+    def test_cached_draft_respects_finance_role_change(self):
+        self.submit(); self.process()
+        self.e.add_member(self.owner, self.project, {'user_id':self.actor.user, 'role':'finance'})
+        self.assert_cached_draft_denied(403)
+
+    def test_allowed_cached_reads_do_not_consume_model_quota(self):
+        self.submit(); expected = self.process()
+        before = self.e.ai.status(self.actor, self.project)['usage_today']
+        self.assertEqual(self.process(), {k:v for k,v in expected.items() if k not in ('error','created')})
+        self.assertEqual(self.submit()['result'], expected['result'])
+        self.assertEqual(self.e.dispatch(self.actor, 'bridges.get', self.project, self.ref)['result'], expected['result'])
+        self.assertEqual(self.e.ai.status(self.actor, self.project)['usage_today'], before)
+        self.assertEqual(len(self.calls), 1)
     def test_revoked_project_member_cannot_process_or_read(self):
         self.submit();self.e.remove_member(self.owner,self.project,{'user_id':self.actor.user})
         with self.assertRaises(APIError):self.process()
