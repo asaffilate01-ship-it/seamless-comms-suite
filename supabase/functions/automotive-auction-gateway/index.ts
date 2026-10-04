@@ -179,6 +179,10 @@ function decisionPayload(ctx:any){
 async function recalculateAuctionDecision(lotId:string){
   const ctx=await auctionIntelligenceContext(lotId);
   const result=evaluateAuctionDecision(decisionPayload(ctx));
+  const revoked=await ctx.db.from("automotive_bid_instructions").update({
+    status:"draft",authorised_actor_ref:null,authorised_at:null,admin_approval_note:null,updated_at:new Date().toISOString()
+  }).eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId).eq("status","authorised");
+  if(revoked.error)throw revoked.error;
   await ctx.db.from("automotive_auction_decisions").update({status:"superseded",updated_at:new Date().toISOString()})
     .eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId).in("status",["proposed","reviewed","approved"]);
   const decision=await ctx.db.from("automotive_auction_decisions").insert({
