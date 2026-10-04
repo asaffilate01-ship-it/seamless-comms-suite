@@ -398,6 +398,8 @@ async function listWatchMatches(body:any){
   let q=db.from("automotive_auction_watch_matches").select("*, automotive_auction_watch_rules(name)")
     .eq("tenant_id",tenantId).order("last_seen_at",{ascending:false}).limit(Math.min(200,Math.max(1,Number(body.limit??50))));
   if(body.onlyNew!==false)q=q.eq("status","new");
+  if(body.qualifiedOnly!==false)q=q.eq("stage","qualified");
+  if(typeof body.watchRuleId==="string"&&body.watchRuleId)q=q.eq("watch_rule_id",body.watchRuleId);
   const rows=await q;if(rows.error)throw rows.error;return rows.data??[];
 }
 async function markWatchMatch(body:any){
