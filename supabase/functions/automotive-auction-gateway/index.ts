@@ -340,9 +340,13 @@ async function correctAuctionExtraction(body:any){
   const changed=extractionDiff(original,corrected).filter(field=>field!=="confidence");
   if(!changed.length)throw new Error("No extraction fields changed");
   const now=new Date().toISOString();
+  const sheet=ctx.lot.auction_sheet??{};
   const correction=await ctx.db.from("automotive_auction_review_corrections").insert({
     tenant_id:ctx.tenantId,product_key:"autohashi",auction_lot_id:lotId,extraction_id:ctx.extraction.id,
-    correction_type:"sheet_extraction",original_payload:original,corrected_payload:corrected,changed_fields:changed,
+    correction_type:"sheet_extraction",
+    context:{make:sheet.make??ctx.vehicle?.make??null,model:sheet.model??ctx.vehicle?.model??null,
+      modelCode:sheet.modelCode??ctx.vehicle?.model_code??null,providerKey:ctx.lot.provider_key},
+    original_payload:original,corrected_payload:corrected,changed_fields:changed,
     note:typeof body.note==="string"?body.note:null,reviewed_actor_ref:"autohashi:user:"+who.userId
   }).select("*").single();
   if(correction.error)throw correction.error;
@@ -372,7 +376,7 @@ async function predictionForLot(lotId:string,body:any){
   };
   if(!target.make||!target.model)throw new Error("Vehicle make/model is required for hammer prediction");
   const outcomes=await ctx.db.from("automotive_auction_price_outcomes").select("*").eq("tenant_id",ctx.tenantId)
-    .eq("make",target.make).eq("model",target.model).order("outcome_at",{ascending:false}).limit(1000);
+    .ilike("make",target.make).ilike("model",target.model).order("outcome_at",{ascending:false}).limit(1000);
   if(outcomes.error)throw outcomes.error;
   const rows:AuctionOutcome[]=(outcomes.data??[]).map((row:any)=>({
     make:row.make,model:row.model,modelCode:row.model_code,year:row.model_year,grade:row.grade,mileageKm:row.mileage_km,
@@ -400,13 +404,23 @@ async function predictionForLot(lotId:string,body:any){
 }
 function watchCriteria(body:any){
   const raw=body?.criteria??{};
-  const num=(key:string)=>raw[key]===null||raw[key]===undefined||raw[key]===""?null:Number(raw[key]);
-  const text=(key:string)=>typeof raw[key]==="string"&&raw[key].trim()?raw[key].trim():null;
-  return {
-    make:text("make"),model:text("model"),modelCode:text("modelCode"),yearMin:num("yearMin"),yearMax:num("yearMax"),
-    gradeMin:num("gradeMin"),odometerMaxKm:num("odometerMaxKm"),maxOpeningJpy:num("maxOpeningJpy"),
-    maxPredictedHammerJpy:num("maxPredictedHammerJpy"),minScore:num("minScore")
+  const num=(key:string,min:number,max:number,integer=false)=>{
+    if(raw[key]===null||raw[key]===undefined||raw[key]==="")return null;
+    const n=Number(raw[key]);
+    if(!Number.isFinite(n)||n<min||n>max||(integer&&!Number.isInteger(n)))throw new Error(key+" has an invalid numeric value");
+    return n;
   };
+  const text=(key:string)=>typeof raw[key]==="string"&&raw[key].trim()?raw[key].trim().slice(0,160):null;
+  const criteria={
+    make:text("make"),model:text("model"),modelCode:text("modelCode"),
+    yearMin:num("yearMin",1900,2200,true),yearMax:num("yearMax",1900,2200,true),
+    gradeMin:num("gradeMin",0,6),odometerMaxKm:num("odometerMaxKm",0,2_000_000,true),
+    maxOpeningJpy:num("maxOpeningJpy",0,10_000_000_000,true),
+    maxPredictedHammerJpy:num("maxPredictedHammerJpy",0,10_000_000_000,true),
+    minScore:num("minScore",0,100,true)
+  };
+  if(criteria.yearMin!==null&&criteria.yearMax!==null&&criteria.yearMin>criteria.yearMax)throw new Error("yearMin cannot exceed yearMax");
+  return criteria;
 }
 async function saveWatchRule(body:any){
   const who=actor(body);
