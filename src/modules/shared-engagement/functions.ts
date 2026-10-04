@@ -18,7 +18,7 @@ export const getSharedEngagementWorkspace=createServerFn({method:"POST"}).middle
   scope(db.from("contact_sessions").select("*").eq("tenant_id",data.tenantId)).order("created_at",{ascending:false}).limit(100),
   scope(db.from("contact_callbacks").select("*").eq("tenant_id",data.tenantId)).order("scheduled_for").limit(100),
   db.from("contact_escalations").select("*").eq("tenant_id",data.tenantId).order("requested_at",{ascending:false}).limit(100),
-  scope(db.from("call_masking_sessions").select("*").eq("tenant_id",data.tenantId)).order("starts_at",{ascending:false}).limit(100),
+  scope(db.from("contact_masking_sessions").select("*").eq("tenant_id",data.tenantId)).order("starts_at",{ascending:false}).limit(100),
   scope(db.from("media_analysis_jobs").select("*").eq("tenant_id",data.tenantId)).order("created_at",{ascending:false}).limit(100),
   scope(db.from("mobile_devices").select("*").eq("tenant_id",data.tenantId)).order("updated_at",{ascending:false}).limit(100),
   scope(db.from("sales_prospect_profiles").select("*").eq("tenant_id",data.tenantId)).order("updated_at",{ascending:false}).limit(100),
