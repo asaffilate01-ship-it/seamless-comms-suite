@@ -259,7 +259,7 @@ CREATE OR REPLACE FUNCTION public.routing_rank_providers(
  provider_key text,success_rate numeric,avg_latency_ms numeric,avg_cost_minor numeric,observation_count bigint,score numeric
 )
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
-AS $
+AS $$
  WITH scope AS(
   SELECT 1 AS ok
   WHERE public.is_platform_admin(auth.uid()) OR public.is_tenant_member(_tenant,auth.uid())
@@ -463,7 +463,7 @@ GRANT EXECUTE ON FUNCTION public.dispatch_apply_assignment_recommendation(uuid) 
 CREATE OR REPLACE FUNCTION public.routing_apply_optimisation(_optimisation uuid)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
-AS $
+AS $$
 DECLARE o public.routing_optimisation_jobs%rowtype;
 BEGIN
  SELECT * INTO o FROM public.routing_optimisation_jobs WHERE id=_optimisation FOR UPDATE;
