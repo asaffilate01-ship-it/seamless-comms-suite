@@ -50,9 +50,13 @@ CREATE TABLE IF NOT EXISTS public.network_application_events(
  detail jsonb NOT NULL DEFAULT '{}'::jsonb,actor_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS public.growth_channel_catalogue(
- channel_key text PRIMARY KEY,name text NOT NULL,medium text NOT NULL,channel_group text NOT NULL,status text NOT NULL DEFAULT 'active'
+ channel_key text PRIMARY KEY,name text NOT NULL,
+ ownership text NOT NULL CHECK(ownership IN('paid','owned','earned','mixed')),
+ medium text NOT NULL CHECK(medium IN('digital','direct','referral','media','offline')),
+ status text NOT NULL DEFAULT 'active' CHECK(status IN('active','retired')),
+ metadata jsonb NOT NULL DEFAULT '{}'::jsonb
 );
-INSERT INTO public.growth_channel_catalogue(channel_key,name,medium,channel_group) VALUES
+INSERT INTO public.growth_channel_catalogue(channel_key,name,ownership,medium) VALUES
 ('google-search','Google Search Ads','paid','digital'),('google-pmax','Google Performance Max','paid','digital'),
 ('meta','Meta','paid','social'),('tiktok','TikTok','paid','social'),('seo','SEO','owned','digital'),
 ('email','Email','owned','crm'),('whatsapp','WhatsApp','owned','crm'),('referral','Referral','earned','network'),
