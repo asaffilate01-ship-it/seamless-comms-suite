@@ -70,6 +70,9 @@ assert(visionRunner.includes("noBidAuthority:true"),"vision provider must have n
 assert(visionRunner.includes("Math.min(10"),"vision runner batch must be bounded");
 
 assert(watchWorker.includes("pending_intelligence"),"score-threshold watches must support two-stage intelligence");
+assert(watchWorker.includes("watchEvidenceScore"),"saved watches must use pre-bid evidence score rather than full economics score");
+assert(watchWorker.includes('.limit(50)'),"scheduled watch worker must cap rules per run");
+assert(watchWorker.includes("24*60*60*1000"),"watch worker should deduplicate unchanged daily price-curve snapshots");
 assert(watchWorker.includes("minimum=rule.cadence"),"watch cadence enforcement missing");
 assert(watchWorker.includes("automotive_auction_watch_matches"),"watch match persistence missing");
 assert(!watchWorker.includes("bid.submit")&&!watchWorker.includes("automotive_bid_instructions"),"watch worker must never submit or authorise bids");
