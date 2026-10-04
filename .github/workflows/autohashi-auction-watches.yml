@@ -1,0 +1,30 @@
+name: AutoHashi auction watches
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WATCH_URL: ${{ secrets.AUTOHASHI_AUCTION_WATCH_WORKER_URL }}
+      WATCH_SECRET: ${{ secrets.AUTOHASHI_AUCTION_WATCH_WORKER_SECRET }}
+    steps:
+      - name: Run saved auction watches
+        shell: bash
+        run: |
+          if [ -z "$WATCH_URL" ] || [ -z "$WATCH_SECRET" ]; then
+            echo "::notice::AutoHashi auction watch deployment secrets are not configured; skipping."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error \
+            --request POST "$WATCH_URL" \
+            --header "content-type: application/json" \
+            --header "x-autohashi-watch-secret: $WATCH_SECRET" \
+            --data '{"scheduled":true}'
