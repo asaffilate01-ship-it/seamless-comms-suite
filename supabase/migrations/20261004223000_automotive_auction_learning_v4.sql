@@ -44,6 +44,30 @@ CREATE TABLE IF NOT EXISTS public.automotive_auction_price_outcomes(
 CREATE INDEX IF NOT EXISTS automotive_price_outcomes_lookup_idx
  ON public.automotive_auction_price_outcomes(tenant_id,make,model,model_code,model_year,outcome_at DESC);
 
+CREATE TABLE IF NOT EXISTS public.automotive_auction_price_curves(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+ product_key text NOT NULL REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
+ make text NOT NULL,
+ model text NOT NULL,
+ model_code text,
+ model_year integer,
+ grade text,
+ mileage_band_km integer,
+ method text NOT NULL,
+ sample_count integer NOT NULL CHECK(sample_count >= 0),
+ p25_jpy bigint,
+ median_jpy bigint,
+ p75_jpy bigint,
+ confidence numeric(5,4) NOT NULL DEFAULT 0 CHECK(confidence BETWEEN 0 AND 1),
+ source_window_days integer NOT NULL DEFAULT 730 CHECK(source_window_days BETWEEN 30 AND 3650),
+ as_of timestamptz NOT NULL DEFAULT now(),
+ metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+ created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS automotive_price_curves_lookup_idx
+ ON public.automotive_auction_price_curves(tenant_id,make,model,model_code,model_year,as_of DESC);
+
 CREATE TABLE IF NOT EXISTS public.automotive_auction_price_predictions(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
@@ -118,7 +142,7 @@ CREATE INDEX IF NOT EXISTS automotive_watch_matches_recent_idx
 
 DO $$ DECLARE t text;BEGIN
  FOREACH t IN ARRAY ARRAY[
-  'automotive_auction_review_corrections','automotive_auction_price_outcomes',
+  'automotive_auction_review_corrections','automotive_auction_price_outcomes','automotive_auction_price_curves',
   'automotive_auction_price_predictions','automotive_auction_watch_rules','automotive_auction_watch_matches'
  ] LOOP
   EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);
