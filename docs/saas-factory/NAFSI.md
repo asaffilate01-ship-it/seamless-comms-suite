@@ -56,3 +56,17 @@ The Connect manifest exposes operational events and read/draft tools only. It in
 - Intelligence usage is metered without storing draft text. Human parity approval remains mandatory before cutover.
 
 Omniqora deployment also requires `OMNIQORA_NAFSI_AI_SHADOW_URL`, `OMNIQORA_NAFSI_AI_SHADOW_KEY`, `OMNIQORA_NAFSI_AI_PROVIDER`, `OMNIQORA_NAFSI_AI_MODEL` and `OMNIQORA_NAFSI_AI_POLICY_VERSION` on the Factory server. The runtime URL must be HTTPS.
+
+## Phase 29 authority controls
+
+Nafsi owns the per-capability `disabled -> shadow -> canary -> active` decision. Omniqora exposes both shadow and live Intelligence routes, but the live route also requires the server-only `OMNIQORA_NAFSI_AI_CUTOVER_ENABLED=true` switch. The first canary is capped at 25%; every decision must be release-bound and reversible.
+
+## Phase 30 Connect pilot
+
+The optional `omniqora.connect` entitlement provides approved-template WhatsApp opt-in and a normalized source-event queue. Nafsi inbound events contain only an opaque `wa-contact:<uuid>` reference plus `START`, `STOP`, `HELP`, or delivery metadata. Raw wellbeing messages, names and phone numbers are not returned to Nafsi. Unsupported inbound messages are redacted.
+
+Required routes:
+
+- `POST /api/control-plane/nafsi/connect`
+- `POST /api/control-plane/nafsi/connect-events`
+- `POST /api/control-plane/nafsi/intelligence`

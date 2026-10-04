@@ -58,7 +58,10 @@ import { Route as ApiPlatformOrderIntakeRouteImport } from './routes/api.platfor
 import { Route as ApiPlatformRuntimeRouteImport } from './routes/api.platform.runtime'
 import { Route as AuthenticatedAppCasesIndexRouteImport } from './routes/_authenticated/app.cases.index'
 import { Route as AuthenticatedAppCasesCaseIdRouteImport } from './routes/_authenticated/app.cases.$caseId'
+import { Route as ApiControlPlaneNafsiConnectRouteImport } from './routes/api.control-plane.nafsi.connect'
+import { Route as ApiControlPlaneNafsiConnectEventsRouteImport } from './routes/api.control-plane.nafsi.connect-events'
 import { Route as ApiControlPlaneNafsiEventsRouteImport } from './routes/api.control-plane.nafsi.events'
+import { Route as ApiControlPlaneNafsiIntelligenceRouteImport } from './routes/api.control-plane.nafsi.intelligence'
 import { Route as ApiControlPlaneNafsiIntelligenceShadowRouteImport } from './routes/api.control-plane.nafsi.intelligence-shadow'
 import { Route as ApiControlPlaneWorkersProvisioningRouteImport } from './routes/api.control-plane.workers.provisioning'
 import { Route as ApiIntegrationsConnectEventsRouteImport } from './routes/api.integrations.connect.events'
@@ -337,10 +340,28 @@ const AuthenticatedAppCasesCaseIdRoute =
     path: '/$caseId',
     getParentRoute: () => AuthenticatedAppCasesRoute,
   } as any)
+const ApiControlPlaneNafsiConnectRoute =
+  ApiControlPlaneNafsiConnectRouteImport.update({
+    id: '/api/control-plane/nafsi/connect',
+    path: '/api/control-plane/nafsi/connect',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiConnectEventsRoute =
+  ApiControlPlaneNafsiConnectEventsRouteImport.update({
+    id: '/api/control-plane/nafsi/connect-events',
+    path: '/api/control-plane/nafsi/connect-events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiControlPlaneNafsiEventsRoute =
   ApiControlPlaneNafsiEventsRouteImport.update({
     id: '/api/control-plane/nafsi/events',
     path: '/api/control-plane/nafsi/events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiIntelligenceRoute =
+  ApiControlPlaneNafsiIntelligenceRouteImport.update({
+    id: '/api/control-plane/nafsi/intelligence',
+    path: '/api/control-plane/nafsi/intelligence',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiControlPlaneNafsiIntelligenceShadowRoute =
@@ -445,7 +466,10 @@ export interface FileRoutesByFullPath {
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
   '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
   '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
@@ -503,7 +527,10 @@ export interface FileRoutesByTo {
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
   '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
   '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
@@ -565,7 +592,10 @@ export interface FileRoutesById {
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
   '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
   '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
@@ -627,7 +657,10 @@ export interface FileRouteTypes {
     | '/api/platform/runtime'
     | '/app/'
     | '/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
     | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
     | '/api/control-plane/nafsi/intelligence-shadow'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
@@ -685,7 +718,10 @@ export interface FileRouteTypes {
     | '/api/platform/runtime'
     | '/app'
     | '/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
     | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
     | '/api/control-plane/nafsi/intelligence-shadow'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
@@ -746,7 +782,10 @@ export interface FileRouteTypes {
     | '/api/platform/runtime'
     | '/_authenticated/app/'
     | '/_authenticated/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
     | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
     | '/api/control-plane/nafsi/intelligence-shadow'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
@@ -781,7 +820,10 @@ export interface RootRouteChildren {
   ApiPlatformCrmRoute: typeof ApiPlatformCrmRoute
   ApiPlatformOrderIntakeRoute: typeof ApiPlatformOrderIntakeRoute
   ApiPlatformRuntimeRoute: typeof ApiPlatformRuntimeRoute
+  ApiControlPlaneNafsiConnectRoute: typeof ApiControlPlaneNafsiConnectRoute
+  ApiControlPlaneNafsiConnectEventsRoute: typeof ApiControlPlaneNafsiConnectEventsRoute
   ApiControlPlaneNafsiEventsRoute: typeof ApiControlPlaneNafsiEventsRoute
+  ApiControlPlaneNafsiIntelligenceRoute: typeof ApiControlPlaneNafsiIntelligenceRoute
   ApiControlPlaneNafsiIntelligenceShadowRoute: typeof ApiControlPlaneNafsiIntelligenceShadowRoute
   ApiControlPlaneWorkersProvisioningRoute: typeof ApiControlPlaneWorkersProvisioningRoute
   ApiIntegrationsConnectEventsRoute: typeof ApiIntegrationsConnectEventsRoute
@@ -1137,11 +1179,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCasesCaseIdRouteImport
       parentRoute: typeof AuthenticatedAppCasesRoute
     }
+    '/api/control-plane/nafsi/connect': {
+      id: '/api/control-plane/nafsi/connect'
+      path: '/api/control-plane/nafsi/connect'
+      fullPath: '/api/control-plane/nafsi/connect'
+      preLoaderRoute: typeof ApiControlPlaneNafsiConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/connect-events': {
+      id: '/api/control-plane/nafsi/connect-events'
+      path: '/api/control-plane/nafsi/connect-events'
+      fullPath: '/api/control-plane/nafsi/connect-events'
+      preLoaderRoute: typeof ApiControlPlaneNafsiConnectEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/control-plane/nafsi/events': {
       id: '/api/control-plane/nafsi/events'
       path: '/api/control-plane/nafsi/events'
       fullPath: '/api/control-plane/nafsi/events'
       preLoaderRoute: typeof ApiControlPlaneNafsiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/intelligence': {
+      id: '/api/control-plane/nafsi/intelligence'
+      path: '/api/control-plane/nafsi/intelligence'
+      fullPath: '/api/control-plane/nafsi/intelligence'
+      preLoaderRoute: typeof ApiControlPlaneNafsiIntelligenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/control-plane/nafsi/intelligence-shadow': {
@@ -1333,7 +1396,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlatformCrmRoute: ApiPlatformCrmRoute,
   ApiPlatformOrderIntakeRoute: ApiPlatformOrderIntakeRoute,
   ApiPlatformRuntimeRoute: ApiPlatformRuntimeRoute,
+  ApiControlPlaneNafsiConnectRoute: ApiControlPlaneNafsiConnectRoute,
+  ApiControlPlaneNafsiConnectEventsRoute:
+    ApiControlPlaneNafsiConnectEventsRoute,
   ApiControlPlaneNafsiEventsRoute: ApiControlPlaneNafsiEventsRoute,
+  ApiControlPlaneNafsiIntelligenceRoute: ApiControlPlaneNafsiIntelligenceRoute,
   ApiControlPlaneNafsiIntelligenceShadowRoute:
     ApiControlPlaneNafsiIntelligenceShadowRoute,
   ApiControlPlaneWorkersProvisioningRoute:

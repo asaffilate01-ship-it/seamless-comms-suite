@@ -122,13 +122,19 @@ for (const token of [
   'createHmac("sha256", token)',
   "privateField(envelope.event.payload)",
   'service_key: "omniqora.ai"',
+  "OMNIQORA_NAFSI_AI_CUTOVER_ENABLED",
+  '"request-opt-in"',
+  "claim_nafsi_connect_events",
 ])
   assert(nafsiServer.includes(token), `Missing Nafsi governed route control: ${token}`);
 assert(!nafsiServer.includes("prompt: z.string"), "Nafsi route must not accept free-form prompts");
 
 for (const route of [
   "api.control-plane.nafsi.intelligence-shadow.ts",
+  "api.control-plane.nafsi.intelligence.ts",
   "api.control-plane.nafsi.events.ts",
+  "api.control-plane.nafsi.connect.ts",
+  "api.control-plane.nafsi.connect-events.ts",
 ]) {
   const source = await readFile(new URL(`../../src/routes/${route}`, import.meta.url), "utf8");
   assert(source.includes("serveNafsi"), `Missing Nafsi route handler: ${route}`);
@@ -143,6 +149,22 @@ const routeMigration = await readFile(
 );
 assert(routeMigration.includes("shadow_intelligence_and_signed_events"));
 assert(routeMigration.includes("operational_metadata_only"));
+
+const cutoverMigration = await readFile(
+  new URL("../../supabase/migrations/20261004180000_nafsi_ai_cutover_connect.sql", import.meta.url),
+  "utf8",
+);
+assert(cutoverMigration.includes("nafsi_connect_to_source_privacy"));
+assert(cutoverMigration.includes("maximumInitialCanaryPercent"));
+assert(cutoverMigration.includes("explicit_double_opt_in"));
+
+const webhook = await readFile(
+  new URL("../../src/routes/api/public/whatsapp/webhook.ts", import.meta.url),
+  "utf8",
+);
+assert(webhook.includes("[redacted-unsupported-message]"));
+assert(webhook.includes('normalizedCommand !== "HELP"'));
+assert(webhook.includes('event_type: isNafsi ? "command.received"'));
 
 await db.close();
 console.log(

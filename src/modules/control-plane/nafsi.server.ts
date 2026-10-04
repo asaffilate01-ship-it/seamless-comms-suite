@@ -105,6 +105,36 @@ const providerResult = z
       .strict(),
   })
   .strict();
+const connectScopes = z.enum(["reminders", "reviewed-dua", "account-links", "support-links"]);
+const connectRequest = z
+  .object({
+    schemaVersion: z.literal(1),
+    externalTenantId: id,
+    requestId: z.string().uuid(),
+    operation: z.literal("request-opt-in"),
+    phoneE164: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
+    locale: z.string().regex(/^[a-z]{2}(?:_[A-Z]{2})?$/),
+    scopes: z.array(connectScopes).min(1).max(4),
+  })
+  .strict();
+const connectEventRequest = z.discriminatedUnion("operation", [
+  z
+    .object({
+      schemaVersion: z.literal(1),
+      externalTenantId: id,
+      operation: z.literal("claim"),
+      limit: z.number().int().min(1).max(100).default(25),
+    })
+    .strict(),
+  z
+    .object({
+      schemaVersion: z.literal(1),
+      externalTenantId: id,
+      operation: z.literal("ack"),
+      eventIds: z.array(z.string().uuid()).min(1).max(100),
+    })
+    .strict(),
+]);
 
 const payloadSchemas: Record<string, z.ZodTypeAny> = {
   "nafsi.release.deployed": z
@@ -257,6 +287,27 @@ async function connection(request: Request) {
   return { db, row, token };
 }
 
+async function entitled(
+  db: Awaited<ReturnType<typeof connection>>["db"],
+  tenantId: string,
+  serviceKey: string,
+) {
+  const result = await db
+    .from("tenant_services")
+    .select("status,valid_from,valid_until")
+    .eq("tenant_id", tenantId)
+    .eq("service_key", serviceKey)
+    .maybeSingle();
+  const value = result.data;
+  return (
+    !result.error &&
+    value &&
+    ["active", "trial"].includes(value.status) &&
+    (!value.valid_from || Date.parse(value.valid_from) <= Date.now()) &&
+    (!value.valid_until || Date.parse(value.valid_until) > Date.now())
+  );
+}
+
 function providerEndpoint() {
   const raw = process.env.OMNIQORA_NAFSI_AI_SHADOW_URL;
   if (!raw)
@@ -269,7 +320,7 @@ function providerEndpoint() {
   return url;
 }
 
-export async function serveNafsiIntelligenceShadow(request: Request) {
+async function serveNafsiIntelligence(request: Request, authority: "shadow" | "live") {
   try {
     const { db, row } = await connection(request);
     if (!(row.capabilities ?? []).includes("intelligence"))
@@ -294,6 +345,8 @@ export async function serveNafsiIntelligenceShadow(request: Request) {
     if (envelope.externalTenantId !== row.external_tenant_id)
       return json({ error: "Tenant binding mismatch" }, 403);
     const context = contextSchemas[envelope.capability].parse(envelope.context);
+    if (authority === "live" && process.env.OMNIQORA_NAFSI_AI_CUTOVER_ENABLED !== "true")
+      return json({ error: "Nafsi live Intelligence cutover is disabled" }, 409);
     const providerKey = process.env.OMNIQORA_NAFSI_AI_SHADOW_KEY ?? "";
     if (providerKey.length < 32 || /[\r\n]/.test(providerKey))
       return json({ error: "Nafsi shadow runtime is not configured" }, 503);
@@ -313,7 +366,7 @@ export async function serveNafsiIntelligenceShadow(request: Request) {
         context,
         evidenceRefs: envelope.evidenceRefs,
         policy: {
-          mode: "shadow",
+          mode: authority,
           noExternalActions: true,
           prohibitArabic: true,
           prohibitFatwaOrMedicalClaims: true,
@@ -340,7 +393,7 @@ export async function serveNafsiIntelligenceShadow(request: Request) {
         tenant_id: row.tenant_id,
         product_key: "nafsi",
         service_key: "omniqora.ai",
-        metric_key: "shadow_evaluation",
+        metric_key: authority === "shadow" ? "shadow_evaluation" : "authoritative_generation",
         quantity: 1,
         unit: "run",
         idempotency_key: envelope.evaluationId,
@@ -360,6 +413,7 @@ export async function serveNafsiIntelligenceShadow(request: Request) {
       capability: envelope.capability,
       ...result,
       route,
+      authorityMode: authority,
     });
   } catch (error) {
     if (error instanceof z.ZodError || error instanceof SyntaxError)
@@ -370,6 +424,12 @@ export async function serveNafsiIntelligenceShadow(request: Request) {
     );
   }
 }
+
+export const serveNafsiIntelligenceShadow = (request: Request) =>
+  serveNafsiIntelligence(request, "shadow");
+
+export const serveNafsiIntelligenceLive = (request: Request) =>
+  serveNafsiIntelligence(request, "live");
 
 export async function serveNafsiEvents(request: Request) {
   try {
@@ -435,6 +495,218 @@ export async function serveNafsiEvents(request: Request) {
       return json({ error: "Invalid Nafsi event contract" }, 422);
     return json(
       { error: error instanceof Error ? error.message : "Nafsi event route unavailable" },
+      Number((error as { status?: number })?.status) || 503,
+    );
+  }
+}
+
+export async function serveNafsiConnect(request: Request) {
+  let eventId: string | null = null;
+  try {
+    const { db, row } = await connection(request);
+    if (!(row.capabilities ?? []).includes("connect"))
+      return json({ error: "Connect capability is not enabled" }, 403);
+    if (!(await entitled(db, row.tenant_id, "omniqora.connect")))
+      return json({ error: "Omniqora Connect entitlement is inactive" }, 403);
+    const input = connectRequest.parse(JSON.parse(await bodyText(request)));
+    if (input.externalTenantId !== row.external_tenant_id)
+      return json({ error: "Tenant binding mismatch" }, 403);
+    if (request.headers.get("idempotency-key") !== input.requestId)
+      return json({ error: "Idempotency key mismatch" }, 422);
+
+    const prior = await db
+      .from("communication_events")
+      .select("id,status,metadata")
+      .eq("tenant_id", row.tenant_id)
+      .eq("product_key", "nafsi")
+      .eq("source_event_id", input.requestId)
+      .maybeSingle();
+    if (prior.data)
+      return json({
+        contactRef: prior.data.metadata?.contactRef,
+        receiptId: prior.data.id,
+        destinationLabel: prior.data.metadata?.destinationLabel,
+        status: prior.data.status === "delivered" ? "delivered" : "queued",
+      });
+
+    const channelResult = await db
+      .from("whatsapp_channels")
+      .select("id,phone_number_id,access_token")
+      .eq("tenant_id", row.tenant_id)
+      .eq("product_key", "nafsi")
+      .eq("external_tenant_id", row.external_tenant_id)
+      .eq("outbound_enabled", true)
+      .eq("status", "configured")
+      .eq("is_primary", true)
+      .limit(1);
+    const channel = channelResult.data?.[0];
+    if (!channel) return json({ error: "No configured Nafsi WhatsApp pilot channel" }, 409);
+
+    const waId = input.phoneE164.slice(1);
+    const contactResult = await db
+      .from("contacts")
+      .upsert(
+        {
+          tenant_id: row.tenant_id,
+          wa_id: waId,
+          display_name: null,
+          locale: input.locale.slice(0, 2),
+          consent_marketing: false,
+        },
+        { onConflict: "tenant_id,wa_id" },
+      )
+      .select("id")
+      .single();
+    if (contactResult.error || !contactResult.data)
+      throw new Error("Connect contact could not be prepared");
+    const contactRef = `wa-contact:${contactResult.data.id}`;
+    const destinationLabel = `WhatsApp ending ${waId.slice(-4)}`;
+    const inserted = await db
+      .from("communication_events")
+      .insert({
+        tenant_id: row.tenant_id,
+        product_key: "nafsi",
+        external_tenant_id: row.external_tenant_id,
+        scope_id: row.external_tenant_id,
+        source_event_id: input.requestId,
+        event_type: "nafsi.whatsapp.opt_in.requested",
+        direction: "source_to_connect",
+        recipient: { phone: input.phoneE164 },
+        message: {
+          kind: "template",
+          templateName: "nafsi_whatsapp_opt_in_v1",
+          language: input.locale,
+        },
+        metadata: {
+          contactRef,
+          destinationLabel,
+          scopes: input.scopes,
+          consentVersion: "nafsi-whatsapp-v1",
+        },
+        status: "queued",
+      })
+      .select("id")
+      .single();
+    if (inserted.error || !inserted.data) throw new Error("Connect event could not be queued");
+    eventId = inserted.data.id;
+
+    const graphVersion = process.env.WHATSAPP_GRAPH_VERSION ?? "v21.0";
+    const meta = await fetch(
+      `https://graph.facebook.com/${graphVersion}/${channel.phone_number_id}/messages`,
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(15000),
+        headers: {
+          authorization: `Bearer ${channel.access_token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: waId,
+          type: "template",
+          template: {
+            name: "nafsi_whatsapp_opt_in_v1",
+            language: { code: input.locale },
+            components: [],
+          },
+        }),
+      },
+    );
+    const metaBody = (await meta.json()) as { messages?: Array<{ id: string }> };
+    if (!meta.ok) {
+      await db
+        .from("communication_events")
+        .update({
+          status: "failed",
+          attempts: 1,
+          last_error: `Meta send failed (${meta.status})`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", eventId);
+      return json({ error: "WhatsApp confirmation could not be sent" }, 502);
+    }
+    await db
+      .from("communication_events")
+      .update({
+        status: "delivered",
+        attempts: 1,
+        metadata: {
+          contactRef,
+          destinationLabel,
+          scopes: input.scopes,
+          consentVersion: "nafsi-whatsapp-v1",
+          waMessageId: metaBody.messages?.[0]?.id ?? null,
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", eventId);
+    return json({ contactRef, receiptId: eventId, destinationLabel, status: "delivered" }, 202);
+  } catch (error) {
+    if (error instanceof z.ZodError || error instanceof SyntaxError)
+      return json({ error: "Invalid Nafsi Connect contract" }, 422);
+    if (eventId) console.error("Nafsi Connect event failed", eventId);
+    return json(
+      { error: error instanceof Error ? error.message : "Nafsi Connect unavailable" },
+      Number((error as { status?: number })?.status) || 503,
+    );
+  }
+}
+
+export async function serveNafsiConnectEvents(request: Request) {
+  try {
+    const { db, row } = await connection(request);
+    if (!(row.capabilities ?? []).includes("connect"))
+      return json({ error: "Connect capability is not enabled" }, 403);
+    if (!(await entitled(db, row.tenant_id, "omniqora.connect")))
+      return json({ error: "Omniqora Connect entitlement is inactive" }, 403);
+    const input = connectEventRequest.parse(JSON.parse(await bodyText(request)));
+    if (input.externalTenantId !== row.external_tenant_id)
+      return json({ error: "Tenant binding mismatch" }, 403);
+    if (input.operation === "ack") {
+      const result = await db
+        .from("communication_events")
+        .update({
+          status: "delivered",
+          updated_at: new Date().toISOString(),
+          last_error: null,
+        })
+        .eq("tenant_id", row.tenant_id)
+        .eq("product_key", "nafsi")
+        .eq("external_tenant_id", row.external_tenant_id)
+        .eq("direction", "connect_to_source")
+        .in("id", input.eventIds);
+      if (result.error) throw new Error("Could not acknowledge Connect events");
+      return json({ acknowledged: input.eventIds.length });
+    }
+    const claimed = await db.rpc("claim_nafsi_connect_events", {
+      p_tenant_id: row.tenant_id,
+      p_external_tenant_id: row.external_tenant_id,
+      p_limit: input.limit,
+    });
+    if (claimed.error) throw new Error("Could not claim Connect events");
+    const events = (claimed.data ?? []).map((raw: unknown) => {
+      const event = raw as {
+        id: string;
+        event_type: string;
+        recipient?: Record<string, unknown>;
+        message?: Record<string, unknown>;
+      };
+      return {
+        eventId: event.id,
+        eventType: event.event_type,
+        contactRef: event.recipient?.contactRef,
+        ...(event.message?.command ? { command: event.message.command } : {}),
+        ...(event.message?.receiptId ? { receiptId: event.message.receiptId } : {}),
+        ...(event.message?.status ? { status: event.message.status } : {}),
+        ...(event.message?.failureCode ? { failureCode: event.message.failureCode } : {}),
+      };
+    });
+    return json({ events });
+  } catch (error) {
+    if (error instanceof z.ZodError || error instanceof SyntaxError)
+      return json({ error: "Invalid Nafsi Connect event contract" }, 422);
+    return json(
+      { error: error instanceof Error ? error.message : "Nafsi Connect events unavailable" },
       Number((error as { status?: number })?.status) || 503,
     );
   }
