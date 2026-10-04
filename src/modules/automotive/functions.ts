@@ -24,6 +24,12 @@ export const getAutomotiveWorkspace=createServerFn({method:"POST"}).middleware([
   db.from("automotive_auction_sheet_extractions").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
   db.from("automotive_auction_comparables").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("observed_at",{ascending:false}).limit(300),
   db.from("automotive_auction_decisions").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
+  db.from("automotive_auction_review_corrections").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
+  db.from("automotive_auction_price_outcomes").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("outcome_at",{ascending:false}).limit(300),
+  db.from("automotive_auction_price_curves").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("as_of",{ascending:false}).limit(300),
+  db.from("automotive_auction_price_predictions").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(300),
+  db.from("automotive_auction_watch_rules").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("updated_at",{ascending:false}).limit(200),
+  db.from("automotive_auction_watch_matches").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("last_seen_at",{ascending:false}).limit(300),
   db.from("automotive_parts_fitment").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
   db.from("automotive_compliance_checks").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("checked_at",{ascending:false}).limit(200)
  ]);
@@ -32,7 +38,9 @@ export const getAutomotiveWorkspace=createServerFn({method:"POST"}).middleware([
   findings:rs[4].data??[],valuations:rs[5].data??[],auctionLots:rs[6].data??[],bidModels:rs[7].data??[],
   bidCostModelsV2:rs[8].data??[],bidInstructions:rs[9].data??[],bidProviderEvents:rs[10].data??[],
   auctionSheetExtractions:rs[11].data??[],auctionComparables:rs[12].data??[],auctionDecisions:rs[13].data??[],
-  fitments:rs[14].data??[],compliance:rs[15].data??[]};
+  auctionCorrections:rs[14].data??[],auctionPriceOutcomes:rs[15].data??[],auctionPriceCurves:rs[16].data??[],
+  auctionPredictions:rs[17].data??[],auctionWatchRules:rs[18].data??[],auctionWatchMatches:rs[19].data??[],
+  fitments:rs[20].data??[],compliance:rs[21].data??[]};
 });
 
 const vehicle=scope.extend({
