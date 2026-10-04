@@ -217,14 +217,7 @@ INSERT INTO public.integration_provider_catalogue(
 ('deliverect','Deliverect','marketplace_middleware','middleware','planned','{}',ARRAY['orders','menu','availability','status','mapping'],'{"role":"optionalBridge"}'::jsonb),
 ('otter','Otter','marketplace_middleware','middleware','planned','{}',ARRAY['orders','menu','availability','status','mapping'],'{"role":"optionalBridge"}'::jsonb),
 ('urbanpiper','UrbanPiper','marketplace_middleware','middleware','planned','{}',ARRAY['orders','menu','availability','status','mapping'],'{"role":"optionalBridge"}'::jsonb),
-('foodics','Foodics','pos','api','evaluate','{}',ARRAY['pos','orders','catalogue','inventory','payments'],'{}'::jsonb),
-('dines','Dines','pos','api','evaluate',ARRAY['GB'],ARRAY['pos','orders','catalogue','kds','payments'],'{}'::jsonb),
-('toast','Toast','pos','api','evaluate','{}',ARRAY['pos','orders','catalogue','kds'],'{}'::jsonb),
-('square','Square','pos','api','evaluate','{}',ARRAY['pos','orders','catalogue','payments'],'{}'::jsonb),
-('sumup','SumUp','pos','api','evaluate','{}',ARRAY['pos','payments','orders'],'{}'::jsonb),
-('lightspeed','Lightspeed','pos','api','evaluate','{}',ARRAY['pos','orders','catalogue','inventory'],'{}'::jsonb),
-('epos_now','Epos Now','pos','api','evaluate',ARRAY['GB'],ARRAY['pos','orders','catalogue','inventory'],'{}'::jsonb),
-('grafterr','Grafterr','pos','api','evaluate',ARRAY['GB'],ARRAY['pos','orders','qr','kiosk'],'{}'::jsonb),
+('sumup','SumUp','payments','api','planned',ARRAY['GB'],ARRAY['card_payments','terminal','checkout'],'{"role":"payment_provider_not_pos"}'::jsonb),
 ('uber_direct','Uber Direct','delivery','api','planned',ARRAY['GB'],ARRAY['quote','create','cancel','tracking'],'{"approvalRequired":true}'::jsonb),
 ('deliveroo_express','Deliveroo Express','delivery','api','planned',ARRAY['GB'],ARRAY['quote','create','cancel','tracking'],'{"approvalRequired":true}'::jsonb),
 ('just_eat_go','Just Eat Go','delivery','api','planned',ARRAY['GB'],ARRAY['quote','create','cancel','tracking'],'{"approvalRequired":true}'::jsonb),
@@ -248,6 +241,10 @@ ON CONFLICT(provider_key) DO UPDATE SET
  metadata=public.integration_provider_catalogue.metadata||EXCLUDED.metadata,
  updated_at=now();
 
+-- Competitor POS products such as Foodics, Dines, Toast, Square, Lightspeed,
+-- Epos Now and Grafterr are intentionally NOT provider routes. They are product
+-- benchmarks/gap inputs. Optional migration tooling may import their exports,
+-- but Dishbee remains the operating system after cut-over.
 -- Default routes are deliberately disabled until approval/certification is complete.
 INSERT INTO public.product_provider_routes(
  product_key,provider_key,route_role,priority,enabled,country_code,capability_scope,metadata
@@ -260,8 +257,6 @@ FROM (VALUES
  ('deliverect','bridge',50,ARRAY['orders','menu','availability','status']),
  ('otter','bridge',60,ARRAY['orders','menu','availability','status']),
  ('urbanpiper','bridge',70,ARRAY['orders','menu','availability','status']),
- ('foodics','source',80,ARRAY['pos','orders','catalogue','inventory']),
- ('dines','source',80,ARRAY['pos','orders','catalogue','kds']),
  ('uber_direct','destination',10,ARRAY['quote','create','tracking']),
  ('deliveroo_express','destination',20,ARRAY['quote','create','tracking']),
  ('just_eat_go','destination',30,ARRAY['quote','create','tracking']),
