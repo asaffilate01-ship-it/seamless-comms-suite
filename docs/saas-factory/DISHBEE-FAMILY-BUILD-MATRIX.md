@@ -146,16 +146,13 @@ Optional middleware bridges:
 
 These are migration/fallback transports, not required merchant products once a direct Dishbee route is production-approved.
 
-POS/source connector roadmap:
+Competitive POS benchmark policy:
 
-- Foodics;
-- Dines;
-- Toast;
-- Square;
-- SumUp;
-- Lightspeed;
-- Epos Now;
-- Grafterr.
+- Foodics, Dines, Toast, Square, Lightspeed, Epos Now, Grafterr and similar products are reviewed for feature gaps only;
+- missing useful capabilities are built natively into Dishbee/Omniqora;
+- optional RapidSwitch/import support may read exports from a merchant's previous POS during migration;
+- Dishbee does not rely on those systems after cut-over;
+- SumUp is treated only as a payment/terminal provider where enabled.
 
 Additional marketplace roadmap can include Wolt, Talabat, Careem, noon Food, foodpanda, Glovo and Grubhub/Seamless by market.
 
@@ -301,7 +298,6 @@ The following cannot truthfully be marked complete by repository code alone:
 - Just Eat Go commercial/API arrangement;
 - Stuart production credentials/terms;
 - Deliverect/Otter/UrbanPiper partner credentials if used as bridges;
-- Foodics/Dines/other POS credentials/partner acceptance;
 - payment-provider live credentials and marketplace/platform onboarding;
 - production domain/app-store release configuration;
 - regulated pharmacy permissions/workflows where applicable.
