@@ -168,6 +168,14 @@ const rows: readonly (readonly [
     "confirmed",
   ],
   [
+    "dishbee-plus",
+    "Dishbee+",
+    "Marketplaces",
+    "Multi-category local marketplace for food, grocery, pharmacy, convenience and more",
+    "commerce",
+    "confirmed",
+  ],
+  [
     "schonova",
     "Schonova",
     "Marketplaces",

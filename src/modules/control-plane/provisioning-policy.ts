@@ -78,6 +78,9 @@ export function decideProvisioning(input: {
           : "Service is not implemented on current main.",
     };
   }
+  if (service.owner_product_key === "haccora" && connection?.status === "connected") {
+    return { outcome: "succeed", reason: "Haccora service is backed by a connected, verified Haccora workspace." };
+  }
   if (service.provisioning_mode === "automatic" && service.owner_product_key === "omniqora") {
     return { outcome: "succeed", reason: "Shared Omniqora service is implemented and automatically provisionable." };
   }

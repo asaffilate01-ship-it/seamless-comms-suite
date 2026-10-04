@@ -24,6 +24,13 @@ class FakeModel:
     def generate(self, question, evidence, paths, instruction):
         self.calls += 1
         return {"insufficient": False, "claims": [{"text": "A source-based draft.", "citations": ["FAKE" if self.invalid else evidence[0]["citation_id"]]}]}, {}
+    def extract_graph(self, title, chunks, instruction=""):
+        self.calls += 1
+        row = chunks[0]
+        quote = row["content"][:min(40, len(row["content"]))]
+        return {"entities": [{"label": "Northstar Foods", "type": "organisation"}, {"label": "Batch B17", "type": "batch"}],
+                "relationships": [{"source": "Northstar Foods", "relation": "supplies", "target": "Batch B17",
+                                   "quote": quote, "chunk_id": row["id"]}]}, {"input_tokens": 10, "output_tokens": 5}
 
 
 class CoreTests(unittest.TestCase):
@@ -97,6 +104,23 @@ class CoreTests(unittest.TestCase):
         edge = {"collection": "manuals", "id": "false", "source": "Northstar Foods", "target": "Another thing", "relation": "supplies", "document_id": "supplier-record", "document_revision": 1, "quote": "This quote does not exist."}
         self.assert_error(422, self.service.add_edge, self.p, edge)
         self.assert_error(409, self.service.add_edge, self.p, {**edge, "document_revision": 2})
+
+    def test_graph_extraction_requires_review_before_indexing(self):
+        self.service.provider = FakeModel()
+        proposal = self.service.graph_candidates(self.p, {
+            "collection": "manuals", "document_id": "supplier-record", "expected_revision": 1
+        })
+        self.assertEqual("review_required", proposal["status"])
+        self.assertTrue(proposal["candidates"])
+        self.assertEqual([], self.query(mode="graph", seeds=["Northstar Foods"])["graph_paths"][:0])
+        candidate = proposal["candidates"][0]
+        applied = self.service.apply_graph_candidates(self.p, {
+            "collection": "manuals",
+            "document_id": "supplier-record",
+            "document_revision": 1,
+            "candidates": [{k: candidate[k] for k in ("id","source","relation","target","quote","chunk_id")}],
+        })
+        self.assertEqual(1, applied["reviewed_count"])
 
     def test_jurisdiction_required_and_filtered(self):
         p = principal("lawquo")
