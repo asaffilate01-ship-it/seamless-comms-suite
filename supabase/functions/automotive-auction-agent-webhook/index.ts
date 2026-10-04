@@ -117,8 +117,32 @@ Deno.serve(async req=>{
       const changed=await client.from("automotive_bid_instructions").update(update).eq("tenant_id",tenantId).eq("id",instruction.id);
       if(changed.error)throw changed.error;
       if(eventType==="auction.bid.won"&&!limitViolation){
-        const lot=await client.from("automotive_auction_lots").update({status:"won",updated_at:now}).eq("tenant_id",tenantId).eq("id",instruction.auction_lot_id);
+        const lot=await client.from("automotive_auction_lots").update({status:"won",updated_at:now})
+          .eq("tenant_id",tenantId).eq("id",instruction.auction_lot_id).select("*").single();
         if(lot.error)throw lot.error;
+        const hammer=Number(body.hammer_price_jpy),sheet=lot.data.auction_sheet??{};
+        const make=String(sheet.make??"").trim(),model=String(sheet.model??"").trim();
+        if(make&&model&&Number.isInteger(hammer)&&hammer>0){
+          const outcome=await client.from("automotive_auction_price_outcomes").insert({
+            tenant_id:tenantId,product_key:"autohashi",auction_lot_id:lot.data.id,provider_key:lot.data.provider_key,
+            external_lot_id:lot.data.external_lot_id,make,model,model_code:sheet.modelCode??null,
+            model_year:Number.isInteger(sheet.year)?sheet.year:null,grade:lot.data.grade,mileage_km:lot.data.odometer_km,
+            hammer_jpy:hammer,source:"provider_webhook",outcome_at:now,metadata:{providerEventId:eventId,providerReference}
+          });
+          if(outcome.error)throw outcome.error;
+          const predictions=await client.from("automotive_auction_price_predictions").select("*")
+            .eq("tenant_id",tenantId).eq("auction_lot_id",lot.data.id).eq("status","predicted");
+          if(predictions.error)throw predictions.error;
+          for(const prediction of predictions.data??[]){
+            if(prediction.predicted_hammer_jpy===null)continue;
+            const predicted=Number(prediction.predicted_hammer_jpy),absolute=Math.abs(hammer-predicted);
+            const calibrated=await client.from("automotive_auction_price_predictions").update({
+              actual_hammer_jpy:hammer,absolute_error_jpy:absolute,error_pct:hammer>0?Number(((absolute/hammer)*100).toFixed(4)):null,
+              status:"calibrated",calibrated_at:now
+            }).eq("id",prediction.id);
+            if(calibrated.error)throw calibrated.error;
+          }
+        }
       }else if(eventType==="auction.bid.lost"){
         const lot=await client.from("automotive_auction_lots").update({status:"ended",updated_at:now}).eq("tenant_id",tenantId).eq("id",instruction.auction_lot_id);
         if(lot.error)throw lot.error;
