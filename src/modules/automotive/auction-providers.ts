@@ -235,9 +235,9 @@ export function normaliseCarStackLot(input: unknown): NormalizedAuctionLot {
     finalPriceMinor:int(price.final),
     currency:firstText(price.currency,"JPY") ?? "JPY",
     priceSemantics:num(price.final)!==null&&num(price.final)!==0?"reported_result":"provider_current",
-    images:allImages,
+    images:[],
     auctionSheet:record(row.auction_sheet),
-    provenance:{source:"carstack",lotNumber:firstText(row.lot_number),steering:firstText(specs.steering),title:firstText(row.title)},
+    provenance:{source:"carstack",lotNumber:firstText(row.lot_number),steering:firstText(specs.steering),title:firstText(row.title),protectedImageRefs:allImages,imageCount:int(images.total)},
     observedAt:new Date().toISOString(),
   };
 }
@@ -328,4 +328,54 @@ export function auctionProviderReadiness(env: Record<string,string|undefined>) {
     ...provider,
     configured:provider.stage==="built_read" && provider.requiredSecretNames.every(name=>!!env[name]),
   }));
+}
+
+
+export async function searchAuctionProvidersWithFailover(input:{
+  candidates:Array<{providerKey:"vehicle.auction.thecarapi"|"vehicle.auction.carstack";secret:string}>;
+  filters:AuctionSearchInput;
+}){
+  const errors:Array<{providerKey:string;error:string}>=[];
+  for(let index=0;index<input.candidates.length;index++){
+    const candidate=input.candidates[index];
+    try{
+      const result=await searchAuctionProvider({providerKey:candidate.providerKey,secret:candidate.secret,filters:input.filters});
+      return {...result,fallbackUsed:index>0,attemptedProviders:input.candidates.slice(0,index+1).map(p=>p.providerKey),providerErrors:errors};
+    }catch(error){
+      errors.push({providerKey:candidate.providerKey,error:error instanceof Error?error.message:String(error)});
+    }
+  }
+  throw new Error("All configured Japanese auction read providers failed: "+errors.map(e=>e.providerKey+"="+e.error).join("; "));
+}
+
+export function auctionLotCoverage(lots:NormalizedAuctionLot[]){
+  const count=lots.length||1;
+  const present=(pick:(lot:NormalizedAuctionLot)=>unknown)=>lots.filter(lot=>{
+    const value=pick(lot);return Array.isArray(value)?value.length>0:value!==null&&value!==undefined&&value!=="";
+  }).length/count;
+  return {
+    sampleSize:lots.length,
+    chassis:present(l=>l.chassisNumber),
+    grade:present(l=>l.grade),
+    odometer:present(l=>l.odometerKm),
+    auctionHouse:present(l=>l.auctionHouse),
+    auctionDate:present(l=>l.auctionAt),
+    images:present(l=>l.images),
+    startingOrCurrentPrice:present(l=>l.startingPriceMinor??l.currentPriceMinor),
+  };
+}
+
+export function compareAuctionLotSamples(a:NormalizedAuctionLot[],b:NormalizedAuctionLot[]){
+  const chassisA=new Set(a.map(x=>x.chassisNumber?.replace(/[^A-Z0-9]/gi,"").toUpperCase()).filter(Boolean) as string[]);
+  const chassisB=new Set(b.map(x=>x.chassisNumber?.replace(/[^A-Z0-9]/gi,"").toUpperCase()).filter(Boolean) as string[]);
+  const exactChassisOverlap=[...chassisA].filter(x=>chassisB.has(x)).length;
+  const coarse=(lot:NormalizedAuctionLot)=>[lot.make.toUpperCase(),lot.model.toUpperCase(),lot.year??"",lot.odometerKm===null?"":Math.round(lot.odometerKm/1000)].join("|");
+  const coarseB=new Set(b.map(coarse));
+  const coarseOverlap=new Set(a.map(coarse).filter(x=>coarseB.has(x))).size;
+  return {
+    exactChassisOverlap,
+    coarseVehicleOverlap:coarseOverlap,
+    providerA:auctionLotCoverage(a),
+    providerB:auctionLotCoverage(b),
+  };
 }
