@@ -268,7 +268,7 @@ export type HaccoraReadiness = {
     aiRequested: boolean;
     aiTotal: number;
   };
-  jobs: { pending: number; failed: number };
+  jobs: { pending: number; blocked: number; failed: number };
   ready: boolean;
   aiReady: boolean;
 };
