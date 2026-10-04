@@ -32,10 +32,20 @@ class Bridges:
 
     def get(self, actor, project, data):
         fields(data, {'connection','id'}, {'connection','id'})
-        with self.e.connection() as db: row = self.row(db, actor, project, data)
+        with self.e.connection() as db:
+            row = self.row(db, actor, project, data)
+            if row['status'] == 'draft': self._draft_access(db, actor, project, row)
         return {'runId': row['id'], 'status': row['status'], 'reviewRequired': True,
                 'scope': json.loads(row['scope']), 'result': json.loads(row['result']) if row['result'] else None,
                 'error': row['error'], 'created': row['created']}
+
+    def _draft_access(self, db, actor, project, row):
+        # Cached output is still protected content. Recheck current permissions
+        # without reserving quota or invoking the model again.
+        p, policy, _ = self.e.ai._guard(db, actor, project)
+        if p['project_role'] == 'finance' and row['profile'] != 'finance':
+            raise APIError(403, 'Finance role only')
+        self.e.ai._entry('models', policy['routes'].get(row['profile']), actor, project)
 
     def submit(self, actor, project, data):
         required = {'connection','id','product','contract','profile','scope','payload','daily_limit'}
@@ -71,6 +81,7 @@ class Bridges:
         with self.e.connection() as db:
             row = self.row(db,actor,project,data)
             if row['status'] == 'draft':
+                self._draft_access(db, actor, project, row)
                 if row['contract'] == 'lawquo_assessment' and encode(data.get('context')) != row['payload']:
                     raise APIError(409, 'Case evidence changed; use a new context revision and request')
                 return self._result(row)
