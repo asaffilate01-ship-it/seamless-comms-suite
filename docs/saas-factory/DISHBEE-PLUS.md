@@ -70,7 +70,7 @@ Direct certified provider connections are preferred.
 
 Deliverect, Otter and UrbanPiper are supported as optional bridges while direct provider approval is unavailable. Once a direct route is production approved, the merchant can use Dishbee/Dishbee+ without buying a separate aggregation middleware product.
 
-POS systems such as Foodics, Dines, Toast, Square, SumUp, Lightspeed, Epos Now and Grafterr are treated as source/destination connectors rather than as the core system.
+Foodics, Dines, Toast, Square, Lightspeed, Epos Now, Grafterr and similar restaurant/POS products are competitor/reference systems, not Dishbee runtime dependencies. Their useful features are gap inputs for native Dishbee/Omniqora development. RapidSwitch/import tooling may ingest exports when a merchant migrates away from a former POS. SumUp remains a payment provider only where configured.
 
 ## Jungleworks parity mapping
 
