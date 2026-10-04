@@ -282,7 +282,7 @@ function ControlPlane() {
                     Enable Haccora + AI
                   </Button>
                 )}
-                {isPlatformAdmin && ((haccoraReadiness.data?.jobs.failed ?? 0) > 0 || (haccoraReadiness.data?.jobs.pending ?? 0) > 0) && (
+                {isPlatformAdmin && ((haccoraReadiness.data?.jobs.failed ?? 0) > 0 || (haccoraReadiness.data?.jobs.blocked ?? 0) > 0) && (
                   <Button size="sm" variant="outline" onClick={retrySelectedHaccora} disabled={busyKey === "haccora:retry"}>
                     Retry failed / blocked
                   </Button>
@@ -300,7 +300,7 @@ function ControlPlane() {
                 <ReadinessStat label="Compliance" value={haccoraReadiness.data.ready ? "ready" : "not ready"} />
                 <ReadinessStat label="AI" value={haccoraReadiness.data.aiReady ? "ready" : haccoraReadiness.data.services.aiRequested ? "provisioning" : "not requested"} />
                 <ReadinessStat label="Active services" value={`${haccoraReadiness.data.services.active}/${haccoraReadiness.data.services.requested}`} />
-                <ReadinessStat label="Jobs" value={`${haccoraReadiness.data.jobs.pending} pending · ${haccoraReadiness.data.jobs.failed} failed`} />
+                <ReadinessStat label="Jobs" value={`${haccoraReadiness.data.jobs.pending} pending · ${haccoraReadiness.data.jobs.blocked} blocked · ${haccoraReadiness.data.jobs.failed} failed`} />
               </div>
             ) : null}
           </CardContent>
