@@ -455,4 +455,57 @@ END $$;
 REVOKE ALL ON FUNCTION public.dispatch_apply_assignment_recommendation(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.dispatch_apply_assignment_recommendation(uuid) TO authenticated,service_role;
 
+
+CREATE OR REPLACE FUNCTION public.routing_apply_optimisation(_optimisation uuid)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $
+DECLARE o public.routing_optimisation_jobs%rowtype;
+BEGIN
+ SELECT * INTO o FROM public.routing_optimisation_jobs WHERE id=_optimisation FOR UPDATE;
+ IF NOT FOUND OR o.status NOT IN('review','approved') THEN
+  RAISE EXCEPTION 'Reviewable routing optimisation required';
+ END IF;
+ IF NOT public.is_platform_admin(auth.uid())
+    AND NOT public.has_tenant_role(o.tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]) THEN
+  RAISE EXCEPTION 'Routing plan approval denied';
+ END IF;
+ IF EXISTS(
+  SELECT s.job_id
+  FROM public.routing_route_plan_stops s
+  JOIN public.routing_route_plans p ON p.id=s.route_plan_id
+  WHERE p.optimisation_job_id=o.id AND s.job_id IS NOT NULL
+  GROUP BY s.job_id HAVING count(DISTINCT p.id)>1
+ ) THEN RAISE EXCEPTION 'A job appears in multiple route plans'; END IF;
+
+ UPDATE public.dispatch_jobs j
+ SET assigned_agent_id=p.agent_id,assigned_vehicle_id=p.vehicle_id,status='assigned',updated_at=now()
+ FROM (
+  SELECT DISTINCT ON(s.job_id) s.job_id,rp.agent_id,rp.vehicle_id
+  FROM public.routing_route_plan_stops s
+  JOIN public.routing_route_plans rp ON rp.id=s.route_plan_id
+  WHERE rp.optimisation_job_id=o.id AND s.job_id IS NOT NULL
+  ORDER BY s.job_id,s.sequence
+ ) p
+ WHERE j.id=p.job_id AND j.tenant_id=o.tenant_id AND j.status='unassigned';
+
+ UPDATE public.dispatch_agents a SET status='busy',updated_at=now()
+ WHERE a.id IN(
+  SELECT DISTINCT agent_id FROM public.routing_route_plans
+  WHERE optimisation_job_id=o.id AND agent_id IS NOT NULL
+ );
+ UPDATE public.dispatch_vehicles v SET status='assigned',updated_at=now()
+ WHERE v.id IN(
+  SELECT DISTINCT vehicle_id FROM public.routing_route_plans
+  WHERE optimisation_job_id=o.id AND vehicle_id IS NOT NULL
+ );
+ UPDATE public.routing_route_plans SET status='applied',updated_at=now()
+ WHERE optimisation_job_id=o.id;
+ UPDATE public.routing_optimisation_jobs
+ SET status='applied',reviewed_by=auth.uid(),reviewed_at=COALESCE(reviewed_at,now()),completed_at=COALESCE(completed_at,now())
+ WHERE id=o.id;
+END $;
+REVOKE ALL ON FUNCTION public.routing_apply_optimisation(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.routing_apply_optimisation(uuid) TO authenticated,service_role;
+
 COMMIT;
