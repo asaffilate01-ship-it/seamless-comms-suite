@@ -16,7 +16,10 @@ const requestSchema=z.discriminatedUnion("operation",[
   toolKey:z.string().max(160).nullish(),request:z.record(z.string(),z.unknown()).default({}),response:z.record(z.string(),z.unknown()).default({}),
   sourceRefs:z.array(z.string().max(500)).max(200).default([])}),
  scope.extend({operation:z.literal("action.propose"),runId:uuid.nullish(),actionKey:z.string().min(2).max(160),targetType:z.string().min(1).max(100),
-  targetId:z.string().max(200).nullish(),payload:z.record(z.string(),z.unknown()).default({}),rationale:z.string().min(4).max(5000)})
+  targetId:z.string().max(200).nullish(),payload:z.record(z.string(),z.unknown()).default({}),rationale:z.string().min(4).max(5000)}),
+ scope.extend({operation:z.literal("action.list"),runId:uuid.nullish(),status:z.enum(["pending","approved","rejected"]).nullish(),
+  limit:z.number().int().min(1).max(100).default(50)}),
+ scope.extend({operation:z.literal("action.review"),proposalId:uuid,decision:z.enum(["approved","rejected"]),actorRef:z.string().min(1).max(200)})
 ]);
 
 function reply(body:unknown,status=200){return Response.json(body,{status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"}});}
@@ -60,7 +63,9 @@ export async function serveIntelligenceService(httpRequest:Request){
    input.operation==="run.get"?"intelligence.run.read":
    input.operation==="job.claim"?"intelligence.jobs":
    input.operation==="job.finish"?"intelligence.results":
-   input.operation==="agent.step"?"intelligence.steps":"ai.proposals";
+   input.operation==="agent.step"?"intelligence.steps":
+   input.operation==="action.list"?"intelligence.run.read":
+   input.operation==="action.review"?"intelligence.run.start":"ai.proposals";
   if(credential)authoriseServiceScope(credential,{tenantId:input.tenantId,productKey:input.productKey,capability});
   const ent=await db.rpc("has_tenant_entitlement",{_tenant:input.tenantId,_service:"omniqora.intelligence-runtime"});
   if(ent.error||!ent.data)throw new Error("Omniqora intelligence entitlement required");
@@ -131,6 +136,55 @@ export async function serveIntelligenceService(httpRequest:Request){
     completed_at:input.stepType==="final"?new Date().toISOString():null,updated_at:new Date().toISOString()}).eq("id",input.runId);
    return reply(step,201);
   }
+  if(input.operation==="action.list"){
+   let query=db.from("ai_action_proposals")
+    .select("id,run_id,action_key,target_type,target_id,payload,rationale,proposed_by,status,reviewed_by,reviewed_at,created_at")
+    .eq("tenant_id",input.tenantId).eq("product_key",input.productKey)
+    .order("created_at",{ascending:false}).limit(input.limit);
+   if(input.runId)query=query.eq("run_id",input.runId);
+   if(input.status)query=query.eq("status",input.status);
+   const result=await query;
+   if(result.error)throw new Error(result.error.message);
+   if(credential)await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+   return reply({proposals:result.data??[]});
+  }
+
+  if(input.operation==="action.review"){
+   const current=await db.from("ai_action_proposals")
+    .select("id,status,run_id,action_key,target_type,target_id,payload,rationale")
+    .eq("tenant_id",input.tenantId).eq("product_key",input.productKey)
+    .eq("id",input.proposalId).maybeSingle();
+   if(current.error||!current.data)throw new Error("Action proposal not found");
+   if(current.data.status!=="pending")throw new Error("Action proposal is not pending");
+   const reviewed=await db.from("ai_action_proposals").update({
+    status:input.decision,
+    reviewed_at:new Date().toISOString(),
+   }).eq("id",input.proposalId).eq("tenant_id",input.tenantId).eq("status","pending")
+    .select("id,run_id,action_key,target_type,target_id,payload,rationale,status,reviewed_at").single();
+   if(reviewed.error)throw new Error(reviewed.error.message);
+   try{
+    await db.from("platform_events").insert({
+      tenant_id:input.tenantId,
+      product_key:input.productKey,
+      event_type:"intelligence.action."+input.decision,
+      event_version:1,
+      source_service:"omniqora.intelligence",
+      subject_type:"ai_action_proposal",
+      subject_id:input.proposalId,
+      idempotency_key:"proposal-review:"+input.proposalId+":"+input.decision,
+      data_classification:"internal",
+      payload:{
+        actorRef:input.actorRef,
+        actionKey:reviewed.data.action_key,
+        targetType:reviewed.data.target_type,
+        targetId:reviewed.data.target_id,
+      },
+    });
+   }catch{}
+   if(credential)await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+   return reply(reviewed.data);
+  }
+
   const {data:proposal,error}=await db.from("ai_action_proposals").insert({tenant_id:input.tenantId,product_key:input.productKey,run_id:input.runId??null,
    action_key:input.actionKey,target_type:input.targetType,target_id:input.targetId??null,payload:input.payload,rationale:input.rationale,
    proposed_by:"ai",status:"pending"}).select("*").single();if(error)throw new Error(error.message);return reply(proposal,201);
