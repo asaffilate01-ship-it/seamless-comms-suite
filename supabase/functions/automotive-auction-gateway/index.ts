@@ -417,6 +417,21 @@ async function markWatchMatch(body:any){
   if(row.error)throw row.error;return row.data;
 }
 
+async function runWatchNow(body:any){
+  const who=actor(body);
+  if(!who.roles.some((role:string)=>["super_admin","tenant_admin","ops"].includes(role)))throw new Error("Operations/admin role is required to run auction watches");
+  const base=(Deno.env.get("SUPABASE_URL")??"").replace(/\/$/,""),secret=Deno.env.get("AUTOHASHI_AUCTION_WATCH_WORKER_SECRET")??"";
+  if(!base||secret.length<32)throw new Error("Auction watch worker is not configured");
+  const response=await fetch(base+"/functions/v1/automotive-auction-watch-worker",{
+    method:"POST",headers:{"Content-Type":"application/json","x-autohashi-watch-secret":secret},
+    body:JSON.stringify({watchRuleId:typeof body.watchRuleId==="string"&&body.watchRuleId?body.watchRuleId:null})
+  });
+  const raw=await response.text();let result:any={};
+  try{result=raw?JSON.parse(raw):{};}catch{throw new Error("Auction watch worker returned non-JSON");}
+  if(!response.ok||result?.error)throw new Error(String(result?.error??"Auction watch worker failed"));
+  return result;
+}
+
 function actor(body:any){
   const raw=body?.actor??{};
   const userId=typeof raw.userId==="string"?raw.userId:"";
@@ -713,6 +728,7 @@ Deno.serve(async req=>{
     if(body.action==="watch.update")return json({ok:true,watch:await updateWatchRule(body)});
     if(body.action==="watch.matches")return json({ok:true,matches:await listWatchMatches(body)});
     if(body.action==="watch.match_status")return json({ok:true,match:await markWatchMatch(body)});
+    if(body.action==="watch.run")return json({ok:true,run:await runWatchNow(body)});
     if(body.action==="history"){
       if(!body.chassisNumber)return json({error:"chassisNumber is required"},400);
       return json({ok:true,...await history(String(body.chassisNumber),Number(body.days??90))});
