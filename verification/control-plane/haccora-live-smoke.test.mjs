@@ -29,17 +29,24 @@ test("Haccora read-only smoke verifies connection, entitlements and compliance s
       return {data:true,error:null};
     },
   };
-  let body=null;
+  const actions=[];
   const fetchImpl=async (_url,init)=>{
-    body=JSON.parse(String(init.body));
+    const body=JSON.parse(String(init.body));
+    actions.push(body.action);
+    if(body.action==="validate_projection"){
+      return new Response(JSON.stringify({ok:true,valid:true,persisted:false,reviewRequired:true}),{status:200,headers:{"content-type":"application/json"}});
+    }
     return new Response(JSON.stringify({status:"ok",openChecks:2}),{status:200,headers:{"content-type":"application/json"}});
   };
   try{
     const result=await runHaccoraReadOnlySmoke(db,"11111111-1111-4111-8111-111111111111",fetchImpl);
     assert.equal(result.overall,"pass");
     assert.equal(result.compliance?.reachable,true);
-    assert.deepEqual(body,{action:"compliance_summary",omniqoraTenantId:"11111111-1111-4111-8111-111111111111"});
+    assert.equal(result.projection?.validated,true);
+    assert.equal(result.projection?.persisted,false);
+    assert.deepEqual(actions,["compliance_summary","validate_projection"]);
     assert(result.checks.some((item)=>item.key==="ai-copilot"&&item.ok));
+    assert(result.checks.some((item)=>item.key==="projection-contract"&&item.ok));
   }finally{
     if(previousUrl===undefined)delete process.env.HACCORA_UK_FUNCTION_URL;else process.env.HACCORA_UK_FUNCTION_URL=previousUrl;
     if(previousSecret===undefined)delete process.env.HACCORA_UK_SYNC_SECRET;else process.env.HACCORA_UK_SYNC_SECRET=previousSecret;

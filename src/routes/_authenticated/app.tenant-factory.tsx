@@ -20,6 +20,7 @@ import {
   linkTenantProduct,
   rotateProductCredential,
   retryHaccoraProvisioning,
+  runHaccoraPilotSmokeTest,
   runHaccoraSmokeTest,
   saveTenantBranding,
   setTenantProduct,
@@ -53,6 +54,7 @@ function ControlPlane() {
   const haccoraReadinessRequest = useServerFn(getHaccoraReadiness);
   const retryHaccoraRequest = useServerFn(retryHaccoraProvisioning);
   const haccoraSmokeRequest = useServerFn(runHaccoraSmokeTest);
+  const haccoraPilotSmokeRequest = useServerFn(runHaccoraPilotSmokeTest);
   const setProductRequest = useServerFn(setTenantProduct);
   const setServiceRequest = useServerFn(setTenantService);
   const setEcosystemAddonRequest = useServerFn(setTenantEcosystemAddon);
@@ -113,6 +115,7 @@ function ControlPlane() {
   const [bootstrappingDishbee, setBootstrappingDishbee] = useState(false);
   const [bootstrappingHaccora, setBootstrappingHaccora] = useState(false);
   const [haccoraSmoke, setHaccoraSmoke] = useState<Awaited<ReturnType<typeof haccoraSmokeRequest>> | null>(null);
+  const [pilotSmoke, setPilotSmoke] = useState<Awaited<ReturnType<typeof haccoraPilotSmokeRequest>> | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const enabledProducts = useMemo(
@@ -182,6 +185,21 @@ function ControlPlane() {
       toast.error(e instanceof Error ? e.message : "Haccora pilot rollout failed");
     } finally {
       setBootstrappingHaccora(false);
+    }
+  }
+
+  async function runPilotHaccoraSmoke() {
+    setBusyKey("haccora:pilot-smoke");
+    try {
+      const result = await haccoraPilotSmokeRequest();
+      setPilotSmoke(result);
+      if (result.overall === "pass") toast.success("All three Haccora pilot tenants passed live checks");
+      else toast.warning("One or more Haccora pilot tenants still have rollout blockers");
+    } catch (e) {
+      setPilotSmoke(null);
+      toast.error(e instanceof Error ? e.message : "Haccora pilot smoke check failed");
+    } finally {
+      setBusyKey(null);
     }
   }
 
@@ -400,6 +418,30 @@ function ControlPlane() {
                 <Button className="mt-2 w-full" variant="outline" disabled={bootstrappingHaccora} onClick={bootstrapHaccoraPilot}>
                   {bootstrappingHaccora ? "Queuing Haccora…" : "Enable Haccora + AI for pilot"}
                 </Button>
+                <Button className="mt-2 w-full" variant="outline" disabled={busyKey === "haccora:pilot-smoke"} onClick={runPilotHaccoraSmoke}>
+                  {busyKey === "haccora:pilot-smoke" ? "Checking all three…" : "Run Haccora pilot live checks"}
+                </Button>
+                {pilotSmoke && (
+                  <div className="mt-3 space-y-2 rounded-lg border bg-muted/30 p-3">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <b>Pilot smoke result</b>
+                      <StatusBadge status={pilotSmoke.overall === "pass" ? "active" : "blocked"} />
+                    </div>
+                    {pilotSmoke.tenants.map((tenant) => (
+                      <div key={tenant.tenantId} className="rounded-md bg-background p-2 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium">{tenant.tenantName}</span>
+                          <span className={tenant.overall === "pass" ? "text-primary" : "text-destructive"}>
+                            {tenant.overall.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-muted-foreground">
+                          {tenant.checks.filter((item) => item.ok).length}/{tenant.checks.length} checks passed
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
