@@ -123,11 +123,18 @@ function filters(criteria:any){
 }
 async function runRule(client:any,tenantId:string,rule:any){
   const criteria=rule.criteria??{},max=Math.min(200,Math.max(1,Number(rule.max_results_per_run??50))),candidates=choose(rule.provider_preference??"auto");
-  const result=rule.provider_preference==="auto"
-    ? await searchAuctionProvidersWithFailover({candidates,filters:{...filters(criteria),pageSize:Math.min(50,max)}})
-    : await searchAuctionProvider({providerKey:candidates[0].providerKey,secret:candidates[0].secret,filters:{...filters(criteria),pageSize:Math.min(50,max)}});
+  const lots:NormalizedAuctionLot[]=[];let page=1,providerKey:string|null=null;
+  while(lots.length<max){
+    const pageSize=Math.min(50,max-lots.length);
+    const result=rule.provider_preference==="auto"
+      ? await searchAuctionProvidersWithFailover({candidates,filters:{...filters(criteria),page,pageSize}})
+      : await searchAuctionProvider({providerKey:candidates[0].providerKey,secret:candidates[0].secret,filters:{...filters(criteria),page,pageSize}});
+    providerKey=result.providerKey;lots.push(...result.lots);
+    if(!result.lots.length||(result.totalPages!==null&&page>=result.totalPages))break;
+    page++;
+  }
   let qualified=0,pending=0,seen=0;
-  for(const lot of result.lots.slice(0,max)){
+  for(const lot of lots.slice(0,max)){
     const basic={...criteria,minScore:null,maxPredictedHammerJpy:null};
     if(!matchesWatchCriteria(basic,{make:lot.make,model:lot.model,modelCode:lot.modelCode,year:lot.year,grade:lot.grade,odometerKm:lot.odometerKm,openingJpy:lot.startingPriceMinor??lot.currentPriceMinor}))continue;
     const saved=await upsertLot(client,tenantId,lot),pred=await prediction(client,tenantId,lot,saved.lot.id),decision=await latestDecision(client,tenantId,saved.lot.id);
@@ -147,7 +154,7 @@ async function runRule(client:any,tenantId:string,rule:any){
     },{onConflict:"tenant_id,watch_rule_id,match_key"});
     if(match.error)throw match.error;seen++;
   }
-  return {seen,qualified,pending,providerKey:result.providerKey};
+  return {seen,qualified,pending,providerKey,pagesRead:page};
 }
 Deno.serve(async req=>{
   if(req.method!=="POST")return json({error:"Method not allowed"},405);
@@ -157,9 +164,14 @@ Deno.serve(async req=>{
     let q=client.from("automotive_auction_watch_rules").select("*").eq("tenant_id",tenantId).eq("product_key","autohashi").eq("enabled",true);
     if(body.watchRuleId)q=q.eq("id",String(body.watchRuleId));
     const rules=await q.order("updated_at",{ascending:true});if(rules.error)throw rules.error;
-    const outputs:any[]=[];
+    const outputs:any[]=[],manual=!!body.watchRuleId;
     for(const rule of rules.data??[]){
       const now=new Date().toISOString();
+      if(!manual&&rule.last_run_at){
+        const age=Date.now()-new Date(rule.last_run_at).getTime();
+        const minimum=rule.cadence==="daily"?20*60*60*1000:45*60*1000;
+        if(age<minimum){outputs.push({watchRuleId:rule.id,name:rule.name,ok:true,skipped:"not_due"});continue;}
+      }
       try{
         const result=await runRule(client,tenantId,rule);
         await client.from("automotive_auction_watch_rules").update({last_run_at:now,last_success_at:now,last_error:null}).eq("id",rule.id);
