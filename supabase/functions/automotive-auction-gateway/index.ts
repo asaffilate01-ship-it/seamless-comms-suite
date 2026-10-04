@@ -180,7 +180,7 @@ async function recalculateAuctionDecision(lotId:string){
   const ctx=await auctionIntelligenceContext(lotId);
   const result=evaluateAuctionDecision(decisionPayload(ctx));
   await ctx.db.from("automotive_auction_decisions").update({status:"superseded",updated_at:new Date().toISOString()})
-    .eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId).in("status",["proposed","reviewed"]);
+    .eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId).in("status",["proposed","reviewed","approved"]);
   const decision=await ctx.db.from("automotive_auction_decisions").insert({
     tenant_id:ctx.tenantId,product_key:"autohashi",auction_lot_id:lotId,vehicle_id:ctx.vehicle?.id??null,
     extraction_id:ctx.extraction?.id??null,cost_model_v2_id:ctx.costModel?.id??null,score:result.score,recommendation:result.recommendation,
@@ -370,7 +370,8 @@ async function bidModel(body:any){
     expires_at:expiresAt,result_payload:{reviewedMaxHammerJpy:calculation.maxHammerJpy}
   }).select("*").single();
   if(instruction.error)throw instruction.error;
-  return {instruction:instruction.data,costModel:insertedModel.data,calculation,reused:false,executionEnabled:executionEnabled()};
+  const intelligence=await recalculateAuctionDecision(lotId);
+  return {instruction:instruction.data,costModel:insertedModel.data,calculation,intelligenceDecision:intelligence.decision,reused:false,executionEnabled:executionEnabled()};
 }
 async function customerAuthorise(body:any){
   const who=actor(body),db=serviceDb(),tenantId=autohashiTenant();
