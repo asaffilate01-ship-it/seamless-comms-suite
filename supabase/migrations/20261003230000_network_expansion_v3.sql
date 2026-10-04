@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS public.growth_channel_catalogue(
 );
 INSERT INTO public.growth_channel_catalogue(channel_key,name,ownership,medium) VALUES
 ('google-search','Google Search Ads','paid','digital'),('google-pmax','Google Performance Max','paid','digital'),
-('meta','Meta','paid','social'),('tiktok','TikTok','paid','social'),('seo','SEO','owned','digital'),
-('email','Email','owned','crm'),('whatsapp','WhatsApp','owned','crm'),('referral','Referral','earned','network'),
+('meta','Meta','paid','media'),('tiktok','TikTok','paid','media'),('seo','SEO','owned','digital'),
+('email','Email','owned','direct'),('whatsapp','WhatsApp','owned','direct'),('referral','Referral','earned','referral'),
 ('events','Events','earned','offline'),('outdoor','Outdoor','paid','offline')
 ON CONFLICT(channel_key) DO UPDATE SET name=EXCLUDED.name,status='active';
 CREATE TABLE IF NOT EXISTS public.growth_acquisition_campaigns(
