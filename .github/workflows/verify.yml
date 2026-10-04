@@ -30,6 +30,7 @@ jobs:
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
+      - run: bun run test:automotive-intelligence
       - run: bun run test:services
       - run: node --test services/ecosystem-core/tests/*.test.mjs
       - name: Native PostgreSQL adapter and forced RLS
