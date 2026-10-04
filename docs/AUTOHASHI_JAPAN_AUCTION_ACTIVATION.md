@@ -48,6 +48,7 @@ Matching Omniqora service scope must be limited to the AutoHashi tenant/product 
 - automotive.auctions.read
 - automotive.auctions.sync
 - automotive.auctions.bid.request
+- automotive.auctions.assess
 
 Generate the plaintext service secret outside the database. Store only its SHA-256 hash through the existing platform_set_service_credential control-plane function.
 
@@ -110,8 +111,8 @@ Official references:
 7. Configure bridge secrets.
 8. Run 50-lot provider smoke test.
 9. Run 100–500 lot provider comparison.
-10. Validate canonical vehicle/relisting history.
-11. Queue AI assessment on selected lots.
+10. Validate canonical vehicle/relisting history through the signed auction.history operation.
+11. Queue AI assessment on selected lots through the signed auction.assess operation.
 12. Validate reviewed GBP→JPY max-bid model.
 13. Test bid authorisation; confirm pending_partner and transmittedToAuctionHouse=false.
 14. Only after a Japan-side contract exists, map its actual execution API or documented manual desk procedure.
