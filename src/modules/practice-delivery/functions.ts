@@ -216,3 +216,24 @@ export const acceptPracticeProposalPortal=createServerFn({method:"POST"}).middle
  const r=await(context.supabase as any).rpc("practice_portal_accept_proposal",{_proposal:data.proposalId,_accept:data.accept});
  if(r.error)throw new Error(r.error.message);return{ok:true};
 });
+
+
+const portalGrant=scope.extend({clientId:uuid,userId:uuid,portalRole:z.enum(["client_owner","client_contributor","client_viewer"]).default("client_viewer")});
+export const grantPracticePortalAccess=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof portalGrant>)=>portalGrant.parse(i)).handler(async({context,data})=>{
+ await admin(context,data.tenantId);const db=context.supabase as any;
+ const portal=await db.from("customer_portal_users").select("user_id,status").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).eq("user_id",data.userId).eq("status","active").maybeSingle();
+ if(portal.error||!portal.data)throw new Error("Active Omniqora customer portal user required");
+ const client=await db.from("practice_clients").select("id").eq("id",data.clientId).eq("tenant_id",data.tenantId).eq("product_key",data.productKey).maybeSingle();
+ if(client.error||!client.data)throw new Error("Practice client scope mismatch");
+ const{data:row,error}=await db.from("practice_client_portal_access").upsert({
+  tenant_id:data.tenantId,product_key:data.productKey,client_id:data.clientId,user_id:data.userId,portal_role:data.portalRole,status:"active",updated_at:new Date().toISOString()
+ },{onConflict:"client_id,user_id"}).select("*").single();
+ if(error)throw new Error(error.message);return row;
+});
+
+export const listMyPracticePortals=createServerFn({method:"GET"}).middleware([requireSupabaseAuth])
+.handler(async({context})=>{
+ const{data,error}=await(context.supabase as any).from("practice_client_portal_access").select("client_id,tenant_id,product_key,portal_role,status").eq("user_id",context.userId).eq("status","active");
+ if(error)throw new Error(error.message);return data??[];
+});
