@@ -190,6 +190,23 @@ async function bidModel(body:any){
   };
   const calculation=calculateJapanUkBidCost(input);
   if(proposed>calculation.maxHammerJpy)throw new Error("Proposed hammer bid exceeds the calculated reviewed maximum");
+  const externalReference=typeof body.externalReference==="string"?body.externalReference:null;
+  if(externalReference){
+    const prior=await db.from("automotive_bid_instructions").select("id,cost_model_v2_id").eq("tenant_id",tenantId)
+      .eq("external_reference",externalReference).eq("status","draft");
+    if(prior.error)throw prior.error;
+    const priorRows=prior.data??[];
+    if(priorRows.length){
+      const cancelled=await db.from("automotive_bid_instructions").update({status:"cancelled",updated_at:new Date().toISOString()})
+        .eq("tenant_id",tenantId).eq("external_reference",externalReference).eq("status","draft");
+      if(cancelled.error)throw cancelled.error;
+      const modelIds=priorRows.map((row:any)=>row.cost_model_v2_id).filter(Boolean);
+      if(modelIds.length){
+        const superseded=await db.from("automotive_bid_cost_models_v2").update({status:"superseded"}).eq("tenant_id",tenantId).in("id",modelIds);
+        if(superseded.error)throw superseded.error;
+      }
+    }
+  }
   const insertedModel=await db.from("automotive_bid_cost_models_v2").insert({
     tenant_id:tenantId,product_key:productKey,auction_lot_id:lotId,destination_country:"GB",
     fx_jpy_per_gbp:input.fxJpyPerGbp,fx_source:input.fxSource,fx_as_of:input.fxAsOf,
@@ -209,7 +226,7 @@ async function bidModel(body:any){
   const instruction=await db.from("automotive_bid_instructions").insert({
     tenant_id:tenantId,product_key:productKey,auction_lot_id:lotId,bid_model_id:null,cost_model_v2_id:insertedModel.data.id,
     execution_provider_key:"vehicle.auction.agent",max_bid_minor:proposed,currency:"JPY",status:"draft",
-    external_reference:typeof body.externalReference==="string"?body.externalReference:null,idempotency_key:idempotencyKey,
+    external_reference:externalReference,idempotency_key:idempotencyKey,
     expires_at:expiresAt,result_payload:{reviewedMaxHammerJpy:calculation.maxHammerJpy}
   }).select("*").single();
   if(instruction.error)throw instruction.error;
