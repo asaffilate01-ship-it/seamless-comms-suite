@@ -57,6 +57,26 @@ const requestSchema=z.discriminatedUnion("operation",[
     productKey:z.string().min(2).max(80),
     sourceRequestRef:z.string().min(1).max(200),
   }).strict(),
+  z.object({
+    operation:z.literal("auction.history"),
+    tenantId:z.string().uuid(),
+    productKey:z.string().min(2).max(80),
+    auctionLotId:z.string().uuid(),
+    days:z.number().int().min(1).max(730).default(90),
+  }).strict(),
+  z.object({
+    operation:z.literal("auction.assess"),
+    tenantId:z.string().uuid(),
+    productKey:z.string().min(2).max(80),
+    auctionLotId:z.string().uuid(),
+    goal:z.string().min(4).max(3000).default("Assess auction-sheet consistency, visible condition, provenance risks, mileage anomalies, relisting signals and bid-relevant concerns. Do not infer a clean history from missing evidence."),
+  }).strict(),
+  z.object({
+    operation:z.literal("auction.assessment.get"),
+    tenantId:z.string().uuid(),
+    productKey:z.string().min(2).max(80),
+    auctionLotId:z.string().uuid(),
+  }).strict(),
 ]);
 
 function reply(body:unknown,status=200){
@@ -143,8 +163,9 @@ export async function serveAutomotiveAuctionRuntime(request:Request){
     const input=requestSchema.parse(parsed);
     const {db,credential}=await authenticate(request);
     const capability=
-      input.operation==="auction.list"||input.operation==="auction.bid.get"?"automotive.auctions.read":
+      ["auction.list","auction.bid.get","auction.history","auction.assessment.get"].includes(input.operation)?"automotive.auctions.read":
       input.operation==="auction.bid.queue"?"automotive.auctions.bid.request":
+      input.operation==="auction.assess"?"automotive.auctions.assess":
       "automotive.auctions.sync";
     authoriseServiceScope(credential,{tenantId:input.tenantId,productKey:input.productKey,capability});
     await assertActiveProduct(db,input.tenantId,input.productKey);
@@ -171,6 +192,63 @@ export async function serveAutomotiveAuctionRuntime(request:Request){
       const row=await persistNormalizedAuctionLot(db,{tenantId:input.tenantId,productKey:input.productKey,lot:normalized});
       await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
       return reply({lot:publicLot(row)});
+    }
+
+    if(input.operation==="auction.history"){
+      const anchor=await db.from("automotive_auction_lots").select("vehicle_id")
+        .eq("tenant_id",input.tenantId).eq("product_key",input.productKey).eq("id",input.auctionLotId).maybeSingle();
+      if(anchor.error||!anchor.data)throw new Error("Auction lot not found");
+      if(!anchor.data.vehicle_id)return reply({vehicleId:null,days:input.days,lots:[],flags:[{type:"identity_pending",summary:"No canonical chassis-linked vehicle exists for this lot yet."}]});
+      const since=new Date(Date.now()-input.days*86400000).toISOString();
+      const history=await db.from("automotive_auction_lots").select("*")
+        .eq("tenant_id",input.tenantId).eq("product_key",input.productKey).eq("vehicle_id",anchor.data.vehicle_id)
+        .gte("created_at",since).order("auction_at",{ascending:true,nullsFirst:false});
+      if(history.error)throw new Error(history.error.message);
+      const lots=history.data??[];
+      const flags:{type:string;summary:string;lotIds?:string[]}[]=[];
+      for(let i=1;i<lots.length;i++){
+        const previous=lots[i-1],current=lots[i];
+        const before=Number(previous.odometer_km),after=Number(current.odometer_km);
+        if(Number.isFinite(before)&&Number.isFinite(after)&&after+100<before){
+          flags.push({type:"mileage_regression",summary:`Mileage fell from ${before.toLocaleString()} km to ${after.toLocaleString()} km across auction appearances.`,lotIds:[previous.id,current.id]});
+        }
+        if(previous.grade&&current.grade&&String(previous.grade)!==String(current.grade)){
+          flags.push({type:"grade_changed",summary:`Auction grade changed from ${previous.grade} to ${current.grade}.`,lotIds:[previous.id,current.id]});
+        }
+      }
+      await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+      return reply({vehicleId:anchor.data.vehicle_id,days:input.days,lots:lots.map(publicLot),flags});
+    }
+
+    if(input.operation==="auction.assess"){
+      const entitlement=await db.rpc("has_tenant_entitlement",{_tenant:input.tenantId,_service:"omniqora.intelligence-runtime"});
+      if(entitlement.error||!entitlement.data)throw new Error("Omniqora intelligence entitlement required");
+      const lot=await db.from("automotive_auction_lots").select("id,vehicle_id,provider_key,external_lot_id,auction_house,auction_at,grade,odometer_km,starting_price_minor,current_price_minor,currency,auction_sheet,images,metadata")
+        .eq("tenant_id",input.tenantId).eq("product_key",input.productKey).eq("id",input.auctionLotId).maybeSingle();
+      if(lot.error||!lot.data)throw new Error("Auction lot not found");
+      const existing=await db.from("intelligence_jobs").select("id,status,created_at")
+        .eq("tenant_id",input.tenantId).eq("product_key",input.productKey).eq("subject_type","auction_lot").eq("subject_id",input.auctionLotId)
+        .in("status",["queued","claimed","running","waiting_review"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+      if(existing.error)throw new Error(existing.error.message);
+      if(existing.data)return reply({job:existing.data,idempotent:true},202);
+      const queued=await db.from("intelligence_jobs").insert({
+        tenant_id:input.tenantId,product_key:input.productKey,job_type:"automotive.auction_assessment",subject_type:"auction_lot",subject_id:input.auctionLotId,priority:"normal",
+        input:{auctionLot:lot.data,vehicleId:lot.data.vehicle_id,goal:input.goal},
+        requirements:{service:"omniqora.automotive",visionAllowed:true,reviewRequired:true,citationsRequired:true,noGeolocation:true,
+          checks:["auction_sheet_vs_structured_fields","visible_damage","mileage_history","relisting_history","grade_consistency","bid_risk"]}
+      }).select("id,status,created_at").single();
+      if(queued.error)throw new Error(queued.error.message);
+      await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+      return reply({job:queued.data},202);
+    }
+
+    if(input.operation==="auction.assessment.get"){
+      const jobs=await db.from("intelligence_jobs").select("id,status,result,error,provider_key,model,created_at,updated_at,completed_at")
+        .eq("tenant_id",input.tenantId).eq("product_key",input.productKey).eq("subject_type","auction_lot").eq("subject_id",input.auctionLotId)
+        .order("created_at",{ascending:false}).limit(10);
+      if(jobs.error)throw new Error(jobs.error.message);
+      await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+      return reply({jobs:jobs.data??[]});
     }
 
     if(input.operation==="auction.bid.queue"){
