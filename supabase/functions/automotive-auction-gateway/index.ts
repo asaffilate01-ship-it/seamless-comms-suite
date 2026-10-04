@@ -193,12 +193,12 @@ async function bidModel(body:any){
   const externalReference=typeof body.externalReference==="string"?body.externalReference:null;
   if(externalReference){
     const prior=await db.from("automotive_bid_instructions").select("id,cost_model_v2_id").eq("tenant_id",tenantId)
-      .eq("external_reference",externalReference).eq("status","draft");
+      .eq("external_reference",externalReference).eq("status","draft").is("customer_authorised_at",null);
     if(prior.error)throw prior.error;
     const priorRows=prior.data??[];
     if(priorRows.length){
       const cancelled=await db.from("automotive_bid_instructions").update({status:"cancelled",updated_at:new Date().toISOString()})
-        .eq("tenant_id",tenantId).eq("external_reference",externalReference).eq("status","draft");
+        .eq("tenant_id",tenantId).eq("external_reference",externalReference).eq("status","draft").is("customer_authorised_at",null);
       if(cancelled.error)throw cancelled.error;
       const modelIds=priorRows.map((row:any)=>row.cost_model_v2_id).filter(Boolean);
       if(modelIds.length){
