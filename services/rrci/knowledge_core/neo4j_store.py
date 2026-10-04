@@ -183,6 +183,20 @@ class Neo4jStore:
             return {"id": edge["id"], "support_chunk": row["id"], "status": "indexed"}
         return self._execute(True, write)
 
+    def document_snapshot(self, scope, document_id):
+        def read(tx):
+            document = self._document(tx, scope, document_id)
+            if not document:
+                raise APIError(404, "Document not found")
+            rows = tx.run(
+                "MATCH (d:KnowledgeDocument {scope:$scope,id:$id})-[:KNOWLEDGE_CONTAINS]->(c:KnowledgeChunk {scope:$scope}) "
+                "RETURN c.id AS id,c.document_id AS document_id,c.ordinal AS ordinal,c.content AS content ORDER BY c.ordinal",
+                scope=scope.key,
+                id=document_id,
+            )
+            return document, [dict(row) for row in rows]
+        return self._execute(False, read)
+
     @staticmethod
     def _snapshot(tx, scope, as_of, jurisdiction, language):
         result = tx.run("""

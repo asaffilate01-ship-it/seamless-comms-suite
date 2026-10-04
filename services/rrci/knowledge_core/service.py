@@ -1,4 +1,5 @@
 from datetime import date
+import hashlib
 import time
 import uuid
 from .profiles import PROFILES
@@ -43,6 +44,123 @@ class KnowledgeService:
         if edge["source"].casefold() == edge["target"].casefold():
             raise APIError(422, "Self edges are not supported in this pilot")
         return self.store.add_edge(scope, edge)
+
+    def graph_candidates(self, principal, data):
+        fields(data, {"collection", "document_id", "expected_revision"}, {"collection", "document_id", "expected_revision"})
+        scope = principal.scope(data["collection"], "ingest")
+        if self.provider is None or not hasattr(self.provider, "extract_graph"):
+            raise APIError(503, "A graph extraction model is not configured")
+        document_id = identifier(data["document_id"], "document_id")
+        expected_revision = integer(data["expected_revision"], "expected_revision", 1, 1_000_000)
+        document, chunks = self.store.document_snapshot(scope, document_id)
+        if int(document["revision"]) != expected_revision:
+            raise APIError(409, "Document revision changed; extract again from the current source")
+        profile = PROFILES.get(scope.project, PROFILES["generic"])
+        chunk_map = {row["id"]: row["content"] for row in chunks}
+        entities = {}
+        candidates = {}
+        usage = {"input_tokens": 0, "output_tokens": 0, "batches": 0}
+        for start in range(0, len(chunks), 12):
+            batch = chunks[start:start + 12]
+            raw, batch_usage = self.provider.extract_graph(document.get("title", document_id), batch, profile.instruction)
+            usage["batches"] += 1
+            for key in ("input_tokens", "output_tokens"):
+                value = batch_usage.get(key)
+                if isinstance(value, int):
+                    usage[key] += value
+            raw_entities = raw.get("entities")
+            raw_relationships = raw.get("relationships")
+            if not isinstance(raw_entities, list) or len(raw_entities) > 80 or not isinstance(raw_relationships, list) or len(raw_relationships) > 120:
+                raise APIError(502, "Graph extraction exceeded the allowed schema")
+            for item in raw_entities:
+                if not isinstance(item, dict) or set(item) != {"label", "type"}:
+                    raise APIError(502, "Invalid graph entity candidate")
+                label = text(item["label"], "entity label", 200)
+                entity_type = identifier(item["type"], "entity type")
+                entities[label.casefold()] = {"label": label, "type": entity_type}
+            for item in raw_relationships:
+                required = {"source", "relation", "target", "quote", "chunk_id"}
+                if not isinstance(item, dict) or set(item) != required:
+                    raise APIError(502, "Invalid graph relationship candidate")
+                source = text(item["source"], "source", 200)
+                target = text(item["target"], "target", 200)
+                relation = identifier(item["relation"], "relation")
+                quote = text(item["quote"], "quote", 600, 10)
+                chunk_id = identifier(item["chunk_id"], "chunk_id")
+                if source.casefold() == target.casefold():
+                    continue
+                content = chunk_map.get(chunk_id)
+                if content is None or quote not in content:
+                    raise APIError(502, "Graph candidate quote is not present in its cited source chunk")
+                digest = hashlib.sha256(
+                    "|".join([scope.key, document_id, str(expected_revision), source, relation, target, chunk_id, quote]).encode()
+                ).hexdigest()[:24]
+                candidate = {
+                    "id": "auto-" + digest,
+                    "source": source,
+                    "relation": relation,
+                    "target": target,
+                    "quote": quote,
+                    "chunk_id": chunk_id,
+                    "document_id": document_id,
+                    "document_revision": expected_revision,
+                }
+                candidates[candidate["id"]] = candidate
+        return {
+            "document_id": document_id,
+            "document_revision": expected_revision,
+            "status": "review_required",
+            "entities": list(entities.values())[:160],
+            "candidates": list(candidates.values())[:240],
+            "usage": usage,
+            "review_required": True,
+        }
+
+    def apply_graph_candidates(self, principal, data):
+        fields(data, {"collection", "document_id", "document_revision", "candidates"},
+               {"collection", "document_id", "document_revision", "candidates"})
+        scope = principal.scope(data["collection"], "ingest")
+        document_id = identifier(data["document_id"], "document_id")
+        document_revision = integer(data["document_revision"], "document_revision", 1, 1_000_000)
+        candidates = data["candidates"]
+        if not isinstance(candidates, list) or not 1 <= len(candidates) <= 100:
+            raise APIError(422, "candidates must contain 1-100 reviewed relationships")
+        document, chunks = self.store.document_snapshot(scope, document_id)
+        if int(document["revision"]) != document_revision:
+            raise APIError(409, "Document revision changed; review candidates again")
+        chunk_map = {row["id"]: row["content"] for row in chunks}
+        validated = []
+        for item in candidates:
+            allowed = {"id", "source", "relation", "target", "quote", "chunk_id"}
+            fields(item, allowed, {"source", "relation", "target", "quote", "chunk_id"})
+            source = text(item["source"], "source", 200)
+            target = text(item["target"], "target", 200)
+            relation = identifier(item["relation"], "relation")
+            quote = text(item["quote"], "quote", 600, 10)
+            chunk_id = identifier(item["chunk_id"], "chunk_id")
+            if source.casefold() == target.casefold():
+                raise APIError(422, "Self edges are not supported")
+            if chunk_id not in chunk_map or quote not in chunk_map[chunk_id]:
+                raise APIError(422, "Reviewed relationship must cite an exact current source quote")
+            edge_id = item.get("id")
+            if edge_id is None:
+                digest = hashlib.sha256(
+                    "|".join([scope.key, document_id, str(document_revision), source, relation, target, chunk_id, quote]).encode()
+                ).hexdigest()[:24]
+                edge_id = "auto-" + digest
+            else:
+                edge_id = identifier(edge_id, "id")
+            validated.append({
+                "id": edge_id,
+                "source": source,
+                "relation": relation,
+                "target": target,
+                "document_id": document_id,
+                "document_revision": document_revision,
+                "quote": quote,
+            })
+        applied = [self.store.add_edge(scope, edge) for edge in validated]
+        return {"status": "indexed", "applied": applied, "reviewed_count": len(applied)}
 
     def delete(self, principal, data):
         fields(data, {"collection", "id", "expected_revision"}, {"collection", "id", "expected_revision"})

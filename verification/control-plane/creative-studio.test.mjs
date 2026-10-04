@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import {readFile,readdir} from "node:fs/promises";
+import {PGlite} from "@electric-sql/pglite";
+const db=new PGlite(),migrations=new URL("../../supabase/migrations/",import.meta.url);
+await db.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role BYPASSRLS;CREATE SCHEMA auth;GRANT USAGE ON SCHEMA auth TO authenticated;CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid $$;CREATE PUBLICATION supabase_realtime;`);
+for(const name of (await readdir(migrations)).filter(x=>x.endsWith(".sql")).sort()){const sql=await readFile(new URL(name,migrations),"utf8");if(name.startsWith("20260816120554"))for(const id of["18bafcd5-3e4c-4044-bb63-10325a0b7209","e66c0525-1787-4250-be26-79f849624521","890c71b1-cf6e-4b68-a56e-dd6050372481","97319fe5-82fd-44cd-b27d-6ae314ee368b"])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,"fixture@example.invalid"]);await db.exec(sql);}
+const admin="33333333-aaaa-4aaa-8aaa-333333333333",stranger="22222222-bbbb-4bbb-8bbb-222222222222";for(const id of[admin,stranger])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
+async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
+const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);const tenant=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(tenant?.tenantId);
+const service=await db.query("SELECT implementation_status FROM public.service_catalogue WHERE service_key='omniqora.creative'");assert.equal(service.rows[0].implementation_status,"built_main");
+const product=await db.query("SELECT status FROM public.product_catalogue WHERE product_key='voxentri'");assert.equal(product.rows[0].status,"active");
+const kit=(await asUser(admin,()=>db.query("INSERT INTO public.creative_brand_kits(tenant_id,product_key,brand_key,name,status) VALUES($1,'voxentri','default','Fixture brand','approved') RETURNING id",[tenant.tenantId]))).rows[0].id;
+const brief=(await asUser(admin,()=>db.query("INSERT INTO public.creative_briefs(tenant_id,product_key,brand_kit_id,objective,audience,channels,asset_types,message,status,created_by) VALUES($1,'voxentri',$2,'Launch','Customers',ARRAY['social'],ARRAY['image'],'Launch message','ready',$3) RETURNING id",[tenant.tenantId,kit,admin]))).rows[0].id;
+await asUser(admin,()=>db.query("INSERT INTO public.creative_assets(tenant_id,product_key,brief_id,asset_type,locale,channel,uri,status) VALUES($1,'voxentri',$2,'image','en-GB','social','https://example.invalid/asset.png','review')",[tenant.tenantId,brief]));
+const hidden=await asUser(stranger,()=>db.query("SELECT id FROM public.creative_assets WHERE tenant_id=$1",[tenant.tenantId]));assert.equal(hidden.rows.length,0);
+await db.close();console.log("Voxentri Creative Studio shared engine and tenant isolation verified");

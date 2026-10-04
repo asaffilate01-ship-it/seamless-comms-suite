@@ -20,7 +20,7 @@ The shared service owns ingestion, retrieval, evidence references, graph travers
 
 **Default mode is evidence retrieval only.** It does not pretend to generate an LLM answer. With a configured, reachable model, the same pipeline can generate draft answers using retrieved evidence. Live model quality has not been evaluated in this build.
 
-**Graph implementation:** choose SQLite for the dependency-free local demonstration or Neo4j for native graph storage and Cypher traversal. Both use reviewed, source-supported relationships. This does not use Microsoft's GraphRAG package or automatically extract graph relationships/community summaries.
+**Graph implementation:** choose SQLite for the dependency-free local demonstration or Neo4j for native graph storage and Cypher traversal. Both use source-supported relationships. The service can now ask the configured model to extract entity/relationship candidates from the current document revision, but those candidates remain review-required and are not indexed until explicitly applied. This is an Omniqora-native GraphRAG workflow; it does not depend on Microsoft's GraphRAG package.
 
 **Enable Neo4j:** follow `docs/NEO4J.md`. Set `KNOWLEDGE_STORAGE=neo4j` in the separate Python service after configuring the database and initializing its schema. The SaaS connector API stays the same.
 
@@ -87,7 +87,7 @@ The provider interface is `embed(texts)` and `generate(question, evidence, graph
 - Local pilot, not deployed or connected to any live SaaS repository.
 - Text input only. No PDF/OCR/SharePoint/email crawler, automatic sync or arbitrary URL fetching.
 - No hosted admin dashboard, billing or end-user login; those remain future work or existing SaaS responsibilities.
-- Graph edges must be submitted by a trusted adapter after review. Checking a quote exists does not establish that the asserted relationship is true.
+- Graph edges can be submitted directly by a trusted adapter or proposed by the model through `/v1/graph/extract`; model proposals require explicit review through `/v1/graph/apply`. Every accepted edge must still cite an exact current source quote. Quote existence does not establish that the relationship is true.
 - No autonomous actions, outgoing messages, case decisions or task execution. This is a retrieval tool that an agent could call.
 - Collection-level authorisation only. The SaaS adapter must enforce end-user access and use appropriately separated collections, especially for legal cases. Do not mix differently authorised documents in one collection.
 - Both backends retain pilot limits of 2,000 eligible chunks and 5,000 edges per collection. Keyword ranking and optional vector similarity are computed in Python; Neo4j's full-text/vector indexes are not used yet. Native graph queries are limited to three hops, 24 returned paths and a transaction timeout. Large workloads need further retrieval/index tuning and load testing.
