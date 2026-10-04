@@ -41,6 +41,20 @@ INSERT INTO public.service_dependencies(service_key,depends_on_service_key) VALU
  ('omniqora.food-safety','omniqora.ai')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.product_services(product_key,service_key,default_enabled,required) VALUES
+ ('omniqora','omniqora.sales-engagement',true,false),
+ ('omniqora','omniqora.contact-centre',true,false),
+ ('omniqora','omniqora.agent-library',true,false),
+ ('omniqora','omniqora.attribution',true,false),
+ ('omniqora','omniqora.company-memory',true,false),
+ ('omniqora','omniqora.bi',true,false),
+ ('unipathway','omniqora.education',true,true),
+ ('haccora','omniqora.food-safety',true,true),
+ ('haccora','omniqora.graphrag',true,false),
+ ('haccora','omniqora.ai-governance',true,false)
+ON CONFLICT(product_key,service_key) DO UPDATE SET
+ default_enabled=EXCLUDED.default_enabled,required=EXCLUDED.required;
+
 -- Sales / prospect engine.
 CREATE TABLE IF NOT EXISTS public.sales_prospect_lists(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
