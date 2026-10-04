@@ -168,7 +168,9 @@ async function runRule(client:any,tenantId:string,rule:any){
     const candidate={make:lot.make,model:lot.model,modelCode:lot.modelCode,year:lot.year,grade:lot.grade,odometerKm:lot.odometerKm,
       openingJpy:lot.startingPriceMinor??lot.currentPriceMinor,predictedHammerJpy:pred.predicted_hammer_jpy===null?null:Number(pred.predicted_hammer_jpy),score:evidenceScore};
     let stage="disqualified";
-    if(typeof criteria.minScore==="number"&&!decision){
+    if(decision?.recommendation==="do_not_bid"||decision?.status==="rejected"){
+      stage="disqualified";
+    }else if(typeof criteria.minScore==="number"&&!decision){
       await ensureIntelligence(client,tenantId,saved.lot,saved.vehicle);stage="pending_intelligence";pending++;
     }else if(matchesWatchCriteria(criteria,candidate)){stage="qualified";qualified++;}
     const matchKey=lot.providerKey+":"+lot.externalLotId;
