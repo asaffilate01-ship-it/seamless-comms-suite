@@ -1,0 +1,62 @@
+name: SaaS Factory provisioning worker
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: omniqora-provisioning-worker-production
+  cancel-in-progress: false
+
+jobs:
+  drain:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.PROVISIONING_WORKER_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    env:
+      OMNIQORA_PUBLIC_URL: ${{ secrets.OMNIQORA_PUBLIC_URL }}
+      CONTROL_PLANE_WORKER_SECRET: ${{ secrets.CONTROL_PLANE_WORKER_SECRET }}
+    steps:
+      - name: Validate worker configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${OMNIQORA_PUBLIC_URL:-}" || { echo "Missing OMNIQORA_PUBLIC_URL"; exit 1; }
+          test -n "${CONTROL_PLANE_WORKER_SECRET:-}" || { echo "Missing CONTROL_PLANE_WORKER_SECRET"; exit 1; }
+          case "$OMNIQORA_PUBLIC_URL" in
+            https://*) ;;
+            *) echo "OMNIQORA_PUBLIC_URL must use HTTPS"; exit 1 ;;
+          esac
+          test "${#CONTROL_PLANE_WORKER_SECRET}" -ge 32 || { echo "CONTROL_PLANE_WORKER_SECRET must be at least 32 characters"; exit 1; }
+
+      - name: Drain queued provisioning jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="${OMNIQORA_PUBLIC_URL%/}/api/control-plane/workers/provisioning"
+
+          for batch in 1 2 3 4 5; do
+            response="$(
+              curl --silent --show-error --fail-with-body                 --retry 2 --retry-all-errors                 --connect-timeout 10 --max-time 60                 --request POST                 --header "authorization: Bearer ${CONTROL_PLANE_WORKER_SECRET}"                 --header "content-type: application/json"                 --data '{}'                 "$endpoint"
+            )"
+
+            claimed="$(
+              RESPONSE="$response" node -e '
+                const body = JSON.parse(process.env.RESPONSE || "{}");
+                if (!Number.isInteger(body.claimed) || body.claimed < 0) {
+                  throw new Error("Provisioning worker returned an invalid claimed count");
+                }
+                process.stdout.write(String(body.claimed));
+              '
+            )"
+
+            echo "Provisioning batch ${batch}: claimed ${claimed} job(s)"
+            if [ "$claimed" -eq 0 ]; then
+              break
+            fi
+          done
