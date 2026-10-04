@@ -26,6 +26,8 @@ assert(runtime.includes('operation:z.literal("auction.search_sync")'));
 assert(runtime.includes('operation:z.literal("auction.list")'));
 assert(runtime.includes('operation:z.literal("auction.hydrate")'));
 assert(runtime.includes('operation:z.literal("auction.bid.queue")'));
+assert(runtime.includes('operation:z.literal("auction.history")'));
+assert(runtime.includes('operation:z.literal("auction.assess")'));
 assert(runtime.includes("transmittedToAuctionHouse:false"));
 assert(migration.includes("automotive_auction_bid_requests"));
 assert(migration.includes('"no_public_api_assumed":true'));
