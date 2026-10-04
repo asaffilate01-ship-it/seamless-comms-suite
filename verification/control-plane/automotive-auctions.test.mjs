@@ -23,7 +23,7 @@ assert(provider.includes("page_size??body.limit"),"TheCarAPI pagination normalis
 assert(fn.includes("Requested bid exceeds the reviewed maximum bid model"),"max-bid guard is missing");
 assert(fn.includes('status:"authorised"'),"bid authorisation state is missing");
 assert(!fn.includes("AUTOHASHI_AUCTION_AGENT_URL")&&!fn.includes("fetch(agent"),"application code must not submit an invented agent API contract");
-assert(gateway.includes('String(body.action??"").startsWith("bid.")'),"gateway bid fail-closed guard is missing");
+assert(gateway.includes('if(!executionEnabled())throw new Error("Live auction execution is disabled")'),"gateway live-bid fail-closed guard is missing");
 assert(gateway.includes("executionEnabled:false"),"gateway must advertise execution disabled");
 assert(gateway.includes("x-oq-signature")&&gateway.includes("HMAC"),"signed bridge verification is missing");
 assert(gateway.includes('body.action==="compare"'),"100-500 lot comparison gateway action is missing");
