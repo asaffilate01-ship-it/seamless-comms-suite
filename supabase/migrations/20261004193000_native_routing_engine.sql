@@ -508,7 +508,7 @@ BEGIN
  UPDATE public.routing_optimisation_jobs
  SET status='applied',reviewed_by=auth.uid(),reviewed_at=COALESCE(reviewed_at,now()),completed_at=COALESCE(completed_at,now())
  WHERE id=o.id;
-END $;
+END $$;
 REVOKE ALL ON FUNCTION public.routing_apply_optimisation(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.routing_apply_optimisation(uuid) TO authenticated,service_role;
 
