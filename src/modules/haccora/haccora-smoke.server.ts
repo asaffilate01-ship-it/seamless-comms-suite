@@ -16,6 +16,10 @@ export type HaccoraSmokeResult = {
     reachable: boolean;
     summaryKeys: string[];
   };
+  projection?: {
+    validated: boolean;
+    persisted: boolean;
+  };
 };
 
 function check(checks: HaccoraSmokeCheck[], key: string, ok: boolean, detail: string) {
@@ -139,6 +143,52 @@ export async function runHaccoraReadOnlySmoke(
     compliance = { reachable: false, summaryKeys: [] };
   }
 
+  let projection: HaccoraSmokeResult["projection"];
+  if (connected && syncReady && env.ok) {
+    try {
+      const response = await fetchImpl(env.functionUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-omniqora-sync-secret": env.syncSecret,
+        },
+        body: JSON.stringify({
+          action: "validate_projection",
+          omniqoraTenantId: tenantId,
+          sourceProduct: "dishbee",
+          sourceEventId: `smoke:${tenantId}`,
+          entityType: "location",
+          externalId: `smoke:${tenantId}`,
+          operation: "upsert",
+          revision: 1,
+          payload: { smoke: true, readOnly: true },
+        }),
+      });
+      const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+      const validated = response.ok && payload.valid === true && payload.persisted === false;
+      check(
+        checks,
+        "projection-contract",
+        validated,
+        validated
+          ? "Dishbee projection contract validated without persistence"
+          : `Projection validation refused or persisted unexpectedly (HTTP ${response.status})`,
+      );
+      projection = { validated, persisted: payload.persisted === true };
+    } catch (error) {
+      check(
+        checks,
+        "projection-contract",
+        false,
+        error instanceof Error ? `Projection validation failed: ${error.message}` : "Projection validation failed",
+      );
+      projection = { validated: false, persisted: false };
+    }
+  } else {
+    check(checks, "projection-contract", false, "Skipped until connection, sync entitlement and bridge configuration are ready");
+    projection = { validated: false, persisted: false };
+  }
+
   return {
     tenantId,
     countryCode,
@@ -146,5 +196,6 @@ export async function runHaccoraReadOnlySmoke(
     overall: checks.every((item) => item.ok) ? "pass" : "fail",
     checks,
     compliance,
+    projection,
   };
 }

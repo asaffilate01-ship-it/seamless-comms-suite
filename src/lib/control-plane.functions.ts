@@ -324,6 +324,38 @@ export const runHaccoraSmokeTest = createServerFn({ method: "POST" })
     return runHaccoraReadOnlySmoke(supabaseAdmin as any, data.tenantId);
   });
 
+export const runHaccoraPilotSmokeTest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const readiness = await context.supabase.rpc("platform_haccora_pilot_readiness" as never);
+    if (readiness.error) throw new Error(readiness.error.message);
+    const pilot = readiness.data as unknown as {
+      tenants?: Array<{ tenantId?: string; tenantSlug?: string; tenantName?: string; missing?: boolean }>;
+    };
+    const targets = (pilot.tenants ?? []).filter(
+      (tenant): tenant is { tenantId: string; tenantSlug?: string; tenantName?: string; missing?: boolean } =>
+        !tenant.missing && typeof tenant.tenantId === "string",
+    );
+    const [{ supabaseAdmin }, { runHaccoraReadOnlySmoke }] = await Promise.all([
+      import("@/integrations/supabase/client.server"),
+      import("@/modules/haccora/haccora-smoke.server"),
+    ]);
+    const tenants = [];
+    for (const target of targets) {
+      const result = await runHaccoraReadOnlySmoke(supabaseAdmin as any, target.tenantId);
+      tenants.push({
+        ...result,
+        tenantSlug: target.tenantSlug ?? target.tenantId,
+        tenantName: target.tenantName ?? target.tenantSlug ?? target.tenantId,
+      });
+    }
+    return {
+      checkedAt: new Date().toISOString(),
+      overall: tenants.length === 3 && tenants.every((tenant) => tenant.overall === "pass") ? "pass" as const : "fail" as const,
+      tenants,
+    };
+  });
+
 export const retryHaccoraProvisioning = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
