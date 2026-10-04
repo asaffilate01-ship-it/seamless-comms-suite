@@ -151,6 +151,9 @@ Deno.serve(async req=>{
       }).select("*").single();
       if(decision.error)throw decision.error;
       if(ctx.vehicle?.id){
+        const supersededFindings=await db.from("automotive_ai_findings").update({status:"superseded"}).eq("tenant_id",job.data.tenant_id)
+          .eq("vehicle_id",ctx.vehicle.id).eq("finding_type","auction_decision").in("status",["proposed","accepted"]);
+        if(supersededFindings.error)throw supersededFindings.error;
         const finding=await db.from("automotive_ai_findings").insert({
           tenant_id:job.data.tenant_id,product_key:job.data.product_key,vehicle_id:ctx.vehicle.id,finding_type:"auction_decision",
           summary:`Auction decision: ${result.recommendation.toUpperCase()} · score ${result.score}/100`,
@@ -161,7 +164,7 @@ Deno.serve(async req=>{
       }
       const updated=await db.from("intelligence_jobs").update({
         status:"waiting_review",result:{extractionId:inserted.data.id,decisionId:decision.data.id,recommendation:result.recommendation,score:result.score,confidence:result.confidence},
-        completed_at:new Date().toISOString(),updated_at:new Date().toISOString(),last_error:null
+        completed_at:null,updated_at:new Date().toISOString(),last_error:null
       }).eq("id",jobId);
       if(updated.error)throw updated.error;
       return json({ok:true,extraction:inserted.data,decision:decision.data});
