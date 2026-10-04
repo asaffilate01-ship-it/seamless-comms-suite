@@ -127,13 +127,13 @@ export const importAuctionLotForIntelligence=createServerFn({method:"POST"}).mid
     images:lot.images,updated_at:new Date().toISOString()
   },{onConflict:"tenant_id,provider_key,external_lot_id"}).select("*").single();
   if(saved.error) throw new Error(saved.error.message);
-  const observation=await db.from("automotive_auction_observations").insert({
+  const observation=await db.from("automotive_auction_observations").upsert({
     tenant_id:data.tenantId,product_key:data.productKey,auction_lot_id:saved.data.id,vehicle_id:vehicle?.id??null,provider_key:lot.providerKey,
     external_lot_id:lot.externalLotId,source_site:lot.sourceSite,source_vehicle_id:lot.sourceVehicleId,chassis_number:lot.chassisNumber,
     model_code:lot.modelCode,make:lot.make,model:lot.model,model_year:lot.year,auction_house:lot.auctionHouse,auction_at:lot.auctionAt,status:lot.status,
     grade:lot.grade,odometer_km:lot.odometerKm,starting_price_minor:lot.startingPriceMinor,current_price_minor:lot.currentPriceMinor,
     final_price_minor:lot.finalPriceMinor,currency:lot.currency,price_semantics:lot.priceSemantics,source_ref:lot.providerKey+":"+lot.externalLotId,observed_at:lot.observedAt
-  }).select("*").single();
+  },{onConflict:"tenant_id,provider_key,external_lot_id,observed_at"}).select("*").single();
   if(observation.error) throw new Error(observation.error.message);
   let job:any=null;
   if(vehicle?.id){
