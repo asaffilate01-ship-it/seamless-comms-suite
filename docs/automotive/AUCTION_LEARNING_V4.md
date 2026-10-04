@@ -46,7 +46,7 @@ A correction:
 - invalidates stale intelligence and unsubmitted finance approval;
 - becomes a reference example for future extraction jobs.
 
-Future workers receive up to 20 recent correction examples with a hard instruction never to copy values that are not visible in the current auction evidence.
+Future workers receive up to 20 recent correction examples scoped to the same vehicle make/model, with a hard instruction never to copy values that are not visible in the current auction evidence.
 
 ## Hammer prediction
 
@@ -84,6 +84,8 @@ Supported rule criteria:
 The watch evidence score uses condition (45%), provenance (40%) and evidence (15%). It intentionally excludes market/economics because a newly discovered lot has not yet completed the bid-cost review.
 
 If a rule requires a score but the lot has no sheet decision yet, the match becomes `pending_intelligence` and the worker queues the v3 sheet assessment. A future watch run can then qualify or disqualify it.
+
+Watch numeric criteria are validated server-side, including year ordering, score 0–100, grade bounds, odometer and JPY limits.
 
 The watch worker:
 - processes at most 50 rules per scheduled run;
