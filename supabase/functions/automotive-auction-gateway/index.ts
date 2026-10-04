@@ -401,6 +401,11 @@ async function adminAuthorise(body:any){
   if(current.data.status!=="draft")throw new Error("Only a draft bid can be authorised");
   if(!current.data.customer_authorised_at)throw new Error("Customer authorisation is required before admin approval");
   if(current.data.expires_at&&new Date(current.data.expires_at).getTime()<=Date.now())throw new Error("Bid instruction has expired");
+  const intelligence=await db.from("automotive_auction_decisions").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",current.data.auction_lot_id)
+    .eq("status","approved").order("reviewed_at",{ascending:false}).limit(1).maybeSingle();
+  if(intelligence.error)throw intelligence.error;
+  if(!intelligence.data)throw new Error("Human-approved auction intelligence is required before admin approval");
+  if(intelligence.data.recommendation==="do_not_bid")throw new Error("Approved auction intelligence says DO NOT BID");
   const now=new Date().toISOString();
   if(current.data.cost_model_v2_id){
     const model=await db.from("automotive_bid_cost_models_v2").update({status:"approved",reviewed_actor_ref:"autohashi:user:"+who.userId,reviewed_at:now})
@@ -440,6 +445,11 @@ async function submitBid(body:any){
   if(!["authorised","error"].includes(current.data.status))throw new Error("Bid must be admin-authorised before submission");
   if(!current.data.customer_authorised_at||!current.data.authorised_at)throw new Error("Required authorisations are incomplete");
   if(current.data.expires_at&&new Date(current.data.expires_at).getTime()<=Date.now())throw new Error("Bid instruction has expired");
+  const intelligence=await db.from("automotive_auction_decisions").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",current.data.auction_lot_id)
+    .eq("status","approved").order("reviewed_at",{ascending:false}).limit(1).maybeSingle();
+  if(intelligence.error)throw intelligence.error;
+  if(!intelligence.data)throw new Error("Human-approved auction intelligence is required before live submission");
+  if(intelligence.data.recommendation==="do_not_bid")throw new Error("Approved auction intelligence says DO NOT BID");
   const lot=await db.from("automotive_auction_lots").select("*").eq("tenant_id",tenantId).eq("id",current.data.auction_lot_id).single();
   if(lot.error)throw lot.error;
   const payload={
