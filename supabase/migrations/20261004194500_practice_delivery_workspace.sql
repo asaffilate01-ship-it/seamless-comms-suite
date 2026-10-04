@@ -344,13 +344,11 @@ CREATE POLICY "practice signature portal read" ON public.practice_signature_requ
 
 -- Provider terminal states cannot be fabricated through direct tenant writes.
 DROP POLICY IF EXISTS "practice signature provider-state update" ON public.practice_signature_requests;
-CREATE POLICY "practice signature provider-state update" AS RESTRICTIVE
- ON public.practice_signature_requests FOR UPDATE TO authenticated
+CREATE POLICY "practice signature provider-state update" ON public.practice_signature_requests AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(status NOT IN('submitted','viewed','signed','declined','expired','failed'))
  WITH CHECK(status NOT IN('submitted','viewed','signed','declined','expired','failed'));
 DROP POLICY IF EXISTS "practice submission provider-state update" ON public.practice_submissions;
-CREATE POLICY "practice submission provider-state update" AS RESTRICTIVE
- ON public.practice_submissions FOR UPDATE TO authenticated
+CREATE POLICY "practice submission provider-state update" ON public.practice_submissions AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(status NOT IN('submitted','accepted','rejected','failed'))
  WITH CHECK(status NOT IN('submitted','accepted','rejected','failed'));
 
@@ -729,62 +727,62 @@ GRANT EXECUTE ON FUNCTION public.practice_enqueue_due_reminders(integer) TO serv
 
 -- Direct-table mutation hardening. Security-definer workflow RPCs remain the
 -- controlled path for gated/terminal transitions.
-CREATE POLICY "practice template admin insert" AS RESTRICTIVE ON public.practice_service_templates
+CREATE POLICY "practice template admin insert" ON public.practice_service_templates AS RESTRICTIVE
  FOR INSERT TO authenticated WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
-CREATE POLICY "practice template admin update" AS RESTRICTIVE ON public.practice_service_templates
+CREATE POLICY "practice template admin update" ON public.practice_service_templates AS RESTRICTIVE
  FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
-CREATE POLICY "practice template admin delete" AS RESTRICTIVE ON public.practice_service_templates
+CREATE POLICY "practice template admin delete" ON public.practice_service_templates AS RESTRICTIVE
  FOR DELETE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 
-CREATE POLICY "practice recurring admin insert" AS RESTRICTIVE ON public.practice_recurring_work
+CREATE POLICY "practice recurring admin insert" ON public.practice_recurring_work AS RESTRICTIVE
  FOR INSERT TO authenticated WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
-CREATE POLICY "practice recurring admin update" AS RESTRICTIVE ON public.practice_recurring_work
+CREATE POLICY "practice recurring admin update" ON public.practice_recurring_work AS RESTRICTIVE
  FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
-CREATE POLICY "practice recurring admin delete" AS RESTRICTIVE ON public.practice_recurring_work
+CREATE POLICY "practice recurring admin delete" ON public.practice_recurring_work AS RESTRICTIVE
  FOR DELETE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 
-CREATE POLICY "practice portal grant admin insert" AS RESTRICTIVE ON public.practice_client_portal_access
+CREATE POLICY "practice portal grant admin insert" ON public.practice_client_portal_access AS RESTRICTIVE
  FOR INSERT TO authenticated WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
-CREATE POLICY "practice portal grant admin update" AS RESTRICTIVE ON public.practice_client_portal_access
+CREATE POLICY "practice portal grant admin update" ON public.practice_client_portal_access AS RESTRICTIVE
  FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
-CREATE POLICY "practice portal grant admin delete" AS RESTRICTIVE ON public.practice_client_portal_access
+CREATE POLICY "practice portal grant admin delete" ON public.practice_client_portal_access AS RESTRICTIVE
  FOR DELETE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 
-CREATE POLICY "practice time actor insert" AS RESTRICTIVE ON public.practice_time_entries
+CREATE POLICY "practice time actor insert" ON public.practice_time_entries AS RESTRICTIVE
  FOR INSERT TO authenticated
  WITH CHECK(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
-CREATE POLICY "practice time actor update" AS RESTRICTIVE ON public.practice_time_entries
+CREATE POLICY "practice time actor update" ON public.practice_time_entries AS RESTRICTIVE
  FOR UPDATE TO authenticated
  USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
-CREATE POLICY "practice time actor delete" AS RESTRICTIVE ON public.practice_time_entries
+CREATE POLICY "practice time actor delete" ON public.practice_time_entries AS RESTRICTIVE
  FOR DELETE TO authenticated
  USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 
-CREATE POLICY "practice phase controlled update" AS RESTRICTIVE ON public.practice_job_phases
+CREATE POLICY "practice phase controlled update" ON public.practice_job_phases AS RESTRICTIVE
  FOR UPDATE TO authenticated
  USING(status<>'completed')
  WITH CHECK(status<>'completed');
 
-CREATE POLICY "practice proposal draft update only" AS RESTRICTIVE ON public.practice_proposals
+CREATE POLICY "practice proposal draft update only" ON public.practice_proposals AS RESTRICTIVE
  FOR UPDATE TO authenticated
  USING(status IN('draft','review'))
  WITH CHECK(status IN('draft','review'));
-CREATE POLICY "practice proposal draft delete only" AS RESTRICTIVE ON public.practice_proposals
+CREATE POLICY "practice proposal draft delete only" ON public.practice_proposals AS RESTRICTIVE
  FOR DELETE TO authenticated USING(status IN('draft','review'));
-CREATE POLICY "practice proposal safe insert" AS RESTRICTIVE ON public.practice_proposals
+CREATE POLICY "practice proposal safe insert" ON public.practice_proposals AS RESTRICTIVE
  FOR INSERT TO authenticated WITH CHECK(status IN('draft','review'));
 
-CREATE POLICY "practice signature safe insert" AS RESTRICTIVE ON public.practice_signature_requests
+CREATE POLICY "practice signature safe insert" ON public.practice_signature_requests AS RESTRICTIVE
  FOR INSERT TO authenticated
  WITH CHECK(
   status IN('draft','review','approved')
@@ -792,22 +790,20 @@ CREATE POLICY "practice signature safe insert" AS RESTRICTIVE ON public.practice
  );
 
 DROP POLICY IF EXISTS "practice submission provider-state update" ON public.practice_submissions;
-CREATE POLICY "practice submission controlled update" AS RESTRICTIVE
- ON public.practice_submissions FOR UPDATE TO authenticated
+CREATE POLICY "practice submission controlled update" ON public.practice_submissions AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(status IN('draft','review'))
  WITH CHECK(status IN('draft','review'));
-CREATE POLICY "practice submission safe insert" AS RESTRICTIVE
- ON public.practice_submissions FOR INSERT TO authenticated
+CREATE POLICY "practice submission safe insert" ON public.practice_submissions AS RESTRICTIVE FOR INSERT TO authenticated
  WITH CHECK(status IN('draft','review'));
 
-CREATE POLICY "practice fee approval control insert" AS RESTRICTIVE ON public.practice_fee_items
+CREATE POLICY "practice fee approval control insert" ON public.practice_fee_items AS RESTRICTIVE
  FOR INSERT TO authenticated
  WITH CHECK(
    status='draft'
    OR public.is_platform_admin(auth.uid())
    OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[])
  );
-CREATE POLICY "practice fee approval control update" AS RESTRICTIVE ON public.practice_fee_items
+CREATE POLICY "practice fee approval control update" ON public.practice_fee_items AS RESTRICTIVE
  FOR UPDATE TO authenticated
  USING(true)
  WITH CHECK(
