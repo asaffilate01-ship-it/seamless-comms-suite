@@ -12,7 +12,6 @@ function safeEqual(a: string, b: string) {
   const bb = Buffer.from(b);
   return aa.length === bb.length && timingSafeEqual(aa, bb);
 }
-
 function json(body: unknown, status = 200) {
   return Response.json(body, {
     status,
@@ -55,16 +54,28 @@ export async function serveTenantSnapshot(request: Request) {
     if (body.productKey && body.productKey !== connection.product_key) return json({ error: "Product binding mismatch" }, 403);
     if (body.externalTenantId && body.externalTenantId !== connection.external_tenant_id) return json({ error: "Tenant binding mismatch" }, 403);
 
-    const [tenantResult, productResult, servicesResult, brandingResult, domainsResult] = await Promise.all([
+    const [tenantResult, productResult, servicesResult, brandingResult, domainsResult, brandsResult, locationsResult, migrationResult] = await Promise.all([
       client.from("tenants").select("id,name,slug,status,country_code,currency,timezone,organisation_id").eq("id", connection.tenant_id).maybeSingle(),
       client.from("tenant_products").select("product_key,status,plan_key,config,activated_at").eq("tenant_id", connection.tenant_id).eq("product_key", connection.product_key).maybeSingle(),
       client.from("tenant_services").select("service_key,status,valid_from,valid_until,config,updated_at").eq("tenant_id", connection.tenant_id),
       client.from("tenant_branding").select("*").eq("tenant_id", connection.tenant_id).maybeSingle(),
       client.from("tenant_domains").select("product_key,domain,verification_status,ssl_status,is_primary").eq("tenant_id", connection.tenant_id),
+      client.from("tenant_brands").select("id,product_key,name,slug,logo_url,theme,is_primary,updated_at").eq("tenant_id", connection.tenant_id),
+      client.from("tenant_locations").select("id,brand_id,name,code,timezone,address,status,metadata,updated_at").eq("tenant_id", connection.tenant_id),
+      connection.product_key === "fleetpulse-uae"
+        ? client.rpc("get_fleetora_migration_readiness", {
+            _tenant: connection.tenant_id,
+            _product: connection.product_key,
+          })
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
     if (tenantResult.error || !tenantResult.data) return json({ error: "Tenant is unavailable" }, 404);
+    if (productResult.error || !productResult.data) return json({ error: "Product is unavailable" }, 404);
     if (servicesResult.error) return json({ error: "Entitlements are unavailable" }, 503);
+    if (brandingResult.error || domainsResult.error) return json({ error: "Brand configuration is unavailable" }, 503);
+    if (brandsResult.error || locationsResult.error) return json({ error: "Operating hierarchy is unavailable" }, 503);
+    if (migrationResult.error) return json({ error: "Migration readiness is unavailable" }, 503);
 
     await client
       .from("product_connections")
@@ -82,19 +93,25 @@ export async function serveTenantSnapshot(request: Request) {
         config: service.config ?? {},
       },
     ]));
+    const brands = (brandsResult.data ?? []).filter((brand) => !brand.product_key || brand.product_key === connection.product_key);
+    const brandIds = new Set(brands.map((brand) => brand.id));
+    const locations = (locationsResult.data ?? []).filter((location) => !location.brand_id || brandIds.has(location.brand_id));
 
     return json({
-      schemaVersion: 1,
+      schemaVersion: 3,
       generatedAt: new Date().toISOString(),
       internalTenantId: connection.tenant_id,
       externalTenantId: connection.external_tenant_id,
       productKey: connection.product_key,
       capabilities: connection.capabilities ?? [],
       tenant: tenantResult.data,
-      product: productResult.data ?? null,
+      product: productResult.data,
       entitlements: entitlementMap,
       branding: brandingResult.data ?? null,
       domains: domainsResult.data ?? [],
+      brands,
+      locations,
+      migration: migrationResult.data ?? null,
     });
   } catch (error) {
     if (error instanceof z.ZodError) return json({ error: "Invalid snapshot request" }, 422);

@@ -145,6 +145,46 @@ export const CONNECT_PRODUCT_MANIFESTS: ConnectProductManifest[] = [
       "create_incident",
     ],
   },
+  {
+    product: "fleetora",
+    name: "Fleetora",
+    events: [
+      "fleet.route.planned",
+      "fleet.route.dispatched",
+      "fleet.delivery.status",
+      "fleet.delivery.exception",
+      "fleet.driver.location",
+      "fleet.route.shadow_compared",
+    ],
+    tools: [
+      "optimise_route",
+      "create_dispatch_job",
+      "assign_driver",
+      "get_driver_eta",
+      "track_delivery",
+      "report_delivery_problem",
+    ],
+  },
+  {
+    product: "fleetpulse-uae",
+    name: "FleetPulse UAE",
+    events: [
+      "fleet.route.planned",
+      "fleet.route.dispatched",
+      "fleet.delivery.status",
+      "fleet.delivery.exception",
+      "fleet.driver.location",
+      "fleet.route.shadow_compared",
+    ],
+    tools: [
+      "optimise_route",
+      "create_dispatch_job",
+      "assign_driver",
+      "get_driver_eta",
+      "track_delivery",
+      "report_delivery_problem",
+    ],
+  },
 ];
 
 export const connectManifest = (product: string) =>
