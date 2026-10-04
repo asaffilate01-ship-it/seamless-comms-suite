@@ -170,29 +170,36 @@ REVOKE ALL ON FUNCTION public.resource_access_allowed(uuid,text,text,uuid,text) 
 GRANT EXECUTE ON FUNCTION public.resource_access_allowed(uuid,text,text,uuid,text) TO authenticated,service_role;
 
 DROP POLICY IF EXISTS "document acl restrictive read" ON public.document_records;
-CREATE POLICY "document acl restrictive read"\n ON public.document_records AS RESTRICTIVE FOR SELECT TO authenticated
+CREATE POLICY "document acl restrictive read"
+ ON public.document_records AS RESTRICTIVE FOR SELECT TO authenticated
  USING(public.resource_access_allowed(tenant_id,'document',id::text,auth.uid(),'read'));
 DROP POLICY IF EXISTS "document acl restrictive update" ON public.document_records;
-CREATE POLICY "document acl restrictive update"\n ON public.document_records AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "document acl restrictive update"
+ ON public.document_records AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.resource_access_allowed(tenant_id,'document',id::text,auth.uid(),'write'))
  WITH CHECK(public.resource_access_allowed(tenant_id,'document',id::text,auth.uid(),'write'));
 DROP POLICY IF EXISTS "document acl restrictive delete" ON public.document_records;
-CREATE POLICY "document acl restrictive delete"\n ON public.document_records AS RESTRICTIVE FOR DELETE TO authenticated
+CREATE POLICY "document acl restrictive delete"
+ ON public.document_records AS RESTRICTIVE FOR DELETE TO authenticated
  USING(public.resource_access_allowed(tenant_id,'document',id::text,auth.uid(),'write'));
 
 DROP POLICY IF EXISTS "document version acl restrictive read" ON public.document_versions;
-CREATE POLICY "document version acl restrictive read"\n ON public.document_versions AS RESTRICTIVE FOR SELECT TO authenticated
+CREATE POLICY "document version acl restrictive read"
+ ON public.document_versions AS RESTRICTIVE FOR SELECT TO authenticated
  USING(public.resource_access_allowed(tenant_id,'document',document_id::text,auth.uid(),'read'));
 DROP POLICY IF EXISTS "document version acl restrictive update" ON public.document_versions;
-CREATE POLICY "document version acl restrictive update"\n ON public.document_versions AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "document version acl restrictive update"
+ ON public.document_versions AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.resource_access_allowed(tenant_id,'document',document_id::text,auth.uid(),'write'))
  WITH CHECK(public.resource_access_allowed(tenant_id,'document',document_id::text,auth.uid(),'write'));
 DROP POLICY IF EXISTS "document version acl restrictive delete" ON public.document_versions;
-CREATE POLICY "document version acl restrictive delete"\n ON public.document_versions AS RESTRICTIVE FOR DELETE TO authenticated
+CREATE POLICY "document version acl restrictive delete"
+ ON public.document_versions AS RESTRICTIVE FOR DELETE TO authenticated
  USING(public.resource_access_allowed(tenant_id,'document',document_id::text,auth.uid(),'write'));
 
 DROP POLICY IF EXISTS "search document acl restrictive read" ON public.search_documents;
-CREATE POLICY "search document acl restrictive read"\n ON public.search_documents AS RESTRICTIVE FOR SELECT TO authenticated
+CREATE POLICY "search document acl restrictive read"
+ ON public.search_documents AS RESTRICTIVE FOR SELECT TO authenticated
  USING(
   entity_type NOT IN('document','document_record')
   OR public.resource_access_allowed(tenant_id,'document',entity_id,auth.uid(),'read')
@@ -477,73 +484,92 @@ GRANT EXECUTE ON FUNCTION public.daily_brief_generate(uuid,text,uuid) TO authent
 
 -- Mutation hardening: UI checks are not the security boundary.
 DROP POLICY IF EXISTS "billing subscription admin insert" ON public.billing_subscriptions;
-CREATE POLICY "billing subscription admin insert"\n ON public.billing_subscriptions AS RESTRICTIVE FOR INSERT TO authenticated
+CREATE POLICY "billing subscription admin insert"
+ ON public.billing_subscriptions AS RESTRICTIVE FOR INSERT TO authenticated
  WITH CHECK(public.is_platform_admin(auth.uid()));
 DROP POLICY IF EXISTS "billing subscription admin update" ON public.billing_subscriptions;
-CREATE POLICY "billing subscription admin update"\n ON public.billing_subscriptions AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "billing subscription admin update"
+ ON public.billing_subscriptions AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()))
  WITH CHECK(public.is_platform_admin(auth.uid()));
 DROP POLICY IF EXISTS "billing subscription admin delete" ON public.billing_subscriptions;
-CREATE POLICY "billing subscription admin delete"\n ON public.billing_subscriptions AS RESTRICTIVE FOR DELETE TO authenticated
+CREATE POLICY "billing subscription admin delete"
+ ON public.billing_subscriptions AS RESTRICTIVE FOR DELETE TO authenticated
  USING(public.is_platform_admin(auth.uid()));
 DROP POLICY IF EXISTS "billing addon subscription admin insert" ON public.billing_addon_subscriptions;
-CREATE POLICY "billing addon subscription admin insert"\n ON public.billing_addon_subscriptions AS RESTRICTIVE FOR INSERT TO authenticated
+CREATE POLICY "billing addon subscription admin insert"
+ ON public.billing_addon_subscriptions AS RESTRICTIVE FOR INSERT TO authenticated
  WITH CHECK(public.is_platform_admin(auth.uid()));
 DROP POLICY IF EXISTS "billing addon subscription admin update" ON public.billing_addon_subscriptions;
-CREATE POLICY "billing addon subscription admin update"\n ON public.billing_addon_subscriptions AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "billing addon subscription admin update"
+ ON public.billing_addon_subscriptions AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()))
  WITH CHECK(public.is_platform_admin(auth.uid()));
 DROP POLICY IF EXISTS "billing addon subscription admin delete" ON public.billing_addon_subscriptions;
-CREATE POLICY "billing addon subscription admin delete"\n ON public.billing_addon_subscriptions AS RESTRICTIVE FOR DELETE TO authenticated
+CREATE POLICY "billing addon subscription admin delete"
+ ON public.billing_addon_subscriptions AS RESTRICTIVE FOR DELETE TO authenticated
  USING(public.is_platform_admin(auth.uid()));
 
 DROP POLICY IF EXISTS "finance beneficiary admin update" ON public.embedded_finance_beneficiaries;
-CREATE POLICY "finance beneficiary admin update"\n ON public.embedded_finance_beneficiaries AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "finance beneficiary admin update"
+ ON public.embedded_finance_beneficiaries AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "finance transfer admin update" ON public.embedded_finance_transfers;
-CREATE POLICY "finance transfer admin update"\n ON public.embedded_finance_transfers AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "finance transfer admin update"
+ ON public.embedded_finance_transfers AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 
 DROP POLICY IF EXISTS "contact centre admin insert" ON public.contact_centres;
-CREATE POLICY "contact centre admin insert"\n ON public.contact_centres AS RESTRICTIVE FOR INSERT TO authenticated
+CREATE POLICY "contact centre admin insert"
+ ON public.contact_centres AS RESTRICTIVE FOR INSERT TO authenticated
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "contact centre admin update" ON public.contact_centres;
-CREATE POLICY "contact centre admin update"\n ON public.contact_centres AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "contact centre admin update"
+ ON public.contact_centres AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "contact centre admin delete" ON public.contact_centres;
-CREATE POLICY "contact centre admin delete"\n ON public.contact_centres AS RESTRICTIVE FOR DELETE TO authenticated
+CREATE POLICY "contact centre admin delete"
+ ON public.contact_centres AS RESTRICTIVE FOR DELETE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "contact queue admin insert" ON public.contact_queues;
-CREATE POLICY "contact queue admin insert"\n ON public.contact_queues AS RESTRICTIVE FOR INSERT TO authenticated
+CREATE POLICY "contact queue admin insert"
+ ON public.contact_queues AS RESTRICTIVE FOR INSERT TO authenticated
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "contact queue admin update" ON public.contact_queues;
-CREATE POLICY "contact queue admin update"\n ON public.contact_queues AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "contact queue admin update"
+ ON public.contact_queues AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "contact queue admin delete" ON public.contact_queues;
-CREATE POLICY "contact queue admin delete"\n ON public.contact_queues AS RESTRICTIVE FOR DELETE TO authenticated
+CREATE POLICY "contact queue admin delete"
+ ON public.contact_queues AS RESTRICTIVE FOR DELETE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "experiment admin update" ON public.growth_experiments;
-CREATE POLICY "experiment admin update"\n ON public.growth_experiments AS RESTRICTIVE FOR UPDATE TO authenticated
+CREATE POLICY "experiment admin update"
+ ON public.growth_experiments AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 
 DROP POLICY IF EXISTS "daily brief profile self read" ON public.daily_brief_profiles;
-CREATE POLICY "daily brief profile self read"\n ON public.daily_brief_profiles AS RESTRICTIVE FOR SELECT TO authenticated
+CREATE POLICY "daily brief profile self read"
+ ON public.daily_brief_profiles AS RESTRICTIVE FOR SELECT TO authenticated
  USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "daily brief profile self write" ON public.daily_brief_profiles;
-CREATE POLICY "daily brief profile self write"\n ON public.daily_brief_profiles AS RESTRICTIVE FOR ALL TO authenticated
+CREATE POLICY "daily brief profile self write"
+ ON public.daily_brief_profiles AS RESTRICTIVE FOR ALL TO authenticated
  USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]))
  WITH CHECK(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 
 DROP POLICY IF EXISTS "daily brief run private read" ON public.daily_brief_runs;
-CREATE POLICY "daily brief run private read"\n ON public.daily_brief_runs AS RESTRICTIVE FOR SELECT TO authenticated
+CREATE POLICY "daily brief run private read"
+ ON public.daily_brief_runs AS RESTRICTIVE FOR SELECT TO authenticated
  USING(user_id=auth.uid() OR public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY['owner','admin']::public.app_role[]));
 DROP POLICY IF EXISTS "daily brief item private read" ON public.daily_brief_items;
-CREATE POLICY "daily brief item private read"\n ON public.daily_brief_items AS RESTRICTIVE FOR SELECT TO authenticated
+CREATE POLICY "daily brief item private read"
+ ON public.daily_brief_items AS RESTRICTIVE FOR SELECT TO authenticated
  USING(EXISTS(
   SELECT 1 FROM public.daily_brief_runs r
   WHERE r.id=daily_brief_items.run_id AND r.tenant_id=daily_brief_items.tenant_id
