@@ -1,4 +1,5 @@
 import {createClient} from "npm:@supabase/supabase-js@2.110.8";
+import {calculateJapanUkBidCost} from "../../../src/modules/automotive/landed-cost-v2.ts";
 import {
   auctionProviderReadiness,
   compareAuctionLotSamples,
@@ -126,6 +127,222 @@ async function history(chassisNumber:string,days=90){
   return {rows,flags:{relisted:rows.length>1,mileageRegression},days};
 }
 
+
+function actor(body:any){
+  const raw=body?.actor??{};
+  const userId=typeof raw.userId==="string"?raw.userId:"";
+  const roles=Array.isArray(raw.roles)?raw.roles.filter((r:any)=>typeof r==="string"):[];
+  if(!userId)throw new Error("Authenticated AutoHashi actor is required");
+  return {userId,roles,tenantId:typeof raw.tenantId==="string"?raw.tenantId:null};
+}
+function isApprovalActor(roles:string[]){
+  return roles.some(role=>["super_admin","tenant_admin","finance"].includes(role));
+}
+function whole(name:string,value:any,min=0){
+  const n=Number(value);
+  if(!Number.isInteger(n)||n<min)throw new Error(name+" must be an integer >= "+min);
+  return n;
+}
+function positive(name:string,value:any){
+  const n=Number(value);
+  if(!Number.isFinite(n)||n<=0)throw new Error(name+" must be positive");
+  return n;
+}
+function executionEnabled(){
+  return (Deno.env.get("AUTOHASHI_AUCTION_EXECUTION_ENABLED")??"").toLowerCase()==="true";
+}
+async function bidModel(body:any){
+  const db=serviceDb(),tenantId=autohashiTenant(),productKey="autohashi";
+  const current=await db.from("automotive_bid_instructions").select("*")
+    .eq("tenant_id",tenantId).eq("idempotency_key",String(body.idempotencyKey??"")).maybeSingle();
+  if(current.error)throw current.error;
+  if(current.data){
+    const model=current.data.cost_model_v2_id
+      ? await db.from("automotive_bid_cost_models_v2").select("*").eq("tenant_id",tenantId).eq("id",current.data.cost_model_v2_id).single()
+      : {data:null,error:null};
+    if(model.error)throw model.error;
+    return {instruction:current.data,costModel:model.data,reused:true,executionEnabled:executionEnabled()};
+  }
+  const lotId=String(body.auctionLotId??"");
+  if(!lotId)throw new Error("auctionLotId is required");
+  const lot=await db.from("automotive_auction_lots").select("*").eq("tenant_id",tenantId).eq("product_key",productKey).eq("id",lotId).single();
+  if(lot.error)throw lot.error;
+  const cost=body.cost??{};
+  const proposed=whole("proposedHammerJpy",body.proposedHammerJpy);
+  const input={
+    fxJpyPerGbp:positive("fxJpyPerGbp",cost.fxJpyPerGbp),
+    fxSource:typeof cost.fxSource==="string"?cost.fxSource:null,
+    fxAsOf:typeof cost.fxAsOf==="string"?cost.fxAsOf:null,
+    targetRetailGbpMinor:whole("targetRetailGbpMinor",cost.targetRetailGbpMinor),
+    targetMarginGbpMinor:whole("targetMarginGbpMinor",cost.targetMarginGbpMinor),
+    auctionFeesJpy:whole("auctionFeesJpy",cost.auctionFeesJpy),
+    inlandTransportJpy:whole("inlandTransportJpy",cost.inlandTransportJpy),
+    freightGbpMinor:whole("freightGbpMinor",cost.freightGbpMinor),
+    insuranceGbpMinor:whole("insuranceGbpMinor",cost.insuranceGbpMinor),
+    clearanceGbpMinor:whole("clearanceGbpMinor",cost.clearanceGbpMinor),
+    complianceGbpMinor:whole("complianceGbpMinor",cost.complianceGbpMinor),
+    registrationGbpMinor:whole("registrationGbpMinor",cost.registrationGbpMinor),
+    deliveryGbpMinor:whole("deliveryGbpMinor",cost.deliveryGbpMinor),
+    otherGbpMinor:whole("otherGbpMinor",cost.otherGbpMinor),
+    dutyRateBps:whole("dutyRateBps",cost.dutyRateBps),
+    taxRateBps:whole("taxRateBps",cost.taxRateBps),
+    proposedHammerJpy:proposed,
+  };
+  const calculation=calculateJapanUkBidCost(input);
+  if(proposed>calculation.maxHammerJpy)throw new Error("Proposed hammer bid exceeds the calculated reviewed maximum");
+  const externalReference=typeof body.externalReference==="string"?body.externalReference:null;
+  if(externalReference){
+    const prior=await db.from("automotive_bid_instructions").select("id,cost_model_v2_id").eq("tenant_id",tenantId)
+      .eq("external_reference",externalReference).eq("status","draft").is("customer_authorised_at",null);
+    if(prior.error)throw prior.error;
+    const priorRows=prior.data??[];
+    if(priorRows.length){
+      const cancelled=await db.from("automotive_bid_instructions").update({status:"cancelled",updated_at:new Date().toISOString()})
+        .eq("tenant_id",tenantId).eq("external_reference",externalReference).eq("status","draft").is("customer_authorised_at",null);
+      if(cancelled.error)throw cancelled.error;
+      const modelIds=priorRows.map((row:any)=>row.cost_model_v2_id).filter(Boolean);
+      if(modelIds.length){
+        const superseded=await db.from("automotive_bid_cost_models_v2").update({status:"superseded"}).eq("tenant_id",tenantId).in("id",modelIds);
+        if(superseded.error)throw superseded.error;
+      }
+    }
+  }
+  const insertedModel=await db.from("automotive_bid_cost_models_v2").insert({
+    tenant_id:tenantId,product_key:productKey,auction_lot_id:lotId,destination_country:"GB",
+    fx_jpy_per_gbp:input.fxJpyPerGbp,fx_source:input.fxSource,fx_as_of:input.fxAsOf,
+    target_retail_gbp_minor:input.targetRetailGbpMinor,target_margin_gbp_minor:input.targetMarginGbpMinor,
+    auction_fees_jpy:input.auctionFeesJpy,inland_transport_jpy:input.inlandTransportJpy,
+    freight_gbp_minor:input.freightGbpMinor,insurance_gbp_minor:input.insuranceGbpMinor,clearance_gbp_minor:input.clearanceGbpMinor,
+    compliance_gbp_minor:input.complianceGbpMinor,registration_gbp_minor:input.registrationGbpMinor,delivery_gbp_minor:input.deliveryGbpMinor,
+    other_gbp_minor:input.otherGbpMinor,duty_rate_bps:input.dutyRateBps,tax_rate_bps:input.taxRateBps,proposed_hammer_jpy:proposed,
+    max_hammer_jpy:calculation.maxHammerJpy,estimated_landed_gbp_minor:calculation.proposedLandedGbpMinor,
+    estimated_gross_margin_gbp_minor:calculation.proposedGrossMarginGbpMinor,calculation,
+    assumptions:{...calculation.assumptions,rateInputsUserReviewed:true},status:"review"
+  }).select("*").single();
+  if(insertedModel.error)throw insertedModel.error;
+  const idempotencyKey=String(body.idempotencyKey??"");
+  if(idempotencyKey.length<12)throw new Error("idempotencyKey must be at least 12 characters");
+  const expiresAt=typeof body.expiresAt==="string"?body.expiresAt:null;
+  const instruction=await db.from("automotive_bid_instructions").insert({
+    tenant_id:tenantId,product_key:productKey,auction_lot_id:lotId,bid_model_id:null,cost_model_v2_id:insertedModel.data.id,
+    execution_provider_key:"vehicle.auction.agent",max_bid_minor:proposed,currency:"JPY",status:"draft",
+    external_reference:externalReference,idempotency_key:idempotencyKey,
+    expires_at:expiresAt,result_payload:{reviewedMaxHammerJpy:calculation.maxHammerJpy}
+  }).select("*").single();
+  if(instruction.error)throw instruction.error;
+  return {instruction:instruction.data,costModel:insertedModel.data,calculation,reused:false,executionEnabled:executionEnabled()};
+}
+async function customerAuthorise(body:any){
+  const who=actor(body),db=serviceDb(),tenantId=autohashiTenant();
+  const instructionId=String(body.instructionId??"");
+  const current=await db.from("automotive_bid_instructions").select("*").eq("tenant_id",tenantId).eq("id",instructionId).single();
+  if(current.error)throw current.error;
+  if(current.data.status!=="draft")throw new Error("Only a draft bid can receive customer authorisation");
+  if(current.data.customer_authorised_at)return current.data;
+  if(current.data.expires_at&&new Date(current.data.expires_at).getTime()<=Date.now())throw new Error("Bid instruction has expired");
+  const acknowledged=whole("acknowledgedMaxBidJpy",body.acknowledgedMaxBidJpy);
+  if(acknowledged!==Number(current.data.max_bid_minor))throw new Error("Acknowledged maximum bid does not match the reviewed bid");
+  const termsVersion=String(body.termsVersion??"");
+  if(termsVersion.length<3)throw new Error("termsVersion is required");
+  const updated=await db.from("automotive_bid_instructions").update({
+    customer_actor_ref:"autohashi:user:"+who.userId,customer_authorised_at:new Date().toISOString(),
+    customer_authorisation:{termsVersion,acknowledgedMaxBidJpy:acknowledged,acknowledgements:body.acknowledgements??{},actorRoles:who.roles},
+    updated_at:new Date().toISOString()
+  }).eq("tenant_id",tenantId).eq("id",instructionId).select("*").single();
+  if(updated.error)throw updated.error;
+  return updated.data;
+}
+async function adminAuthorise(body:any){
+  const who=actor(body);
+  if(!isApprovalActor(who.roles))throw new Error("Admin/finance approval role is required");
+  const db=serviceDb(),tenantId=autohashiTenant(),instructionId=String(body.instructionId??"");
+  const current=await db.from("automotive_bid_instructions").select("*").eq("tenant_id",tenantId).eq("id",instructionId).single();
+  if(current.error)throw current.error;
+  if(current.data.status!=="draft")throw new Error("Only a draft bid can be authorised");
+  if(!current.data.customer_authorised_at)throw new Error("Customer authorisation is required before admin approval");
+  if(current.data.expires_at&&new Date(current.data.expires_at).getTime()<=Date.now())throw new Error("Bid instruction has expired");
+  const now=new Date().toISOString();
+  if(current.data.cost_model_v2_id){
+    const model=await db.from("automotive_bid_cost_models_v2").update({status:"approved",reviewed_actor_ref:"autohashi:user:"+who.userId,reviewed_at:now})
+      .eq("tenant_id",tenantId).eq("id",current.data.cost_model_v2_id);
+    if(model.error)throw model.error;
+  }
+  const updated=await db.from("automotive_bid_instructions").update({
+    status:"authorised",authorised_actor_ref:"autohashi:user:"+who.userId,authorised_at:now,
+    admin_approval_note:typeof body.note==="string"?body.note:null,updated_at:now
+  }).eq("tenant_id",tenantId).eq("id",instructionId).select("*").single();
+  if(updated.error)throw updated.error;
+  return {...updated.data,executionEnabled:executionEnabled()};
+}
+async function bidStatus(body:any){
+  const db=serviceDb(),tenantId=autohashiTenant(),instructionId=String(body.instructionId??"");
+  const instruction=await db.from("automotive_bid_instructions").select("*").eq("tenant_id",tenantId).eq("id",instructionId).single();
+  if(instruction.error)throw instruction.error;
+  const [model,lot,events]=await Promise.all([
+    instruction.data.cost_model_v2_id?db.from("automotive_bid_cost_models_v2").select("*").eq("tenant_id",tenantId).eq("id",instruction.data.cost_model_v2_id).maybeSingle():Promise.resolve({data:null,error:null}),
+    db.from("automotive_auction_lots").select("*").eq("tenant_id",tenantId).eq("id",instruction.data.auction_lot_id).maybeSingle(),
+    db.from("automotive_bid_provider_events").select("*").eq("tenant_id",tenantId).eq("bid_instruction_id",instructionId).order("received_at",{ascending:false}).limit(100)
+  ]);
+  if(model.error)throw model.error;if(lot.error)throw lot.error;if(events.error)throw events.error;
+  return {instruction:instruction.data,costModel:model.data,auctionLot:lot.data,events:events.data??[],executionEnabled:executionEnabled()};
+}
+async function submitBid(body:any){
+  const who=actor(body);
+  if(!isApprovalActor(who.roles))throw new Error("Admin/finance approval role is required");
+  if(!executionEnabled())throw new Error("Live auction execution is disabled");
+  const baseUrl=(Deno.env.get("AUTOHASHI_AUCTION_AGENT_URL")??"").replace(/\/$/,"");
+  const token=Deno.env.get("AUTOHASHI_AUCTION_AGENT_TOKEN")??"";
+  const callbackBase=(Deno.env.get("OMNIQORA_PUBLIC_URL")??"").replace(/\/$/,"");
+  if(!baseUrl||!token||!callbackBase)throw new Error("Auction execution provider is not fully configured");
+  const db=serviceDb(),tenantId=autohashiTenant(),instructionId=String(body.instructionId??"");
+  const current=await db.from("automotive_bid_instructions").select("*").eq("tenant_id",tenantId).eq("id",instructionId).single();
+  if(current.error)throw current.error;
+  if(!["authorised","error"].includes(current.data.status))throw new Error("Bid must be admin-authorised before submission");
+  if(!current.data.customer_authorised_at||!current.data.authorised_at)throw new Error("Required authorisations are incomplete");
+  if(current.data.expires_at&&new Date(current.data.expires_at).getTime()<=Date.now())throw new Error("Bid instruction has expired");
+  const lot=await db.from("automotive_auction_lots").select("*").eq("tenant_id",tenantId).eq("id",current.data.auction_lot_id).single();
+  if(lot.error)throw lot.error;
+  const payload={
+    idempotency_key:current.data.idempotency_key,instruction_id:current.data.id,provider_lot_id:lot.data.external_lot_id,
+    auction_house:lot.data.auction_house,auction_date:lot.data.auction_at,max_bid_jpy:Number(current.data.max_bid_minor),
+    customer_authorised_at:current.data.customer_authorised_at,autohashi_reference:current.data.external_reference,
+    callback_url:callbackBase+"/functions/v1/automotive-auction-agent-webhook"
+  };
+  const attempt=Number(current.data.submission_attempts??0)+1,now=new Date().toISOString();
+  try{
+    const response=await fetch(baseUrl+"/v1/bids",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json","Idempotency-Key":current.data.idempotency_key},body:JSON.stringify(payload)});
+    const raw=await response.text();let result:any={};
+    try{result=raw?JSON.parse(raw):{};}catch{result={message:raw.slice(0,1000)}}
+    const providerStatus=String(result.status??(response.ok?"accepted":"rejected")).toLowerCase();
+    const acceptedMax=(result.accepted_max_bid_jpy??result.max_bid_jpy)==null?Number(current.data.max_bid_minor):Number(result.accepted_max_bid_jpy??result.max_bid_jpy);
+    if(!Number.isFinite(acceptedMax)||acceptedMax>Number(current.data.max_bid_minor)){
+      const violated=await db.from("automotive_bid_instructions").update({
+        status:"error",limit_violation:true,last_error:"Execution provider acknowledged a bid ceiling above the authorised maximum",
+        result_payload:{...current.data.result_payload,submissionResponse:result},submission_attempts:attempt,last_provider_status_at:now,updated_at:now
+      }).eq("tenant_id",tenantId).eq("id",instructionId).select("*").single();
+      if(violated.error)throw violated.error;
+      throw new Error("Execution provider maximum-bid safety violation");
+    }
+    const nextStatus=providerStatus==="rejected"?"rejected":response.ok&&providerStatus==="accepted"?"accepted":response.ok?"submitted":"rejected";
+    const updated=await db.from("automotive_bid_instructions").update({
+      status:nextStatus,provider_reference:typeof result.provider_reference==="string"?result.provider_reference:current.data.provider_reference,
+      submitted_at:current.data.submitted_at??now,result_payload:{...current.data.result_payload,submissionResponse:result},
+      submission_attempts:attempt,last_provider_status_at:now,last_error:response.ok?null:String(result.reason??result.message??"Provider rejected bid"),
+      updated_at:now
+    }).eq("tenant_id",tenantId).eq("id",instructionId).select("*").single();
+    if(updated.error)throw updated.error;
+    return updated.data;
+  }catch(error){
+    const message=error instanceof Error?error.message:String(error);
+    if(!message.includes("safety violation")){
+      await db.from("automotive_bid_instructions").update({
+        status:"error",submission_attempts:attempt,last_error:message,last_provider_status_at:now,updated_at:now
+      }).eq("tenant_id",tenantId).eq("id",instructionId);
+    }
+    throw error;
+  }
+}
+
 Deno.serve(async req=>{
   if(req.method==="OPTIONS")return new Response(null,{headers:corsHeaders});
   if(req.method!=="POST")return json({error:"Method not allowed"},405);
@@ -140,7 +357,7 @@ Deno.serve(async req=>{
         THECARAPI_API_KEY:Deno.env.get("THECARAPI_API_KEY"),
         CARSTACK_API_TOKEN:Deno.env.get("CARSTACK_API_TOKEN"),
       }).filter(p=>p.stage==="built_read").map(p=>({key:p.key,name:p.name,configured:p.configured,capabilities:p.capabilities}));
-      return json({ok:true,executionEnabled:false,intelligenceImportConfigured:!!Deno.env.get("AUTOHASHI_OMNIQORA_TENANT_ID"),providers:readiness});
+      return json({ok:true,executionEnabled:executionEnabled(),executionConfigured:!!Deno.env.get("AUTOHASHI_AUCTION_AGENT_URL")&&!!Deno.env.get("AUTOHASHI_AUCTION_AGENT_TOKEN"),intelligenceImportConfigured:!!Deno.env.get("AUTOHASHI_OMNIQORA_TENANT_ID"),providers:readiness});
     }
     if(body.action==="search"){
       const candidates=providerCandidates(body.providerKey);
@@ -188,9 +405,11 @@ Deno.serve(async req=>{
       if(!body.chassisNumber)return json({error:"chassisNumber is required"},400);
       return json({ok:true,...await history(String(body.chassisNumber),Number(body.days??90))});
     }
-    if(String(body.action??"").startsWith("bid.")){
-      return json({error:"Live bid execution is disabled until a contracted Japan execution provider passes certification",executionEnabled:false},501);
-    }
+    if(body.action==="bid.model")return json({ok:true,...await bidModel(body)});
+    if(body.action==="bid.customer_authorise")return json({ok:true,instruction:await customerAuthorise(body),executionEnabled:executionEnabled()});
+    if(body.action==="bid.admin_authorise")return json({ok:true,instruction:await adminAuthorise(body),executionEnabled:executionEnabled()});
+    if(body.action==="bid.status")return json({ok:true,...await bidStatus(body)});
+    if(body.action==="bid.submit")return json({ok:true,instruction:await submitBid(body),executionEnabled:executionEnabled()});
     return json({error:"Unsupported action"},400);
   }catch(error){
     return json({error:error instanceof Error?error.message:String(error)},502);
