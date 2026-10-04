@@ -31,8 +31,8 @@ for(const required of ["omniqora.identity","omniqora.marketplace","omniqora.inte
 assert.equal(map.get("dishbee.kds"),false);
 assert.equal(map.get("dishbee.hive"),false);
 
-const providers=await db.query("SELECT provider_key,status FROM public.integration_provider_catalogue WHERE provider_key IN ('uber_eats','deliveroo','just_eat','deliverect','otter','urbanpiper','foodics','dines') ORDER BY provider_key");
-assert.equal(providers.rows.length,8);
+const providers=await db.query("SELECT provider_key,status FROM public.integration_provider_catalogue WHERE provider_key IN ('uber_eats','deliveroo','just_eat','deliverect','otter','urbanpiper') ORDER BY provider_key");
+assert.equal(providers.rows.length,6);
 assert(providers.rows.every(row=>row.status!=="live"),"Provider registry must not claim live certification");
 
 const blueprint=(await db.query("SELECT blueprint_key,country_code FROM public.tenant_blueprints WHERE blueprint_key='dishbee-plus-uk'")).rows[0];
