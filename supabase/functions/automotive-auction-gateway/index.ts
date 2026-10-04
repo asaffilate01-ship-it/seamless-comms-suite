@@ -296,6 +296,18 @@ function correctionPayload(original:any,patch:any){
   for(const [key,value] of Object.entries(patch&&typeof patch==="object"?patch:{})){
     if(allowed.has(key))corrected[key]=value;
   }
+  const oneOf=(key:string,values:string[])=>{
+    if(corrected[key]!==null&&corrected[key]!==undefined&&!values.includes(String(corrected[key])))throw new Error(key+" has an invalid correction value");
+  };
+  oneOf("repairHistory",["none","suspected","declared","unknown"]);
+  oneOf("structuralRepair",["none","minor","major","unknown"]);
+  oneOf("flood",["none","suspected","declared","unknown"]);
+  oneOf("corrosion",["none","light","moderate","severe","unknown"]);
+  oneOf("rust",["none","light","moderate","severe","unknown"]);
+  oneOf("odometerStatus",["verified","questionable","unknown"]);
+  if(corrected.odometerKm!==null&&corrected.odometerKm!==undefined&&(!Number.isInteger(Number(corrected.odometerKm))||Number(corrected.odometerKm)<0))throw new Error("odometerKm must be a non-negative integer");
+  for(const key of ["oilLeak","warningLights","airbagIssue"])if(corrected[key]!==null&&corrected[key]!==undefined&&typeof corrected[key]!=="boolean")throw new Error(key+" must be boolean or null");
+  for(const key of ["damageCodes","options","notes","sourceRefs"])if(corrected[key]!==undefined&&(!Array.isArray(corrected[key])||corrected[key].some((v:any)=>typeof v!=="string")))throw new Error(key+" must be a string array");
   corrected.confidence=1;
   return corrected;
 }
