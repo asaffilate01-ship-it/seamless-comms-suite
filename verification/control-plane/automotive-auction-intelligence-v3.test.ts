@@ -82,6 +82,8 @@ assert(worker.includes("AUCTION_EXTRACTION_SCHEMA"),"typed extraction schema mis
 assert(gateway.includes("Human-approved auction intelligence is required before admin approval"),"admin bid gate must require human-reviewed intelligence");
 assert(gateway.includes("Approved auction intelligence says DO NOT BID"),"DO NOT BID must block execution");
 assert(gateway.includes('in("status",["proposed","reviewed","approved"])'),"changed inputs must supersede previous approved decisions");
+assert(gateway.includes('status:"draft",authorised_actor_ref:null,authorised_at:null'),"changed intelligence must revoke stale finance approval");
+assert(worker.includes('status:"draft",authorised_actor_ref:null,authorised_at:null'),"new sheet evidence must revoke stale finance approval");
 assert(migration.includes("automotive_auction_sheet_extractions"),"sheet extraction ledger missing");
 assert(migration.includes("automotive_auction_comparables"),"market evidence ledger missing");
 assert(migration.includes("automotive_auction_decisions"),"decision ledger missing");
