@@ -309,6 +309,21 @@ export const enableHaccoraForDishbee = createServerFn({ method: "POST" })
     };
   });
 
+export const runHaccoraSmokeTest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const permission = await context.supabase.rpc("platform_haccora_readiness" as never, {
+      _tenant: data.tenantId,
+    } as never);
+    if (permission.error) throw new Error(permission.error.message);
+    const [{ supabaseAdmin }, { runHaccoraReadOnlySmoke }] = await Promise.all([
+      import("@/integrations/supabase/client.server"),
+      import("@/modules/haccora/haccora-smoke.server"),
+    ]);
+    return runHaccoraReadOnlySmoke(supabaseAdmin as any, data.tenantId);
+  });
+
 export const retryHaccoraProvisioning = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { tenantId: string }) => tenantInput.parse(input))
