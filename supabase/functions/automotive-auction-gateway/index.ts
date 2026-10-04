@@ -1,5 +1,6 @@
 import {createClient} from "npm:@supabase/supabase-js@2.110.8";
 import {calculateJapanUkBidCost} from "../../../src/modules/automotive/landed-cost-v2.ts";
+import {evaluateAuctionDecision,type AuctionComparable,type AuctionHistoryRow,type AuctionSheetExtraction} from "../../../src/modules/automotive/auction-intelligence.ts";
 import {
   auctionProviderReadiness,
   compareAuctionLotSamples,
@@ -128,6 +129,154 @@ async function history(chassisNumber:string,days=90){
 }
 
 
+async function auctionIntelligenceContext(lotId:string){
+  const db=serviceDb(),tenantId=autohashiTenant();
+  const lot=await db.from("automotive_auction_lots").select("*").eq("tenant_id",tenantId).eq("product_key","autohashi").eq("id",lotId).single();
+  if(lot.error)throw lot.error;
+  let vehicle:any=null;
+  if(lot.data.vehicle_id){
+    const v=await db.from("automotive_vehicles").select("*").eq("tenant_id",tenantId).eq("id",lot.data.vehicle_id).maybeSingle();
+    if(v.error)throw v.error;vehicle=v.data;
+  }
+  const chassis=vehicle?.chassis_number??lot.data.auction_sheet?.chassisNumber??null;
+  let historyRows:any[]=[];
+  if(chassis){
+    const h=await db.from("automotive_auction_observations").select("*").eq("tenant_id",tenantId).eq("chassis_number",chassis).order("observed_at",{ascending:true}).limit(500);
+    if(h.error)throw h.error;historyRows=h.data??[];
+  }
+  const extraction=await db.from("automotive_auction_sheet_extractions").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",lotId)
+    .in("status",["approved","reviewed","proposed"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(extraction.error)throw extraction.error;
+  const comps=await db.from("automotive_auction_comparables").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",lotId).order("observed_at",{ascending:false}).limit(100);
+  if(comps.error)throw comps.error;
+  const cost=await db.from("automotive_bid_cost_models_v2").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",lotId)
+    .in("status",["approved","review","draft"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(cost.error)throw cost.error;
+  return {db,tenantId,lot:lot.data,vehicle,historyRows,extraction:extraction.data,comparables:comps.data??[],costModel:cost.data};
+}
+function decisionPayload(ctx:any){
+  const lotSheet=ctx.lot.auction_sheet??{};
+  const history:AuctionHistoryRow[]=(ctx.historyRows??[]).map((h:any)=>({
+    observedAt:h.observed_at,auctionHouse:h.auction_house,externalLotId:h.external_lot_id,grade:h.grade,odometerKm:h.odometer_km,
+    finalPriceMinor:h.final_price_minor,currentPriceMinor:h.current_price_minor,startingPriceMinor:h.starting_price_minor,currency:h.currency,
+  }));
+  const comparables:AuctionComparable[]=(ctx.comparables??[]).filter((x:any)=>x.currency==="GBP").map((x:any)=>({
+    evidenceType:x.evidence_type,priceGbpMinor:Number(x.price_minor),year:x.model_year,mileageKm:x.mileage_km,source:x.source,externalRef:x.external_ref,
+  }));
+  const cm=ctx.costModel;
+  const economics=cm?{
+    targetRetailGbpMinor:Number(cm.target_retail_gbp_minor),targetMarginGbpMinor:Number(cm.target_margin_gbp_minor),
+    estimatedLandedGbpMinor:cm.estimated_landed_gbp_minor===null?null:Number(cm.estimated_landed_gbp_minor),
+    estimatedGrossMarginGbpMinor:cm.estimated_gross_margin_gbp_minor===null?null:Number(cm.estimated_gross_margin_gbp_minor),
+    proposedHammerJpy:cm.proposed_hammer_jpy===null?null:Number(cm.proposed_hammer_jpy),maxHammerJpy:Number(cm.max_hammer_jpy),
+  }:null;
+  return {
+    lot:{chassisNumber:ctx.vehicle?.chassis_number??lotSheet.chassisNumber??null,grade:ctx.lot.grade,odometerKm:ctx.lot.odometer_km,
+      make:lotSheet.make??ctx.vehicle?.make??null,model:lotSheet.model??ctx.vehicle?.model??null,year:lotSheet.year??ctx.vehicle?.specification?.year??null},
+    extraction:(ctx.extraction?.extraction??null) as AuctionSheetExtraction|null,history,comparables,economics,
+  };
+}
+async function recalculateAuctionDecision(lotId:string){
+  const ctx=await auctionIntelligenceContext(lotId);
+  const result=evaluateAuctionDecision(decisionPayload(ctx));
+  const revoked=await ctx.db.from("automotive_bid_instructions").update({
+    status:"draft",authorised_actor_ref:null,authorised_at:null,admin_approval_note:null,updated_at:new Date().toISOString()
+  }).eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId).eq("status","authorised");
+  if(revoked.error)throw revoked.error;
+  await ctx.db.from("automotive_auction_decisions").update({status:"superseded",updated_at:new Date().toISOString()})
+    .eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId).in("status",["proposed","reviewed","approved"]);
+  const decision=await ctx.db.from("automotive_auction_decisions").insert({
+    tenant_id:ctx.tenantId,product_key:"autohashi",auction_lot_id:lotId,vehicle_id:ctx.vehicle?.id??null,
+    extraction_id:ctx.extraction?.id??null,cost_model_v2_id:ctx.costModel?.id??null,score:result.score,recommendation:result.recommendation,
+    confidence:result.confidence,blockers:result.blockers,warnings:result.warnings,reasons:result.reasons,subscores:result.subscores,
+    market:result.market,history:result.history,calculation:result,status:"proposed"
+  }).select("*").single();
+  if(decision.error)throw decision.error;
+  return {decision:decision.data,extraction:ctx.extraction,comparableCount:ctx.comparables.length,costModel:ctx.costModel};
+}
+async function intelligenceStatus(body:any){
+  const lotId=String(body.auctionLotId??"");if(!lotId)throw new Error("auctionLotId is required");
+  const ctx=await auctionIntelligenceContext(lotId);
+  const job=await ctx.db.from("intelligence_jobs").select("*").eq("tenant_id",ctx.tenantId).eq("job_type","automotive.auction_assessment")
+    .filter("input->>auctionLotId","eq",lotId).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(job.error)throw job.error;
+  const decision=await ctx.db.from("automotive_auction_decisions").select("*").eq("tenant_id",ctx.tenantId).eq("auction_lot_id",lotId)
+    .neq("status","superseded").order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(decision.error)throw decision.error;
+  return {job:job.data,extraction:ctx.extraction,decision:decision.data,comparables:ctx.comparables,costModel:ctx.costModel};
+}
+async function syncMarketEvidence(body:any){
+  const lotId=String(body.auctionLotId??"");if(!lotId)throw new Error("auctionLotId is required");
+  const rows=Array.isArray(body.comparables)?body.comparables.slice(0,100):[];
+  const db=serviceDb(),tenantId=autohashiTenant();
+  const lot=await db.from("automotive_auction_lots").select("id").eq("tenant_id",tenantId).eq("id",lotId).single();if(lot.error)throw lot.error;
+  let imported=0;
+  for(const row of rows){
+    const type=String(row?.evidenceType??"");
+    if(!["asking","sold","auction_result"].includes(type))continue;
+    const price=Number(row?.priceGbpMinor);
+    const externalRef=String(row?.externalRef??"");
+    if(!Number.isInteger(price)||price<0||!externalRef)continue;
+    const saved=await db.from("automotive_auction_comparables").upsert({
+      tenant_id:tenantId,product_key:"autohashi",auction_lot_id:lotId,market_country:"GB",evidence_type:type,
+      source:String(row?.source??"autohashi_internal").slice(0,160),external_ref:externalRef.slice(0,300),
+      make:typeof row?.make==="string"?row.make:null,model:typeof row?.model==="string"?row.model:null,
+      model_year:Number.isInteger(row?.year)?row.year:null,mileage_km:Number.isInteger(row?.mileageKm)?row.mileageKm:null,
+      price_minor:price,currency:"GBP",observed_at:typeof row?.observedAt==="string"?row.observedAt:new Date().toISOString(),
+      metadata:row?.metadata&&typeof row.metadata==="object"?row.metadata:{}
+    },{onConflict:"tenant_id,auction_lot_id,evidence_type,source,external_ref"});
+    if(saved.error)throw saved.error;imported++;
+  }
+  const recalculated=await recalculateAuctionDecision(lotId);
+  return {imported,...recalculated};
+}
+async function requeueAuctionIntelligence(body:any){
+  const who=actor(body);
+  if(!who.roles.some(role=>["super_admin","tenant_admin","compliance","ops"].includes(role)))throw new Error("Operations/compliance role is required");
+  const lotId=String(body.auctionLotId??"");if(!lotId)throw new Error("auctionLotId is required");
+  const ctx=await auctionIntelligenceContext(lotId);
+  const active=await ctx.db.from("intelligence_jobs").select("*").eq("tenant_id",ctx.tenantId).eq("job_type","automotive.auction_assessment")
+    .filter("input->>auctionLotId","eq",lotId).in("status",["queued","processing"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(active.error)throw active.error;if(active.data)return {job:active.data,reused:true};
+  const job=await ctx.db.from("intelligence_jobs").insert({
+    tenant_id:ctx.tenantId,product_key:"autohashi",job_type:"automotive.auction_assessment",subject_type:"vehicle",
+    subject_id:ctx.vehicle?.id??lotId,priority:"high",
+    input:{vehicleId:ctx.vehicle?.id??null,auctionLotId:lotId,providerKey:ctx.lot.provider_key,externalLotId:ctx.lot.external_lot_id,
+      goals:["auction_sheet_interpretation","damage_map","provenance","relisting_detection","mileage_consistency","uk_market_comparables","max_bid_review"]},
+    requirements:{service:"omniqora.automotive",visionAllowed:true,reviewRequired:true,noGeolocation:true,failClosedOnMissingProviderEvidence:true}
+  }).select("*").single();
+  if(job.error)throw job.error;return {job:job.data,reused:false};
+}
+async function reviewAuctionDecision(body:any){
+  const who=actor(body);
+  if(!who.roles.some(role=>["super_admin","tenant_admin","compliance"].includes(role)))throw new Error("Compliance/admin review role is required");
+  const lotId=String(body.auctionLotId??""),decisionId=String(body.decisionId??""),review=String(body.review??"");
+  if(!lotId||!decisionId||!["approved","rejected"].includes(review))throw new Error("auctionLotId, decisionId and approved/rejected review are required");
+  const db=serviceDb(),tenantId=autohashiTenant(),now=new Date().toISOString();
+  const current=await db.from("automotive_auction_decisions").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",lotId).eq("id",decisionId).single();
+  if(current.error)throw current.error;if(!["proposed","reviewed"].includes(current.data.status))throw new Error("Auction decision is not reviewable");
+  const updated=await db.from("automotive_auction_decisions").update({
+    status:review,reviewed_actor_ref:"autohashi:user:"+who.userId,reviewed_at:now,review_note:typeof body.note==="string"?body.note:null,updated_at:now
+  }).eq("id",decisionId).select("*").single();
+  if(updated.error)throw updated.error;
+  let reviewedJobId:string|null=null;
+  if(current.data.extraction_id){
+    const extraction=await db.from("automotive_auction_sheet_extractions").select("intelligence_job_id").eq("tenant_id",tenantId).eq("id",current.data.extraction_id).single();
+    if(extraction.error)throw extraction.error;reviewedJobId=extraction.data.intelligence_job_id??null;
+    const ex=await db.from("automotive_auction_sheet_extractions").update({
+      status:review==="approved"?"approved":"reviewed",reviewed_at:now,review_note:typeof body.note==="string"?body.note:null,updated_at:now
+    }).eq("tenant_id",tenantId).eq("id",current.data.extraction_id);
+    if(ex.error)throw ex.error;
+  }
+  if(reviewedJobId){
+    const jobs=await db.from("intelligence_jobs").update({
+      status:"completed",completed_at:now,updated_at:now,result:{decisionId,recommendation:current.data.recommendation,score:current.data.score,humanReview:review}
+    }).eq("tenant_id",tenantId).eq("id",reviewedJobId).eq("status","waiting_review");
+    if(jobs.error)throw jobs.error;
+  }
+  return updated.data;
+}
+
 function actor(body:any){
   const raw=body?.actor??{};
   const userId=typeof raw.userId==="string"?raw.userId:"";
@@ -230,7 +379,8 @@ async function bidModel(body:any){
     expires_at:expiresAt,result_payload:{reviewedMaxHammerJpy:calculation.maxHammerJpy}
   }).select("*").single();
   if(instruction.error)throw instruction.error;
-  return {instruction:instruction.data,costModel:insertedModel.data,calculation,reused:false,executionEnabled:executionEnabled()};
+  const intelligence=await recalculateAuctionDecision(lotId);
+  return {instruction:instruction.data,costModel:insertedModel.data,calculation,intelligenceDecision:intelligence.decision,reused:false,executionEnabled:executionEnabled()};
 }
 async function customerAuthorise(body:any){
   const who=actor(body),db=serviceDb(),tenantId=autohashiTenant();
@@ -261,6 +411,11 @@ async function adminAuthorise(body:any){
   if(current.data.status!=="draft")throw new Error("Only a draft bid can be authorised");
   if(!current.data.customer_authorised_at)throw new Error("Customer authorisation is required before admin approval");
   if(current.data.expires_at&&new Date(current.data.expires_at).getTime()<=Date.now())throw new Error("Bid instruction has expired");
+  const intelligence=await db.from("automotive_auction_decisions").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",current.data.auction_lot_id)
+    .eq("status","approved").order("reviewed_at",{ascending:false}).limit(1).maybeSingle();
+  if(intelligence.error)throw intelligence.error;
+  if(!intelligence.data)throw new Error("Human-approved auction intelligence is required before admin approval");
+  if(intelligence.data.recommendation==="do_not_bid")throw new Error("Approved auction intelligence says DO NOT BID");
   const now=new Date().toISOString();
   if(current.data.cost_model_v2_id){
     const model=await db.from("automotive_bid_cost_models_v2").update({status:"approved",reviewed_actor_ref:"autohashi:user:"+who.userId,reviewed_at:now})
@@ -300,6 +455,11 @@ async function submitBid(body:any){
   if(!["authorised","error"].includes(current.data.status))throw new Error("Bid must be admin-authorised before submission");
   if(!current.data.customer_authorised_at||!current.data.authorised_at)throw new Error("Required authorisations are incomplete");
   if(current.data.expires_at&&new Date(current.data.expires_at).getTime()<=Date.now())throw new Error("Bid instruction has expired");
+  const intelligence=await db.from("automotive_auction_decisions").select("*").eq("tenant_id",tenantId).eq("auction_lot_id",current.data.auction_lot_id)
+    .eq("status","approved").order("reviewed_at",{ascending:false}).limit(1).maybeSingle();
+  if(intelligence.error)throw intelligence.error;
+  if(!intelligence.data)throw new Error("Human-approved auction intelligence is required before live submission");
+  if(intelligence.data.recommendation==="do_not_bid")throw new Error("Approved auction intelligence says DO NOT BID");
   const lot=await db.from("automotive_auction_lots").select("*").eq("tenant_id",tenantId).eq("id",current.data.auction_lot_id).single();
   if(lot.error)throw lot.error;
   const payload={
@@ -401,6 +561,11 @@ Deno.serve(async req=>{
       return json({ok:true,executionEnabled:false,lot});
     }
     if(body.action==="intelligence.import")return json({ok:true,...await importLot(body.lot)});
+    if(body.action==="intelligence.status")return json({ok:true,...await intelligenceStatus(body)});
+    if(body.action==="intelligence.market_sync")return json({ok:true,...await syncMarketEvidence(body)});
+    if(body.action==="intelligence.evaluate")return json({ok:true,...await recalculateAuctionDecision(String(body.auctionLotId??""))});
+    if(body.action==="intelligence.requeue")return json({ok:true,...await requeueAuctionIntelligence(body)});
+    if(body.action==="intelligence.review")return json({ok:true,decision:await reviewAuctionDecision(body)});
     if(body.action==="history"){
       if(!body.chassisNumber)return json({error:"chassisNumber is required"},400);
       return json({ok:true,...await history(String(body.chassisNumber),Number(body.days??90))});
