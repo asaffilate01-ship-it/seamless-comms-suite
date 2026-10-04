@@ -125,7 +125,7 @@ SECURITY DEFINER
 SET search_path=''
 AS $$
 DECLARE
-  slug text;
+  tenant_slug text;
   tid uuid;
   row jsonb;
   rows jsonb:='[]'::jsonb;
@@ -134,11 +134,11 @@ BEGIN
     RAISE EXCEPTION 'Platform administrator required';
   END IF;
 
-  FOREACH slug IN ARRAY ARRAY['cafe1-luton','cafe1-st-albans','mealdeck']::text[] LOOP
-    SELECT id INTO tid FROM public.tenants WHERE public.tenants.slug=slug;
+  FOREACH tenant_slug IN ARRAY ARRAY['cafe1-luton','cafe1-st-albans','mealdeck']::text[] LOOP
+    SELECT t.id INTO tid FROM public.tenants t WHERE t.slug=tenant_slug;
     IF tid IS NULL THEN
       rows:=rows||jsonb_build_array(jsonb_build_object(
-        'tenantSlug',slug,'ready',false,'missing',true
+        'tenantSlug',tenant_slug,'ready',false,'missing',true
       ));
     ELSE
       row:=public.platform_haccora_readiness(tid);
