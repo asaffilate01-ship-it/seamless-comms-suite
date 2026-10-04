@@ -38,6 +38,25 @@ const requestSchema=z.discriminatedUnion("operation",[
     providerKey:provider,
     externalLotId:z.string().min(1).max(200),
   }).strict(),
+  z.object({
+    operation:z.literal("auction.bid.queue"),
+    tenantId:z.string().uuid(),
+    productKey:z.string().min(2).max(80),
+    auctionLotId:z.string().uuid(),
+    sourceRequestRef:z.string().min(1).max(200),
+    maxBidMinor:z.number().int().positive(),
+    currency:z.string().regex(/^[A-Z]{3}$/),
+    providerKey:z.literal("vehicle.japan.agent").default("vehicle.japan.agent"),
+    riskReviewStatus:z.enum(["low","review","high","specialist_review"]).default("review"),
+    authorisedByRef:z.string().max(200).nullish(),
+    notes:z.string().max(2000).nullish(),
+  }).strict(),
+  z.object({
+    operation:z.literal("auction.bid.get"),
+    tenantId:z.string().uuid(),
+    productKey:z.string().min(2).max(80),
+    sourceRequestRef:z.string().min(1).max(200),
+  }).strict(),
 ]);
 
 function reply(body:unknown,status=200){
@@ -98,6 +117,23 @@ function publicLot(row:any){
   };
 }
 
+function publicBid(row:any){
+  return{
+    id:row.id,
+    auctionLotId:row.auction_lot_id,
+    sourceRequestRef:row.source_request_ref,
+    providerKey:row.provider_key,
+    executionMode:row.execution_mode,
+    maxBidMinor:row.max_bid_minor,
+    currency:row.currency,
+    status:row.status,
+    externalBidRef:row.external_bid_ref,
+    riskReviewStatus:row.risk_review_status,
+    createdAt:row.created_at,
+    updatedAt:row.updated_at,
+  };
+}
+
 export async function serveAutomotiveAuctionRuntime(request:Request){
   try{
     const raw=await request.text();
@@ -106,7 +142,10 @@ export async function serveAutomotiveAuctionRuntime(request:Request){
     try{parsed=JSON.parse(raw)}catch{return reply({error:"Invalid JSON"},400)}
     const input=requestSchema.parse(parsed);
     const {db,credential}=await authenticate(request);
-    const capability=input.operation==="auction.list"?"automotive.auctions.read":"automotive.auctions.sync";
+    const capability=
+      input.operation==="auction.list"||input.operation==="auction.bid.get"?"automotive.auctions.read":
+      input.operation==="auction.bid.queue"?"automotive.auctions.bid.request":
+      "automotive.auctions.sync";
     authoriseServiceScope(credential,{tenantId:input.tenantId,productKey:input.productKey,capability});
     await assertActiveProduct(db,input.tenantId,input.productKey);
 
@@ -132,6 +171,48 @@ export async function serveAutomotiveAuctionRuntime(request:Request){
       const row=await persistNormalizedAuctionLot(db,{tenantId:input.tenantId,productKey:input.productKey,lot:normalized});
       await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
       return reply({lot:publicLot(row)});
+    }
+
+    if(input.operation==="auction.bid.queue"){
+      const lot=await db.from("automotive_auction_lots").select("id,status,currency")
+        .eq("tenant_id",input.tenantId).eq("product_key",input.productKey).eq("id",input.auctionLotId).maybeSingle();
+      if(lot.error||!lot.data)throw new Error("Auction lot not found");
+      if(["sold","cancelled","closed"].includes(String(lot.data.status).toLowerCase()))throw new Error("Auction lot is no longer open");
+      const existing=await db.from("automotive_auction_bid_requests").select("*")
+        .eq("tenant_id",input.tenantId).eq("source_system","autohashi").eq("source_request_ref",input.sourceRequestRef).maybeSingle();
+      if(existing.error)throw new Error(existing.error.message);
+      if(existing.data){
+        const same=Number(existing.data.max_bid_minor)===input.maxBidMinor&&existing.data.currency===input.currency&&existing.data.auction_lot_id===input.auctionLotId;
+        if(!same)throw new Error("Existing AutoHashi bid request conflicts with this authorisation");
+        return reply({bid:publicBid(existing.data),idempotent:true});
+      }
+      const inserted=await db.from("automotive_auction_bid_requests").insert({
+        tenant_id:input.tenantId,
+        product_key:input.productKey,
+        auction_lot_id:input.auctionLotId,
+        source_system:"autohashi",
+        source_request_ref:input.sourceRequestRef,
+        provider_key:input.providerKey,
+        execution_mode:"manual",
+        max_bid_minor:input.maxBidMinor,
+        currency:input.currency,
+        status:"pending_partner",
+        authorised_by_ref:input.authorisedByRef??null,
+        risk_review_status:input.riskReviewStatus,
+        notes:input.notes??"Authorised in AutoHashi. Pending Japan-side execution; not yet submitted to an auction house.",
+      }).select("*").single();
+      if(inserted.error)throw new Error(inserted.error.message);
+      await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+      return reply({bid:publicBid(inserted.data),transmittedToAuctionHouse:false},202);
+    }
+
+    if(input.operation==="auction.bid.get"){
+      const result=await db.from("automotive_auction_bid_requests").select("*")
+        .eq("tenant_id",input.tenantId).eq("product_key",input.productKey)
+        .eq("source_system","autohashi").eq("source_request_ref",input.sourceRequestRef).maybeSingle();
+      if(result.error||!result.data)throw new Error("Bid request not found");
+      await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+      return reply({bid:publicBid(result.data)});
     }
 
     let query=db.from("automotive_auction_lots").select("*")
