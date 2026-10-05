@@ -39,6 +39,7 @@ const nav: NavItem[] = [
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
   { to: "/app/crm", labelKey: "", label: "CRM & Customer 360", icon: ContactRound },
+  { to: "/app/sales", labelKey: "", label: "Omniqora Sales", icon: Handshake },
   { to: "/app/intelligence", labelKey: "", label: "AI Control & Governance", icon: Cpu },
   { to: "/app/shared-engines", labelKey: "", label: "Shared Engines", icon: Boxes },
   { to: "/app/contact-centre", labelKey: "", label: "Omniqora Contact", icon: MessageCircle },

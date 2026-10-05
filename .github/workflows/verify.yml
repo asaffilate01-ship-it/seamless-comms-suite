@@ -22,7 +22,9 @@ jobs:
           python-version: '3.12'
       - run: bun install --frozen-lockfile
       - name: Sales cadence, isolation and suppression regressions
-        run: node verification/control-plane/sales-runtime.test.mjs
+        run: |
+          node verification/control-plane/sales-runtime.test.mjs
+          node verification/control-plane/sales-queue-fairness.test.mjs
       - run: bun run build
       - run: bun run typecheck
       - run: bun run test:security
