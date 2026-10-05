@@ -284,7 +284,9 @@ async function requireCompleteLocationLinks(
   const locations = await activeTenantLocations(db, tenantId);
   if (!locations.length) throw new ProvisioningBlock(`${productLabel} requires an active tenant location`);
   const links = await productLocationLinks(db, connection.id);
-  const byTenantLocation = new Map(links.map((link: any) => [link.tenant_location_id, link]));
+  const byTenantLocation = new Map<string, Record<string, unknown>>(
+    links.map((link: any) => [link.tenant_location_id, link] as const),
+  );
   const missing = locations.filter((location: any) => !byTenantLocation.has(location.id));
   if (missing.length) {
     throw new ProvisioningBlock(
