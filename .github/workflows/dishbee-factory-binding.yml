@@ -33,7 +33,10 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/factory-test/node_modules" node --test \
             verification/control-plane/dishbee-binding.node.mjs \
             verification/control-plane/dishbee-auto-provisioning.test.mjs
-      - name: Native PostgreSQL scope and acknowledgement tests
+      - name: Native PostgreSQL binding and readiness evidence tests
         env:
           TEST_DATABASE_URL: postgresql://postgres:disposable-test-only@localhost:5432/factory_test
-        run: psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f verification/control-plane/dishbee-binding-postgres.sql
+        run: |
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 \
+            -f verification/control-plane/dishbee-binding-postgres.sql \
+            -f verification/control-plane/dishbee-readiness-postgres.sql
