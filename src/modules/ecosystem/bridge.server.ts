@@ -1,3 +1,4 @@
+import { business360Entitled } from '../transformation/entitlement.server';
 import { createClient } from '@supabase/supabase-js';
 import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -8,10 +9,10 @@ type Receipt = {runId:string;status:string;reviewRequired:boolean;scope:Record<s
 async function access(b: Binding) {
   const current = readBindings().find(x=>x.id===b.id);
   if (!current || JSON.stringify(current)!==JSON.stringify(b) || !available(current)) throw new BridgeError(403,'Connection access changed');
-  if (!(process.env.BUSINESS360_ENABLED_TENANTS ?? '').split(',').map(x=>x.trim()).includes(b.tenant)) throw new BridgeError(403,'Workspace entitlement is inactive');
   const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new BridgeError(503,'Bridge identity verification is not configured');
   const client=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  if (!await business360Entitled(client,b.tenant)) throw new BridgeError(403,'Workspace entitlement is inactive');
   const {data,error}=await client.from('tenant_members').select('role').eq('tenant_id',b.tenant).eq('user_id',b.serviceUser).maybeSingle();
   if (error || !data || !['owner','admin','manager','member','agent'].includes(data.role)) throw new BridgeError(403,'Source principal is no longer an active workspace member');
   return {tenant:b.tenant,user:b.serviceUser,tenant_role:data.role};

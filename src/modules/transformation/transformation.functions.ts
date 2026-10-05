@@ -32,11 +32,8 @@ export const transformationRequest = createServerFn({ method: "POST" })
       .from("tenant_members").select("role")
       .eq("tenant_id", data.tenantId).eq("user_id", userId).maybeSingle();
     if (error || !membership) throw new Error("Tenant access denied");
-    // Operator-managed pilot entitlement. Empty configuration denies every tenant.
-    // Replace with the host's billing entitlement service before self-serve sales.
-    const enabledTenants = new Set((process.env.BUSINESS360_ENABLED_TENANTS ?? "")
-      .split(",").map((value) => value.trim()).filter(Boolean));
-    if (!enabledTenants.has(data.tenantId)) throw new Error("Business360 is not enabled for this workspace");
+    const { business360Entitled } = await import('./entitlement.server');
+    if (!await business360Entitled(supabase, data.tenantId)) throw new Error("Business360 is not enabled for this workspace");
     if (data.command === "members.add") {
       const target = z.string().uuid().parse(data.data.user_id);
       const { data: colleague, error: targetError } = await supabase
@@ -52,5 +49,6 @@ export const transformationRequest = createServerFn({ method: "POST" })
     const { data: current, error: currentError } = await supabase.from("tenant_members").select("role")
       .eq("tenant_id", data.tenantId).eq("user_id", userId).maybeSingle();
     if (currentError || !current || current.role !== membership.role) throw new Error("Workspace access changed; retry after signing in");
+    if (!await business360Entitled(supabase, data.tenantId)) throw new Error("Business360 access changed during the request");
     return { payload: JSON.stringify(result) };
   });
