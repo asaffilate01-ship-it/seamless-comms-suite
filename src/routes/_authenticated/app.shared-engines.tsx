@@ -7,6 +7,7 @@ import {Button} from "@/components/ui/button";
 import {Badge} from "@/components/ui/badge";
 import {useTenant} from "@/hooks/useTenant";
 import {getSharedEnginesWorkspace} from "@/modules/shared-engines/functions";
+import {PowerBiWorkbench} from "@/modules/analytics/PowerBiWorkbench";
 import {BrainCircuit,Headphones,GraduationCap,LineChart,RefreshCw,Users,Database,Target} from "lucide-react";
 
 export const Route=createFileRoute("/_authenticated/app/shared-engines")({
@@ -27,6 +28,7 @@ function SharedEngines(){
    <Metric icon={BrainCircuit} label="Agent templates" value={d?.agents?.length??0}/>
    <Metric icon={GraduationCap} label="Students" value={d?.education?.students?.length??0}/>
   </div>
+  <PowerBiWorkbench key={tenantId} tenantId={tenantId}/>
   <div className="mt-6 grid gap-6 xl:grid-cols-2">
    <Card><CardContent className="p-5"><h2 className="font-semibold">Revenue & relationships</h2><p className="mt-1 text-sm text-muted-foreground">Prospecting, callbacks, meetings, proposals, attribution and relationship intelligence.</p>
     <div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">Callbacks {d?.sales?.callbacks?.length??0}</Badge><Badge variant="outline">Meetings {d?.sales?.meetings?.length??0}</Badge><Badge variant="outline">Proposals {d?.sales?.proposals?.length??0}</Badge><Badge variant="outline">Attribution {d?.attribution?.length??0}</Badge><Badge variant="outline">Relationships {d?.relationships?.length??0}</Badge></div>

@@ -1,0 +1,13 @@
+import type {BiConfig, BiChoice, BiPublicModel, BiRequest, BiInvestigation} from './powerbi.types';
+export const SCOPES: string[];
+export function digest(value: string): string;
+export function secretBinding(tenantId: string, userId: string, purpose: string): string;
+export function encryptionKey(env: Record<string, string | undefined>): Uint8Array;
+export function seal(value: unknown, key: Uint8Array, binding: string): string;
+export function unseal(value: string, key: Uint8Array, binding: string): any;
+export function getConfig(env: Record<string, string | undefined>, tenantId: string): BiConfig;
+export function publicModels(config: BiConfig): BiPublicModel[];
+export function startOAuth(config: BiConfig): {state: string; verifier: string; stateHash: string; url: string};
+export function exchangeCode(config: BiConfig, env: Record<string, string | undefined>, code: string, verifier: string, fetcher?: typeof fetch): Promise<{accessToken: string; expiresAt: string}>;
+export function discoverModels(config: BiConfig, token: string, fetcher?: typeof fetch): Promise<(BiChoice & {available: boolean})[]>;
+export function executeInvestigation(config: BiConfig, token: string, request: BiRequest, fetcher?: typeof fetch): Promise<BiInvestigation>;
