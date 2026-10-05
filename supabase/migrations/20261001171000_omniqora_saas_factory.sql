@@ -110,6 +110,20 @@ CREATE TABLE IF NOT EXISTS public.tenant_products (
   PRIMARY KEY (tenant_id, product_key)
 );
 
+-- Compatibility with the richer tenant_products table created by the platform registry.
+-- When that table already exists, CREATE TABLE IF NOT EXISTS above does not add the legacy
+-- control-plane columns. Add only the compatibility surface needed by this migration.
+ALTER TABLE public.tenant_products
+  ADD COLUMN IF NOT EXISTS external_tenant_id text,
+  ADD COLUMN IF NOT EXISTS base_url text,
+  ADD COLUMN IF NOT EXISTS config jsonb NOT NULL DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS activated_at timestamptz;
+ALTER TABLE public.tenant_products ALTER COLUMN region_key SET DEFAULT 'GB';
+ALTER TABLE public.tenant_products DROP CONSTRAINT IF EXISTS tenant_products_status_check;
+ALTER TABLE public.tenant_products
+  ADD CONSTRAINT tenant_products_status_check
+  CHECK (status IN ('requested','provisioning','active','suspended','failed','cancelled'));
+
 CREATE TABLE IF NOT EXISTS public.tenant_services (
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   service_key text NOT NULL REFERENCES public.service_catalogue(service_key) ON DELETE RESTRICT,
@@ -160,6 +174,22 @@ CREATE TABLE IF NOT EXISTS public.tenant_domains (
   UNIQUE (domain),
   UNIQUE (tenant_id, product_key, domain)
 );
+
+-- Compatibility with the richer tenant_domains table (tenant_product_id/hostname/purpose).
+ALTER TABLE public.tenant_domains
+  ADD COLUMN IF NOT EXISTS product_key text REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS domain text,
+  ADD COLUMN IF NOT EXISTS domain_type text NOT NULL DEFAULT 'custom',
+  ADD COLUMN IF NOT EXISTS ssl_status text NOT NULL DEFAULT 'pending';
+UPDATE public.tenant_domains d
+SET domain=COALESCE(d.domain,d.hostname),
+    product_key=COALESCE(d.product_key,tp.product_key)
+FROM public.tenant_products tp
+WHERE d.tenant_product_id=tp.id
+  AND (d.domain IS NULL OR d.product_key IS NULL);
+UPDATE public.tenant_domains SET domain=hostname WHERE domain IS NULL;
+ALTER TABLE public.tenant_domains ALTER COLUMN domain SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS tenant_domains_domain_compat_uq ON public.tenant_domains(domain);
 
 CREATE UNIQUE INDEX IF NOT EXISTS tenant_primary_domain_per_product
   ON public.tenant_domains (tenant_id, COALESCE(product_key,'__all__'))
@@ -463,8 +493,8 @@ BEGIN
   IF _blueprint_key IS NOT NULL THEN
     IF NOT EXISTS(SELECT 1 FROM public.tenant_blueprints WHERE blueprint_key=_blueprint_key AND status='active') THEN RAISE EXCEPTION 'Blueprint not found'; END IF;
     FOR p IN SELECT product_key,config FROM public.blueprint_products WHERE blueprint_key=_blueprint_key LOOP
-      INSERT INTO public.tenant_products(tenant_id,product_key,status,config)
-      VALUES(tenant_id,p.product_key,'requested',p.config) ON CONFLICT DO NOTHING;
+      INSERT INTO public.tenant_products(tenant_id,product_key,region_key,status,config)
+      VALUES(tenant_id,p.product_key,_country_code,'requested',p.config) ON CONFLICT DO NOTHING;
       PERFORM public.queue_provisioning(tenant_id,'product',p.product_key,'provision',p.config);
     END LOOP;
     FOR s IN SELECT service_key,config FROM public.blueprint_services WHERE blueprint_key=_blueprint_key LOOP
@@ -484,9 +514,12 @@ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN RAISE EXCEPTION 'Platform administrator required'; END IF;
   IF _enabled THEN
-    INSERT INTO public.tenant_products(tenant_id,product_key,status,config)
-    VALUES(_tenant,_product,'requested',COALESCE(_config,'{}'::jsonb))
-    ON CONFLICT (tenant_id,product_key) DO UPDATE SET status='requested',config=EXCLUDED.config,updated_at=now();
+    INSERT INTO public.tenant_products(tenant_id,product_key,region_key,status,config)
+    VALUES(_tenant,_product,COALESCE((SELECT country_code FROM public.tenants WHERE id=_tenant),'GB'),'requested',COALESCE(_config,'{}'::jsonb))
+    ON CONFLICT DO NOTHING;
+    UPDATE public.tenant_products
+    SET status='requested',config=COALESCE(_config,'{}'::jsonb),updated_at=now()
+    WHERE tenant_id=_tenant AND product_key=_product;
     PERFORM public.queue_provisioning(_tenant,'product',_product,'provision',_config);
     INSERT INTO public.tenant_services(tenant_id,service_key,status,source)
     SELECT _tenant,ps.service_key,'requested','product-default'
@@ -548,9 +581,14 @@ BEGIN
   END IF;
   IF _domain !~ '^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' THEN RAISE EXCEPTION 'Invalid domain'; END IF;
   IF _primary THEN UPDATE public.tenant_domains SET is_primary=false,updated_at=now() WHERE tenant_id=_tenant AND product_key IS NOT DISTINCT FROM _product; END IF;
-  INSERT INTO public.tenant_domains(tenant_id,product_key,domain,is_primary)
-  VALUES(_tenant,_product,lower(_domain),_primary)
-  ON CONFLICT (domain) DO UPDATE SET tenant_id=EXCLUDED.tenant_id,product_key=EXCLUDED.product_key,is_primary=EXCLUDED.is_primary,updated_at=now()
+  INSERT INTO public.tenant_domains(tenant_id,tenant_product_id,product_key,hostname,domain,purpose,is_primary)
+  VALUES(
+    _tenant,
+    (SELECT id FROM public.tenant_products WHERE tenant_id=_tenant AND product_key=_product ORDER BY created_at LIMIT 1),
+    _product,lower(_domain),lower(_domain),'app',_primary
+  )
+  ON CONFLICT (hostname) DO UPDATE SET tenant_id=EXCLUDED.tenant_id,tenant_product_id=EXCLUDED.tenant_product_id,
+    product_key=EXCLUDED.product_key,domain=EXCLUDED.domain,is_primary=EXCLUDED.is_primary,updated_at=now()
   RETURNING id INTO result;
   PERFORM public.queue_provisioning(_tenant,'domain',lower(_domain),'verify',jsonb_build_object('productKey',_product,'primary',_primary));
   RETURN result;
@@ -581,9 +619,13 @@ BEGIN
   ON CONFLICT (tenant_id,product_key,external_tenant_id)
   DO UPDATE SET base_url=EXCLUDED.base_url,capabilities=EXCLUDED.capabilities,status='configured',updated_at=now()
   RETURNING id INTO result;
-  INSERT INTO public.tenant_products(tenant_id,product_key,status,external_tenant_id,base_url)
-  VALUES(_tenant,_product,'provisioning',_external_tenant_id,_base_url)
-  ON CONFLICT (tenant_id,product_key) DO UPDATE SET external_tenant_id=EXCLUDED.external_tenant_id,base_url=EXCLUDED.base_url,status=CASE WHEN public.tenant_products.status='active' THEN 'active' ELSE 'provisioning' END,updated_at=now();
+  INSERT INTO public.tenant_products(tenant_id,product_key,region_key,status,external_tenant_id,base_url)
+  VALUES(_tenant,_product,COALESCE((SELECT country_code FROM public.tenants WHERE id=_tenant),'GB'),'provisioning',_external_tenant_id,_base_url)
+  ON CONFLICT DO NOTHING;
+  UPDATE public.tenant_products
+  SET external_tenant_id=_external_tenant_id,base_url=_base_url,
+      status=CASE WHEN status='active' THEN 'active' ELSE 'provisioning' END,updated_at=now()
+  WHERE tenant_id=_tenant AND product_key=_product;
   PERFORM public.queue_provisioning(_tenant,'integration',_product||':'||_external_tenant_id,'verify',jsonb_build_object('productKey',_product,'externalTenantId',_external_tenant_id,'baseUrl',_base_url,'capabilities',_capabilities));
   RETURN result;
 END; $$;
