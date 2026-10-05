@@ -1,0 +1,52 @@
+name: Repair reviewed Factory JSX
+on:
+  push:
+    branches: [feature/dishbee-factory-audit-20261005]
+    paths: [.github/workflows/branch-jsx-repair.yml]
+permissions:
+  contents: read
+jobs:
+  repair:
+    if: github.repository == 'asaffilate01-ship-it/seamless-comms-suite' && github.ref == 'refs/heads/feature/dishbee-factory-audit-20261005'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Apply the two reviewed JSX delimiters without executing application code
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/_authenticated/app.tenant-factory.tsx')
+          text = p.read_text()
+          changes = [
+              ('            ) : haccoraReadiness.data ? (\n              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-8">', '            ) : haccoraReadiness.data ? (\n              <>\n              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-8">'),
+              ('              )}\n            ) : null}\n            {haccoraSmoke && (', '              )}\n              </>\n            ) : null}\n            {haccoraSmoke && ('),
+          ]
+          for before, after in changes:
+              if text.count(before) != 1:
+                  raise SystemExit('Source changed; refusing ambiguous JSX repair')
+              text = text.replace(before, after)
+          p.write_text(text)
+          PY
+          test "$(git diff --name-only)" = 'src/routes/_authenticated/app.tenant-factory.tsx'
+      - name: Commit the reviewed source patch only to this feature branch
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch='feature/dishbee-factory-audit-20261005'
+          remote_sha="$(git ls-remote origin "refs/heads/$branch" | cut -f1)"
+          test "$remote_sha" = "$EXPECTED_SHA" || { echo 'Branch moved; refusing stale repair'; exit 1; }
+          git add -- src/routes/_authenticated/app.tenant-factory.tsx
+          test "$(git diff --cached --name-only)" = 'src/routes/_authenticated/app.tenant-factory.tsx'
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(factory): wrap adjacent Haccora readiness panels in one JSX fragment'
+          git push origin "HEAD:refs/heads/$branch"
+          printf 'Repaired review-branch commit: %s\n' "$(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"

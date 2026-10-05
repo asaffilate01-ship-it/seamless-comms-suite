@@ -1,3 +1,27 @@
+-- Historical baseline correction for fresh database replay.
+-- This fixture belonged to one demo project. Never invent auth.users or disable
+-- foreign keys to replay it elsewhere. Already-applied migrations are not rerun;
+-- reconcile the hosted ledger before deployment rather than repairing it blindly.
+DO $legacy_demo$
+BEGIN
+  IF (SELECT count(*) FROM auth.users WHERE id IN (
+    '18bafcd5-3e4c-4044-bb63-10325a0b7209'::uuid,
+    'e66c0525-1787-4250-be26-79f849624521'::uuid,
+    '890c71b1-cf6e-4b68-a56e-dd6050372481'::uuid,
+    '97319fe5-82fd-44cd-b27d-6ae314ee368b'::uuid
+  )) <> 4 THEN
+    RAISE NOTICE 'Legacy demo fixture skipped: its existing auth identities are absent';
+    RETURN;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.tenants
+    WHERE id = '11111111-1111-4111-8111-111111111111'::uuid
+      AND slug IS DISTINCT FROM 'demo-beauty-muenchen'
+  ) THEN
+    RAISE EXCEPTION 'Legacy demo tenant identity collision';
+  END IF;
+
 INSERT INTO public.tenants (id, name, slug)
 VALUES ('11111111-1111-4111-8111-111111111111', 'Beauty Studio München (Demo)', 'demo-beauty-muenchen')
 ON CONFLICT DO NOTHING;
@@ -34,3 +58,5 @@ INSERT INTO public.cases (id, tenant_id, conversation_id, title, status, priorit
   ('55555555-5555-4555-8555-555555555502', '11111111-1111-4111-8111-111111111111', '33333333-3333-4333-8333-333333333302', 'Preisanfrage Herrenhaarschnitt + Bart', 'qualifying', 'low'),
   ('55555555-5555-4555-8555-555555555503', '11111111-1111-4111-8111-111111111111', '33333333-3333-4333-8333-333333333303', 'Gift voucher request (EN)', 'new', 'normal')
 ON CONFLICT DO NOTHING;
+END;
+$legacy_demo$;
