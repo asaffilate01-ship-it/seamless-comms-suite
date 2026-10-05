@@ -99,6 +99,20 @@ export function decideProvisioning(input: {
   }
 
   if (!service) return { outcome: "block", reason: "Service catalogue entry is unavailable." };
+
+  if (service.implementation_status === "external_product") {
+    if (connection?.status === "connected") {
+      return {
+        outcome: "succeed",
+        reason: "External-product service is backed by a connected, verified product workspace.",
+      };
+    }
+    return {
+      outcome: "block",
+      reason: "External-product service requires its authoritative product workspace to be connected.",
+    };
+  }
+
   if (!implemented(service.implementation_status)) {
     return {
       outcome: "block",
@@ -108,20 +122,34 @@ export function decideProvisioning(input: {
           : "Service is not implemented on current main.",
     };
   }
-  if (service.owner_product_key === "haccora" && connection?.status === "connected") {
+
+  if (
+    service.owner_product_key &&
+    service.owner_product_key !== "omniqora" &&
+    connection?.status === "connected"
+  ) {
     return {
       outcome: "succeed",
-      reason: "Haccora service is backed by a connected, verified Haccora workspace.",
+      reason: "Product-owned service is implemented and its authoritative workspace is connected.",
     };
   }
+
   if (service.provisioning_mode === "automatic" && service.owner_product_key === "omniqora") {
     return {
       outcome: "succeed",
       reason: "Shared Omniqora service is implemented and automatically provisionable.",
     };
   }
+
+  if (!service.owner_product_key && service.provisioning_mode === "automatic") {
+    return {
+      outcome: "succeed",
+      reason: "Shared automatic service is implemented in the control plane.",
+    };
+  }
+
   return {
     outcome: "block",
-    reason: "Service needs an external/manual provisioning adapter before it can become active.",
+    reason: "Service needs a connected owner-product workspace or a product-specific provisioning adapter.",
   };
 }
