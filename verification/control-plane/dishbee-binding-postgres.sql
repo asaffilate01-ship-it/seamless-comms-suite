@@ -10,7 +10,7 @@ CREATE TABLE public.tenants(id uuid PRIMARY KEY,status text NOT NULL DEFAULT 'dr
 CREATE TABLE public.product_connections(id uuid PRIMARY KEY,tenant_id uuid REFERENCES public.tenants,product_key text,external_tenant_id text,
  base_url text,status text,credential_hash text,credential_suffix text,credential_expires_at timestamptz,last_verified_at timestamptz,
  updated_at timestamptz,metadata jsonb DEFAULT '{}',capabilities text[]);
-CREATE TABLE public.provisioning_jobs(id uuid PRIMARY KEY,tenant_id uuid REFERENCES public.tenants,status text,target_kind text,action text);
+CREATE TABLE public.provisioning_jobs(id uuid PRIMARY KEY,tenant_id uuid REFERENCES public.tenants,status text,target_kind text,action text,target_key text);
 CREATE TABLE public.tenant_locations(id uuid PRIMARY KEY,tenant_id uuid REFERENCES public.tenants,status text);
 CREATE TABLE public.product_location_links(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),tenant_id uuid REFERENCES public.tenants,
  product_connection_id uuid REFERENCES public.product_connections,product_key text,tenant_location_id uuid REFERENCES public.tenant_locations,
@@ -33,9 +33,9 @@ INSERT INTO public.product_connections(id,tenant_id,product_key,external_tenant_
  ('00000000-0000-4000-8000-000000000020','00000000-0000-4000-8000-000000000002','dishbee','00000000-0000-4000-8000-000000000200','https://dishbee.example','configured'),
  ('00000000-0000-4000-8000-000000000030','00000000-0000-4000-8000-000000000003','dishbee','00000000-0000-4000-8000-000000000300','https://dishbee.example','configured');
 INSERT INTO public.provisioning_jobs VALUES
- ('00000000-0000-4000-8000-000000000011','00000000-0000-4000-8000-000000000001','running','product','provision'),
- ('00000000-0000-4000-8000-000000000012','00000000-0000-4000-8000-000000000002','running','product','provision'),
- ('00000000-0000-4000-8000-000000000013','00000000-0000-4000-8000-000000000003','running','product','provision');
+ ('00000000-0000-4000-8000-000000000011','00000000-0000-4000-8000-000000000001','running','product','provision',NULL),
+ ('00000000-0000-4000-8000-000000000012','00000000-0000-4000-8000-000000000002','running','product','provision',NULL),
+ ('00000000-0000-4000-8000-000000000013','00000000-0000-4000-8000-000000000003','running','product','provision',NULL);
 INSERT INTO public.tenant_locations VALUES
  ('00000000-0000-4000-8000-000000000101','00000000-0000-4000-8000-000000000001','active'),
  ('00000000-0000-4000-8000-000000000102','00000000-0000-4000-8000-000000000002','active');
@@ -54,6 +54,9 @@ INSERT INTO public.product_location_links(tenant_id,product_connection_id,produc
 DO $$
 DECLARE c uuid:='00000000-0000-4000-8000-000000000010'; j uuid:='00000000-0000-4000-8000-000000000011'; a jsonb; r jsonb; result jsonb; change jsonb;
 BEGIN
+ UPDATE public.provisioning_jobs SET target_kind='integration',action='verify',target_key='dishbee:00000000-0000-4000-8000-000000000999' WHERE id=j;
+ PERFORM public.expect_error(format('SELECT public.test_prepare(%L,%L)',c,j),'integration job cannot select a different external workspace');
+ UPDATE public.provisioning_jobs SET target_key='dishbee:00000000-0000-4000-8000-000000000100' WHERE id=j;
  a:=public.test_prepare(c,j);
  PERFORM public.check_test((SELECT count(*)=1 FROM public.platform_service_credentials),'one runtime credential reserved');
  PERFORM public.check_test((SELECT status='configured' AND last_verified_at IS NULL FROM public.product_connections WHERE id=c),'reservation does not claim connected or verified');
