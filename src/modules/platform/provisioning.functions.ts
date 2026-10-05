@@ -19,7 +19,7 @@ const requestSchema = z.object({
   })).max(500).optional(),
   domains: z.array(z.object({
     hostname: z.string().min(3).max(253),
-    purpose: z.enum(["marketing","app","api","tracking","assets","auth","other"]),
+    purpose: z.enum(["marketing","app","customer_portal","provider_portal","staff_portal","api","tracking","assets","auth","email","other"]),
     primary: z.boolean().optional(),
   })).max(50).optional(),
 });
@@ -109,5 +109,12 @@ export const executeProvisioningRun = createServerFn({ method: "POST" })
       }).eq("id", data.runId);
       throw new Error(error?.message ?? "Provisioning failed");
     }
-    return { runId: data.runId, tenantProductId };
+    const { data: defaults, error: defaultsError } = await admin.rpc("apply_product_variant_defaults", {
+      _tenant: data.tenantId,
+      _tenant_product: tenantProductId,
+    });
+    if (defaultsError) {
+      throw new Error("Provisioned, but product/country defaults could not be applied: " + defaultsError.message);
+    }
+    return { runId: data.runId, tenantProductId, defaults };
   });
