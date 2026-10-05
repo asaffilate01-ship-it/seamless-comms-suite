@@ -161,7 +161,13 @@
     "metadata": {
       "previousProductName": "OnynGo",
       "brandFamily": "Dishbee",
-      "categories": ["food", "grocery", "pharmacy", "convenience", "more"]
+      "categories": [
+        "food",
+        "grocery",
+        "pharmacy",
+        "convenience",
+        "more"
+      ]
     }
   },
   {
@@ -376,7 +382,7 @@
   },
   {
     "id": "loungetech-founders-38",
-    "name": "LoungeTech Gründungsportal",
+    "name": "LoungeTech Gr\u00fcndungsportal",
     "product": "loungetech-founders",
     "repository": null,
     "source": "https://loungetech-gruendung.amersaleem.chatgpt.site",
@@ -746,7 +752,7 @@
   },
   {
     "id": "syndryvia-75",
-    "name": "Syndryvia / user spelling Syndrivya — identity to confirm",
+    "name": "Syndryvia / user spelling Syndrivya \u2014 identity to confirm",
     "product": "syndryvia",
     "repository": null,
     "source": null,
@@ -833,5 +839,15 @@
     "profile": "automotive",
     "boundary": "Vehicle sourcing, auction, inspection, landed-cost and shipping records remain authoritative in AutoHashi; Omniqora Connect handles authorised communications only.",
     "status": "connect-manifest-implemented"
+  },
+  {
+    "id": "moneybridge-gb",
+    "name": "MoneyBridge (formerly FastRemit)",
+    "product": "fastremit",
+    "repository": "asaffilate01-ship-it/screen-shot-magic-526",
+    "source": "https://github.com/asaffilate01-ship-it/screen-shot-magic-526",
+    "profile": "generic",
+    "boundary": "One MoneyBridge deployment per operator workspace. Treasury/admin-only frozen snapshot counts; no customer identities, bank references, individual amounts or payment/compliance actions. Separate central binding and reviewed AI policy required.",
+    "status": "source-adapter-built-not-live-verified"
   }
 ]
