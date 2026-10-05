@@ -56,11 +56,16 @@ test('source adapter rechecks access after generation and keeps credentials off 
 });
 
 // Exercise the actual server-side preflight with offline identity/RPC adapters.
+const entitlementSource=await readFile(new URL('../src/modules/transformation/entitlement.server.ts',import.meta.url),'utf8');
+const entitlementCompiled=ts.transpileModule(entitlementSource,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const entitlementUrl='data:text/javascript;base64,'+Buffer.from(entitlementCompiled).toString('base64');
+const {business360Entitled}=await import(entitlementUrl);
 const serverSource=await readFile(new URL('../src/modules/ecosystem/bridge.server.ts',import.meta.url),'utf8');
 const coreUrl='data:text/javascript;base64,'+Buffer.from(compiled).toString('base64');
 const harness={binding:base,role:'member',calls:[],after:null,result:null};
 globalThis.__bridgeReadinessTest=harness;
 const serverPrepared=serverSource
+ .replace("from '../transformation/entitlement.server'",'from '+JSON.stringify(entitlementUrl))
  .replace("from 'zod'",'from '+JSON.stringify(import.meta.resolve('zod')))
  .replace("import { createClient } from '@supabase/supabase-js';",`const h=globalThis.__bridgeReadinessTest;
  const createClient=()=>({from:()=>({select:()=>({eq:()=>({eq:()=>({maybeSingle:async()=>({data:{role:h.role},error:null})})})})})});`)
@@ -71,7 +76,7 @@ const serverCompiled=ts.transpileModule(serverPrepared,{compilerOptions:{target:
 const {checkBridgeReadiness}=await import('data:text/javascript;base64,'+Buffer.from(serverCompiled).toString('base64'));
 const codes=['project_active','ai_enabled','data_sharing_approved','profile_authorised','model_bound','provider_configuration_present'];
 async function preflightFixture(run){
- const values={...env,BUSINESS360_ENABLED_TENANTS:base.tenant,SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'offline-fixture'};
+ const values={...env,BUSINESS360_ENTITLEMENT_MODE:'pilot',BUSINESS360_ENABLED_TENANTS:base.tenant,SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'offline-fixture'};
  const prior=Object.fromEntries(Object.keys(values).map(k=>[k,process.env[k]]));
  Object.assign(process.env,values);
  harness.role='member';harness.calls=[];harness.after=null;
@@ -109,6 +114,7 @@ const functionsPrepared=functionsSource
  .replace("from 'zod'",'from '+JSON.stringify(import.meta.resolve('zod')))
  .replace("import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';",'const requireSupabaseAuth={};')
  .replaceAll("import('./bridge-core')",'Promise.resolve(h.core)')
+ .replace("import('../transformation/entitlement.server')",'import('+JSON.stringify(entitlementUrl)+')')
  .replace("import('./bridge.server')",'Promise.resolve({checkBridgeReadiness:h.checkBridgeReadiness})')
  .replace("import('../transformation/transformation.server')",'Promise.resolve({TransformationError:class extends Error {}})');
 const functionsCompiled=ts.transpileModule(functionsPrepared,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
@@ -124,4 +130,47 @@ test('readiness endpoint rejects non-admins and cross-workspace bindings',()=>pr
 test('readiness endpoint rechecks administrator access before returning results',()=>preflightFixture(async()=>{
  harness.adminRole='admin';harness.after=()=>{harness.adminRole='member';};
  await assert.rejects(checkAsAdmin());assert.equal(harness.calls.length,1);
+}));
+
+test('Factory access validates current tenant, product, service and validity window',async()=>{
+ const now=Date.parse('2026-10-05T10:00:00Z');
+ const state={tenants:{status:'active'},tenant_products:{status:'active'},tenant_services:{status:'active',valid_from:'2026-10-01T00:00:00Z',valid_until:null}};
+ const queries=[];let error=null;
+ const client={from(table){const filters=[];const q={select(){return q},eq(k,v){filters.push([k,v]);return q},async maybeSingle(){queries.push({table,filters});return {data:state[table],error}}};return q;}};
+ const env={BUSINESS360_ENTITLEMENT_MODE:'factory',BUSINESS360_ENABLED_TENANTS:base.tenant};
+ const allowed=()=>business360Entitled(client,base.tenant,env,now);
+ assert.equal(await allowed(),true);
+ assert(queries.every(q=>q.filters.some(([k,v])=>['tenant_id','id'].includes(k)&&v===base.tenant)));
+ assert(queries.find(q=>q.table==='tenant_services').filters.some(([k,v])=>k==='service_key'&&v==='business360.core'));
+ for(const patch of [{status:'suspended'},{valid_from:'2027-01-01T00:00:00Z'},{valid_from:'invalid'},{valid_until:'2026-10-05T10:00:00Z'},{valid_until:'invalid'}]){
+  const original={...state.tenant_services};Object.assign(state.tenant_services,patch);assert.equal(await allowed(),false);state.tenant_services=original;
+ }
+ state.tenant_products.status='suspended';assert.equal(await allowed(),false);
+ state.tenant_products=null;assert.equal(await allowed(),true); // service-only add-on
+ state.tenants.status='suspended';assert.equal(await allowed(),false);state.tenants.status='active';
+ state.tenant_services=null;assert.equal(await allowed(),false);
+ error={message:'database unavailable'};await assert.rejects(allowed());
+ await assert.rejects(business360Entitled(client,base.tenant,{...env,BUSINESS360_ENTITLEMENT_MODE:'typo'},now));
+ assert.equal(await business360Entitled(client,base.tenant,{BUSINESS360_ENABLED_TENANTS:base.tenant},now),true);
+ assert.equal(await business360Entitled(client,base.tenant,{},now),false);
+});
+
+const workspaceSource=await readFile(new URL('../src/modules/transformation/transformation.functions.ts',import.meta.url),'utf8');
+const workspacePrepared=workspaceSource
+ .replace('import { createServerFn } from "@tanstack/react-start";',`const h=globalThis.__bridgeReadinessTest;const createServerFn=()=>({middleware(){return this},inputValidator(){return this},handler(fn){return fn}});`)
+ .replace('from "zod"','from '+JSON.stringify(import.meta.resolve('zod')))
+ .replace('import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";','const requireSupabaseAuth={};')
+ .replace("import('./entitlement.server')",'import('+JSON.stringify(entitlementUrl)+')')
+ .replace('import("./transformation.server")','Promise.resolve({callTransformation:async()=>{h.workspaceCalls++;if(h.after)h.after();return {private:"result"}}})');
+const workspaceCompiled=ts.transpileModule(workspacePrepared,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {transformationRequest}=await import('data:text/javascript;base64,'+Buffer.from(workspaceCompiled).toString('base64'));
+test('workspace Factory gate blocks suspended access before RPC and revoked entitlement after RPC',()=>preflightFixture(async()=>{
+ process.env.BUSINESS360_ENTITLEMENT_MODE='factory';harness.workspaceCalls=0;
+ const state={tenant_members:{role:'owner'},tenants:{status:'active'},tenant_products:{status:'active'},tenant_services:{status:'active',valid_from:'2020-01-01T00:00:00Z',valid_until:null}};
+ const client={from(table){const q={select(){return q},eq(){return q},async maybeSingle(){return {data:state[table],error:null}}};return q;}};
+ const request=()=>transformationRequest({context:{supabase:client,userId:base.serviceUser},data:{tenantId:base.tenant,command:'projects.list',data:{}}});
+ state.tenant_services.status='suspended';await assert.rejects(request());assert.equal(harness.workspaceCalls,0);
+ state.tenant_services.status='active';harness.after=()=>{state.tenant_services.status='suspended';};
+ await assert.rejects(request());assert.equal(harness.workspaceCalls,1);
+ state.tenant_services.status='active';harness.after=null;assert.equal(JSON.parse((await request()).payload).private,'result');
 }));
