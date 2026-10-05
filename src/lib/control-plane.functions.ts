@@ -494,6 +494,40 @@ export const requestTenantDomainVerification = createServerFn({ method: "POST" }
     return { jobId: response.data as unknown as string };
   });
 
+export type DishbeeFamilyReadiness={
+  tenant:{id:string;name:string;slug:string;countryCode:string;status:string};
+  factoryReady:boolean;
+  productionAccepted:boolean;
+  productionAcceptanceNote:string;
+  blockers:string[];
+  warnings:string[];
+  locations:{active:number;dishbeeMapped:number;haccoraMapped:number;dishbeePlusMapped:number};
+  connections:{
+    dishbee:null|{id:string;status:string;externalTenantId:string;baseUrl?:string|null;lastVerifiedAt?:string|null};
+    haccora:null|{id:string;status:string;externalTenantId:string;baseUrl?:string|null;lastVerifiedAt?:string|null;runtimeBound:boolean};
+    dishbeePlus:null|{id:string;status:string;externalTenantId:string;baseUrl?:string|null;lastVerifiedAt?:string|null};
+  };
+  products:Record<string,{status:string;externalTenantId?:string|null;baseUrl?:string|null;planKey?:string|null;config?:JsonValue}>;
+  modules:Record<string,Record<string,string>>;
+  provisioning:{
+    pending:number;blocked:number;failed:number;
+    recent:Array<{id:string;targetKind:string;targetKey:string;action:string;status:string;lastError?:string|null;createdAt:string}>;
+  };
+  externalProviders:Array<{providerKey:string;name:string;family:string;status:string;mode:string;countries:string[]}>;
+};
+
+export const getDishbeeFamilyReadiness=createServerFn({method:"POST"})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input:{tenantId:string})=>tenantInput.parse(input))
+  .handler(async({context,data})=>{
+    const response=await context.supabase.rpc(
+      "platform_dishbee_family_readiness" as never,
+      {_tenant:data.tenantId} as never,
+    );
+    if(response.error)throw new Error(response.error.message);
+    return response.data as unknown as DishbeeFamilyReadiness;
+  });
+
 export type HaccoraReadiness = {
   tenantId: string;
   tenantSlug: string;
