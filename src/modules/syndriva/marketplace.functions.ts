@@ -191,3 +191,73 @@ export const connectSyndrivaMarketplace = createServerFn({ method: "POST" })
     if (inserted.error) throw new Error(inserted.error.message);
     return inserted.data;
   });
+
+
+const searchSchema = z.object({
+  marketplaceId: uuid,
+  query: z.string().max(200).nullish(),
+  category: z.string().max(120).nullish(),
+  vendorId: uuid.nullish(),
+  minPriceMinor: z.number().int().nonnegative().nullish(),
+  maxPriceMinor: z.number().int().nonnegative().nullish(),
+  limit: z.number().int().min(1).max(100).default(50),
+  offset: z.number().int().min(0).default(0),
+});
+
+export const searchSyndrivaMarketplace = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof searchSchema>) => searchSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const result = await (context.supabase as any).rpc("syndriva_search_listings", {
+      _marketplace: data.marketplaceId,
+      _query: data.query ?? null,
+      _category: data.category ?? null,
+      _vendor: data.vendorId ?? null,
+      _min_price: data.minPriceMinor ?? null,
+      _max_price: data.maxPriceMinor ?? null,
+      _limit: data.limit,
+      _offset: data.offset,
+    });
+    if (result.error) throw new Error(result.error.message);
+    return result.data ?? [];
+  });
+
+const eventSchema = z.object({
+  marketplaceId: uuid,
+  eventType: z.string().regex(/^marketplace\.[a-z0-9]+([._-][a-z0-9]+)*$/),
+  subjectId: z.string().max(240).nullish(),
+  payload: z.record(z.unknown()).default({}),
+  idempotencyKey: z.string().max(240).nullish(),
+  correlationId: z.string().max(240).nullish(),
+  causationId: z.string().max(240).nullish(),
+});
+
+export const emitSyndrivaMarketplaceEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof eventSchema>) => eventSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const result = await (context.supabase as any).rpc("syndriva_emit_marketplace_event", {
+      _marketplace: data.marketplaceId,
+      _event_type: data.eventType,
+      _subject_id: data.subjectId ?? null,
+      _payload: data.payload,
+      _idempotency_key: data.idempotencyKey ?? null,
+      _correlation_id: data.correlationId ?? null,
+      _causation_id: data.causationId ?? null,
+    });
+    if (result.error) throw new Error(result.error.message);
+    return { eventId: result.data as string };
+  });
+
+export const getSyndrivaEventCatalogue = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const result = await (context.supabase as any)
+      .from("syndriva_event_catalogue")
+      .select("*")
+      .neq("status", "retired")
+      .order("family")
+      .order("event_type");
+    if (result.error) throw new Error(result.error.message);
+    return result.data ?? [];
+  });
