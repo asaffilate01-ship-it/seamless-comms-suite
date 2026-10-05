@@ -19,7 +19,10 @@ const requestSchema=z.discriminatedUnion("operation",[
   targetId:z.string().max(200).nullish(),payload:z.record(z.string(),z.unknown()).default({}),rationale:z.string().min(4).max(5000)}),
  scope.extend({operation:z.literal("action.list"),runId:uuid.nullish(),status:z.enum(["pending","approved","rejected"]).nullish(),
   limit:z.number().int().min(1).max(100).default(50)}),
- scope.extend({operation:z.literal("action.review"),proposalId:uuid,decision:z.enum(["approved","rejected"]),actorRef:z.string().min(1).max(200)})
+ scope.extend({operation:z.literal("action.review"),proposalId:uuid,decision:z.enum(["approved","rejected"]),actorRef:z.string().min(1).max(200)}),
+ scope.extend({operation:z.literal("action.claim"),destinationRef:z.string().min(2).max(160).default("dishbee.runtime"),workerKey:z.string().min(4).max(200),limit:z.number().int().min(1).max(50).default(20)}),
+ scope.extend({operation:z.literal("action.finish"),actionRequestId:uuid,claimToken:uuid,workerKey:z.string().min(4).max(200),success:z.boolean(),executionRef:z.string().max(300).nullish(),
+  result:z.record(z.string(),z.unknown()).default({}),error:z.string().max(2000).nullish()})
 ]);
 
 function reply(body:unknown,status=200){return Response.json(body,{status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"}});}
@@ -30,7 +33,9 @@ async function auth(request:Request,input:z.infer<typeof requestSchema>){
  const {supabaseAdmin}=await import("@/integrations/supabase/client.server");const db=supabaseAdmin as any;
 
  if(bearer.startsWith("oqcp_")){
-  if(!["run.start","run.get"].includes(input.operation))throw new Error("Connector credential cannot perform this operation");
+  if(!["run.start","run.get","action.review","action.claim","action.finish"].includes(input.operation)){
+    throw new Error("Connector credential cannot perform this operation");
+  }
   const digest=createHash("sha256").update(bearer).digest("hex");
   const {data:row,error}=await db.from("product_connections")
    .select("id,tenant_id,product_key,status,capabilities,credential_hash,credential_expires_at")
@@ -41,7 +46,12 @@ async function auth(request:Request,input:z.infer<typeof requestSchema>){
   if(!["configured","connected","degraded"].includes(row.status))throw new Error("Connector credential is inactive");
   if(row.credential_expires_at&&Date.parse(row.credential_expires_at)<=Date.now())throw new Error("Connector credential expired");
   if(row.tenant_id!==input.tenantId||row.product_key!==input.productKey)throw new Error("Connector tenant scope refused");
-  const capability=input.operation==="run.start"?"intelligence.run.start":"intelligence.run.read";
+  const capability=
+    input.operation==="run.start"?"intelligence.run.start":
+    input.operation==="run.get"?"intelligence.run.read":
+    input.operation==="action.review"?"intelligence.action.review":
+    input.operation==="action.claim"?"intelligence.action.claim":
+    "intelligence.action.finish";
   if(!Array.isArray(row.capabilities)||!row.capabilities.includes(capability))throw new Error("Connector capability refused");
   return{db,connectorId:row.id,keyId:null as string|null,credential:null as ServiceCredentialRecord|null};
  }
@@ -65,8 +75,18 @@ export async function serveIntelligenceService(httpRequest:Request){
    input.operation==="job.finish"?"intelligence.results":
    input.operation==="agent.step"?"intelligence.steps":
    input.operation==="action.list"?"intelligence.run.read":
-   input.operation==="action.review"?"intelligence.run.start":"ai.proposals";
-  if(credential)authoriseServiceScope(credential,{tenantId:input.tenantId,productKey:input.productKey,capability});
+   input.operation==="action.review"?"intelligence.action.review":
+   input.operation==="action.claim"?"intelligence.action.claim":
+   input.operation==="action.finish"?"intelligence.action.finish":"ai.proposals";
+  const permittedScope=credential?authoriseServiceScope(credential,{tenantId:input.tenantId,productKey:input.productKey,capability}):null;
+  if(["action.review","action.claim","action.finish"].includes(input.operation)){
+   // This execution contract is product-wide. Restricted location/brand keys
+   // cannot silently acquire broader authority through an omitted location.
+   if(input.productKey!=="dishbee"||permittedScope?.locationIds?.length||permittedScope?.brandIds?.length){
+    throw new Error("Action execution requires explicit product-wide scope");
+   }
+  }
+  const executionWorker=(worker:string)=>`${connectorId?"connector:"+connectorId:"service:"+credential?.id}:${worker}`;
   const ent=await db.rpc("has_tenant_entitlement",{_tenant:input.tenantId,_service:"omniqora.intelligence-runtime"});
   if(ent.error||!ent.data)throw new Error("Omniqora intelligence entitlement required");
   if(input.productKey==="haccora"&&(input.operation==="run.start"||input.operation==="run.get")){
@@ -97,7 +117,7 @@ export async function serveIntelligenceService(httpRequest:Request){
    if(run.error||!run.data)throw new Error("Agent run not found");
    const [steps,proposals]=await Promise.all([
     db.from("ai_agent_steps").select("step_no,step_type,tool_key,response,source_refs,status,created_at").eq("run_id",input.runId).eq("tenant_id",input.tenantId).order("step_no"),
-    db.from("ai_action_proposals").select("id,action_key,target_type,target_id,payload,rationale,status,created_at").eq("run_id",input.runId).eq("tenant_id",input.tenantId).order("created_at")
+    db.from("ai_action_proposals").select("id,action_key,target_type,target_id,payload,rationale,status,action_request_id,reviewed_at,executed_at,execution_result,created_at").eq("run_id",input.runId).eq("tenant_id",input.tenantId).order("created_at")
    ]);
    if(steps.error||proposals.error)throw new Error("Agent run details unavailable");
    if(credential)await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
@@ -149,39 +169,36 @@ export async function serveIntelligenceService(httpRequest:Request){
    return reply({proposals:result.data??[]});
   }
 
-  if(input.operation==="action.review"){
-   const current=await db.from("ai_action_proposals")
-    .select("id,status,run_id,action_key,target_type,target_id,payload,rationale")
-    .eq("tenant_id",input.tenantId).eq("product_key",input.productKey)
-    .eq("id",input.proposalId).maybeSingle();
-   if(current.error||!current.data)throw new Error("Action proposal not found");
-   if(current.data.status!=="pending")throw new Error("Action proposal is not pending");
-   const reviewed=await db.from("ai_action_proposals").update({
-    status:input.decision,
-    reviewed_at:new Date().toISOString(),
-   }).eq("id",input.proposalId).eq("tenant_id",input.tenantId).eq("status","pending")
-    .select("id,run_id,action_key,target_type,target_id,payload,rationale,status,reviewed_at").single();
-   if(reviewed.error)throw new Error(reviewed.error.message);
-   try{
-    await db.from("platform_events").insert({
-      tenant_id:input.tenantId,
-      product_key:input.productKey,
-      event_type:"intelligence.action."+input.decision,
-      event_version:1,
-      source_service:"omniqora.intelligence",
-      subject_type:"ai_action_proposal",
-      subject_id:input.proposalId,
-      idempotency_key:"proposal-review:"+input.proposalId+":"+input.decision,
-      data_classification:"internal",
-      payload:{
-        actorRef:input.actorRef,
-        actionKey:reviewed.data.action_key,
-        targetType:reviewed.data.target_type,
-        targetId:reviewed.data.target_id,
-      },
-    });
-   }catch{}
+  if(input.operation==="action.claim"){
+   const r=await db.rpc("claim_product_action_requests",{
+    _tenant:input.tenantId,_product:input.productKey,_destination:input.destinationRef,
+    _worker:executionWorker(input.workerKey),_limit:input.limit,
+   });
+   if(r.error)throw new Error(r.error.message);
    if(credential)await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+   if(connectorId)await db.from("product_connections").update({last_verified_at:new Date().toISOString(),status:"connected",updated_at:new Date().toISOString()}).eq("id",connectorId);
+   return reply({actions:r.data??[]});
+  }
+
+  if(input.operation==="action.finish"){
+   const r=await db.rpc("finish_product_action_request",{
+    _tenant:input.tenantId,_product:input.productKey,_destination:"dishbee.runtime",
+    _worker:executionWorker(input.workerKey),_claim_token:input.claimToken,
+    _action:input.actionRequestId,_success:input.success,
+    _execution_ref:input.executionRef??null,_result:input.result,_error:input.error??null,
+   });
+   if(r.error)throw new Error(r.error.message);
+   if(credential)await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+   if(connectorId)await db.from("product_connections").update({last_verified_at:new Date().toISOString(),status:"connected",updated_at:new Date().toISOString()}).eq("id",connectorId);
+   return reply({ok:true});
+  }
+
+  if(input.operation==="action.review"){
+   const reviewed=await db.rpc("review_product_action_proposal",{
+    _tenant:input.tenantId,_product:input.productKey,_proposal:input.proposalId,
+    _decision:input.decision,_actor_ref:input.actorRef,
+   });
+   if(reviewed.error)throw new Error(reviewed.error.message);
    return reply(reviewed.data);
   }
 
