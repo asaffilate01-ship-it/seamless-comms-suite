@@ -33,7 +33,10 @@ BEGIN
  IF EXISTS(SELECT 1 FROM public.dishbee_factory_binding_attempts WHERE connection_id=c.id)
   THEN RAISE EXCEPTION 'existing_attempt_requires_reconciliation'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.provisioning_jobs WHERE id=_job AND tenant_id=c.tenant_id
-  AND status='running' AND target_kind IN('product','service') AND action IN('provision','update','resume','verify'))
+  AND status='running' AND (
+   (target_kind IN('product','service') AND action IN('provision','update','resume','verify'))
+   OR (target_kind='integration' AND action='verify' AND target_key='dishbee:'||c.external_tenant_id)
+  ))
   THEN RAISE EXCEPTION 'running_tenant_job_required'; END IF;
  IF _control_plane_hash IS NULL OR _control_plane_hash !~ '^[a-f0-9]{64}$'
   OR _runtime_hash IS NULL OR _runtime_hash !~ '^[a-f0-9]{64}$'
