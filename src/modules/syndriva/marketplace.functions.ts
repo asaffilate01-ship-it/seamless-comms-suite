@@ -261,3 +261,23 @@ export const getSyndrivaEventCatalogue = createServerFn({ method: "GET" })
     if (result.error) throw new Error(result.error.message);
     return result.data ?? [];
   });
+
+
+const vendorWorkspaceSchema = z.object({
+  marketplaceId: uuid,
+  vendorId: uuid,
+});
+
+export const getSyndrivaVendorWorkspace = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof vendorWorkspaceSchema>) =>
+    vendorWorkspaceSchema.parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const result = await (context.supabase as any).rpc("syndriva_vendor_workspace", {
+      _marketplace: data.marketplaceId,
+      _vendor: data.vendorId,
+    });
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
