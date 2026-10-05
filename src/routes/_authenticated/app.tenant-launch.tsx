@@ -39,7 +39,7 @@ function TenantLaunch(){
   const [locationKey,setLocationKey]=useState("main");
   const [locationName,setLocationName]=useState("");
   const [domain,setDomain]=useState("");
-  const [domainPurpose,setDomainPurpose]=useState<"marketing"|"app"|"api"|"tracking"|"assets"|"auth"|"other">("app");
+  const [domainPurpose,setDomainPurpose]=useState<"marketing"|"app"|"customer_portal"|"provider_portal"|"staff_portal"|"api"|"tracking"|"assets"|"auth"|"email"|"other">("app");
   const [selectedModules,setSelectedModules]=useState<string[]>([]);
   const [created,setCreated]=useState<CreatedTenant|null>(null);
   const [plannedRun,setPlannedRun]=useState<{id:string;plan:any}|null>(null);
@@ -54,7 +54,7 @@ function TenantLaunch(){
   const [instagramUrl,setInstagramUrl]=useState("");
   const [linkedinUrl,setLinkedinUrl]=useState("");
   const [ownerEmail,setOwnerEmail]=useState("");
-  const [inviteToken,setInviteToken]=useState("");
+  const [inviteToken,setInviteToken]=useState("");\n  const [brandSaved,setBrandSaved]=useState(false);
   const [busy,setBusy]=useState<string|null>(null);
 
   const createTenant=useServerFn(createManagedTenant);
@@ -82,7 +82,7 @@ function TenantLaunch(){
       setLocale(p.supportedLocales[0]??"en-GB");
     }
     setSelectedModules([]);
-    setCreated(null);setPlannedRun(null);setProvisioned(null);setInviteToken("");
+    setCreated(null);setPlannedRun(null);setProvisioned(null);setInviteToken("");setBrandSaved(false);
   }
 
   async function onCreate(event:FormEvent){
@@ -143,7 +143,7 @@ function TenantLaunch(){
           publicEmail:supportEmail||null,address:{}
         }
       }});
-      toast.success("Brand profile saved");
+      setBrandSaved(true);\n      toast.success("Brand profile saved");
     }catch(e){toast.error(e instanceof Error?e.message:"Brand profile could not be saved");}
     finally{setBusy(null);}
   }
@@ -171,7 +171,7 @@ function TenantLaunch(){
       <Step n="1" label="Tenant" done={!!created}/>
       <Step n="2" label="Blueprint" done={!!plannedRun}/>
       <Step n="3" label="Provision" done={!!provisioned}/>
-      <Step n="4" label="Brand" done={false}/>
+      <Step n="4" label="Brand" done={brandSaved}/>
       <Step n="5" label="Owner" done={!!inviteToken}/>
     </div>
 
@@ -209,7 +209,7 @@ function TenantLaunch(){
             <Field label="Location key"><Input value={locationKey} onChange={(e)=>setLocationKey(e.target.value)} disabled={!created||!!plannedRun}/></Field>
             <Field label="Location name"><Input value={locationName} onChange={(e)=>setLocationName(e.target.value)} disabled={!created||!!plannedRun}/></Field>
             <Field label="Primary custom domain (optional)"><Input value={domain} onChange={(e)=>setDomain(e.target.value)} placeholder="app.customer.co.uk" disabled={!created||!!plannedRun}/></Field>
-            <Field label="Domain purpose"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={domainPurpose} onChange={(e)=>setDomainPurpose(e.target.value as any)} disabled={!created||!!plannedRun}>{["app","marketing","api","tracking","assets","auth","other"].map((p)=><option key={p}>{p}</option>)}</select></Field>
+            <Field label="Domain purpose"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={domainPurpose} onChange={(e)=>setDomainPurpose(e.target.value as any)} disabled={!created||!!plannedRun}>{["app","customer_portal","provider_portal","staff_portal","marketing","api","tracking","assets","auth","email","other"].map((p)=><option key={p}>{p}</option>)}</select></Field>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <Button type="button" onClick={onPlan} disabled={!created||!!plannedRun||busy==="plan"}>Build provisioning plan</Button>
