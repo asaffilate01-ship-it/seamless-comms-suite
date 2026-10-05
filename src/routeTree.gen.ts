@@ -60,6 +60,7 @@ import { Route as AuthenticatedAppPlatformDepthRouteImport } from './routes/_aut
 import { Route as AuthenticatedAppPlatformKernelRouteImport } from './routes/_authenticated/app.platform-kernel'
 import { Route as AuthenticatedAppProcurementReadinessRouteImport } from './routes/_authenticated/app.procurement-readiness'
 import { Route as AuthenticatedAppRegulatoryMonitoringRouteImport } from './routes/_authenticated/app.regulatory-monitoring'
+import { Route as AuthenticatedAppSalesRouteImport } from './routes/_authenticated/app.sales'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 import { Route as AuthenticatedAppSharedEnginesRouteImport } from './routes/_authenticated/app.shared-engines'
 import { Route as AuthenticatedAppTenantFactoryRouteImport } from './routes/_authenticated/app.tenant-factory'
@@ -379,6 +380,11 @@ const AuthenticatedAppRegulatoryMonitoringRoute =
     path: '/regulatory-monitoring',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppSalesRoute = AuthenticatedAppSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppSettingsRoute =
   AuthenticatedAppSettingsRouteImport.update({
     id: '/settings',
@@ -617,6 +623,7 @@ export interface FileRoutesByFullPath {
   '/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/app/sales': typeof AuthenticatedAppSalesRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
   '/app/tenant-factory': typeof AuthenticatedAppTenantFactoryRoute
@@ -700,6 +707,7 @@ export interface FileRoutesByTo {
   '/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/app/sales': typeof AuthenticatedAppSalesRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
   '/app/tenant-factory': typeof AuthenticatedAppTenantFactoryRoute
@@ -787,6 +795,7 @@ export interface FileRoutesById {
   '/_authenticated/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/_authenticated/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/_authenticated/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/_authenticated/app/sales': typeof AuthenticatedAppSalesRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
   '/_authenticated/app/tenant-factory': typeof AuthenticatedAppTenantFactoryRoute
@@ -874,6 +883,7 @@ export interface FileRouteTypes {
     | '/app/platform-kernel'
     | '/app/procurement-readiness'
     | '/app/regulatory-monitoring'
+    | '/app/sales'
     | '/app/settings'
     | '/app/shared-engines'
     | '/app/tenant-factory'
@@ -957,6 +967,7 @@ export interface FileRouteTypes {
     | '/app/platform-kernel'
     | '/app/procurement-readiness'
     | '/app/regulatory-monitoring'
+    | '/app/sales'
     | '/app/settings'
     | '/app/shared-engines'
     | '/app/tenant-factory'
@@ -1043,6 +1054,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/platform-kernel'
     | '/_authenticated/app/procurement-readiness'
     | '/_authenticated/app/regulatory-monitoring'
+    | '/_authenticated/app/sales'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/shared-engines'
     | '/_authenticated/app/tenant-factory'
@@ -1477,6 +1489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRegulatoryMonitoringRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/sales': {
+      id: '/_authenticated/app/sales'
+      path: '/sales'
+      fullPath: '/app/sales'
+      preLoaderRoute: typeof AuthenticatedAppSalesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/settings': {
       id: '/_authenticated/app/settings'
       path: '/settings'
@@ -1761,6 +1780,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPlatformKernelRoute: typeof AuthenticatedAppPlatformKernelRoute
   AuthenticatedAppProcurementReadinessRoute: typeof AuthenticatedAppProcurementReadinessRoute
   AuthenticatedAppRegulatoryMonitoringRoute: typeof AuthenticatedAppRegulatoryMonitoringRoute
+  AuthenticatedAppSalesRoute: typeof AuthenticatedAppSalesRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppSharedEnginesRoute: typeof AuthenticatedAppSharedEnginesRoute
   AuthenticatedAppTenantFactoryRoute: typeof AuthenticatedAppTenantFactoryRoute
@@ -1812,6 +1832,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
     AuthenticatedAppProcurementReadinessRoute,
   AuthenticatedAppRegulatoryMonitoringRoute:
     AuthenticatedAppRegulatoryMonitoringRoute,
+  AuthenticatedAppSalesRoute: AuthenticatedAppSalesRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppSharedEnginesRoute: AuthenticatedAppSharedEnginesRoute,
   AuthenticatedAppTenantFactoryRoute: AuthenticatedAppTenantFactoryRoute,
