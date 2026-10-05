@@ -86,9 +86,14 @@ export async function provisionDishbeeFactory(db: any, job: any, options: { env?
   if (!UUID.test(job?.tenant_id) || !UUID.test(job?.id) || !["provision", "update", "resume", "verify"].includes(job?.action)) {
     return stop("A valid enabling provisioning job is required");
   }
-  const connectionResult = await db.from("product_connections").select("*")
-    .eq("tenant_id", job.tenant_id).eq("product_key", "dishbee")
-    .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  const query = db.from("product_connections").select("*")
+    .eq("tenant_id", job.tenant_id).eq("product_key", "dishbee");
+  if (job.target_kind === "integration") {
+    const match = /^dishbee:([0-9a-f-]{36})$/i.exec(String(job.target_key));
+    if (job.action !== "verify" || !match || !UUID.test(match[1])) return stop("An exact Dishbee integration verification target is required");
+    query.eq("external_tenant_id", match[1]);
+  }
+  const connectionResult = await query.order("updated_at", { ascending: false }).limit(1).maybeSingle();
   if (connectionResult.error) return stop("Dishbee connection lookup failed");
   const connection = connectionResult.data;
   if (!connection || !UUID.test(connection.external_tenant_id)) return stop("Link the real Dishbee tenant UUID in Tenant Factory first");
