@@ -13,9 +13,9 @@ const mappings = [{ dishbeeLocationId: id(11), omniqoraLocationId: id(21) }];
 const attempt = { connectionId: id(1), tenantId: id(2), externalTenantId: id(3), runtimeKeyId: `oqsvc_${'a'.repeat(18)}`, controlPlaneKeySuffix: '1234abcd', locationMappings: mappings };
 const receipt = () => ({ tenantId: id(3), omniqoraTenantId: id(2), runtimeKeyId: attempt.runtimeKeyId, controlPlaneKeySuffix: attempt.controlPlaneKeySuffix, bindingComplete: true, productionAccepted: false, activeLocations: 1, mappedLocations: 1, locationMappings: mappings });
 function fixture() {
- const state = { connection: { id: id(1), tenant_id: id(2), product_key: 'dishbee', external_tenant_id: id(3), base_url: env.DISHBEE_APP_URL, status: 'configured' }, pending: null, remote: { tenantId: id(3), controlPlaneBound: false, omniqoraRuntimeBound: false }, calls: [], sent: [], loseResponse: false };
+ const state = { connection: { id: id(1), tenant_id: id(2), product_key: 'dishbee', external_tenant_id: id(3), base_url: env.DISHBEE_APP_URL, status: 'configured' }, pending: null, remote: { tenantId: id(3), controlPlaneBound: false, omniqoraRuntimeBound: false }, calls: [], sent: [], filters: [], loseResponse: false };
  const db = {
-  from(table) { const query = { select() { return this; }, eq() { return this; }, order() { return this; }, limit() { return this; }, async maybeSingle() { return { data: table === 'product_connections' ? state.connection : state.pending, error: null }; } }; return query; },
+  from(table) { const query = { select() { return this; }, eq(key, value) { state.filters.push([table, key, value]); return this; }, order() { return this; }, limit() { return this; }, async maybeSingle() { return { data: table === 'product_connections' ? state.connection : state.pending, error: null }; } }; return query; },
   async rpc(name, args) {
    state.calls.push({ name, args });
    if (name === 'server_prepare_dishbee_factory_binding') {
@@ -88,4 +88,13 @@ test('suspend jobs do not initialise provisioning', async () => {
 test('non-2xx remote response cannot mark a tenant connected', async () => {
  const f = fixture(); await assert.rejects(provisionDishbeeFactory(f.db, f.job, { env, send: async () => Response.json({ error: 'no' }, { status: 403 }) }), /HTTP 403/);
  assert.equal(f.state.calls.length, 0); assert.equal(f.state.connection.status, 'configured');
+});
+test('integration jobs bind the explicit external workspace rather than the latest connection', async () => {
+ const f = fixture(); Object.assign(f.job, { target_kind: 'integration', target_key: `dishbee:${id(3)}`, action: 'verify' });
+ assert.equal((await f.run()).status, 'connected');
+ assert.ok(f.state.filters.some(([table,key,value]) => table === 'product_connections' && key === 'external_tenant_id' && value === id(3)));
+});
+test('integration jobs for another product cannot bind Dishbee', async () => {
+ const f = fixture(); Object.assign(f.job, { target_kind: 'integration', target_key: `haccora:${id(3)}`, action: 'verify' });
+ await assert.rejects(f.run(), /exact Dishbee integration/); assert.equal(f.state.sent.length, 0);
 });
