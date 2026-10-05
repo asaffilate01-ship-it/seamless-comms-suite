@@ -2,18 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
 
-const migration=await readFile(
-  new URL("../../supabase/migrations/20261005081000_product_location_authority.sql",import.meta.url),
-  "utf8",
-);
-const worker=await readFile(
-  new URL("../../src/modules/control-plane/provisioning-worker.server.ts",import.meta.url),
-  "utf8",
-);
-const factory=await readFile(
-  new URL("../../src/routes/_authenticated/app.tenant-factory.tsx",import.meta.url),
-  "utf8",
-);
+const migration=await readFile(new URL("../../supabase/migrations/20261005081000_product_location_authority.sql",import.meta.url),"utf8");
+const bindingMigration=await readFile(new URL("../../supabase/migrations/20261005111500_dishbee_binding_attempts.sql",import.meta.url),"utf8");
+const worker=await readFile(new URL("../../src/modules/control-plane/provisioning-worker.server.ts",import.meta.url),"utf8");
+const binding=await readFile(new URL("../../src/modules/control-plane/dishbee-binding.server.ts",import.meta.url),"utf8");
+const factory=await readFile(new URL("../../src/routes/_authenticated/app.tenant-factory.tsx",import.meta.url),"utf8");
 
 test("external product locations are explicit and tenant scoped",()=>{
   assert.match(migration,/product_location_links/);
@@ -24,14 +17,16 @@ test("external product locations are explicit and tenant scoped",()=>{
   assert.match(migration,/server_upsert_product_location_link/);
 });
 
-test("Dishbee provisioning fails closed when product/location mapping is incomplete",()=>{
-  assert.match(worker,/provisionDishbee/);
-  assert.match(worker,/requireCompleteLocationLinks/);
-  assert.match(worker,/Dishbee external tenant\/workspace ID must be the real Dishbee tenant UUID/);
-  assert.match(worker,/action: "bind_omniqora"/);
-  assert.match(worker,/locationMappings:/);
-  assert.match(worker,/server_set_product_credential/);
-  assert.doesNotMatch(worker,/find\([^)]*name.*dishbee/i);
+test("Dishbee worker delegates to the atomic, receipt-verified adapter",()=>{
+  assert.match(worker,/return provisionDishbeeFactory\(db, job\)/);
+  assert.match(binding,/Link the real Dishbee tenant UUID/);
+  assert.match(binding,/action: "bind_omniqora"/);
+  assert.match(binding,/runtimeToken: credentials.runtimeToken/);
+  assert.match(binding,/server_prepare_dishbee_factory_binding/);
+  assert.match(binding,/server_complete_dishbee_factory_binding/);
+  assert.match(bindingMigration,/complete_active_locations_required/);
+  assert.match(bindingMigration,/locations_changed_during_binding/);
+  assert.doesNotMatch(binding,/find\([^)]*name.*dishbee/i);
 });
 
 test("Haccora Dishbee sync uses both explicit product location maps",()=>{
