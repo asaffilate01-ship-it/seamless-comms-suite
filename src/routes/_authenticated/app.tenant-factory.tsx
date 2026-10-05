@@ -400,6 +400,14 @@ function ControlPlane() {
       </div>
 
       {selectedTenantId && (
+        <DishbeeFamilyReadinessPanel
+          data={dishbeeFamilyReadiness.data}
+          loading={dishbeeFamilyReadiness.isLoading}
+          error={dishbeeFamilyReadiness.error?.message}
+        />
+      )}
+
+      {selectedTenantId && (
         <Card className="mt-6">
           <CardContent className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1107,6 +1115,94 @@ function ControlPlane() {
       </div>
     </AppShell>
   );
+}
+
+function DishbeeFamilyReadinessPanel({
+  data,
+  loading,
+  error,
+}:{
+  data?:DishbeeFamilyReadiness;
+  loading:boolean;
+  error?:string;
+}){
+  const modules=data?.modules??{};
+  const moduleRows=[
+    ["Dishbee One",modules["one"]],
+    ["Dishbee Hive",modules["hive"]],
+    ["Dishbee+",modules["plus"]],
+    ["Dishbee Buzz",modules["buzz"]],
+    ["Dishbee Stay",modules["stay"]],
+    ["Court Pack / Connect",modules["court"]],
+    ["Haccora",modules["haccora"]],
+    ["Shared Omniqora",modules["shared"]],
+  ] as const;
+
+  return <Card className="mt-6">
+    <CardContent className="p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-primary/10 p-2">
+            <Layers3 className="h-4 w-4 text-primary"/>
+          </div>
+          <div>
+            <h2 className="font-display text-lg font-semibold">Dishbee family readiness</h2>
+            <p className="text-sm text-muted-foreground">
+              Product wiring, authoritative workspaces, location mappings and provisioning. Production provider acceptance remains a separate gate.
+            </p>
+          </div>
+        </div>
+        {data&&<StatusBadge status={data.factoryReady?"active":"blocked"}/>}
+      </div>
+
+      {loading?<p className="mt-4 text-sm text-muted-foreground">Checking Dishbee family wiring…</p>:
+       error?<p role="alert" className="mt-4 text-sm text-destructive">{error}</p>:
+       data?<>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <ReadinessStat label="Factory" value={data.factoryReady?"ready":"not ready"}/>
+          <ReadinessStat label="Dishbee" value={data.connections.dishbee?.status??"not linked"}/>
+          <ReadinessStat label="Haccora" value={data.connections.haccora?.status??"not linked"}/>
+          <ReadinessStat label="Dishbee+" value={data.connections.dishbeePlus?.status??"not linked"}/>
+          <ReadinessStat label="Locations" value={`${data.locations.dishbeeMapped}/${data.locations.active} Dishbee`}/>
+          <ReadinessStat label="Provisioning" value={`${data.provisioning.pending} pending · ${data.provisioning.blocked} blocked · ${data.provisioning.failed} failed`}/>
+        </div>
+
+        {(data.blockers.length>0||data.warnings.length>0)&&<div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+            <p className="text-xs font-black uppercase tracking-wide text-destructive">Blockers</p>
+            {data.blockers.length?data.blockers.map(item=><p key={item} className="mt-1 text-xs">{item.replaceAll("_"," ")}</p>):<p className="mt-1 text-xs text-muted-foreground">None</p>}
+          </div>
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <p className="text-xs font-black uppercase tracking-wide">Warnings</p>
+            {data.warnings.length?data.warnings.map(item=><p key={item} className="mt-1 text-xs text-muted-foreground">{item.replaceAll("_"," ")}</p>):<p className="mt-1 text-xs text-muted-foreground">None</p>}
+          </div>
+        </div>}
+
+        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          {moduleRows.map(([label,states])=>{
+            const values=Object.entries(states??{});
+            const active=values.filter(([,status])=>["active","trial"].includes(status)).length;
+            const requested=values.filter(([,status])=>status!=="not_requested").length;
+            return <div key={label} className="rounded-lg border bg-background p-3">
+              <div className="flex items-center justify-between gap-2">
+                <b className="text-sm">{label}</b>
+                <span className="text-[11px] text-muted-foreground">{active}/{requested||values.length} active</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {values.map(([key,status])=><span key={key} className="rounded bg-muted px-2 py-1 text-[10px]">
+                  {key.replaceAll("_"," ")}: {status.replaceAll("_"," ")}
+                </span>)}
+              </div>
+            </div>
+          })}
+        </div>
+
+        <div className="mt-4 rounded-lg bg-warning/5 p-3 text-xs text-muted-foreground">
+          <b>Production acceptance:</b> {data.productionAcceptanceNote}
+        </div>
+      </>:null}
+    </CardContent>
+  </Card>;
 }
 
 function ReadinessStat({ label, value }: { label: string; value: string }) {
