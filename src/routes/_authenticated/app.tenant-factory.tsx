@@ -462,6 +462,7 @@ function ControlPlane() {
                 {haccoraReadiness.error.message}
               </p>
             ) : haccoraReadiness.data ? (
+              <>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-8">
                 <ReadinessStat label="Product" value={haccoraReadiness.data.productStatus} />
                 <ReadinessStat label="Control-plane connection" value={haccoraReadiness.data.connectionStatus} />
@@ -526,6 +527,7 @@ function ControlPlane() {
                   </p>
                 </div>
               )}
+              </>
             ) : null}
             {haccoraSmoke && (
               <div className="mt-4 rounded-lg border bg-muted/30 p-4">
