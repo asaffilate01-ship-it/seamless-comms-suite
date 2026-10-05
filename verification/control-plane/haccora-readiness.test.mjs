@@ -47,8 +47,9 @@ assert.equal(controlPlaneOnly.operationalRuntime.ready,false);
 assert.equal(controlPlaneOnly.ready,false);
 await privileged(`INSERT INTO public.platform_events(
  tenant_id,product_key,event_type,event_version,occurred_at,source_service,
- subject_type,subject_id,idempotency_key,data_classification,payload
+ subject_type,subject_id,idempotency_key,data_classification,sequence_no,payload
 ) VALUES($1,'dishbee','dishbee.runtime.readiness',1,now(),'dishbee.runtime','tenant',$1::text,$2,'internal',
+ (SELECT coalesce(max(sequence_no),0)+1 FROM public.platform_events WHERE tenant_id=$1),
  jsonb_build_object('dishbeeTenantId',$1::text) || '{"haccora":{"enabled":true,"configured":true,"ready":true,"activeLocations":1,"passedLocations":1,"failedLocations":0,"unprobedLocations":0,"deadEvents":0,"pendingEvents":0}}'::jsonb)`,[mealdeck.tenantId,"haccora-runtime-ready:"+mealdeck.tenantId]);
 const ready=await report();
 assert.equal(ready.ready,true);
