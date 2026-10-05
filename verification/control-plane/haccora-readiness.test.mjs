@@ -38,7 +38,8 @@ await privileged("UPDATE public.tenant_products SET status='active' WHERE tenant
 await privileged("UPDATE public.tenant_services SET status='active' WHERE tenant_id=$1 AND service_key LIKE 'haccora.%'",[mealdeck.tenantId]);
 await privileged("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status,last_verified_at) VALUES($1,'haccora','haccora-mealdeck','connected',now())",[mealdeck.tenantId]);
 await privileged("UPDATE public.provisioning_jobs SET status='succeeded' WHERE tenant_id=$1 AND ((target_kind='product' AND target_key='haccora') OR (target_kind='service' AND target_key LIKE 'haccora.%'))",[mealdeck.tenantId]);
-await privileged("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status,last_verified_at) VALUES($1,'dishbee',$1::text,'connected',now())",[mealdeck.tenantId]);
+// The pilot bootstrap already creates this connection; update it without duplicating it.
+await privileged("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status,last_verified_at) VALUES($1,'dishbee',$1::text,'connected',now()) ON CONFLICT (tenant_id,product_key) DO UPDATE SET external_tenant_id=EXCLUDED.external_tenant_id,status=EXCLUDED.status,last_verified_at=EXCLUDED.last_verified_at",[mealdeck.tenantId]);
 const controlPlaneOnly=await report();
 assert.equal(controlPlaneOnly.controlPlaneReady,true);
 assert.equal(controlPlaneOnly.operationalRuntime.required,true);
