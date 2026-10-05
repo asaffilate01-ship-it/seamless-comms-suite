@@ -169,5 +169,68 @@ const hidden = await asUser(stranger, () =>
 );
 assert.equal(hidden.rows.length, 0);
 
+
+const vendor = (
+  await asUser(admin, () =>
+    db.query(
+      "INSERT INTO public.marketplace_vendors(tenant_id,product_key,name,vendor_key,public_slug,rating_average) VALUES($1,'mealdeck','Syndriva Test Seller','syndriva-test','syndriva-test',4.8) RETURNING id",
+      [mealdeck.tenantId],
+    ),
+  )
+).rows[0].id;
+const listing = (
+  await asUser(admin, () =>
+    db.query(
+      "INSERT INTO public.marketplace_listings(tenant_id,product_key,vendor_id,title,description,price_minor,currency,status) VALUES($1,'mealdeck',$2,'Premium Brake Kit','Performance brake kit',12999,'GBP','active') RETURNING id",
+      [mealdeck.tenantId, vendor],
+    ),
+  )
+).rows[0].id;
+const category = (
+  await asUser(admin, () =>
+    db.query(
+      "INSERT INTO public.marketplace_categories(tenant_id,product_key,category_key,name) VALUES($1,'mealdeck','brakes','Brakes') RETURNING id",
+      [mealdeck.tenantId],
+    ),
+  )
+).rows[0].id;
+await asUser(admin, () =>
+  db.query(
+    "INSERT INTO public.marketplace_listing_categories(listing_id,category_id,tenant_id) VALUES($1,$2,$3)",
+    [listing, category, mealdeck.tenantId],
+  ),
+);
+
+const search = await asUser(admin, () =>
+  db.query(
+    "SELECT * FROM public.syndriva_search_listings($1,'brake','brakes',NULL,10000,15000,20,0)",
+    [marketplaceId],
+  ),
+);
+assert.equal(search.rows.length, 1);
+assert.equal(search.rows[0].title, "Premium Brake Kit");
+assert.deepEqual(search.rows[0].category_keys, ["brakes"]);
+
+const eventId = await asUser(admin, async () =>
+  (
+    await db.query(
+      "SELECT public.syndriva_emit_marketplace_event($1,'marketplace.listing.published',$2,$3::jsonb,'listing-published-1',NULL,NULL) AS id",
+      [marketplaceId, listing, JSON.stringify({ channel: "web" })],
+    )
+  ).rows[0].id,
+);
+assert(eventId);
+const event = await asUser(admin, () =>
+  db.query(
+    "SELECT event_type,source_service,subject_type,subject_id,payload FROM public.platform_events WHERE id=$1",
+    [eventId],
+  ),
+);
+assert.equal(event.rows[0].event_type, "marketplace.listing.published");
+assert.equal(event.rows[0].source_service, "syndriva.marketplace-engine");
+assert.equal(event.rows[0].subject_type, "listing");
+assert.equal(event.rows[0].subject_id, listing);
+assert.equal(event.rows[0].payload.marketplaceId, marketplaceId);
+
 await db.close();
 console.log("Syndriva Marketplace Engine templates, provisioning, capabilities and RLS verified");
