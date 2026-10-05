@@ -369,6 +369,53 @@ export const rotateProductCredential = createServerFn({ method: "POST" })
     return { ...stored, token };
   });
 
+
+export type ProductLocationLink={
+  id:string;
+  connectionId:string;
+  productKey:string;
+  tenantLocationId:string;
+  externalLocationId:string;
+  status:string;
+  lastVerifiedAt?:string|null;
+  metadata?:JsonValue;
+};
+
+export const getProductLocationLinks=createServerFn({method:"POST"})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input:{tenantId:string})=>tenantInput.parse(input))
+  .handler(async({context,data})=>{
+    const response=await context.supabase.rpc(
+      "get_product_location_links" as never,
+      {_tenant:data.tenantId} as never,
+    );
+    if(response.error)throw new Error(response.error.message);
+    return (response.data??[]) as unknown as ProductLocationLink[];
+  });
+
+const productLocationLinkSchema=z.object({
+  connectionId:uuid,
+  tenantLocationId:uuid,
+  externalLocationId:z.string().trim().min(1).max(200),
+});
+
+export const upsertProductLocationLink=createServerFn({method:"POST"})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input:z.infer<typeof productLocationLinkSchema>)=>productLocationLinkSchema.parse(input))
+  .handler(async({context,data})=>{
+    const response=await context.supabase.rpc(
+      "platform_upsert_product_location_link" as never,
+      {
+        _connection:data.connectionId,
+        _tenant_location:data.tenantLocationId,
+        _external_location:data.externalLocationId,
+        _metadata:{source:"tenant-factory"},
+      } as never,
+    );
+    if(response.error)throw new Error(response.error.message);
+    return{linkId:response.data as unknown as string};
+  });
+
 const brandingSchema = z.object({
   tenantId: uuid,
   brandName: z.string().trim().max(160).optional(),
