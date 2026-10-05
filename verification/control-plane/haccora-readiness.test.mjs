@@ -95,5 +95,40 @@ assert.equal((await report()).ready,false);
 await asService(()=>db.query("UPDATE public.platform_events SET payload=jsonb_set(payload,'{haccora,unprobedLocations}','0') WHERE idempotency_key=$1",[eventKey]));
 assert.equal((await report()).ready,true);
 await assert.rejects(()=>inContext("authenticated","",()=>db.query("SELECT public.platform_haccora_readiness($1)",[mealdeck.tenantId])),/Tenant access denied/);
+// Runtime regression cases use the real report over all checked-in migrations.
+for (const assignments of ["valid_until=now()-interval '1 second'", "valid_from=now()+interval '1 hour'"]) {
+ await asService(()=>db.query(`UPDATE public.tenant_services SET ${assignments} WHERE tenant_id=$1 AND service_key='haccora.core'`,[mealdeck.tenantId]));
+ assert.equal((await report()).controlPlaneReady,false);
+ await asService(()=>db.query("UPDATE public.tenant_services SET valid_until=NULL,valid_from=now()-interval '1 day' WHERE tenant_id=$1 AND service_key='haccora.core'",[mealdeck.tenantId]));
+}
+const validCounts={enabled:true,configured:true,ready:true,activeLocations:1,passedLocations:1,failedLocations:0,unprobedLocations:0,deadEvents:0,pendingEvents:0};
+for (const counts of [
+ {...validCounts,enabled:"true"}, {...validCounts,activeLocations:"1"},
+ {...validCounts,deadEvents:-1}, {...validCounts,activeLocations:1.5},
+ {...validCounts,activeLocations:2147483648}, {...validCounts,passedLocations:0},
+ {...validCounts,privateEvidence:"must-not-appear"}, {...validCounts,locations:[{name:"private"}]},
+ {...validCounts,lastVerifiedAt:"must-not-appear"}, {}, [], null,
+]) {
+ await asService(()=>db.query("UPDATE public.platform_events SET payload=jsonb_build_object('dishbeeTenantId',$2::text,'haccora',$3::jsonb) WHERE idempotency_key=$1",[eventKey,dishbeeWorkspace,JSON.stringify(counts)]));
+ const result=await report();
+ assert.equal(result.ready,false,JSON.stringify(counts));
+ assert.equal(result.operationalRuntime.evidenceValid,false);
+ assert(!JSON.stringify(result).includes('must-not-appear'));
+}
+await asService(()=>db.query("UPDATE public.platform_events SET payload=jsonb_build_object('dishbeeTenantId',$2::text,'haccora',$3::jsonb) WHERE idempotency_key=$1",[eventKey,dishbeeWorkspace,JSON.stringify(validCounts)]));
+assert.equal((await report()).ready,true);
+for (const product of ['haccora','dishbee']) {
+ await asService(()=>db.query("UPDATE public.product_connections SET credential_expires_at=now()-interval '1 second' WHERE tenant_id=$1 AND product_key=$2",[mealdeck.tenantId,product]));
+ assert.equal((await report()).ready,false);
+ await asService(()=>db.query("UPDATE public.product_connections SET credential_expires_at=NULL WHERE tenant_id=$1 AND product_key=$2",[mealdeck.tenantId,product]));
+}
+await asService(()=>db.query("UPDATE public.tenant_products SET config=jsonb_set(config,'{mode}','\"unknown\"') WHERE tenant_id=$1 AND product_key='haccora'",[mealdeck.tenantId]));
+assert.equal((await report()).ready,false);
+await asService(()=>db.query("UPDATE public.tenant_products SET config=jsonb_set(config,'{mode}','\"dishbee-addon\"') WHERE tenant_id=$1 AND product_key='haccora'",[mealdeck.tenantId]));
+const stranger='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+await db.query('INSERT INTO auth.users(id,email) VALUES($1,$2)',[stranger,'stranger@example.invalid']);
+await assert.rejects(()=>inContext('authenticated',stranger,()=>db.query('SELECT public.platform_haccora_readiness($1)',[mealdeck.tenantId])),/Tenant access denied/);
+assert.equal((await report()).ready,true);
+
 await db.close();
 console.log("Haccora required-service, workspace, freshness and access readiness verified");
