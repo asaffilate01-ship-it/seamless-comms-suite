@@ -40,6 +40,9 @@ test("Haccora Dishbee sync uses both explicit product location maps",()=>{
 test("Tenant Factory exposes product and location mapping controls",()=>{
   assert.match(factory,/title="Product tenant links"/);
   assert.match(factory,/title="Product location map"/);
-  assert.match(factory,/External product location UUID/);
+  // The input identifies the selected product instead of showing a fixed generic label.
+  assert.match(factory,/placeholder=\{\s*"External "\s*\+\s*\(selected\?\.product_key\s*\?\?\s*"product"\)\s*\+\s*" location UUID"\s*\}/);
+  assert.match(factory,/await upsertProductLocationLinkRequest\(/);
+  assert.match(factory,/await onSave\(selected\.id,\s*location\.id,\s*values\[location\.id\]/);
   assert.match(factory,/Runtime provisioning fails closed/);
 });
