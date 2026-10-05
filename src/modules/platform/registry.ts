@@ -333,9 +333,6 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     supportedLocales: ["en-GB", "de-DE", "ar-AE", "ar-SA"],
     status: "migration_candidate",
   },
-];
-
-
   {
     key: "mealdeck",
     name: "MealDeck",
@@ -486,7 +483,7 @@ export const OMNIQORA_PRODUCTS: ProductDefinition[] = [
     supportedLocales: ["en-GB","de-DE","ar-SA","ar-AE","en-US","ur-PK"],
     status: "active",
   },
-
+];
 
 for (const product of OMNIQORA_PORTFOLIO) {
   if (!product.registerInFactory) continue;
