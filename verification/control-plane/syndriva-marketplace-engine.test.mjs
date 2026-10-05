@@ -232,5 +232,39 @@ assert.equal(event.rows[0].subject_type, "listing");
 assert.equal(event.rows[0].subject_id, listing);
 assert.equal(event.rows[0].payload.marketplaceId, marketplaceId);
 
+
+const vendorUser = "77777777-cccc-4ccc-8ccc-777777777777";
+await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)", [vendorUser, "vendor@example.invalid"]);
+await asUser(admin, () =>
+  db.query(
+    "INSERT INTO public.marketplace_vendor_memberships(tenant_id,vendor_id,user_id,role,status) VALUES($1,$2,$3,'manager','active')",
+    [mealdeck.tenantId, vendor, vendorUser],
+  ),
+);
+
+const vendorWorkspace = await asUser(vendorUser, async () =>
+  (
+    await db.query("SELECT public.syndriva_vendor_workspace($1,$2) AS workspace", [
+      marketplaceId,
+      vendor,
+    ])
+  ).rows[0].workspace,
+);
+assert.equal(vendorWorkspace.vendor.id, vendor);
+assert.equal(vendorWorkspace.vendor.name, "Syndriva Test Seller");
+assert.equal(vendorWorkspace.listings.length, 1);
+assert.equal(vendorWorkspace.listings[0].title, "Premium Brake Kit");
+assert.equal(vendorWorkspace.membership[0].role, "manager");
+
+let denied = false;
+try {
+  await asUser(stranger, () =>
+    db.query("SELECT public.syndriva_vendor_workspace($1,$2)", [marketplaceId, vendor]),
+  );
+} catch (error) {
+  denied = String(error?.message ?? error).includes("vendor access denied");
+}
+assert.equal(denied, true, "unrelated user must not receive another vendor workspace");
+
 await db.close();
 console.log("Syndriva Marketplace Engine templates, provisioning, capabilities and RLS verified");
