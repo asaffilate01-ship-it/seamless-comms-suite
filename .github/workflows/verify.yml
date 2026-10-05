@@ -46,3 +46,5 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm run build
+
+      - run: npm run test:factory
