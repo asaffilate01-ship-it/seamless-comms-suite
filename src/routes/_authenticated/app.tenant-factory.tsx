@@ -14,6 +14,7 @@ import {
   enableHaccoraDishbeePilot,
   enableHaccoraForDishbee,
   getHaccoraReadiness,
+  getProductLocationLinks,
   getControlPlaneCatalogue,
   getTenantControlPlane,
   listPlatformTenants,
@@ -30,6 +31,8 @@ import {
   type JsonValue,
   type TenantControlPlane,
   upsertTenantDomain,
+  upsertProductLocationLink,
+  type ProductLocationLink,
 } from "@/lib/control-plane.functions";
 import {
   Building2,
@@ -65,6 +68,8 @@ function ControlPlane() {
   const catalogueRequest = useServerFn(getControlPlaneCatalogue);
   const listTenantsRequest = useServerFn(listPlatformTenants);
   const tenantRequest = useServerFn(getTenantControlPlane);
+  const productLocationLinksRequest = useServerFn(getProductLocationLinks);
+  const upsertProductLocationLinkRequest = useServerFn(upsertProductLocationLink);
   const createTenantRequest = useServerFn(createPlatformTenant);
   const bootstrapDishbeeRequest = useServerFn(bootstrapDishbeePilot);
   const enableHaccoraPilotRequest = useServerFn(enableHaccoraDishbeePilot);
@@ -110,6 +115,13 @@ function ControlPlane() {
   const detail = useQuery({
     queryKey: ["tenant-control-plane", selectedTenantId],
     queryFn: () => tenantRequest({ data: { tenantId: selectedTenantId } }),
+    enabled: !!selectedTenantId,
+    retry: false,
+  });
+
+  const productLocationLinks = useQuery({
+    queryKey: ["product-location-links", selectedTenantId],
+    queryFn: () => productLocationLinksRequest({ data: { tenantId: selectedTenantId } }),
     enabled: !!selectedTenantId,
     retry: false,
   });
@@ -917,6 +929,26 @@ function ControlPlane() {
             }}
           />
 
+          <ProductLocationMappings
+            tenantId={selectedTenantId}
+            connections={detail.data?.connections ?? []}
+            locations={detail.data?.locations ?? []}
+            links={productLocationLinks.data ?? []}
+            products={catalogue.data?.products ?? []}
+            canEdit={isPlatformAdmin}
+            onSave={async (connectionId, tenantLocationId, externalLocationId) => {
+              try {
+                await upsertProductLocationLinkRequest({
+                  data: { connectionId, tenantLocationId, externalLocationId },
+                });
+                toast.success("External product location mapped; verification queued");
+                await Promise.all([productLocationLinks.refetch(), detail.refetch()]);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Location mapping failed");
+              }
+            }}
+          />
+
           <BrandingAndDomains
             tenantId={selectedTenantId}
             detail={detail.data}
@@ -1265,6 +1297,127 @@ function ProductConnections({
       </div>
     </section>
   );
+}
+
+
+function ProductLocationMappings({
+  tenantId,
+  connections,
+  locations,
+  links,
+  products,
+  canEdit,
+  onSave,
+}: {
+  tenantId:string;
+  connections:Array<{
+    id:string;
+    product_key:string;
+    external_tenant_id:string;
+    base_url?:string|null;
+    status:string;
+  }>;
+  locations:Array<{
+    id:string;
+    name:string;
+    code:string;
+    status:string;
+  }>;
+  links:ProductLocationLink[];
+  products:Array<{product_key:string;name:string}>;
+  canEdit:boolean;
+  onSave:(connectionId:string,tenantLocationId:string,externalLocationId:string)=>Promise<void>;
+}) {
+  const [connectionId,setConnectionId]=useState("");
+  const [values,setValues]=useState<Record<string,string>>({});
+  const [saving,setSaving]=useState("");
+
+  const eligible=connections.filter(connection=>["dishbee","haccora","dishbee-plus"].includes(connection.product_key));
+  const selected=eligible.find(connection=>connection.id===connectionId)??eligible[0]??null;
+
+  useEffect(()=>{
+    if(!selected){setConnectionId("");setValues({});return}
+    if(connectionId!==selected.id)setConnectionId(selected.id);
+    const next:Record<string,string>={};
+    for(const location of locations){
+      next[location.id]=links.find(link=>
+        link.connectionId===selected.id&&link.tenantLocationId===location.id
+      )?.externalLocationId??"";
+    }
+    setValues(next);
+  },[tenantId,selected?.id,connections.length,locations.length,links]);
+
+  if(!eligible.length)return null;
+
+  return <section>
+    <SectionTitle
+      icon={GitBranchIcon}
+      title="Product location map"
+      description="Explicitly map each Omniqora location to the real location UUID in Dishbee, Haccora or Dishbee+. Runtime provisioning fails closed when an active site is unmapped."
+    />
+    <Card className="mt-3">
+      <CardContent className="p-5">
+        <div className="grid gap-3 lg:grid-cols-[1fr_2fr]">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">External product workspace</label>
+            <select
+              className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
+              value={selected?.id??""}
+              onChange={e=>setConnectionId(e.target.value)}
+            >
+              {eligible.map(connection=>{
+                const product=products.find(p=>p.product_key===connection.product_key);
+                return <option key={connection.id} value={connection.id}>
+                  {product?.name??connection.product_key} · {connection.external_tenant_id.slice(0,12)}…
+                </option>
+              })}
+            </select>
+            {selected&&<div className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+              <p><b>Product:</b> {selected.product_key}</p>
+              <p className="mt-1 break-all"><b>Workspace:</b> {selected.external_tenant_id}</p>
+              <p className="mt-1"><b>Connection:</b> {selected.status}</p>
+            </div>}
+          </div>
+          <div className="space-y-2">
+            {locations.filter(location=>location.status==="active").map(location=>{
+              const link=selected?links.find(item=>
+                item.connectionId===selected.id&&item.tenantLocationId===location.id
+              ):undefined;
+              return <div key={location.id} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1fr_1.4fr_auto] md:items-center">
+                <div>
+                  <b className="text-sm">{location.name}</b>
+                  <p className="font-mono text-[11px] text-muted-foreground">{location.id}</p>
+                </div>
+                <Input
+                  value={values[location.id]??""}
+                  onChange={e=>setValues(current=>({...current,[location.id]:e.target.value.trim()}))}
+                  placeholder={"External "+(selected?.product_key??"product")+" location UUID"}
+                  className="font-mono text-xs"
+                />
+                <div className="flex items-center gap-2">
+                  {link&&<StatusBadge status={link.status}/>}
+                  <Button
+                    size="sm"
+                    disabled={!canEdit||!selected||!values[location.id]||saving===location.id}
+                    onClick={async()=>{
+                      if(!selected)return;
+                      setSaving(location.id);
+                      try{await onSave(selected.id,location.id,values[location.id]??"")}
+                      finally{setSaving("")}
+                    }}
+                  >
+                    {saving===location.id?"Saving…":"Map"}
+                  </Button>
+                </div>
+              </div>
+            })}
+            {!locations.some(location=>location.status==="active")&&
+              <p className="text-sm text-muted-foreground">No active tenant locations.</p>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </section>;
 }
 
 function BrandingAndDomains({
