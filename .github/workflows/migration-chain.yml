@@ -18,9 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      REPLAY_DIR: ${{ runner.temp }}/supabase-schema-replay
       SUPABASE_TELEMETRY_DISABLED: '1'
     steps:
+      - name: Allocate isolated runner workspace
+        shell: bash
+        run: echo "REPLAY_DIR=${RUNNER_TEMP}/supabase-schema-replay" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
