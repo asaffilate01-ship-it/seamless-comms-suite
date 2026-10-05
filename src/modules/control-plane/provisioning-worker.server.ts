@@ -102,6 +102,7 @@ async function provisionHaccora(db: any, job: any) {
     stateResult.data?.external_tenant_id ??
     stateResult.data?.config?.haccoraOrganizationId ??
     null;
+  let initialLocationId: string | null = null;
 
   if (!organizationId) {
     const provisioned = await haccoraRequest(config, {
@@ -116,6 +117,7 @@ async function provisionHaccora(db: any, job: any) {
       address: tenant.metadata?.address ?? {},
     });
     organizationId = provisioned.organizationId;
+    initialLocationId = typeof provisioned.locationId === "string" ? provisioned.locationId : null;
   }
   if (!organizationId) throw new Error("Haccora did not return an organization id");
 
@@ -171,6 +173,8 @@ async function provisionHaccora(db: any, job: any) {
   });
   if (bind.status !== "connected") throw new Error("Haccora control-plane bind was not confirmed");
 
+  await provisionHaccoraLocations(db, job, config, organizationId, connection, initialLocationId);
+
   const verified = await db
     .from("product_connections")
     .update({
@@ -193,6 +197,311 @@ async function provisionHaccora(db: any, job: any) {
     .eq("tenant_id", job.tenant_id)
     .eq("product_key", "haccora");
   return verified.data;
+}
+
+
+function isUuid(value: unknown) {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function externalProductUrl(value: unknown, envName: string) {
+  const raw = String(value ?? process.env[envName] ?? "").trim();
+  if (!raw) throw new ProvisioningBlock(`${envName} or product connection base URL is required`);
+  const parsed = new URL(raw);
+  if (parsed.protocol !== "https:") throw new ProvisioningBlock("External product URL must use HTTPS");
+  return parsed.toString().replace(/\/$/, "");
+}
+
+function dishbeeEnvironment(baseUrl?: string | null) {
+  const secret = process.env.DISHBEE_PROVISIONING_SECRET ?? "";
+  if (secret.length < 32) throw new ProvisioningBlock("DISHBEE_PROVISIONING_SECRET is not configured");
+  return {
+    appUrl: externalProductUrl(baseUrl, "DISHBEE_APP_URL"),
+    secret,
+  };
+}
+
+async function dishbeeRequest(
+  config: ReturnType<typeof dishbeeEnvironment>,
+  body: Record<string, unknown>,
+) {
+  const response = await fetch(`${config.appUrl}/api/platform/provisioning`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-omniqora-provisioning-secret": config.secret,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json().catch(() => ({ error: "invalid_dishbee_response" }));
+  if (!response.ok) {
+    const reason = typeof data?.error === "string" ? data.error : `dishbee_${response.status}`;
+    if ([400, 404, 409, 422].includes(response.status)) throw new ProvisioningBlock(reason);
+    throw new Error(reason);
+  }
+  return data as any;
+}
+
+function newProductCredential(prefix = "oqcp") {
+  const token = `${prefix}_${randomBytes(32).toString("hex")}`;
+  return {
+    token,
+    hash: createHash("sha256").update(token).digest("hex"),
+    suffix: token.slice(-8),
+  };
+}
+
+async function activeTenantLocations(db: any, tenantId: string) {
+  const result = await db
+    .from("tenant_locations")
+    .select("id,name,code,timezone,address,status")
+    .eq("tenant_id", tenantId)
+    .eq("status", "active")
+    .order("name");
+  if (result.error) throw new Error(result.error.message);
+  return result.data ?? [];
+}
+
+async function productLocationLinks(db: any, connectionId: string) {
+  const result = await db
+    .from("product_location_links")
+    .select("id,tenant_location_id,external_location_id,status")
+    .eq("product_connection_id", connectionId)
+    .neq("status", "disabled");
+  if (result.error) throw new Error(result.error.message);
+  return result.data ?? [];
+}
+
+async function requireCompleteLocationLinks(
+  db: any,
+  tenantId: string,
+  connection: any,
+  productLabel: string,
+) {
+  const locations = await activeTenantLocations(db, tenantId);
+  const links = await productLocationLinks(db, connection.id);
+  const byTenantLocation = new Map(links.map((link: any) => [link.tenant_location_id, link]));
+  const missing = locations.filter((location: any) => !byTenantLocation.has(location.id));
+  if (missing.length) {
+    throw new ProvisioningBlock(
+      `${productLabel} location mapping is incomplete: ${missing.map((x: any) => x.name).join(", ")}`,
+    );
+  }
+  return {
+    locations,
+    links: locations.map((location: any) => ({
+      ...byTenantLocation.get(location.id),
+      tenantLocation: location,
+    })),
+  };
+}
+
+async function provisionDishbee(db: any, job: any) {
+  const connectionResult = await db
+    .from("product_connections")
+    .select("*")
+    .eq("tenant_id", job.tenant_id)
+    .eq("product_key", "dishbee")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (connectionResult.error) throw new Error(connectionResult.error.message);
+  const connection = connectionResult.data;
+  if (!connection) {
+    throw new ProvisioningBlock(
+      "Link the real Dishbee tenant/workspace in Tenant Factory before provisioning Dishbee.",
+    );
+  }
+  if (!isUuid(connection.external_tenant_id)) {
+    throw new ProvisioningBlock("Dishbee external tenant/workspace ID must be the real Dishbee tenant UUID");
+  }
+
+  const mapped = await requireCompleteLocationLinks(db, job.tenant_id, connection, "Dishbee");
+  const config = dishbeeEnvironment(connection.base_url);
+  const origin = requiredHttps("OMNIQORA_PUBLIC_URL");
+  const credential = newProductCredential("oqcp");
+
+  const storedCredential = await db.rpc("server_set_product_credential", {
+    _connection: connection.id,
+    _credential_hash: credential.hash,
+    _suffix: credential.suffix,
+    _valid_days: 365,
+  });
+  if (storedCredential.error) throw new Error(storedCredential.error.message);
+
+  const result = await dishbeeRequest(config, {
+    action: "bind_omniqora",
+    tenantId: connection.external_tenant_id,
+    omniqoraTenantId: job.tenant_id,
+    productKey: "dishbee",
+    controlPlaneUrl: `${origin}/api/control-plane/tenant-snapshot`,
+    runtimeUrl: origin,
+    connectorKey: credential.token,
+    locationMappings: mapped.links.map((link: any) => ({
+      omniqoraLocationId: link.tenant_location_id,
+      dishbeeLocationId: link.external_location_id,
+    })),
+  });
+
+  if (result?.status?.runtimeReady !== true) {
+    throw new ProvisioningBlock(
+      "Dishbee accepted the binding but runtime readiness is still blocked",
+    );
+  }
+
+  for (const link of mapped.links) {
+    const marked = await db.rpc("server_mark_product_location_link", {
+      _link: link.id,
+      _verified: true,
+      _detail: { verifiedBy: "dishbee-provisioning-adapter" },
+    });
+    if (marked.error) throw new Error(marked.error.message);
+  }
+
+  const verified = await db
+    .from("product_connections")
+    .update({
+      status: "connected",
+      capabilities: [
+        "tenant.snapshot",
+        "runtime.events",
+        "order.handoff",
+        "business-intelligence",
+        "intelligence.agent",
+      ],
+      last_verified_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      metadata: {
+        ...(connection.metadata ?? {}),
+        provisionedBy: "omniqora",
+        runtimeBound: true,
+      },
+    })
+    .eq("id", connection.id)
+    .select("id,product_key,external_tenant_id,base_url,status,capabilities")
+    .single();
+  if (verified.error) throw new Error(verified.error.message);
+  return verified.data;
+}
+
+async function provisionHaccoraLocations(
+  db: any,
+  job: any,
+  config: ReturnType<typeof haccoraEnvironment>,
+  organizationId: string,
+  connection: any,
+  initialLocationId?: string | null,
+) {
+  const locations = await activeTenantLocations(db, job.tenant_id);
+  const existing = await productLocationLinks(db, connection.id);
+  const mappedIds = new Set(existing.map((link: any) => link.tenant_location_id));
+  let canUseInitial = Boolean(initialLocationId) && existing.length === 0;
+
+  for (const location of locations) {
+    if (mappedIds.has(location.id)) continue;
+    let haccoraLocationId: string;
+    if (canUseInitial && initialLocationId) {
+      haccoraLocationId = initialLocationId;
+      canUseInitial = false;
+    } else {
+      const provisioned = await haccoraRequest(config, {
+        action: "provision_location",
+        omniqoraTenantId: job.tenant_id,
+        organizationId,
+        omniqoraLocationId: location.id,
+        name: location.name,
+        address: location.address ?? {},
+        timezone: location.timezone ?? "Europe/London",
+      });
+      haccoraLocationId = String(provisioned.haccoraLocationId ?? "");
+    }
+    if (!isUuid(haccoraLocationId)) throw new Error("Haccora did not return a valid location id");
+
+    const stored = await db.rpc("server_upsert_product_location_link", {
+      _connection: connection.id,
+      _tenant_location: location.id,
+      _external_location: haccoraLocationId,
+      _metadata: { provisionedBy: "haccora-adapter" },
+      _verified: true,
+    });
+    if (stored.error) throw new Error(stored.error.message);
+  }
+}
+
+async function bindHaccoraDishbeeRuntime(db: any, tenantId: string) {
+  const [dishbeeResult, haccoraResult, tenantResult] = await Promise.all([
+    db.from("product_connections").select("*")
+      .eq("tenant_id", tenantId).eq("product_key", "dishbee").eq("status", "connected")
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("product_connections").select("*")
+      .eq("tenant_id", tenantId).eq("product_key", "haccora").eq("status", "connected")
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("tenants").select("country_code").eq("id", tenantId).maybeSingle(),
+  ]);
+  if (dishbeeResult.error || haccoraResult.error || tenantResult.error) {
+    throw new Error("Dishbee/Haccora product connection state is unavailable");
+  }
+  const dishbee = dishbeeResult.data;
+  const haccora = haccoraResult.data;
+  if (!dishbee) throw new ProvisioningBlock("Dishbee product connection must be connected");
+  if (!haccora) throw new ProvisioningBlock("Haccora product connection must be connected");
+  if (!isUuid(dishbee.external_tenant_id) || !isUuid(haccora.external_tenant_id)) {
+    throw new ProvisioningBlock("Dishbee and Haccora external tenant IDs must be valid UUIDs");
+  }
+
+  const [dishbeeMap, haccoraMap] = await Promise.all([
+    requireCompleteLocationLinks(db, tenantId, dishbee, "Dishbee"),
+    requireCompleteLocationLinks(db, tenantId, haccora, "Haccora"),
+  ]);
+  const haccoraByLocation = new Map(
+    haccoraMap.links.map((link: any) => [link.tenant_location_id, link.external_location_id]),
+  );
+  const locations = dishbeeMap.links.map((link: any) => {
+    const haccoraLocationId = haccoraByLocation.get(link.tenant_location_id);
+    if (!haccoraLocationId) throw new ProvisioningBlock("Haccora location mapping is incomplete");
+    return {
+      dishbeeLocationId: link.external_location_id,
+      haccoraLocationId,
+    };
+  });
+
+  const haccoraConfig = haccoraEnvironment(String(tenantResult.data?.country_code ?? "GB"));
+  const dishbeeConfig = dishbeeEnvironment(dishbee.base_url);
+  const runtimeToken = newProductCredential("dbhr").token;
+
+  const haccoraBind = await haccoraRequest(haccoraConfig, {
+    action: "bind_dishbee_runtime",
+    omniqoraTenantId: tenantId,
+    organizationId: haccora.external_tenant_id,
+    dishbeeTenantId: dishbee.external_tenant_id,
+    runtimeToken,
+    locations,
+  });
+  if (haccoraBind.status !== "connected") throw new Error("Haccora Dishbee runtime bind failed");
+
+  const dishbeeBind = await dishbeeRequest(dishbeeConfig, {
+    action: "bind_haccora",
+    tenantId: dishbee.external_tenant_id,
+    haccoraBaseUrl: haccoraConfig.appUrl,
+    haccoraRuntimeToken: runtimeToken,
+    haccoraOrganizationId: haccora.external_tenant_id,
+  });
+  if (dishbeeBind?.status?.haccoraRuntimeBound !== true) {
+    throw new Error("Dishbee Haccora runtime bind was not confirmed");
+  }
+
+  await db.from("product_connections").update({
+    metadata: {
+      ...(haccora.metadata ?? {}),
+      dishbeeRuntimeBound: true,
+      dishbeeExternalTenantId: dishbee.external_tenant_id,
+      runtimeBoundAt: new Date().toISOString(),
+    },
+    updated_at: new Date().toISOString(),
+  }).eq("id", haccora.id);
+
+  return { dishbee, haccora, locations };
 }
 
 function json(body: unknown, status = 200) {
@@ -255,6 +564,13 @@ export async function serveProvisioningWorker(request: Request) {
         ) {
           connection = await provisionHaccora(db, job);
         }
+        if (
+          job.target_key === "dishbee" &&
+          !connection &&
+          ["provision", "update", "resume", "verify"].includes(job.action)
+        ) {
+          connection = await provisionDishbee(db, job);
+        }
       } else if (job.target_kind === "service") {
         const response = await db
           .from("service_catalogue")
@@ -275,16 +591,17 @@ export async function serveProvisioningWorker(request: Request) {
           if (haccoraLink.error) throw new Error(haccoraLink.error.message);
           connection = haccoraLink.data;
           if (job.target_key === "haccora.dishbee-sync") {
-            const dishbeeLink = await db
+            await bindHaccoraDishbeeRuntime(db, job.tenant_id);
+            const haccoraLink = await db
               .from("product_connections")
-              .select("id")
+              .select("product_key,external_tenant_id,status")
               .eq("tenant_id", job.tenant_id)
-              .eq("product_key", "dishbee")
+              .eq("product_key", "haccora")
               .eq("status", "connected")
               .limit(1)
               .maybeSingle();
-            if (dishbeeLink.error) throw new Error(dishbeeLink.error.message);
-            if (!dishbeeLink.data) connection = null;
+            if (haccoraLink.error) throw new Error(haccoraLink.error.message);
+            connection = haccoraLink.data;
           }
         }
       } else if (job.target_kind === "integration") {
@@ -357,7 +674,7 @@ export async function serveProvisioningWorker(request: Request) {
         await db.rpc("server_block_provisioning_job", {
           _job: job.id,
           _reason: reason,
-          _detail: { worker: "omniqora-control-plane", adapter: "haccora" },
+          _detail: { worker: "omniqora-control-plane", adapter: job.target_key === "dishbee" ? "dishbee" : "haccora" },
         });
         results.push({ id: job.id, outcome: "block", reason });
         continue;
