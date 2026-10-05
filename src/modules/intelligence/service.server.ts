@@ -21,7 +21,7 @@ const requestSchema=z.discriminatedUnion("operation",[
   limit:z.number().int().min(1).max(100).default(50)}),
  scope.extend({operation:z.literal("action.review"),proposalId:uuid,decision:z.enum(["approved","rejected"]),actorRef:z.string().min(1).max(200)}),
  scope.extend({operation:z.literal("action.claim"),destinationRef:z.string().min(2).max(160).default("dishbee.runtime"),workerKey:z.string().min(4).max(200),limit:z.number().int().min(1).max(50).default(20)}),
- scope.extend({operation:z.literal("action.finish"),actionRequestId:uuid,success:z.boolean(),executionRef:z.string().max(300).nullish(),
+ scope.extend({operation:z.literal("action.finish"),actionRequestId:uuid,claimToken:uuid,workerKey:z.string().min(4).max(200),success:z.boolean(),executionRef:z.string().max(300).nullish(),
   result:z.record(z.string(),z.unknown()).default({}),error:z.string().max(2000).nullish()})
 ]);
 
@@ -78,7 +78,15 @@ export async function serveIntelligenceService(httpRequest:Request){
    input.operation==="action.review"?"intelligence.action.review":
    input.operation==="action.claim"?"intelligence.action.claim":
    input.operation==="action.finish"?"intelligence.action.finish":"ai.proposals";
-  if(credential)authoriseServiceScope(credential,{tenantId:input.tenantId,productKey:input.productKey,capability});
+  const permittedScope=credential?authoriseServiceScope(credential,{tenantId:input.tenantId,productKey:input.productKey,capability}):null;
+  if(["action.review","action.claim","action.finish"].includes(input.operation)){
+   // This execution contract is product-wide. Restricted location/brand keys
+   // cannot silently acquire broader authority through an omitted location.
+   if(input.productKey!=="dishbee"||permittedScope?.locationIds?.length||permittedScope?.brandIds?.length){
+    throw new Error("Action execution requires explicit product-wide scope");
+   }
+  }
+  const executionWorker=(worker:string)=>`${connectorId?"connector:"+connectorId:"service:"+credential?.id}:${worker}`;
   const ent=await db.rpc("has_tenant_entitlement",{_tenant:input.tenantId,_service:"omniqora.intelligence-runtime"});
   if(ent.error||!ent.data)throw new Error("Omniqora intelligence entitlement required");
   if(input.productKey==="haccora"&&(input.operation==="run.start"||input.operation==="run.get")){
@@ -164,7 +172,7 @@ export async function serveIntelligenceService(httpRequest:Request){
   if(input.operation==="action.claim"){
    const r=await db.rpc("claim_product_action_requests",{
     _tenant:input.tenantId,_product:input.productKey,_destination:input.destinationRef,
-    _worker:input.workerKey,_limit:input.limit,
+    _worker:executionWorker(input.workerKey),_limit:input.limit,
    });
    if(r.error)throw new Error(r.error.message);
    if(credential)await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
@@ -174,6 +182,8 @@ export async function serveIntelligenceService(httpRequest:Request){
 
   if(input.operation==="action.finish"){
    const r=await db.rpc("finish_product_action_request",{
+    _tenant:input.tenantId,_product:input.productKey,_destination:"dishbee.runtime",
+    _worker:executionWorker(input.workerKey),_claim_token:input.claimToken,
     _action:input.actionRequestId,_success:input.success,
     _execution_ref:input.executionRef??null,_result:input.result,_error:input.error??null,
    });
@@ -184,48 +194,12 @@ export async function serveIntelligenceService(httpRequest:Request){
   }
 
   if(input.operation==="action.review"){
-   const current=await db.from("ai_action_proposals")
-    .select("id,status,run_id,action_key,target_type,target_id,payload,rationale")
-    .eq("tenant_id",input.tenantId).eq("product_key",input.productKey)
-    .eq("id",input.proposalId).maybeSingle();
-   if(current.error||!current.data)throw new Error("Action proposal not found");
-   if(current.data.status!=="pending")throw new Error("Action proposal is not pending");
-   const reviewed=await db.from("ai_action_proposals").update({
-    status:input.decision,
-    reviewed_at:new Date().toISOString(),
-   }).eq("id",input.proposalId).eq("tenant_id",input.tenantId).eq("status","pending")
-    .select("id,run_id,action_key,target_type,target_id,payload,rationale,status,reviewed_at").single();
+   const reviewed=await db.rpc("review_product_action_proposal",{
+    _tenant:input.tenantId,_product:input.productKey,_proposal:input.proposalId,
+    _decision:input.decision,_actor_ref:input.actorRef,
+   });
    if(reviewed.error)throw new Error(reviewed.error.message);
-   try{
-    await db.from("platform_events").insert({
-      tenant_id:input.tenantId,
-      product_key:input.productKey,
-      event_type:"intelligence.action."+input.decision,
-      event_version:1,
-      source_service:"omniqora.intelligence",
-      subject_type:"ai_action_proposal",
-      subject_id:input.proposalId,
-      idempotency_key:"proposal-review:"+input.proposalId+":"+input.decision,
-      data_classification:"internal",
-      payload:{
-        actorRef:input.actorRef,
-        actionKey:reviewed.data.action_key,
-        targetType:reviewed.data.target_type,
-        targetId:reviewed.data.target_id,
-      },
-    });
-   }catch{}
-   let execution={queued:false,supported:false} as Record<string,unknown>;
-   if(input.decision==="approved"){
-    const queued=await db.rpc("queue_approved_action_proposal",{
-      _proposal:input.proposalId,_actor_ref:input.actorRef,
-    });
-    if(queued.error)throw new Error(queued.error.message);
-    execution=(queued.data??{}) as Record<string,unknown>;
-   }
-   if(credential)await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
-   if(connectorId)await db.from("product_connections").update({last_verified_at:new Date().toISOString(),status:"connected",updated_at:new Date().toISOString()}).eq("id",connectorId);
-   return reply({...reviewed.data,execution});
+   return reply(reviewed.data);
   }
 
   const {data:proposal,error}=await db.from("ai_action_proposals").insert({tenant_id:input.tenantId,product_key:input.productKey,run_id:input.runId??null,

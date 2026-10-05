@@ -21,7 +21,12 @@ assert(product.rows[0].metadata.countryPacks.includes("GB"));
 assert(product.rows[0].metadata.countryPacks.includes("DE"));
 
 const services=await db.query("SELECT service_key FROM public.service_catalogue WHERE service_key LIKE 'haccora.%' ORDER BY service_key");
-assert.equal(services.rows.length,16);
+assert.deepEqual(services.rows.map(row=>row.service_key), [
+  "haccora.ai-copilot", "haccora.allergens", "haccora.analytics", "haccora.compliance",
+  "haccora.core", "haccora.dishbee-runtime", "haccora.dishbee-sync", "haccora.document-ai",
+  "haccora.evidence", "haccora.graphrag", "haccora.haccp", "haccora.inspections",
+  "haccora.rag", "haccora.regulatory-intelligence", "haccora.sensors", "haccora.traceability", "haccora.training"
+]);
 for(const key of ["haccora.core","haccora.compliance","haccora.ai-copilot","haccora.rag","haccora.graphrag","haccora.regulatory-intelligence","haccora.dishbee-sync"])
   assert(services.rows.some(row=>row.service_key===key),key);
 
@@ -31,7 +36,7 @@ assert.equal(blueprints.rows.find(row=>row.blueprint_key==="haccora-uk").country
 assert.equal(blueprints.rows.find(row=>row.blueprint_key==="haccora-de").country_code,"DE");
 
 const dishbee=await db.query("SELECT service_key FROM public.product_services WHERE product_key='dishbee' AND service_key LIKE 'haccora.%' ORDER BY service_key");
-assert.deepEqual(dishbee.rows.map(row=>row.service_key),["haccora.compliance","haccora.core","haccora.dishbee-sync"]);
+assert.deepEqual(dishbee.rows.map(row=>row.service_key),["haccora.compliance","haccora.core","haccora.dishbee-runtime","haccora.dishbee-sync"]);
 
 const productDeps=await db.query("SELECT product_key FROM public.service_product_dependencies WHERE service_key='haccora.dishbee-sync' ORDER BY product_key");
 assert.deepEqual(productDeps.rows.map(row=>row.product_key),["dishbee","haccora"]);
