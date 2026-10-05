@@ -125,8 +125,7 @@ CREATE OR REPLACE FUNCTION public.syndriva_search_listings(
  currency text,
  inventory_tracked boolean,
  available_stock numeric,
- category_keys text[],
- metadata jsonb
+ category_keys text[]
 )
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE
@@ -134,12 +133,8 @@ DECLARE
   lim integer:=LEAST(GREATEST(COALESCE(_limit,50),1),100);
   off integer:=GREATEST(COALESCE(_offset,0),0);
 BEGIN
-  SELECT * INTO m FROM public.syndriva_marketplaces WHERE id=_marketplace AND status IN('active','provisioning');
+  SELECT * INTO m FROM public.syndriva_marketplaces WHERE id=_marketplace AND status='active';
   IF NOT FOUND THEN RAISE EXCEPTION 'Syndriva marketplace not found or inactive'; END IF;
-
-  IF NOT public.is_platform_admin(auth.uid()) AND NOT public.is_tenant_member(m.tenant_id,auth.uid()) THEN
-    RAISE EXCEPTION 'Syndriva marketplace access denied';
-  END IF;
 
   RETURN QUERY
   SELECT
@@ -158,8 +153,7 @@ BEGIN
       WHEN l.inventory_tracked THEN COALESCE(stock.available,0)
       ELSE NULL
     END AS available_stock,
-    COALESCE(cats.keys,'{}'::text[]) AS category_keys,
-    l.metadata
+    COALESCE(cats.keys,'{}'::text[]) AS category_keys
   FROM public.marketplace_listings l
   JOIN public.marketplace_vendors v
     ON v.id=l.vendor_id AND v.tenant_id=l.tenant_id
@@ -203,7 +197,7 @@ BEGIN
   LIMIT lim OFFSET off;
 END;$$;
 
-REVOKE ALL ON FUNCTION public.syndriva_search_listings(uuid,text,text,uuid,bigint,bigint,integer,integer) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.syndriva_search_listings(uuid,text,text,uuid,bigint,bigint,integer,integer) TO authenticated,service_role;
+REVOKE ALL ON FUNCTION public.syndriva_search_listings(uuid,text,text,uuid,bigint,bigint,integer,integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.syndriva_search_listings(uuid,text,text,uuid,bigint,bigint,integer,integer) TO anon,authenticated,service_role;
 
 COMMIT;
