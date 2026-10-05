@@ -23,6 +23,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:security
       - run: npm run test:bridges
+      - run: npm run test:factory
       - run: npm run test:mobile
       - run: npm run test:procurement
       - run: npm run test:services
