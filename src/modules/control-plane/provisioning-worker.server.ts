@@ -100,6 +100,7 @@ async function provisionHaccora(db: any, job: any) {
       : "standalone";
   let organizationId =
     connectionResult.data?.external_tenant_id ??
+    stateResult.data?.external_tenant_id ??
     stateResult.data?.config?.haccoraOrganizationId ??
     null;
   let initialLocationId: string | null = null;
@@ -547,6 +548,11 @@ export async function serveProvisioningWorker(request: Request) {
           .maybeSingle();
         if (response.error) throw new Error(response.error.message);
         connection = response.data;
+        // Product/location mapping controls queue integration verification jobs.
+        // Run the binding adapter for that exact workspace, even on receipt re-checks.
+        if (productKey === "dishbee" && job.action === "verify") {
+          connection = await provisionDishbee(db, job);
+        }
       } else if (job.target_kind === "domain") {
         const response = await db
           .from("tenant_domains")
