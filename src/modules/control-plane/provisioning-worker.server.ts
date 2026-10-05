@@ -542,30 +542,33 @@ export async function serveProvisioningWorker(request: Request) {
       if (job.target_kind === "product") {
         const response = await db
           .from("product_catalogue")
-          .select("product_key,deployment_mode,implementation_status,product_role")
+.select("product_key,deployment_mode,implementation_status,product_role,parent_product_key,metadata")
           .eq("product_key", job.target_key)
           .maybeSingle();
         if (response.error) throw new Error(response.error.message);
         product = response.data;
+        const runtimeProductKey = String(
+          product?.metadata?.runtimeProductKey ?? job.target_key,
+        );
         const link = await db
           .from("product_connections")
-          .select("product_key,external_tenant_id,status")
+          .select("id,product_key,external_tenant_id,base_url,status,metadata")
           .eq("tenant_id", job.tenant_id)
-          .eq("product_key", job.target_key)
+          .eq("product_key", runtimeProductKey)
           .eq("status", "connected")
           .limit(1)
           .maybeSingle();
         if (link.error) throw new Error(link.error.message);
         connection = link.data;
         if (
-          job.target_key === "haccora" &&
+          runtimeProductKey === "haccora" &&
           !connection &&
           ["provision", "update", "resume", "verify"].includes(job.action)
         ) {
           connection = await provisionHaccora(db, job);
         }
         if (
-          job.target_key === "dishbee" &&
+          runtimeProductKey === "dishbee" &&
           !connection &&
           ["provision", "update", "resume", "verify"].includes(job.action)
         ) {
@@ -579,29 +582,46 @@ export async function serveProvisioningWorker(request: Request) {
           .maybeSingle();
         if (response.error) throw new Error(response.error.message);
         service = response.data;
-        if (service?.owner_product_key === "haccora") {
-          const haccoraLink = await db
+        if (service?.owner_product_key && service.owner_product_key !== "omniqora") {
+          const owner = await db
+            .from("product_catalogue")
+            .select("product_key,parent_product_key,metadata")
+            .eq("product_key", service.owner_product_key)
+            .maybeSingle();
+          if (owner.error) throw new Error(owner.error.message);
+          const runtimeProductKey = String(
+            owner.data?.metadata?.runtimeProductKey ?? service.owner_product_key,
+          );
+          const runtimeLink = await db
             .from("product_connections")
-            .select("product_key,external_tenant_id,status")
+            .select("id,product_key,external_tenant_id,base_url,status,metadata")
             .eq("tenant_id", job.tenant_id)
-            .eq("product_key", "haccora")
+            .eq("product_key", runtimeProductKey)
             .eq("status", "connected")
             .limit(1)
             .maybeSingle();
-          if (haccoraLink.error) throw new Error(haccoraLink.error.message);
-          connection = haccoraLink.data;
+          if (runtimeLink.error) throw new Error(runtimeLink.error.message);
+          connection = runtimeLink.data;
+
+          if (!connection && runtimeProductKey === "dishbee") {
+            connection = await provisionDishbee(db, job);
+          }
+          if (!connection && runtimeProductKey === "haccora") {
+            connection = await provisionHaccora(db, job);
+          }
+
           if (job.target_key === "haccora.dishbee-sync") {
             await bindHaccoraDishbeeRuntime(db, job.tenant_id);
-            const haccoraLink = await db
+            const refreshed = await db
               .from("product_connections")
-              .select("product_key,external_tenant_id,status")
+              .select("id,product_key,external_tenant_id,base_url,status,metadata")
               .eq("tenant_id", job.tenant_id)
               .eq("product_key", "haccora")
               .eq("status", "connected")
               .limit(1)
               .maybeSingle();
-            if (haccoraLink.error) throw new Error(haccoraLink.error.message);
-            connection = haccoraLink.data;
+            if (refreshed.error) throw new Error(refreshed.error.message);
+            connection = refreshed.data;
           }
         }
       } else if (job.target_kind === "integration") {
