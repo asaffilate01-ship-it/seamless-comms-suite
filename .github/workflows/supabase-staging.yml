@@ -4,13 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       project_ref:
-        description: "Omniqora staging Supabase project ref"
+        description: 'Must equal the approved staging project configured in environment variables'
+        required: true
+        type: string
+      expected_sha:
+        description: 'Exact 40-character commit SHA selected for this staging release'
         required: true
         type: string
       mode:
-        description: "Preview or apply pending migrations"
+        description: 'Preview or apply pending migrations'
         required: true
-        default: "dry-run"
+        default: 'dry-run'
         type: choice
         options:
           - dry-run
@@ -18,7 +22,8 @@ on:
       confirmation:
         description: 'Type MIGRATE-STAGING when mode=apply'
         required: false
-        default: ""
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -28,43 +33,70 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify-chain:
+    uses: ./.github/workflows/migration-chain.yml
   migrate:
+    needs: verify-chain
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: staging
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      APPROVED_STAGING_PROJECT_REF: ${{ vars.SUPABASE_STAGING_PROJECT_REF }}
+      PRODUCTION_PROJECT_REF: ${{ vars.SUPABASE_PRODUCTION_PROJECT_REF }}
       PROJECT_REF: ${{ inputs.project_ref }}
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      MODE: ${{ inputs.mode }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      SUPABASE_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate approved staging target and exact release before any connection
+        shell: bash
+        run: |
+          set -euo pipefail
+          export CHECKED_OUT_SHA="$(git rev-parse HEAD)"
+          mkdir -p staging-evidence
+          node verification/staging/guard.mjs target > staging-evidence/target.json
+          node verification/staging/guard.mjs manifest > staging-evidence/migration-manifest.json
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
-      - name: Validate staging credentials
+          version: 2.119.0
+      - name: Initialise CLI project metadata when missing
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${PROJECT_REF:-}" || { echo "Missing Omniqora staging project ref"; exit 1; }
-          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "Missing SUPABASE_ACCESS_TOKEN"; exit 1; }
-          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo "Missing SUPABASE_DB_PASSWORD"; exit 1; }
-      - name: Link staging project
+          if [ ! -f supabase/config.toml ]; then
+            supabase init
+          fi
+      - name: Link only the validated staging project
         run: supabase link --project-ref "$PROJECT_REF"
-      - name: Show remote migration status
-        run: supabase migration list --linked
+      - name: Record remote migration status before changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list --linked | tee staging-evidence/migrations-before.txt
       - name: Preview pending migrations
         run: supabase db push --linked --dry-run
-      - name: Require explicit apply confirmation
+      - name: Apply pending migrations after guarded confirmation
         if: ${{ inputs.mode == 'apply' }}
+        run: supabase db push --linked --yes
+      - name: Record remote migration status after the requested operation
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ inputs.confirmation }}" != "MIGRATE-STAGING" ]; then
-            echo "Apply blocked: confirmation must equal MIGRATE-STAGING"
-            exit 1
-          fi
-      - name: Apply pending migrations
-        if: ${{ inputs.mode == 'apply' }}
-        run: supabase db push --linked --yes
-      - name: Verify migration status after apply
-        if: ${{ inputs.mode == 'apply' }}
-        run: supabase migration list --linked
+          supabase migration list --linked | tee staging-evidence/migrations-after.txt
+      - name: Retain migration evidence, not credentials or tenant data
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-migration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: staging-evidence/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -14,6 +14,8 @@ import {
   enableHaccoraDishbeePilot,
   enableHaccoraForDishbee,
   getHaccoraReadiness,
+  getDishbeeFamilyReadiness,
+  getProductLocationLinks,
   getControlPlaneCatalogue,
   getTenantControlPlane,
   listPlatformTenants,
@@ -30,6 +32,9 @@ import {
   type JsonValue,
   type TenantControlPlane,
   upsertTenantDomain,
+  upsertProductLocationLink,
+  type ProductLocationLink,
+  type DishbeeFamilyReadiness,
 } from "@/lib/control-plane.functions";
 import {
   Building2,
@@ -65,11 +70,14 @@ function ControlPlane() {
   const catalogueRequest = useServerFn(getControlPlaneCatalogue);
   const listTenantsRequest = useServerFn(listPlatformTenants);
   const tenantRequest = useServerFn(getTenantControlPlane);
+  const productLocationLinksRequest = useServerFn(getProductLocationLinks);
+  const upsertProductLocationLinkRequest = useServerFn(upsertProductLocationLink);
   const createTenantRequest = useServerFn(createPlatformTenant);
   const bootstrapDishbeeRequest = useServerFn(bootstrapDishbeePilot);
   const enableHaccoraPilotRequest = useServerFn(enableHaccoraDishbeePilot);
   const enableHaccoraRequest = useServerFn(enableHaccoraForDishbee);
   const haccoraReadinessRequest = useServerFn(getHaccoraReadiness);
+  const dishbeeFamilyReadinessRequest = useServerFn(getDishbeeFamilyReadiness);
   const retryHaccoraRequest = useServerFn(retryHaccoraProvisioning);
   const haccoraSmokeRequest = useServerFn(runHaccoraSmokeTest);
   const haccoraPilotSmokeRequest = useServerFn(runHaccoraPilotSmokeTest);
@@ -110,6 +118,20 @@ function ControlPlane() {
   const detail = useQuery({
     queryKey: ["tenant-control-plane", selectedTenantId],
     queryFn: () => tenantRequest({ data: { tenantId: selectedTenantId } }),
+    enabled: !!selectedTenantId,
+    retry: false,
+  });
+
+  const productLocationLinks = useQuery({
+    queryKey: ["product-location-links", selectedTenantId],
+    queryFn: () => productLocationLinksRequest({ data: { tenantId: selectedTenantId } }),
+    enabled: !!selectedTenantId,
+    retry: false,
+  });
+
+  const dishbeeFamilyReadiness = useQuery({
+    queryKey: ["dishbee-family-readiness", selectedTenantId],
+    queryFn: () => dishbeeFamilyReadinessRequest({ data: { tenantId: selectedTenantId } }),
     enabled: !!selectedTenantId,
     retry: false,
   });
@@ -170,7 +192,13 @@ function ControlPlane() {
   );
 
   async function refreshTenant() {
-    await Promise.all([detail.refetch(), tenants.refetch(), haccoraReadiness.refetch()]);
+    await Promise.all([
+      detail.refetch(),
+      tenants.refetch(),
+      haccoraReadiness.refetch(),
+      productLocationLinks.refetch(),
+      dishbeeFamilyReadiness.refetch(),
+    ]);
   }
 
   async function createTenant() {
@@ -370,6 +398,14 @@ function ControlPlane() {
           value={String(detail.data?.provisioning?.length ?? 0)}
         />
       </div>
+
+      {selectedTenantId && (
+        <DishbeeFamilyReadinessPanel
+          data={dishbeeFamilyReadiness.data}
+          loading={dishbeeFamilyReadiness.isLoading}
+          error={dishbeeFamilyReadiness.error?.message}
+        />
+      )}
 
       {selectedTenantId && (
         <Card className="mt-6">
@@ -955,6 +991,26 @@ function ControlPlane() {
             }}
           />
 
+          <ProductLocationMappings
+            tenantId={selectedTenantId}
+            connections={detail.data?.connections ?? []}
+            locations={detail.data?.locations ?? []}
+            links={productLocationLinks.data ?? []}
+            products={catalogue.data?.products ?? []}
+            canEdit={isPlatformAdmin}
+            onSave={async (connectionId, tenantLocationId, externalLocationId) => {
+              try {
+                await upsertProductLocationLinkRequest({
+                  data: { connectionId, tenantLocationId, externalLocationId },
+                });
+                toast.success("External product location mapped; verification queued");
+                await Promise.all([productLocationLinks.refetch(), detail.refetch()]);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Location mapping failed");
+              }
+            }}
+          />
+
           <BrandingAndDomains
             tenantId={selectedTenantId}
             detail={detail.data}
@@ -1097,6 +1153,94 @@ function ControlPlane() {
       </div>
     </AppShell>
   );
+}
+
+function DishbeeFamilyReadinessPanel({
+  data,
+  loading,
+  error,
+}:{
+  data?:DishbeeFamilyReadiness;
+  loading:boolean;
+  error?:string;
+}){
+  const modules=data?.modules??{};
+  const moduleRows=[
+    ["Dishbee One",modules["one"]],
+    ["Dishbee Hive",modules["hive"]],
+    ["Dishbee+",modules["plus"]],
+    ["Dishbee Buzz",modules["buzz"]],
+    ["Dishbee Stay",modules["stay"]],
+    ["Court Pack / Connect",modules["court"]],
+    ["Haccora",modules["haccora"]],
+    ["Shared Omniqora",modules["shared"]],
+  ] as const;
+
+  return <Card className="mt-6">
+    <CardContent className="p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-primary/10 p-2">
+            <Layers3 className="h-4 w-4 text-primary"/>
+          </div>
+          <div>
+            <h2 className="font-display text-lg font-semibold">Dishbee family readiness</h2>
+            <p className="text-sm text-muted-foreground">
+              Product wiring, authoritative workspaces, location mappings and provisioning. Production provider acceptance remains a separate gate.
+            </p>
+          </div>
+        </div>
+        {data&&<StatusBadge status={data.factoryReady?"active":"blocked"}/>}
+      </div>
+
+      {loading?<p className="mt-4 text-sm text-muted-foreground">Checking Dishbee family wiring…</p>:
+       error?<p role="alert" className="mt-4 text-sm text-destructive">{error}</p>:
+       data?<>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <ReadinessStat label="Factory" value={data.factoryReady?"ready":"not ready"}/>
+          <ReadinessStat label="Dishbee" value={data.connections.dishbee?.status??"not linked"}/>
+          <ReadinessStat label="Haccora" value={data.connections.haccora?.status??"not linked"}/>
+          <ReadinessStat label="Dishbee+" value={data.connections.dishbeePlus?.status??"not linked"}/>
+          <ReadinessStat label="Locations" value={`${data.locations.dishbeeMapped}/${data.locations.active} Dishbee`}/>
+          <ReadinessStat label="Provisioning" value={`${data.provisioning.pending} pending · ${data.provisioning.blocked} blocked · ${data.provisioning.failed} failed`}/>
+        </div>
+
+        {(data.blockers.length>0||data.warnings.length>0)&&<div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+            <p className="text-xs font-black uppercase tracking-wide text-destructive">Blockers</p>
+            {data.blockers.length?data.blockers.map(item=><p key={item} className="mt-1 text-xs">{item.replaceAll("_"," ")}</p>):<p className="mt-1 text-xs text-muted-foreground">None</p>}
+          </div>
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <p className="text-xs font-black uppercase tracking-wide">Warnings</p>
+            {data.warnings.length?data.warnings.map(item=><p key={item} className="mt-1 text-xs text-muted-foreground">{item.replaceAll("_"," ")}</p>):<p className="mt-1 text-xs text-muted-foreground">None</p>}
+          </div>
+        </div>}
+
+        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          {moduleRows.map(([label,states])=>{
+            const values=Object.entries(states??{});
+            const active=values.filter(([,status])=>["active","trial"].includes(status)).length;
+            const requested=values.filter(([,status])=>status!=="not_requested").length;
+            return <div key={label} className="rounded-lg border bg-background p-3">
+              <div className="flex items-center justify-between gap-2">
+                <b className="text-sm">{label}</b>
+                <span className="text-[11px] text-muted-foreground">{active}/{requested||values.length} active</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {values.map(([key,status])=><span key={key} className="rounded bg-muted px-2 py-1 text-[10px]">
+                  {key.replaceAll("_"," ")}: {status.replaceAll("_"," ")}
+                </span>)}
+              </div>
+            </div>
+          })}
+        </div>
+
+        <div className="mt-4 rounded-lg bg-warning/5 p-3 text-xs text-muted-foreground">
+          <b>Production acceptance:</b> {data.productionAcceptanceNote}
+        </div>
+      </>:null}
+    </CardContent>
+  </Card>;
 }
 
 function ReadinessStat({ label, value }: { label: string; value: string }) {
@@ -1303,6 +1447,127 @@ function ProductConnections({
       </div>
     </section>
   );
+}
+
+
+function ProductLocationMappings({
+  tenantId,
+  connections,
+  locations,
+  links,
+  products,
+  canEdit,
+  onSave,
+}: {
+  tenantId:string;
+  connections:Array<{
+    id:string;
+    product_key:string;
+    external_tenant_id:string;
+    base_url?:string|null;
+    status:string;
+  }>;
+  locations:Array<{
+    id:string;
+    name:string;
+    code:string;
+    status:string;
+  }>;
+  links:ProductLocationLink[];
+  products:Array<{product_key:string;name:string}>;
+  canEdit:boolean;
+  onSave:(connectionId:string,tenantLocationId:string,externalLocationId:string)=>Promise<void>;
+}) {
+  const [connectionId,setConnectionId]=useState("");
+  const [values,setValues]=useState<Record<string,string>>({});
+  const [saving,setSaving]=useState("");
+
+  const eligible=connections.filter(connection=>["dishbee","haccora","dishbee-plus"].includes(connection.product_key));
+  const selected=eligible.find(connection=>connection.id===connectionId)??eligible[0]??null;
+
+  useEffect(()=>{
+    if(!selected){setConnectionId("");setValues({});return}
+    if(connectionId!==selected.id)setConnectionId(selected.id);
+    const next:Record<string,string>={};
+    for(const location of locations){
+      next[location.id]=links.find(link=>
+        link.connectionId===selected.id&&link.tenantLocationId===location.id
+      )?.externalLocationId??"";
+    }
+    setValues(next);
+  },[tenantId,selected?.id,connections.length,locations.length,links]);
+
+  if(!eligible.length)return null;
+
+  return <section>
+    <SectionTitle
+      icon={GitBranchIcon}
+      title="Product location map"
+      description="Explicitly map each Omniqora location to the real location UUID in Dishbee, Haccora or Dishbee+. Runtime provisioning fails closed when an active site is unmapped."
+    />
+    <Card className="mt-3">
+      <CardContent className="p-5">
+        <div className="grid gap-3 lg:grid-cols-[1fr_2fr]">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">External product workspace</label>
+            <select
+              className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
+              value={selected?.id??""}
+              onChange={e=>setConnectionId(e.target.value)}
+            >
+              {eligible.map(connection=>{
+                const product=products.find(p=>p.product_key===connection.product_key);
+                return <option key={connection.id} value={connection.id}>
+                  {product?.name??connection.product_key} · {connection.external_tenant_id.slice(0,12)}…
+                </option>
+              })}
+            </select>
+            {selected&&<div className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+              <p><b>Product:</b> {selected.product_key}</p>
+              <p className="mt-1 break-all"><b>Workspace:</b> {selected.external_tenant_id}</p>
+              <p className="mt-1"><b>Connection:</b> {selected.status}</p>
+            </div>}
+          </div>
+          <div className="space-y-2">
+            {locations.filter(location=>location.status==="active").map(location=>{
+              const link=selected?links.find(item=>
+                item.connectionId===selected.id&&item.tenantLocationId===location.id
+              ):undefined;
+              return <div key={location.id} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1fr_1.4fr_auto] md:items-center">
+                <div>
+                  <b className="text-sm">{location.name}</b>
+                  <p className="font-mono text-[11px] text-muted-foreground">{location.id}</p>
+                </div>
+                <Input
+                  value={values[location.id]??""}
+                  onChange={e=>setValues(current=>({...current,[location.id]:e.target.value.trim()}))}
+                  placeholder={"External "+(selected?.product_key??"product")+" location UUID"}
+                  className="font-mono text-xs"
+                />
+                <div className="flex items-center gap-2">
+                  {link&&<StatusBadge status={link.status}/>}
+                  <Button
+                    size="sm"
+                    disabled={!canEdit||!selected||!values[location.id]||saving===location.id}
+                    onClick={async()=>{
+                      if(!selected)return;
+                      setSaving(location.id);
+                      try{await onSave(selected.id,location.id,values[location.id]??"")}
+                      finally{setSaving("")}
+                    }}
+                  >
+                    {saving===location.id?"Saving…":"Map"}
+                  </Button>
+                </div>
+              </div>
+            })}
+            {!locations.some(location=>location.status==="active")&&
+              <p className="text-sm text-muted-foreground">No active tenant locations.</p>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </section>;
 }
 
 function BrandingAndDomains({
