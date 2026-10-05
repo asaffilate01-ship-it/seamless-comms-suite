@@ -34,16 +34,62 @@ assert(pilot.tenants.every(t=>t.services.aiRequested===true));
 
 const mealdeck=pilot.tenants.find(t=>t.tenantSlug==="mealdeck");
 assert(mealdeck?.tenantId);
-
 await db.query("SET ROLE service_role");
 await db.query("UPDATE public.tenant_products SET status='active' WHERE tenant_id=$1 AND product_key='haccora'",[mealdeck.tenantId]);
 await db.query("UPDATE public.tenant_services SET status='active' WHERE tenant_id=$1 AND service_key LIKE 'haccora.%'",[mealdeck.tenantId]);
 await db.query("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status,last_verified_at) VALUES($1,'haccora','haccora-mealdeck','connected',now())",[mealdeck.tenantId]);
+await db.query("DELETE FROM public.provisioning_jobs WHERE tenant_id=$1 AND ((target_kind='product' AND target_key='haccora') OR (target_kind='service' AND target_key LIKE 'haccora.%'))",[mealdeck.tenantId]);
+// Test fixture only: no production job is removed or marked accepted by the implementation.
+const dishbeeWorkspace="cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+await db.query("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status) VALUES($1,'dishbee',$2,'connected')",[mealdeck.tenantId,dishbeeWorkspace]);
 await db.exec("RESET ROLE");
+const report=async()=>asAdmin(async()=> (await db.query("SELECT public.platform_haccora_readiness($1) AS r",[mealdeck.tenantId])).rows[0].r);
+const controlPlaneOnly=await report();
+assert.equal(controlPlaneOnly.controlPlaneReady,true);
+assert.equal(controlPlaneOnly.operationalRuntime.required,true);
+assert.equal(controlPlaneOnly.operationalRuntime.ready,false);
+assert.equal(controlPlaneOnly.ready,false);
 
-const ready=await asAdmin(async()=> (await db.query("SELECT public.platform_haccora_readiness($1) AS r",[mealdeck.tenantId])).rows[0].r);
+await db.exec("SET ROLE service_role");
+await db.query(
+  `INSERT INTO public.platform_events(
+    tenant_id,product_key,event_type,event_version,occurred_at,source_service,
+    subject_type,subject_id,idempotency_key,data_classification,payload
+  ) VALUES(
+    $1,'dishbee','dishbee.runtime.readiness',1,now(),'dishbee.runtime',
+    'tenant',$3,$2,'internal',
+    jsonb_build_object('dishbeeTenantId',$3::text) || '{"haccora":{"enabled":true,"configured":true,"ready":true,"activeLocations":1,"passedLocations":1,"failedLocations":0,"unprobedLocations":0,"deadEvents":0,"pendingEvents":0}}'::jsonb
+  )`,
+  [mealdeck.tenantId,"haccora-runtime-ready:"+mealdeck.tenantId,dishbeeWorkspace],
+);
+await db.exec("RESET ROLE");
+const ready=await report();
 assert.equal(ready.ready,true);
 assert.equal(ready.aiReady,true);
+assert.equal(ready.operationalRuntime.ready,true);
+assert.equal(ready.operationalRuntime.passedLocations,1);
 
+// AI subscriptions cannot substitute for a required compliance module.
+await db.query("UPDATE public.tenant_services SET status='requested' WHERE tenant_id=$1 AND service_key='haccora.haccp'",[mealdeck.tenantId]);
+assert.equal((await report()).controlPlaneReady,false);
+assert.equal((await report()).ready,false);
+await db.query("UPDATE public.tenant_services SET status='active' WHERE tenant_id=$1 AND service_key='haccora.haccp'",[mealdeck.tenantId]);
+const eventKey="haccora-runtime-ready:"+mealdeck.tenantId;
+for (const timestamp of ["now()-interval '16 minutes'","now()+interval '1 hour'"]) {
+  await db.query(`UPDATE public.platform_events SET occurred_at=${timestamp} WHERE idempotency_key=$1`,[eventKey]);
+  assert.equal((await report()).operationalRuntime.fresh,false);
+  assert.equal((await report()).ready,false);
+}
+await db.query("UPDATE public.platform_events SET occurred_at=now(),subject_id='different-workspace' WHERE idempotency_key=$1",[eventKey]);
+assert.equal((await report()).ready,false);
+await db.query("UPDATE public.platform_events SET subject_id=$2 WHERE idempotency_key=$1",[eventKey,dishbeeWorkspace]);
+await db.query("UPDATE public.platform_events SET payload=jsonb_set(payload,'{haccora,unprobedLocations}','1') WHERE idempotency_key=$1",[eventKey]);
+assert.equal((await report()).ready,false);
+await db.query("UPDATE public.platform_events SET payload=jsonb_set(payload,'{haccora,unprobedLocations}','0') WHERE idempotency_key=$1",[eventKey]);
+assert.equal((await report()).ready,true);
+await db.exec("BEGIN;SET LOCAL ROLE authenticated;");
+await db.query("SELECT set_config('request.jwt.claim.sub','',true)");
+await assert.rejects(()=>db.query("SELECT public.platform_haccora_readiness($1)",[mealdeck.tenantId]),/Tenant access denied/);
+await db.exec("ROLLBACK");
 await db.close();
-console.log("Haccora rollout readiness and pilot status verified");
+console.log("Haccora required-service, workspace, freshness and access readiness verified");

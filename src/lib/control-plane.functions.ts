@@ -548,6 +548,22 @@ export type HaccoraReadiness = {
     aiTotal: number;
   };
   jobs: { pending: number; blocked: number; failed: number };
+  controlPlaneReady: boolean;
+  operationalRuntime: {
+    required: boolean;
+    fresh: boolean;
+    eventAt?: string|null;
+    ready: boolean;
+    enabled: boolean;
+    configured: boolean;
+    activeLocations: number;
+    passedLocations: number;
+    failedLocations: number;
+    unprobedLocations: number;
+    deadEvents: number;
+    pendingEvents: number;
+    lastVerifiedAt?: string|null;
+  };
   ready: boolean;
   aiReady: boolean;
 };

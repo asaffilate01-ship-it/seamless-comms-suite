@@ -418,8 +418,8 @@ function ControlPlane() {
                 <div>
                   <h2 className="font-display text-lg font-semibold">Haccora readiness</h2>
                   <p className="text-sm text-muted-foreground">
-                    Dishbee add-on provisioning, connector verification, compliance services and
-                    governed AI readiness.
+                    Separate control-plane/AI provisioning from the direct Dishbee → Haccora
+                    operational compliance runtime and premises probes.
                   </p>
                 </div>
               </div>
@@ -462,11 +462,28 @@ function ControlPlane() {
                 {haccoraReadiness.error.message}
               </p>
             ) : haccoraReadiness.data ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+              <>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-8">
                 <ReadinessStat label="Product" value={haccoraReadiness.data.productStatus} />
-                <ReadinessStat label="Connection" value={haccoraReadiness.data.connectionStatus} />
+                <ReadinessStat label="Control-plane connection" value={haccoraReadiness.data.connectionStatus} />
                 <ReadinessStat
-                  label="Compliance"
+                  label="Control plane"
+                  value={haccoraReadiness.data.controlPlaneReady ? "ready" : "not ready"}
+                />
+                <ReadinessStat
+                  label="Dishbee runtime"
+                  value={
+                    !haccoraReadiness.data.operationalRuntime.required
+                      ? "not required"
+                      : haccoraReadiness.data.operationalRuntime.ready
+                        ? "ready"
+                        : haccoraReadiness.data.operationalRuntime.fresh
+                          ? `${haccoraReadiness.data.operationalRuntime.passedLocations}/${haccoraReadiness.data.operationalRuntime.activeLocations} premises`
+                          : "no fresh evidence"
+                  }
+                />
+                <ReadinessStat
+                  label="Overall compliance"
                   value={haccoraReadiness.data.ready ? "ready" : "not ready"}
                 />
                 <ReadinessStat
@@ -488,6 +505,29 @@ function ControlPlane() {
                   value={`${haccoraReadiness.data.jobs.pending} pending · ${haccoraReadiness.data.jobs.blocked} blocked · ${haccoraReadiness.data.jobs.failed} failed`}
                 />
               </div>
+              {haccoraReadiness.data.operationalRuntime.required && (
+                <div className="mt-3 rounded-lg border bg-muted/30 p-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <b>Dishbee operational evidence</b>
+                    <StatusBadge status={haccoraReadiness.data.operationalRuntime.ready ? "active" : "blocked"} />
+                  </div>
+                  <p className="mt-1 text-muted-foreground">
+                    {haccoraReadiness.data.operationalRuntime.passedLocations}/
+                    {haccoraReadiness.data.operationalRuntime.activeLocations} active premises probed ·{" "}
+                    {haccoraReadiness.data.operationalRuntime.unprobedLocations} unprobed ·{" "}
+                    {haccoraReadiness.data.operationalRuntime.failedLocations} failed ·{" "}
+                    {haccoraReadiness.data.operationalRuntime.deadEvents} dead compliance events
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    Runtime event: {haccoraReadiness.data.operationalRuntime.eventAt
+                      ? new Date(haccoraReadiness.data.operationalRuntime.eventAt).toLocaleString()
+                      : "not received"}
+                    {" · "}
+                    {haccoraReadiness.data.operationalRuntime.fresh ? "fresh" : "stale / missing"}
+                  </p>
+                </div>
+              )}
+              </>
             ) : null}
             {haccoraSmoke && (
               <div className="mt-4 rounded-lg border bg-muted/30 p-4">
