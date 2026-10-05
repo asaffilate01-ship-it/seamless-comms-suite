@@ -1,0 +1,42 @@
+name: Verify Dishbee Factory binding
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  binding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: disposable-test-only
+          POSTGRES_DB: factory_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated test compiler
+        run: npm install --prefix "$RUNNER_TEMP/factory-test" typescript@5.8.3 --no-audit --no-fund
+      - name: Credential, recovery and wiring tests
+        run: |
+          NODE_PATH="$RUNNER_TEMP/factory-test/node_modules" node --test \
+            verification/control-plane/dishbee-binding.node.mjs \
+            verification/control-plane/dishbee-auto-provisioning.test.mjs
+      - name: Native PostgreSQL binding and readiness evidence tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:disposable-test-only@localhost:5432/factory_test
+        run: |
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 \
+            -f verification/control-plane/dishbee-binding-postgres.sql \
+            -f verification/control-plane/dishbee-readiness-postgres.sql

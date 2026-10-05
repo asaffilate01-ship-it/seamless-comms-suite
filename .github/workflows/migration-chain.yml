@@ -1,0 +1,97 @@
+name: Verify complete Supabase migration chain
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'verification/staging/**'
+      - '.github/workflows/migration-chain.yml'
+      - '.github/workflows/supabase-staging.yml'
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Allocate isolated runner workspace
+        shell: bash
+        run: echo "REPLAY_DIR=${RUNNER_TEMP}/supabase-schema-replay" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test staging safety guard
+        run: node --test verification/staging/guard.test.mjs
+      - name: Inventory the complete checked-in migration chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rehearsal-evidence
+          node verification/staging/guard.mjs manifest > rehearsal-evidence/migration-manifest.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      - name: Prepare isolated local database configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$REPLAY_DIR"
+          supabase init --workdir "$REPLAY_DIR"
+          mkdir -p "$REPLAY_DIR/supabase/migrations"
+          cp supabase/migrations/*.sql "$REPLAY_DIR/supabase/migrations/"
+          if [ -f supabase/roles.sql ]; then
+            cp supabase/roles.sql "$REPLAY_DIR/supabase/roles.sql"
+          fi
+      - name: Replay every migration against real local Supabase
+        id: replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase start --workdir "$REPLAY_DIR" --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
+          supabase db reset --local --no-seed --workdir "$REPLAY_DIR"
+          supabase migration list --local --workdir "$REPLAY_DIR" > rehearsal-evidence/local-migration-ledger.txt
+      - name: Record the actual result, never production acceptance
+        if: ${{ always() }}
+        env:
+          REPLAY_OUTCOME: ${{ steps.replay.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RELEASE_SHA="$(git rev-parse HEAD)"
+          node --input-type=module <<'NODE'
+          import { mkdirSync, writeFileSync } from 'node:fs';
+          mkdirSync('rehearsal-evidence', { recursive: true });
+          writeFileSync('rehearsal-evidence/result.json', JSON.stringify({
+            schemaVersion: 1,
+            releaseSha: process.env.RELEASE_SHA,
+            testedIn: 'isolated-local-supabase',
+            cliVersion: '2.119.0',
+            schemaReplayPassed: process.env.REPLAY_OUTCOME === 'success',
+            stagingDeployed: false,
+            productionAccepted: false,
+            generatedAt: new Date().toISOString(),
+          }, null, 2) + '\n');
+          NODE
+      - name: Retain only migration inventory and result evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-replay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: rehearsal-evidence/
+          retention-days: 14
+      - name: Remove disposable local database
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if command -v supabase >/dev/null && [ -f "$REPLAY_DIR/supabase/config.toml" ]; then
+            supabase stop --no-backup --workdir "$REPLAY_DIR"
+          fi
