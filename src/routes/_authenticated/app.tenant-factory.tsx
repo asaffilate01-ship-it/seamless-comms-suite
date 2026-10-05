@@ -14,6 +14,7 @@ import {
   enableHaccoraDishbeePilot,
   enableHaccoraForDishbee,
   getHaccoraReadiness,
+  getDishbeeFamilyReadiness,
   getProductLocationLinks,
   getControlPlaneCatalogue,
   getTenantControlPlane,
@@ -33,6 +34,7 @@ import {
   upsertTenantDomain,
   upsertProductLocationLink,
   type ProductLocationLink,
+  type DishbeeFamilyReadiness,
 } from "@/lib/control-plane.functions";
 import {
   Building2,
@@ -75,6 +77,7 @@ function ControlPlane() {
   const enableHaccoraPilotRequest = useServerFn(enableHaccoraDishbeePilot);
   const enableHaccoraRequest = useServerFn(enableHaccoraForDishbee);
   const haccoraReadinessRequest = useServerFn(getHaccoraReadiness);
+  const dishbeeFamilyReadinessRequest = useServerFn(getDishbeeFamilyReadiness);
   const retryHaccoraRequest = useServerFn(retryHaccoraProvisioning);
   const haccoraSmokeRequest = useServerFn(runHaccoraSmokeTest);
   const haccoraPilotSmokeRequest = useServerFn(runHaccoraPilotSmokeTest);
@@ -122,6 +125,13 @@ function ControlPlane() {
   const productLocationLinks = useQuery({
     queryKey: ["product-location-links", selectedTenantId],
     queryFn: () => productLocationLinksRequest({ data: { tenantId: selectedTenantId } }),
+    enabled: !!selectedTenantId,
+    retry: false,
+  });
+
+  const dishbeeFamilyReadiness = useQuery({
+    queryKey: ["dishbee-family-readiness", selectedTenantId],
+    queryFn: () => dishbeeFamilyReadinessRequest({ data: { tenantId: selectedTenantId } }),
     enabled: !!selectedTenantId,
     retry: false,
   });
@@ -182,7 +192,13 @@ function ControlPlane() {
   );
 
   async function refreshTenant() {
-    await Promise.all([detail.refetch(), tenants.refetch(), haccoraReadiness.refetch()]);
+    await Promise.all([
+      detail.refetch(),
+      tenants.refetch(),
+      haccoraReadiness.refetch(),
+      productLocationLinks.refetch(),
+      dishbeeFamilyReadiness.refetch(),
+    ]);
   }
 
   async function createTenant() {
