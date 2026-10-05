@@ -41,9 +41,31 @@ await db.query("UPDATE public.tenant_services SET status='active' WHERE tenant_i
 await db.query("INSERT INTO public.product_connections(tenant_id,product_key,external_tenant_id,status,last_verified_at) VALUES($1,'haccora','haccora-mealdeck','connected',now())",[mealdeck.tenantId]);
 await db.exec("RESET ROLE");
 
+const controlPlaneOnly=await asAdmin(async()=> (await db.query("SELECT public.platform_haccora_readiness($1) AS r",[mealdeck.tenantId])).rows[0].r);
+assert.equal(controlPlaneOnly.controlPlaneReady,true);
+assert.equal(controlPlaneOnly.operationalRuntime.required,true);
+assert.equal(controlPlaneOnly.operationalRuntime.ready,false);
+assert.equal(controlPlaneOnly.ready,false);
+
+await db.exec("SET ROLE service_role");
+await db.query(
+  `INSERT INTO public.platform_events(
+    tenant_id,product_key,event_type,event_version,occurred_at,source_service,
+    subject_type,subject_id,idempotency_key,data_classification,payload
+  ) VALUES(
+    $1,'dishbee','dishbee.runtime.readiness',1,now(),'dishbee.runtime',
+    'tenant',$1::text,$2,'internal',
+    '{"haccora":{"enabled":true,"configured":true,"ready":true,"activeLocations":1,"passedLocations":1,"failedLocations":0,"unprobedLocations":0,"deadEvents":0,"pendingEvents":0,"lastVerifiedAt":"2026-10-05T06:00:00Z"}}'::jsonb
+  )`,
+  [mealdeck.tenantId,"haccora-runtime-ready:"+mealdeck.tenantId],
+);
+await db.exec("RESET ROLE");
+
 const ready=await asAdmin(async()=> (await db.query("SELECT public.platform_haccora_readiness($1) AS r",[mealdeck.tenantId])).rows[0].r);
 assert.equal(ready.ready,true);
 assert.equal(ready.aiReady,true);
+assert.equal(ready.operationalRuntime.ready,true);
+assert.equal(ready.operationalRuntime.passedLocations,1);
 
 await db.close();
 console.log("Haccora rollout readiness and pilot status verified");
