@@ -33,6 +33,7 @@ function FranchiseSales(){
  const agreementFn=useServerFn(saveManagementAgreement);
  const q=useQuery({queryKey:["network-expansion",tenantId],queryFn:()=>getFn({data:{tenantId}}),enabled:!!tenantId&&!tenant.loading,retry:false});
  const programme=(q.data?.programmes??[])[0] as any;
+ const terms=programme?.current_terms;
  const territories=(q.data?.territories??[]) as any[],applications=(q.data?.applications??[]) as any[],channels=(q.data?.channels??[]) as any[];
  const campaigns=(q.data?.campaigns??[]) as any[],content=(q.data?.content??[]) as any[];
  const managementAgreements=(q.data?.managementAgreements??[]) as any[],territoryDesigns=(q.data?.territoryDesigns??[]) as any[],territoryVersions=(q.data?.territoryVersions??[]) as any[];
@@ -51,7 +52,7 @@ function FranchiseSales(){
  const signed=applications.filter(a=>["paid","onboarding","training","launch_ready","live"].includes(a.stage)).length;
 
  async function run(key:string,fn:()=>Promise<unknown>,message:string){try{setBusy(key);await fn();await qc.invalidateQueries({queryKey:["network-expansion",tenantId]});toast.success(message);}catch(e){toast.error(e instanceof Error?e.message:String(e));}finally{setBusy("");}}
- const money=(minor:number)=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Number(minor??0)/100);
+ const money=(minor:number)=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",minimumFractionDigits:0,maximumFractionDigits:2}).format(Number(minor??0)/100);
 
  if(tenant.loading)return <AppShell title="Franchise Sales"><p className="text-sm text-muted-foreground">Loading workspace…</p></AppShell>;
  if(q.error)return <AppShell title="Franchise Sales"><Card><CardContent className="p-6"><p className="text-sm text-destructive">{q.error instanceof Error?q.error.message:"Franchise Sales unavailable"}</p></CardContent></Card></AppShell>;
@@ -67,8 +68,21 @@ function FranchiseSales(){
   {programme&&<Card className="mt-6"><CardContent className="p-5">
    <div className="flex flex-wrap items-start justify-between gap-4">
     <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Active programme</p><h2 className="mt-1 font-display text-xl font-semibold">{programme.name}</h2><p className="mt-1 text-sm text-muted-foreground">{programme.offer?.positioning??"One kitchen. 15+ brands. One technology platform. One protected territory."}</p></div>
-    <div className="flex flex-wrap gap-2"><Badge variant="outline">{Number(programme.royalty_bps)/100}% royalty</Badge><Badge variant="outline">{Number(programme.marketing_bps)/100}% marketing</Badge><Badge variant="outline">{new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(Number(programme.tech_fee_minor_per_order)/100)} / order tech</Badge><Badge variant="outline">{Number(programme.supply_markup_bps)/100}% supply markup</Badge></div>
+    <div className="flex flex-wrap gap-2">
+     <Badge variant="outline">Royalty: {terms?.royaltyStatus==="quote_required"||programme.royalty_bps==null?"To be confirmed in written quote":`${Number(programme.royalty_bps)/100}%`}</Badge>
+     <Badge variant="outline">{Number(programme.marketing_bps)/100}% marketing</Badge>
+     {terms?.franchiseFeeVersion==="2026-10-06-r2"?<>
+      <Badge variant="outline">{money(terms.techFeePerMonth*100)} / month tech</Badge>
+      <Badge variant="outline">{money(terms.accountancyFeePerMonth*100)} / month accounts</Badge>
+      <Badge variant="outline">Bought-in supplies at cost</Badge>
+      <Badge variant="outline">Manufactured supplies: full production cost + {terms.manufacturedSupplyMarkupPercent}%</Badge>
+     </>:<>
+      <Badge variant="outline">{new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(Number(programme.tech_fee_minor_per_order)/100)} / order tech</Badge>
+      <Badge variant="outline">{Number(programme.supply_markup_bps)/100}% supply markup</Badge>
+     </>}
+    </div>
    </div>
+   {terms?.franchiseFeeVersion==="2026-10-06-r2"&&<p className="mt-4 text-sm text-muted-foreground">Base franchise fees are reduced by 50% for each location. Allow approximately {money(terms.equipmentOpeningSuppliesEstimate*100)} per location for equipment, opening packaging and supplies, plus the base fee and other quoted startup costs. The royalty and final scope require a written quote. Existing signed fee schedules retain their agreed terms.</p>}
    {!!programme.offer?.featuredMarkets?.length&&<div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">{programme.offer.featuredMarkets.map((m:any)=><div key={m.name} className="rounded-lg bg-muted p-3"><b className="text-sm">{m.name}</b><div className="mt-1"><StatusBadge status={m.status}/></div>{m.note&&<p className="mt-1 text-xs text-muted-foreground">{m.note}</p>}</div>)}</div>}
   </CardContent></Card>}
 
@@ -82,7 +96,7 @@ function FranchiseSales(){
    <TabsContent value="territories">
     <div className="mb-4 flex flex-wrap gap-2"><Input className="max-w-sm" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search territory…"/><select className="h-10 rounded-md border bg-background px-3 text-sm" value={region} onChange={e=>setRegion(e.target.value)}><option value="all">All regions</option>{regions.map(r=><option key={r} value={r}>{r}</option>)}</select></div>
     <Card><CardContent className="p-0"><div className="overflow-x-auto"><table className="w-full min-w-[880px] text-sm"><thead className="bg-surface-2 text-left text-xs uppercase text-muted-foreground"><tr><th className="px-4 py-3">Territory</th><th>Region</th><th>Fee</th><th>Status</th><th>Sellable</th><th>TVI</th><th className="pr-4">Public note</th></tr></thead><tbody className="divide-y">
-     {filtered.map(t=><tr key={t.id}><td className="px-4 py-3"><b>{t.name}</b><p className="text-xs text-muted-foreground">{t.territory_code}</p></td><td>{t.region}</td><td>{money(t.fee_minor)}</td><td><select className="h-8 rounded border bg-background px-2 text-xs" value={t.status} onChange={e=>run("territory:"+t.id,()=>territoryFn({data:{tenantId,territoryId:t.id,status:e.target.value as any}}),"Territory status updated")}>{territoryStatuses.map(s=><option key={s} value={s}>{s.replaceAll("_"," ")}</option>)}</select></td><td><input type="checkbox" checked={!!t.is_sellable} onChange={e=>run("sell:"+t.id,()=>territoryFn({data:{tenantId,territoryId:t.id,isSellable:e.target.checked}}),"Territory availability updated")}/></td><td>{t.territory_score??"—"}</td><td className="max-w-sm pr-4 text-xs text-muted-foreground">{t.public_note??t.metadata?.anchor??"—"}</td></tr>)}
+     {filtered.map(t=><tr key={t.id}><td className="px-4 py-3"><b>{t.name}</b><p className="text-xs text-muted-foreground">{t.territory_code}</p></td><td>{t.region}</td><td>{t.fee_minor==null?"To be confirmed in written quote":money(t.fee_minor)}</td><td><select className="h-8 rounded border bg-background px-2 text-xs" value={t.status} onChange={e=>run("territory:"+t.id,()=>territoryFn({data:{tenantId,territoryId:t.id,status:e.target.value as any}}),"Territory status updated")}>{territoryStatuses.map(s=><option key={s} value={s}>{s.replaceAll("_"," ")}</option>)}</select></td><td><input type="checkbox" checked={!!t.is_sellable} onChange={e=>run("sell:"+t.id,()=>territoryFn({data:{tenantId,territoryId:t.id,isSellable:e.target.checked}}),"Territory availability updated")}/></td><td>{t.territory_score??"—"}</td><td className="max-w-sm pr-4 text-xs text-muted-foreground">{t.public_note??t.metadata?.anchor??"—"}</td></tr>)}
      {!filtered.length&&<tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No territories match.</td></tr>}
     </tbody></table></div></CardContent></Card>
    </TabsContent>
