@@ -5,7 +5,7 @@ import {authoriseServiceScope,parseServiceAuthorization,verifyServiceSecret,type
 const uuid=z.string().uuid();
 const scope=z.object({tenantId:uuid,productKey:z.string().min(2).max(80)});
 const requestSchema=z.discriminatedUnion("operation",[
- scope.extend({operation:z.literal("run.start"),profile:z.enum(["discovery","finance","technical","compliance","product","transaction","accounting","tax","operations"]),
+ scope.extend({operation:z.literal("run.start"),serviceKey:z.string().regex(/^[a-z0-9][a-z0-9.-]{1,100}$/).optional(),profile:z.enum(["discovery","finance","technical","compliance","product","transaction","accounting","tax","operations"]),
   goal:z.string().min(4).max(5000),maxSteps:z.number().int().min(1).max(32).default(8),providerKey:z.string().max(120).nullish(),model:z.string().max(200).nullish(),
   inputVersion:z.string().max(200).nullish(),context:z.record(z.string(),z.unknown()).default({}),sourceRefs:z.array(z.string().max(500)).max(200).default([])}),
  scope.extend({operation:z.literal("run.get"),runId:uuid}),
@@ -89,6 +89,12 @@ export async function serveIntelligenceService(httpRequest:Request){
   const executionWorker=(worker:string)=>`${connectorId?"connector:"+connectorId:"service:"+credential?.id}:${worker}`;
   const ent=await db.rpc("has_tenant_entitlement",{_tenant:input.tenantId,_service:"omniqora.intelligence-runtime"});
   if(ent.error||!ent.data)throw new Error("Omniqora intelligence entitlement required");
+  if(input.operation==="run.start"&&input.serviceKey){
+   const service=await db.from("service_catalogue").select("service_key,status").eq("service_key",input.serviceKey).maybeSingle();
+   if(service.error||!service.data||!["active","beta","internal"].includes(service.data.status))throw new Error("Requested intelligence service is unavailable");
+   const entitlement=await db.rpc("has_tenant_entitlement",{_tenant:input.tenantId,_service:input.serviceKey});
+   if(entitlement.error||!entitlement.data)throw new Error("Requested intelligence service entitlement required");
+  }
   if(input.productKey==="haccora"&&(input.operation==="run.start"||input.operation==="run.get")){
    const haccora=await db.rpc("has_tenant_entitlement",{_tenant:input.tenantId,_service:"haccora.ai-copilot"});
    if(haccora.error||!haccora.data)throw new Error("Haccora AI Copilot entitlement required");
@@ -101,7 +107,7 @@ export async function serveIntelligenceService(httpRequest:Request){
    if(runError)throw new Error(runError.message);
    const {data:job,error:jobError}=await db.from("intelligence_jobs").insert({tenant_id:input.tenantId,product_key:input.productKey,job_type:"agent.run",
     subject_type:"ai_agent_run",subject_id:run.id,priority:"normal",input:{runId:run.id,profile:input.profile,goal:input.goal,maxSteps:input.maxSteps,
-    providerKey:input.providerKey,model:input.model,inputVersion:input.inputVersion,context:input.context,sourceRefs:input.sourceRefs},
+    providerKey:input.providerKey,model:input.model,inputVersion:input.inputVersion,serviceKey:input.serviceKey??null,context:input.context,sourceRefs:input.sourceRefs},
     requirements:{boundedTools:true,approvalForWrites:true,citationsRequired:input.productKey==="haccora"}}).select("id").single();
    if(jobError){
     await db.from("ai_agent_runs").update({status:"failed",updated_at:new Date().toISOString()}).eq("id",run.id);
