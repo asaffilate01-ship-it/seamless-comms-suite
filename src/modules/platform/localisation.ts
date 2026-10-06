@@ -1,32 +1,38 @@
-export type RegionPack = {
-  region_key: string;
-  country_code: string;
-  currency: string;
-  timezones: string[];
-  supported_locales: string[];
-  data_region: string;
-  provider_preferences?: Record<string, string[]>;
-};
+export type TranslationBundle = Record<string, string>;
 
-export type LocalePack = {
+export type LocalisationLayer = {
   locale: string;
-  language_code: string;
-  country_code?: string | null;
-  rtl: boolean;
-  date_format?: string | null;
-  number_format?: string | null;
-  terminology?: Record<string, string>;
+  fallbackLocale?: string | null;
+  platform: TranslationBundle;
+  product?: TranslationBundle;
+  module?: Record<string, TranslationBundle>;
+  tenant?: TranslationBundle;
 };
 
-export function resolveRuntimeLocale(region: RegionPack, requested?: string | null) {
-  const locale = requested || region.supported_locales[0];
-  if (!locale || !region.supported_locales.includes(locale)) {
-    throw new Error("Locale is not supported for this region");
-  }
-  return {
-    locale,
-    currency: region.currency,
-    timezone: region.timezones[0] ?? "UTC",
-    dataRegion: region.data_region,
-  };
+export function mergeTranslations(layer: LocalisationLayer): TranslationBundle {
+  const merged: TranslationBundle = { ...layer.platform };
+  if (layer.product) Object.assign(merged, layer.product);
+  for (const bundle of Object.values(layer.module ?? {})) Object.assign(merged, bundle);
+  if (layer.tenant) Object.assign(merged, layer.tenant);
+  return merged;
 }
+
+export function translate(bundle: TranslationBundle, key: string, fallback?: string): string {
+  return bundle[key] ?? fallback ?? key;
+}
+
+export function isRtlLocale(locale: string): boolean {
+  const language = locale.toLowerCase().split("-")[0];
+  return ["ar","ur","fa","he"].includes(language);
+}
+
+/** AI may propose draft translations, but runtime bundles should prefer reviewed/approved entries. */
+export type TranslationProposal = {
+  locale: string;
+  key: string;
+  proposedValue: string;
+  sourceLocale: string;
+  sourceValue: string;
+  modelRunId: string;
+  status: "draft";
+};
