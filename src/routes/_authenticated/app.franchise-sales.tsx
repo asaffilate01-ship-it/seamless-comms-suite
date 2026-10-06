@@ -71,8 +71,8 @@ function FranchiseSales(){
     <div className="flex flex-wrap gap-2">
      <Badge variant="outline">Royalty: {terms?.royaltyStatus==="quote_required"||programme.royalty_bps==null?"To be confirmed in written quote":`${Number(programme.royalty_bps)/100}%`}</Badge>
      <Badge variant="outline">{Number(programme.marketing_bps)/100}% marketing</Badge>
-     {terms?.franchiseFeeVersion==="2026-10-06-r2"?<>
-      <Badge variant="outline">{money(terms.techFeePerMonth*100)} / month tech</Badge>
+     {terms?.offerVersion==="2026-10-06-r3"||terms?.offerVersion==="2026-10-06-r2"?<>
+      <Badge variant="outline">{terms.offerVersion==="2026-10-06-r3"?`${Math.round(terms.techFeePerOrder*100)}p / completed order · all technology including Haccora`:`${money(terms.techFeePerMonth*100)} / month tech · previous offer`}</Badge>
       <Badge variant="outline">{money(terms.accountancyFeePerMonth*100)} / month accounts</Badge>
       <Badge variant="outline">Bought-in supplies at cost</Badge>
       <Badge variant="outline">Manufactured supplies: full production cost + {terms.manufacturedSupplyMarkupPercent}%</Badge>
@@ -82,7 +82,12 @@ function FranchiseSales(){
      </>}
     </div>
    </div>
-   {terms?.franchiseFeeVersion==="2026-10-06-r2"&&<p className="mt-4 text-sm text-muted-foreground">Base franchise fees are reduced by 50% for each location. Allow approximately {money(terms.equipmentOpeningSuppliesEstimate*100)} per location for equipment, opening packaging and supplies, plus the base fee and other quoted startup costs. The royalty and final scope require a written quote. Existing signed fee schedules retain their agreed terms.</p>}
+   {terms?.offerVersion==="2026-10-06-r3"&&<>
+    <p className="mt-4 text-sm text-muted-foreground">The turnkey MealDeck multi-brand kitchen franchise brings together the shared brand portfolio, location and territory assessment, equipment and opening supplies, technology including Haccora, compliance, administration, training, support, marketing and scoped accountancy. The location menu and launch requirements are agreed for each kitchen.</p>
+    <p className="mt-3 text-sm text-muted-foreground">The {money(terms.equipmentOpeningSuppliesFee*100)} equipment, opening packaging and supplies package plus the reduced base franchise fee are payable upfront per location. The technology charge is {Math.round(terms.techFeePerOrder*100)}p per completed order. {terms.techOrderDefinition} Card processing fees charged by third parties. The royalty and final service scope require a written quote; existing signed fee schedules retain their agreed terms.</p>
+    <p className="mt-3 text-sm text-muted-foreground">{programme.offer?.operatorResponsibilities}</p>
+   </>}
+   {terms?.offerVersion==="2026-10-06-r2"&&<p className="mt-4 text-sm text-muted-foreground">Stored previous offer (r2): approximately {money(terms.equipmentOpeningSuppliesEstimate*100)} for equipment and opening supplies and {money(terms.techFeePerMonth*100)} monthly technology. The current service/setup revision has not been applied to this programme. The reduced territory fee version remains r2.</p>}
    {!!programme.offer?.featuredMarkets?.length&&<div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">{programme.offer.featuredMarkets.map((m:any)=><div key={m.name} className="rounded-lg bg-muted p-3"><b className="text-sm">{m.name}</b><div className="mt-1"><StatusBadge status={m.status}/></div>{m.note&&<p className="mt-1 text-xs text-muted-foreground">{m.note}</p>}</div>)}</div>}
   </CardContent></Card>}
 

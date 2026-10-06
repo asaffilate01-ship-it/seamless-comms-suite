@@ -1,10 +1,11 @@
 export const MEALDECK_PROGRAMME_KEY = "mealdeck-england-wales";
-export const MEALDECK_PRICING_VERSION = "2026-10-06-r2";
+export const MEALDECK_FRANCHISE_FEE_VERSION = "2026-10-06-r2";
+export const MEALDECK_OFFER_VERSION = "2026-10-06-r3";
 export const ROYALTY_QUOTE_MESSAGE = "To be confirmed in written quote";
 
-/** Current offer reference, in GBP major units. This is not an accepted fee schedule. */
-export const MEALDECK_CURRENT_PRICING = Object.freeze({
-  franchiseFeeVersion: MEALDECK_PRICING_VERSION,
+/** Previous service terms remain readable until the r3 migration is applied. */
+export const MEALDECK_R2_PRICING = Object.freeze({
+  franchiseFeeVersion: MEALDECK_FRANCHISE_FEE_VERSION,
   feeMin: 3750,
   feeMax: 12500,
   royaltyStatus: "quote_required",
@@ -24,6 +25,66 @@ export const MEALDECK_CURRENT_PRICING = Object.freeze({
   feesExcludeVatWhereApplicable: true,
 });
 
+/** Service/setup offer version is independent from the once-reduced territory fee version. */
+export const MEALDECK_CURRENT_PRICING = Object.freeze({
+  offerVersion: MEALDECK_OFFER_VERSION,
+  franchiseFeeVersion: MEALDECK_FRANCHISE_FEE_VERSION,
+  feeMin: 3750,
+  feeMax: 12500,
+  franchiseFeePaymentTiming: "upfront",
+  royaltyStatus: "quote_required",
+  royaltyPercent: null,
+  royaltyDisplay: ROYALTY_QUOTE_MESSAGE,
+  marketingPercent: 1.5,
+  techFeePerOrder: 0.35,
+  techIncludesHaccora: true,
+  techFeeBasis: "per_completed_order",
+  techOrderDefinition: "One completed customer order per kitchen, regardless of brand count or ordering channel; cancelled and fully refunded orders are excluded.",
+  accountancyFeePerMonth: 100,
+  boughtInSupplyMarkupPercent: 0,
+  manufacturedSupplyMarkupPercent: 15,
+  manufacturedSupplyCostBasis: "fully_costed_production",
+  manufacturedSupplyFormula: "(ingredients + labour + other allocated production costs) × 1.15",
+  equipmentOpeningSuppliesFee: 15000,
+  equipmentOpeningSuppliesPaymentTiming: "upfront",
+  setupPackageScope: "Equipment, opening packaging and opening supplies per location",
+  setupPackageExclusions: "Premises works and deposits, professional costs and working capital",
+  cardProcessingFeeDescription: "Card processing fees charged by third parties",
+  feesExcludeVatWhereApplicable: true,
+});
+
+export const MEALDECK_CURRENT_OFFER = Object.freeze({
+  brands: "Shared MealDeck brand portfolio",
+  positioning: "Turnkey MealDeck multi-brand kitchen franchise, with the location, brand portfolio, equipment, supplies, technology and central support brought together for an agreed launch.",
+  pricing: MEALDECK_CURRENT_PRICING,
+  featuredMarkets: [
+    { name: "Luton", status: "taken", note: "LU4 8NU" },
+    { name: "St Albans", status: "taken", note: "AL1 3JU" },
+    { name: "Bedford", status: "taken" },
+    { name: "Milton Keynes", status: "taken" },
+    { name: "Islington / Camden", status: "taken", note: "N7 8XH" },
+  ],
+  franchisorProvides: [
+    "Shared MealDeck brand portfolio, with location menus agreed for launch",
+    "Location and territory assessment",
+    "Agreed equipment and opening supplies package",
+    "All technology including Haccora food safety tools",
+    "Central compliance and administration support",
+    "Training and ongoing operational support",
+    "Marketing programme",
+    "Scoped accountancy service",
+    "Central production and supply",
+  ],
+  franchiseeFunds: [
+    "Reduced base franchise fee and £15,000 equipment/opening-supplies package upfront",
+    "Premises and deposits", "Staff and payroll", "Utilities", "Ongoing stock and packaging",
+    "Agreed royalty and marketing charges", "35p technology per completed order", "£100 monthly accountancy",
+    "Card processing fees charged by third parties", "Courier delivery charges and aggregator commissions",
+    "Local operating costs and working capital",
+  ],
+  operatorResponsibilities: "The franchisee runs and staffs the kitchen, follows food safety and service standards, and funds premises, payroll, utilities and the agreed operating charges.",
+});
+
 type Row = Record<string, any>;
 
 function object(value: unknown): Row {
@@ -36,9 +97,9 @@ function amount(value: unknown): number | null {
   return Number.isSafeInteger(number) && number >= 0 ? number : null;
 }
 
-export function hasCurrentMealDeckPricing(programme: Row): boolean {
+export function hasRevisedMealDeckFranchiseFees(programme: Row): boolean {
   return programme.programme_key === MEALDECK_PROGRAMME_KEY &&
-    object(object(programme.offer).pricing).franchiseFeeVersion === MEALDECK_PRICING_VERSION;
+    object(object(programme.offer).pricing).franchiseFeeVersion === MEALDECK_FRANCHISE_FEE_VERSION;
 }
 
 /** A version is a stored declaration; never infer a row's version from its programme. */
@@ -48,22 +109,27 @@ export function territoryFeeVersion(territory: Row): string | undefined {
 }
 
 export function currentTerritoryFeeMinor(territory: Row, programme: Row): number | null {
-  if (hasCurrentMealDeckPricing(programme) && territoryFeeVersion(territory) !== MEALDECK_PRICING_VERSION) return null;
+  if (hasRevisedMealDeckFranchiseFees(programme) && territoryFeeVersion(territory) !== MEALDECK_FRANCHISE_FEE_VERSION) return null;
   return amount(territory.fee_minor);
 }
 
 /** Public programme fields exclude pricing history and internal commercial deliberations. */
 export function publicNetworkProgramme(programme: Row) {
-  const current = hasCurrentMealDeckPricing(programme);
-  const quoteRequired = current || programme.royalty_status === "quote_required" || programme.royalty_bps == null;
+  const revisedFees = hasRevisedMealDeckFranchiseFees(programme);
+  const quoteRequired = revisedFees || programme.royalty_status === "quote_required" || programme.royalty_bps == null;
   const rawOffer = object(programme.offer);
   const offer: Row = {};
-  for (const key of ["brands", "positioning", "featuredMarkets", "franchisorProvides", "franchiseeFunds"]) {
+  for (const key of ["brands", "positioning", "featuredMarkets", "franchisorProvides", "franchiseeFunds", "operatorResponsibilities"]) {
     if (rawOffer[key] !== undefined) offer[key] = rawOffer[key];
   }
   const legacyRoyalty = amount(programme.royalty_bps);
   const storedVersion = object(rawOffer.pricing).franchiseFeeVersion;
-  const commercial = current ? MEALDECK_CURRENT_PRICING : {
+  const storedOfferVersion = object(rawOffer.pricing).offerVersion;
+  const currentOffer = revisedFees && storedOfferVersion === MEALDECK_OFFER_VERSION;
+  const previousOffer = revisedFees && (storedOfferVersion === undefined || storedOfferVersion === "2026-10-06-r2");
+  const commercial = currentOffer ? MEALDECK_CURRENT_PRICING : previousOffer ? {
+    ...MEALDECK_R2_PRICING, offerVersion: "2026-10-06-r2",
+  } : {
     feeMin: Number(programme.fee_min_minor ?? 0) / 100,
     feeMax: Number(programme.fee_max_minor ?? 0) / 100,
     royaltyStatus: quoteRequired ? "quote_required" : "agreed",
@@ -73,6 +139,7 @@ export function publicNetworkProgramme(programme: Row) {
     techFeePerOrder: Number(programme.tech_fee_minor_per_order ?? 0) / 100,
     supplyMarkupPercent: Number(programme.supply_markup_bps ?? 0) / 100,
     ...(typeof storedVersion === "string" && storedVersion ? { franchiseFeeVersion: storedVersion } : {}),
+    ...(typeof storedOfferVersion === "string" && storedOfferVersion ? { offerVersion: storedOfferVersion } : {}),
   };
   return {
     key: programme.programme_key,

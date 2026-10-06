@@ -79,31 +79,47 @@ Managed Operating Profit is calculated after food/packaging, payroll, premises, 
 
 The management agreement must remain legally separate from the franchise agreement and should be reviewed by franchise, tax and employment advisers before issue.
 
-## MealDeck current offer: 2026-10-06-r2
+## MealDeck current offer: 2026-10-06-r3
 
-This revision applies to the current location offer and territory templates. It does not change signed agreements, accepted application snapshots, management agreements or invoices.
+MealDeck is a turnkey multi-brand kitchen franchise. The offer brings together the shared MealDeck brand portfolio, location and territory assessment, the equipment and opening-supplies package, all technology including Haccora, and central compliance, administration, training, operational support, marketing and scoped accountancy. The available location menu, equipment schedule, service scope and launch requirements are agreed for each site. The franchisee runs and staffs the kitchen, follows food safety and service standards, and funds premises, payroll, utilities and the agreed operating charges.
+
+This revision changes the current service and setup offer. Existing signed agreements, accepted application snapshots, management agreements, invoices and territory fee history remain unchanged.
 
 | Term | Current offer reference |
 | --- | --- |
-| Base franchise fee | Each location's previous catalogue fee reduced by 50%; standard range £3,750–£12,500 |
-| Equipment, opening packaging and opening supplies | Approximately £15,000 per location; indicative and separately itemised |
+| Base franchise fee | Each location's previous catalogue fee reduced by 50% once; standard range £3,750–£12,500, paid upfront |
+| Equipment, opening packaging and opening supplies | £15,000 package per location, paid upfront in addition to the reduced base franchise fee |
 | Royalty | To be confirmed in the written quote; no replacement percentage has been agreed |
 | Marketing | 1.5% of contract-defined Net Sales |
-| Technology | £199 per month per location; replaces the old 25p-per-order charge |
+| Technology | 35p per completed order for all technology including Haccora |
 | Accountancy | £100 per month for the agreed service scope |
 | Bought-in supplies | At the agreed purchase-cost basis, with no markup |
 | Manufactured supplies | (Ingredients + labour + other properly allocated production costs) × 1.15 |
 
-Business charges exclude VAT where applicable. The equipment/opening-stock allowance excludes additional premises work, deposits, separately quoted technology hardware/setup, professional costs and working capital. The quote defines the precise inclusions and avoids charging a cost twice.
+One completed customer order per kitchen, regardless of brand count or ordering channel; cancelled and fully refunded orders are excluded. The 35p charge replaces the previous £199 monthly technology offer. There is no additional monthly technology charge in r3.
 
-The migration `20261006120000_mealdeck_franchise_pricing_revision.sql` archives each record's previous fee under `metadata.franchiseFeeRevisions['2026-10-06-r2']`, rounds the halved fee to the nearest penny and sets `metadata.franchiseFeeVersion` in the same transaction. Programme history is retained under `offer.pricingHistory`. Replaying the migration does not reprice converted records; a later unmarked import under an already revised programme requires a separate review. The seed RPC fills missing records and preserves existing prices, reservations and programme decisions.
+Card processing fees charged by third parties. Courier delivery charges and aggregator commissions also remain separate operating costs. No MealDeck card-processing tariff or payment commission is introduced by this revision.
 
-An undecided royalty is stored as `royalty_bps = NULL` with `royalty_status = 'quote_required'`. The database check constraint rejects an apparently agreed numeric rate while that status remains. The retired per-order technology and universal supply-markup scalars are zero; current monthly fees and the two supply categories are in `offer.pricing`.
+The standard upfront base fee plus package totals £18,750–£27,500 per location. Business charges exclude VAT where applicable. The package excludes premises works and deposits, professional costs and working capital; the written quote defines the equipment and supplies included and the site-specific service scope. This is not an all-in premises or working-capital budget.
 
-The public programme DTO contains `franchiseFeeVersion`, `royaltyStatus`, `royaltyPercent: null`, `royaltyDisplay`, `techFeePerMonth`, `accountancyFeePerMonth`, `boughtInSupplyMarkupPercent`, `manufacturedSupplyMarkupPercent`, `manufacturedSupplyCostBasis` and `equipmentOpeningSuppliesEstimate`. Each territory has its own `franchiseFeeVersion` only when that marker exists on the stored row. Do not infer it from the programme or fee amount. An unmarked row remains unmarked, and current CRM/exhibit presenters withhold its price until confirmed. Public responses exclude internal pricing history.
+### Independent service and territory fee versions
 
-The website adapter handles legacy-to-current fee conversion once. The revised API sends stored, already-revised fees directly; it does not apply a second discount. Application `answers.offerVersion`, `answers.offerSnapshot` and `answers.selectedTerritoryFee` retain the offer presented by the website adapter. These enquiry records are not signed fee schedules.
+`offerVersion` is `2026-10-06-r3`; `franchiseFeeVersion` remains `2026-10-06-r2`. The unchanged migration `20261006120000_mealdeck_franchise_pricing_revision.sql` archives each record's previous fee under `metadata.franchiseFeeRevisions['2026-10-06-r2']`, rounds its original fee reduction to the nearest penny and sets `metadata.franchiseFeeVersion` in the same transaction. Replaying that migration does not reprice converted records; a later unmarked import under an already revised programme requires a separate review.
+
+The forward migration `20261006133000_mealdeck_technology_and_upfront_package.sql` updates only the current MealDeck programme's service/setup offer and the authoritative `tech_fee_minor_per_order` scalar to 35. It archives the prior pricing and offer under `offer.pricingHistory['2026-10-06-r3']`, retains earlier history and leaves all actual territory and template records untouched. There is no fee-reduction calculation in r3. Replaying r3 does not change fees, reservations, accepted snapshots or the archived offer. The seed RPC fills missing records, copies already reduced template fees verbatim and preserves existing prices, reservations and programme decisions.
+
+An undecided royalty remains `royalty_bps = NULL` with `royalty_status = 'quote_required'`. The database check constraint rejects an apparently agreed numeric rate, including zero, while that status remains. The universal supply-markup scalar remains zero; the two supply categories and monthly accountancy fee are defined in `offer.pricing`. No new royalty percentage is approved by this revision.
+
+The r3 public programme DTO contains `offerVersion`, `franchiseFeeVersion`, `royaltyStatus`, `royaltyPercent: null`, `royaltyDisplay`, `techFeePerOrder: 0.35`, `techIncludesHaccora: true`, `techFeeBasis: 'per_completed_order'`, `techOrderDefinition`, `accountancyFeePerMonth`, the split supply-cost fields, `equipmentOpeningSuppliesFee: 15000` and both `equipmentOpeningSuppliesPaymentTiming` and `franchiseFeePaymentTiming` as `'upfront'`. It contains no retired `techFeePerMonth` or `equipmentOpeningSuppliesEstimate` fields. Public offer copy includes the turnkey brand portfolio, central support and operator responsibilities, with `cardProcessingFeeDescription: 'Card processing fees charged by third parties'`.
+
+Presenters inspect the stored offer version independently of the fee version. A database programme still carrying r2 service terms is shown as offer r2, with its previous monthly technology and indicative equipment allowance, until the forward migration has run. Updating the application code alone must not make that stored programme claim the r3 service prices.
+
+Each territory has its own `franchiseFeeVersion` only when that marker exists on the stored row. Do not infer it from the programme or fee amount. An unmarked row remains unmarked, and public, CRM and exhibit presenters withhold its price until confirmed. Missing or invalid stored amounts also produce a null fee. Public responses exclude internal pricing history.
+
+The website adapter handles legacy-to-current fee conversion once using the fee version alone. The revised API sends stored, already revised r2 territory fees directly for both r2 and r3 offers; it does not apply a second discount. Application `answers.offerVersion`, `answers.offerSnapshot` and `answers.selectedTerritoryFee` retain the offer presented by the website adapter. These enquiry records are not signed fee schedules, and earlier snapshots are not rewritten to r3.
 
 `getTerritoryAgreementExhibit` keeps geography in `territory` and puts the indicative catalogue charge in `currentOffer.baseFranchiseFee`. It no longer injects today's catalogue price into `territory.fee_minor` as though that were a contractual charge. `contractualPricing.status` is `agreement_schedule_required`; the signed fee schedule remains the source for an existing contract.
 
-Deploy the migration together with the corresponding server/CRM release. Source changes alone do not confirm that the production database or public endpoint has been updated. Run `network-expansion-pricing.test.mjs`, `network-expansion.test.mjs` and `network-expansion-public.node.mjs` to verify migration replay, custom prices, signed-snapshot preservation and the API boundary.
+Deploy the forward migration together with the corresponding server/CRM release. Source changes alone do not confirm that the production database or public endpoint has been updated. This change configures and presents offer terms; it does not implement order metering, charge collection or a billing engine.
+
+Run `network-expansion-pricing.test.mjs` for the original r2 fee reduction; `network-expansion-offer-r3.test.mjs` for service-term migration replay, unchanged prices/reservations/snapshots, history and new seeds; `network-expansion.test.mjs` for the full migration chain; and `network-expansion-public.node.mjs` for the public API, bootstrap, CRM/exhibit terms and stored-r2 versus stored-r3 distinction.
