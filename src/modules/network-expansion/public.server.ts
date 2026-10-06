@@ -17,6 +17,8 @@ const application=z.object({
   utm:z.record(z.string(),z.unknown()).default({}),
   answers:z.record(z.string(),z.unknown()).default({}),
   consent:z.literal(true),
+  // Consent to application follow-up is separate from optional marketing consent.
+  marketingConsent:z.boolean().default(false),
   website:z.string().max(200).optional().default(""),
 });
 
@@ -122,7 +124,7 @@ export async function servePublicNetworkExpansion(request:Request){
       if(!person.data){
         person=await db.from("crm_people").insert({
           tenant_id:tenant.id,display_name:parsed.name,email,phone_e164:parsed.phone||null,lifecycle_stage:"lead",
-          marketing_consent:parsed.consent,source_product_key:"mealdeck",tags:["franchise-prospect"],
+          marketing_consent:parsed.marketingConsent,source_product_key:"mealdeck",tags:["franchise-prospect"],
           metadata:{preferredArea:parsed.preferredArea,existingKitchen:parsed.existingKitchen,multiUnitInterest:parsed.multiUnitInterest,operatorModel:parsed.operatorModel}
         }).select("*").single();
         if(person.error)throw new Error(person.error.message);
