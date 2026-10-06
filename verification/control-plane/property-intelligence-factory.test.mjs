@@ -41,4 +41,6 @@ await db.close();
 
 const contractSource=await readFile(new URL("../../src/modules/property-intelligence/contracts.ts",import.meta.url),"utf8");
 for(const token of ["underwriteDeal","scoreVacancy","rankBuyerMatches","sourceUrl","confidence"]) assert(contractSource.includes(token),token);
+const intelligenceService=await readFile(new URL("../../src/modules/intelligence/service.server.ts",import.meta.url),"utf8");
+for(const token of ["serviceKey","Requested intelligence service entitlement required","has_tenant_entitlement"]) assert(intelligenceService.includes(token),token);
 console.log("Gabley/DOMUREVA factory catalogue and property intelligence contracts verified");
