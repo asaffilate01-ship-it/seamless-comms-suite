@@ -78,3 +78,32 @@ Default planning configuration for MealDeck:
 Managed Operating Profit is calculated after food/packaging, payroll, premises, utilities, delivery/payment costs, local site costs and standard franchise charges, but before the management fee, financing, corporation tax, depreciation and investor distributions.
 
 The management agreement must remain legally separate from the franchise agreement and should be reviewed by franchise, tax and employment advisers before issue.
+
+## MealDeck current offer: 2026-10-06-r2
+
+This revision applies to the current location offer and territory templates. It does not change signed agreements, accepted application snapshots, management agreements or invoices.
+
+| Term | Current offer reference |
+| --- | --- |
+| Base franchise fee | Each location's previous catalogue fee reduced by 50%; standard range £3,750–£12,500 |
+| Equipment, opening packaging and opening supplies | Approximately £15,000 per location; indicative and separately itemised |
+| Royalty | To be confirmed in the written quote; no replacement percentage has been agreed |
+| Marketing | 1.5% of contract-defined Net Sales |
+| Technology | £199 per month per location; replaces the old 25p-per-order charge |
+| Accountancy | £100 per month for the agreed service scope |
+| Bought-in supplies | At the agreed purchase-cost basis, with no markup |
+| Manufactured supplies | (Ingredients + labour + other properly allocated production costs) × 1.15 |
+
+Business charges exclude VAT where applicable. The equipment/opening-stock allowance excludes additional premises work, deposits, separately quoted technology hardware/setup, professional costs and working capital. The quote defines the precise inclusions and avoids charging a cost twice.
+
+The migration `20261006120000_mealdeck_franchise_pricing_revision.sql` archives each record's previous fee under `metadata.franchiseFeeRevisions['2026-10-06-r2']`, rounds the halved fee to the nearest penny and sets `metadata.franchiseFeeVersion` in the same transaction. Programme history is retained under `offer.pricingHistory`. Replaying the migration does not reprice converted records; a later unmarked import under an already revised programme requires a separate review. The seed RPC fills missing records and preserves existing prices, reservations and programme decisions.
+
+An undecided royalty is stored as `royalty_bps = NULL` with `royalty_status = 'quote_required'`. The database check constraint rejects an apparently agreed numeric rate while that status remains. The retired per-order technology and universal supply-markup scalars are zero; current monthly fees and the two supply categories are in `offer.pricing`.
+
+The public programme DTO contains `franchiseFeeVersion`, `royaltyStatus`, `royaltyPercent: null`, `royaltyDisplay`, `techFeePerMonth`, `accountancyFeePerMonth`, `boughtInSupplyMarkupPercent`, `manufacturedSupplyMarkupPercent`, `manufacturedSupplyCostBasis` and `equipmentOpeningSuppliesEstimate`. Each territory has its own `franchiseFeeVersion` only when that marker exists on the stored row. Do not infer it from the programme or fee amount. An unmarked row remains unmarked, and current CRM/exhibit presenters withhold its price until confirmed. Public responses exclude internal pricing history.
+
+The website adapter handles legacy-to-current fee conversion once. The revised API sends stored, already-revised fees directly; it does not apply a second discount. Application `answers.offerVersion`, `answers.offerSnapshot` and `answers.selectedTerritoryFee` retain the offer presented by the website adapter. These enquiry records are not signed fee schedules.
+
+`getTerritoryAgreementExhibit` keeps geography in `territory` and puts the indicative catalogue charge in `currentOffer.baseFranchiseFee`. It no longer injects today's catalogue price into `territory.fee_minor` as though that were a contractual charge. `contractualPricing.status` is `agreement_schedule_required`; the signed fee schedule remains the source for an existing contract.
+
+Deploy the migration together with the corresponding server/CRM release. Source changes alone do not confirm that the production database or public endpoint has been updated. Run `network-expansion-pricing.test.mjs`, `network-expansion.test.mjs` and `network-expansion-public.node.mjs` to verify migration replay, custom prices, signed-snapshot preservation and the API boundary.

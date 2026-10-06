@@ -24,10 +24,20 @@ await asUser(()=>db.query("SELECT public.network_seed_mealdeck_programme($1)",[m
 
 const programme=await db.query("SELECT * FROM public.network_programmes WHERE tenant_id=$1 AND programme_key='mealdeck-england-wales'",[mealdeck.tenantId]);
 assert.equal(programme.rows.length,1);
-assert.equal(programme.rows[0].royalty_bps,550);
+assert.equal(programme.rows[0].royalty_bps,null);
+assert.equal(programme.rows[0].royalty_status,"quote_required");
 assert.equal(programme.rows[0].marketing_bps,150);
-assert.equal(programme.rows[0].tech_fee_minor_per_order,25);
-assert.equal(programme.rows[0].supply_markup_bps,1000);
+assert.equal(programme.rows[0].tech_fee_minor_per_order,0);
+assert.equal(programme.rows[0].supply_markup_bps,0);
+assert.equal(programme.rows[0].fee_min_minor,375000);
+assert.equal(programme.rows[0].fee_max_minor,1250000);
+assert.equal(programme.rows[0].offer.pricing.franchiseFeeVersion,"2026-10-06-r2");
+assert.equal(programme.rows[0].offer.pricing.royaltyPercent,null);
+assert.equal(programme.rows[0].offer.pricing.techFeePerMonth,199);
+assert.equal(programme.rows[0].offer.pricing.accountancyFeePerMonth,100);
+assert.equal(programme.rows[0].offer.pricing.boughtInSupplyMarkupPercent,0);
+assert.equal(programme.rows[0].offer.pricing.manufacturedSupplyMarkupPercent,15);
+assert.equal(programme.rows[0].offer.pricing.equipmentOpeningSuppliesEstimate,15000);
 assert.equal(programme.rows[0].managed_franchise_available,true);
 assert.equal(programme.rows[0].managed_profit_share_bps,2000);
 assert.equal(programme.rows[0].managed_profit_basis,"managed_operating_profit");

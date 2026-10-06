@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { networkWorkspaceProgramme, networkWorkspaceTerritory, territoryCommercialExhibit } from "./commercial-terms";
 
 const uuid=z.string().uuid();
 const scope=z.object({tenantId:uuid});
@@ -39,7 +40,10 @@ export const getNetworkExpansionWorkspace=createServerFn({method:"POST"}).middle
     db.from("geo_demographic_cells").select("geography_code",{count:"exact",head:true})
   ]);
   for(const r of rs)if(r.error)throw new Error(r.error.message);
-  return{programmes:rs[0].data??[],territories:rs[1].data??[],applications:rs[2].data??[],channels:rs[3].data??[],campaigns:rs[4].data??[],content:rs[5].data??[],
+  const programmes=(rs[0].data??[]).map(networkWorkspaceProgramme);
+  const programmeById=new Map(programmes.map((p:any)=>[p.id,p]));
+  const territories=(rs[1].data??[]).map((t:any)=>networkWorkspaceTerritory(t,programmeById.get(t.programme_id)??{}));
+  return{programmes,territories,applications:rs[2].data??[],channels:rs[3].data??[],campaigns:rs[4].data??[],content:rs[5].data??[],
     managementAgreements:rs[6].data??[],territoryDesigns:rs[7].data??[],territoryVersions:rs[8].data??[],demographicCells:rs[9].count??0};
 });
 
@@ -260,14 +264,19 @@ export const getTerritoryAgreementExhibit=createServerFn({method:"POST"}).middle
 .inputValidator((i:{tenantId:string;territoryId:string})=>scope.extend({territoryId:uuid}).parse(i))
 .handler(async({context,data})=>{
  const{db}=await access(context,data.tenantId);
- const territory=await db.from("network_territories").select("id,territory_code,name,region,fee_minor,currency").eq("tenant_id",data.tenantId).eq("id",data.territoryId).single();
+ const territory=await db.from("network_territories").select("id,programme_id,territory_code,name,region,fee_minor,currency,metadata").eq("tenant_id",data.tenantId).eq("id",data.territoryId).single();
  if(territory.error)throw new Error(territory.error.message);
+ const programme=await db.from("network_programmes").select("*").eq("tenant_id",data.tenantId).eq("id",territory.data.programme_id).single();
+ if(programme.error)throw new Error(programme.error.message);
  const version=await db.from("network_territory_versions").select("*").eq("tenant_id",data.tenantId).eq("territory_id",data.territoryId).eq("status","approved").order("version",{ascending:false}).limit(1).maybeSingle();
  if(version.error)throw new Error(version.error.message);if(!version.data)throw new Error("No approved territory version");
  return{
   exhibitReference:version.data.contract_reference??territory.data.territory_code+"-v"+version.data.version,
   polygonSha256:version.data.polygon_sha256,
-  territory:territory.data,version:version.data.version,approvedAt:version.data.approved_at,
+  // The geographic exhibit must not present today's catalogue fee as an amended contract price.
+  territory:{id:territory.data.id,territory_code:territory.data.territory_code,name:territory.data.name,region:territory.data.region,currency:territory.data.currency},
+  ...territoryCommercialExhibit(territory.data,programme.data),
+  version:version.data.version,approvedAt:version.data.approved_at,
   protectedGeojson:version.data.protected_geojson,sharedGeojson:version.data.shared_geojson,overflowGeojson:version.data.overflow_geojson,
   population:{protected:version.data.protected_population,households:version.data.protected_households,daytime:version.data.protected_daytime_population,students:version.data.protected_students},
   rules:{protectedCore:"Contractual exclusive territory",shared:"Non-exclusive routing overlap",overflow:"Operational delivery reach only"}

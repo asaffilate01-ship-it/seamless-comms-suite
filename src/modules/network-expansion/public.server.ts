@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MEALDECK_CURRENT_PRICING, currentTerritoryFeeMinor, publicNetworkProgramme, territoryFeeVersion } from "./commercial-terms";
 
 const application=z.object({
   programmeKey:z.string().min(3).max(100).default("mealdeck-england-wales"),
@@ -36,9 +37,9 @@ async function context(programmeKey:string){
     if(template.error)throw new Error(template.error.message);
     const created=await db.from("network_programmes").insert({
       tenant_id:tenant.data.id,product_key:"mealdeck",programme_key:"mealdeck-england-wales",name:"MealDeck England & Wales",
-      model_type:"franchise",status:"active",currency:"GBP",fee_min_minor:750000,fee_max_minor:2500000,
-      royalty_bps:550,marketing_bps:150,tech_fee_minor_per_order:25,supply_markup_bps:1000,
-      offer:{brands:"15+ and growing",featuredMarkets:[
+      model_type:"franchise",status:"active",currency:"GBP",fee_min_minor:375000,fee_max_minor:1250000,
+      royalty_bps:null,royalty_status:"quote_required",marketing_bps:150,tech_fee_minor_per_order:0,supply_markup_bps:0,
+      offer:{brands:"15+ and growing",pricing:MEALDECK_CURRENT_PRICING,featuredMarkets:[
         {name:"Luton",status:"taken",note:"LU4 8NU"},{name:"St Albans",status:"taken",note:"AL1 3JU"},
         {name:"Bedford",status:"taken"},{name:"Milton Keynes",status:"taken"},
         {name:"Islington / Camden",status:"taken",note:"N7 8XH"}
@@ -62,11 +63,16 @@ async function context(programmeKey:string){
   return{db,tenant:tenant.data,programme:programme.data};
 }
 
-const safeTerritory=(t:any)=>({
+const safeTerritory=(t:any,programme:any)=>{
+ const feeMinor=currentTerritoryFeeMinor(t,programme);
+ return{
   code:t.territory_code,name:t.name,region:t.region,status:t.status,
-  fee:Number(t.fee_minor??0)/100,currency:t.currency??"GBP",
+  fee:feeMinor===null?null:feeMinor/100,currency:t.currency??"GBP",
+  // An unmarked row stays unmarked, even when its programme has already been revised.
+  ...(territoryFeeVersion(t)?{franchiseFeeVersion:territoryFeeVersion(t)}:{}),
   isSellable:!!t.is_sellable,note:t.public_note??null,score:t.territory_score??null,
-});
+ };
+};
 
 function score(input:z.infer<typeof application>){
   let n=10;
@@ -88,22 +94,15 @@ export async function servePublicNetworkExpansion(request:Request){
       const status=(url.searchParams.get("status")||"").trim();
       const{db,programme}=await context(programmeKey);
       let query=db.from("network_territories")
-        .select("territory_code,name,region,status,fee_minor,currency,is_sellable,public_note,territory_score")
+        .select("territory_code,name,region,status,fee_minor,currency,is_sellable,public_note,territory_score,metadata")
         .eq("programme_id",programme.id).eq("is_public",true).order("region").order("name").limit(200);
       if(q)query=query.or(`name.ilike.%${q.replaceAll("%","")}%,region.ilike.%${q.replaceAll("%","")}%`);
       if(status)query=query.eq("status",status);
       const territories=await query;
       if(territories.error)throw new Error(territories.error.message);
       return Response.json({
-        programme:{
-          key:programme.programme_key,name:programme.name,currency:programme.currency,
-          feeMin:Number(programme.fee_min_minor)/100,feeMax:Number(programme.fee_max_minor)/100,
-          royaltyPercent:Number(programme.royalty_bps)/100,marketingPercent:Number(programme.marketing_bps)/100,
-          techFeePerOrder:Number(programme.tech_fee_minor_per_order)/100,supplyMarkupPercent:Number(programme.supply_markup_bps)/100,
-          managedFranchiseAvailable:!!programme.managed_franchise_available,managedProfitSharePercent:Number(programme.managed_profit_share_bps??0)/100,
-          managedProfitBasis:programme.managed_profit_basis??"managed_operating_profit",offer:programme.offer??{}
-        },
-        territories:(territories.data??[]).map(safeTerritory)
+        programme:publicNetworkProgramme(programme),
+        territories:(territories.data??[]).map((t:any)=>safeTerritory(t,programme))
       },{headers:{"Cache-Control":"public, max-age=60, stale-while-revalidate=300"}});
     }
     if(request.method==="POST"){
@@ -149,7 +148,7 @@ export async function servePublicNetworkExpansion(request:Request){
         db.from("crm_activities").insert({tenant_id:tenant.id,activity_type:"lead_event",summary:"Franchise application submitted",person_id:person.data.id,lead_id:lead.data.id,source_product_key:"mealdeck",metadata:{applicationId:app.data.id,territory:territory?.name??parsed.preferredArea}}),
         db.from("growth_attribution_events").insert({tenant_id:tenant.id,product_key:"mealdeck",programme_id:programme.id,territory_id:territory?.id??null,application_id:app.data.id,event_type:"application",channel_key:null,utm:parsed.utm,metadata:{source:parsed.source||"mealdeck-franchise-page"}})
       ]);
-      return Response.json({ok:true,applicationId:app.data.id,territory:territory?safeTerritory(territory):null,score:leadScore},{status:201});
+      return Response.json({ok:true,applicationId:app.data.id,territory:territory?safeTerritory(territory,programme):null,score:leadScore},{status:201});
     }
     return new Response("Method not allowed",{status:405,headers:{Allow:"GET, POST"}});
   }catch(error){
