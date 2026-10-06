@@ -2,6 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { decideProvisioning } from "./provisioning-policy";
 import { verifyDomainOwnership } from "./domain-verification.server";
 import { approvedOrigin, FactoryBindingError, provisionDishbeeFactory } from "./dishbee-binding.server";
+import { MerqanoProvisioningBlock, provisionMerqanoFactory } from "./merqano-binding.server";
 
 function secureEqual(a: string, b: string) {
   const aa = createHash("sha256").update(a).digest();
@@ -487,6 +488,10 @@ export async function serveProvisioningWorker(request: Request) {
         }
         if (runtimeProductKey === "dishbee" && !connection && enabling) {
           connection = await provisionDishbee(db, job);
+        }
+        if (runtimeProductKey === "merqano" && !connection && enabling) {
+          try { connection = await provisionMerqanoFactory(db, job); }
+          catch (error) { if (error instanceof MerqanoProvisioningBlock) throw new ProvisioningBlock(error.message); throw error; }
         }
       } else if (job.target_kind === "service") {
         const response = await db
