@@ -11,7 +11,7 @@ const commercialCompiled = ts.transpileModule(commercialSource, {
   compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const commercialUrl = "data:text/javascript;base64," + Buffer.from(commercialCompiled).toString("base64");
-const { MEALDECK_CURRENT_PRICING, publicNetworkProgramme, networkWorkspaceProgramme, networkWorkspaceTerritory, territoryCommercialExhibit } = await import(commercialUrl);
+const { MEALDECK_CURRENT_PRICING, MEALDECK_CURRENT_OFFER, MEALDECK_R2_PRICING, publicNetworkProgramme, networkWorkspaceProgramme, networkWorkspaceTerritory, territoryCommercialExhibit } = await import(commercialUrl);
 const source = await readFile(new URL("../../src/modules/network-expansion/public.server.ts", import.meta.url), "utf8");
 const entry = source
   .replace('"zod"', JSON.stringify(pathToFileURL(require.resolve("zod")).href))
@@ -157,36 +157,67 @@ for (const consent of [undefined, false]) {
 
 const revisedProgramme = {
   royalty_bps: null, royalty_status: "quote_required", fee_min_minor: 375000, fee_max_minor: 1250000,
-  tech_fee_minor_per_order: 0, supply_markup_bps: 0,
-  offer: { pricing: MEALDECK_CURRENT_PRICING, pricingHistory: { previousRoyaltyBps: 550 }, internalNegotiation: "private" },
+  tech_fee_minor_per_order: 35, supply_markup_bps: 0,
+  offer: { ...MEALDECK_CURRENT_OFFER, pricingHistory: { previousRoyaltyBps: 550 }, internalNegotiation: "private" },
 };
 const revisedTerritory = {
   territory_code: "MD-003", name: "Battersea / Clapham / Vauxhall", region: "London", status: "available", is_sellable: true,
   fee_minor: 1250000, currency: "GBP", metadata: { franchiseFeeVersion: "2026-10-06-r2", internalNote: "private" },
 };
 
-test("public current offer has monthly charges, split supplies and an undecided royalty", async () => {
+test("public r3 offer has per-order technology, upfront package, split supplies and an undecided royalty", async () => {
   fixture(null, { programme: revisedProgramme, territories: [revisedTerritory] });
   const response = await servePublicNetworkExpansion(new Request("https://example.invalid/api/public/network-expansion"));
   assert.equal(response.status, 200);
   const result = await response.json();
+  assert.equal(result.programme.offerVersion, "2026-10-06-r3");
   assert.equal(result.programme.franchiseFeeVersion, "2026-10-06-r2");
   assert.equal(result.programme.royaltyPercent, null);
   assert.equal(result.programme.royaltyStatus, "quote_required");
   assert.equal(result.programme.royaltyDisplay, "To be confirmed in written quote");
   assert.equal(result.programme.marketingPercent, 1.5);
-  assert.equal(result.programme.techFeePerMonth, 199);
+  assert.equal(result.programme.techFeePerOrder, 0.35);
+  assert.equal(result.programme.techIncludesHaccora, true);
+  assert.equal(result.programme.techFeeBasis, "per_completed_order");
+  assert.equal(result.programme.techOrderDefinition, "One completed customer order per kitchen, regardless of brand count or ordering channel; cancelled and fully refunded orders are excluded.");
   assert.equal(result.programme.accountancyFeePerMonth, 100);
   assert.equal(result.programme.boughtInSupplyMarkupPercent, 0);
   assert.equal(result.programme.manufacturedSupplyMarkupPercent, 15);
   assert.equal(result.programme.manufacturedSupplyCostBasis, "fully_costed_production");
-  assert.equal(result.programme.equipmentOpeningSuppliesEstimate, 15000);
-  assert.equal("techFeePerOrder" in result.programme, false);
+  assert.equal(result.programme.equipmentOpeningSuppliesFee, 15000);
+  assert.equal(result.programme.equipmentOpeningSuppliesPaymentTiming, "upfront");
+  assert.equal(result.programme.franchiseFeePaymentTiming, "upfront");
+  assert.equal(result.programme.cardProcessingFeeDescription, "Card processing fees charged by third parties");
+  assert.equal(result.programme.offer.brands, "Shared MealDeck brand portfolio");
+  assert.match(result.programme.offer.positioning, /Turnkey MealDeck multi-brand kitchen franchise/);
+  assert.equal(result.programme.offer.operatorResponsibilities, MEALDECK_CURRENT_OFFER.operatorResponsibilities);
+  assert.equal("techFeePerMonth" in result.programme, false);
+  assert.equal("equipmentOpeningSuppliesEstimate" in result.programme, false);
   assert.equal("supplyMarkupPercent" in result.programme, false);
   assert.equal(JSON.stringify(result).includes("previousRoyaltyBps"), false);
   assert.equal(JSON.stringify(result).includes("private"), false);
   assert.equal(result.territories[0].fee, 12500, "the already revised stored fee is never halved in this API");
   assert.equal(result.territories[0].franchiseFeeVersion, "2026-10-06-r2");
+});
+
+test("stored r2 service terms remain r2 until migration despite sharing the r2 territory fee version", async () => {
+  for (const pricing of [MEALDECK_R2_PRICING, { ...MEALDECK_R2_PRICING, offerVersion: "2026-10-06-r2" }]) {
+    const programme = { ...revisedProgramme, tech_fee_minor_per_order: 0, offer: { pricing } };
+    fixture(null, { programme, territories: [revisedTerritory] });
+    const response = await servePublicNetworkExpansion(new Request("https://example.invalid/api/public/network-expansion"));
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.programme.offerVersion, "2026-10-06-r2");
+    assert.equal(result.programme.franchiseFeeVersion, "2026-10-06-r2");
+    assert.equal(result.programme.techFeePerMonth, 199);
+    assert.equal(result.programme.equipmentOpeningSuppliesEstimate, 15000);
+    assert.equal("techFeePerOrder" in result.programme, false);
+    assert.equal("equipmentOpeningSuppliesFee" in result.programme, false);
+    assert.equal(result.territories[0].fee, 12500);
+    const stored = { programme_key: "mealdeck-england-wales", ...programme };
+    assert.equal(networkWorkspaceProgramme(stored).current_terms.offerVersion, "2026-10-06-r2");
+    assert.equal(territoryCommercialExhibit(revisedTerritory, stored).currentOffer.techFeePerMonth, 199);
+  }
 });
 
 test("a current programme never gives its version to an unmarked territory", async () => {
@@ -233,15 +264,15 @@ test("bootstrap uses the new offer and preserves the template's own revision mar
   const inserted = state.inserts.find(x => x.table === "network_programmes").row;
   assert.equal(inserted.royalty_bps, null);
   assert.equal(inserted.royalty_status, "quote_required");
-  assert.equal(inserted.tech_fee_minor_per_order, 0);
-  assert.deepEqual(inserted.offer.pricing, MEALDECK_CURRENT_PRICING);
+  assert.equal(inserted.tech_fee_minor_per_order, 35);
+  assert.deepEqual(inserted.offer, MEALDECK_CURRENT_OFFER);
   assert.equal(state.territories[0].fee_minor, 1250000);
   assert.equal(state.territories[0].metadata.franchiseFeeVersion, "2026-10-06-r2");
 });
 
 test("enquiry offer snapshots and the selected fee are preserved as received from the website adapter", async () => {
   const state = fixture(null, { programme: revisedProgramme, territories: [revisedTerritory] });
-  const answers = { offerVersion: "2026-10-06-r2", offerSnapshot: MEALDECK_CURRENT_PRICING, selectedTerritoryFee: 12500 };
+  const answers = { offerVersion: "2026-10-06-r3", offerSnapshot: MEALDECK_CURRENT_PRICING, selectedTerritoryFee: 12500 };
   await assertAccepted(await invoke({ territoryCode: "MD-003", answers }), state);
   assert.deepEqual(state.inserts.find(x => x.table === "network_applications").row.answers, answers);
 });
@@ -250,9 +281,12 @@ test("CRM and exhibits suppress stale numeric royalties and distinguish the curr
   const programme = { programme_key: "mealdeck-england-wales", ...revisedProgramme, royalty_bps: 550 };
   const workspace = networkWorkspaceProgramme(programme);
   assert.equal(workspace.royalty_bps, null);
+  assert.equal(workspace.current_terms.offerVersion, "2026-10-06-r3");
+  assert.equal(workspace.current_terms.techFeePerOrder, 0.35);
   assert.equal(workspace.current_terms.royaltyDisplay, "To be confirmed in written quote");
   const exhibit = territoryCommercialExhibit(revisedTerritory, programme);
   assert.equal(exhibit.currentOffer.baseFranchiseFee, 12500);
+  assert.equal(exhibit.currentOffer.equipmentOpeningSuppliesFee, 15000);
   assert.equal(exhibit.currentOffer.royaltyPercent, null);
   assert.equal(exhibit.currentOffer.royaltyDisplay, "To be confirmed in written quote");
   assert.equal(exhibit.contractualPricing.status, "agreement_schedule_required");

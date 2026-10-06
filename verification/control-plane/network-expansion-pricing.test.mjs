@@ -6,7 +6,7 @@ import { PGlite } from "@electric-sql/pglite";
 const ts = createRequire(import.meta.url)("typescript");
 const commercialSource = await readFile(new URL("../../src/modules/network-expansion/commercial-terms.ts", import.meta.url), "utf8");
 const commercialCode = ts.transpileModule(commercialSource, { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { MEALDECK_CURRENT_PRICING } = await import("data:text/javascript;base64," + Buffer.from(commercialCode).toString("base64"));
+const { MEALDECK_R2_PRICING } = await import("data:text/javascript;base64," + Buffer.from(commercialCode).toString("base64"));
 
 const db = new PGlite();
 const migrations = new URL("../../supabase/migrations/", import.meta.url);
@@ -75,7 +75,7 @@ assert.equal(programme.offer.pricing.boughtInSupplyMarkupPercent, 0);
 assert.equal(programme.offer.pricing.manufacturedSupplyMarkupPercent, 15);
 assert.equal(programme.offer.pricing.manufacturedSupplyCostBasis, "fully_costed_production");
 assert.equal(programme.offer.pricing.equipmentOpeningSuppliesEstimate, 15000);
-assert.deepEqual(programme.offer.pricing, MEALDECK_CURRENT_PRICING, "stored pricing and public/bootstrap commercial terms agree");
+assert.deepEqual(programme.offer.pricing, MEALDECK_R2_PRICING, "the original r2 migration retains its historical service terms");
 
 const revisedTemplates = await rows("network_territory_templates", "template_key=$1", ["mealdeck-england-wales"]);
 const revisedTerritories = await rows("network_territories", "programme_id=$1", [programmeId]);
