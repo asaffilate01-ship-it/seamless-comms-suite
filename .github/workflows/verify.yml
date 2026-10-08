@@ -28,6 +28,8 @@ jobs:
       - run: bun run build
       - run: bun run typecheck
       - run: bun run test:security
+      - name: Growth runtime, tenant isolation and product gateway
+        run: bun run test:growth
       - run: bun run test:bridges
       - run: bun run test:mobile
       - run: bun run test:procurement

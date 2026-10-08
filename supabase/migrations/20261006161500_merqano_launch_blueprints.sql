@@ -17,8 +17,8 @@ select b,'merqano',true,c from (values
 
 insert into public.blueprint_services(blueprint_key,service_key,required,config)
 select b,s,r,'{}'::jsonb from (values
- ('merqano.alstero','merqano.omniqora_ai',false),('merqano.alstero','merqano.marktpass',true),('merqano.alstero','merqano.marketing',false),('merqano.alstero','merqano.merqora',false),
- ('merqano.kalethon','merqano.omniqora_ai',false),('merqano.kalethon','merqano.marktpass',false),('merqano.kalethon','merqano.marketing',false),('merqano.kalethon','merqano.merqora',false),
- ('merqano.dulcis','merqano.omniqora_ai',false),('merqano.dulcis','merqano.marktpass',false),('merqano.dulcis','merqano.marketing',false),('merqano.dulcis','merqano.merqora',false),
- ('merqano.meyzaar','merqano.omniqora_ai',false),('merqano.meyzaar','merqano.marktpass',false),('merqano.meyzaar','merqano.marketing',false),('merqano.meyzaar','merqano.merqora',false)
+ ('merqano.alstero','merqano.omniqora-ai',false),('merqano.alstero','merqano.marktpass',true),('merqano.alstero','merqano.marketing',false),('merqano.alstero','merqano.merqora',false),
+ ('merqano.kalethon','merqano.omniqora-ai',false),('merqano.kalethon','merqano.marktpass',false),('merqano.kalethon','merqano.marketing',false),('merqano.kalethon','merqano.merqora',false),
+ ('merqano.dulcis','merqano.omniqora-ai',false),('merqano.dulcis','merqano.marktpass',false),('merqano.dulcis','merqano.marketing',false),('merqano.dulcis','merqano.merqora',false),
+ ('merqano.meyzaar','merqano.omniqora-ai',false),('merqano.meyzaar','merqano.marktpass',false),('merqano.meyzaar','merqano.marketing',false),('merqano.meyzaar','merqano.merqora',false)
 ) x(b,s,r) on conflict(blueprint_key,service_key) do update set required=excluded.required;

@@ -9,7 +9,7 @@ export function evaluateMerqanoFactoryReadiness(x:MerqanoFactoryReadinessInput):
  {key:"connection",ok:x.connectionStatus==="connected"&&Boolean(x.externalTenantId),required:true,detail:"Verified external Merqano workspace required."},
  {key:"endpoint",ok:Boolean(x.baseUrl?.startsWith("https://")),required:true,detail:"Deployment-approved HTTPS Merqano origin required."},
  {key:"freshness",ok:Boolean(x.lastVerifiedAt)&&Date.now()-Date.parse(x.lastVerifiedAt!)<24*60*60*1000,required:true,detail:"Control-plane handshake must have been verified within 24 hours."},
- {key:"ai",ok:x.services["merqano.omniqora_ai"]?.enabled===true,required:false,detail:"Omniqora AI is optional but recommended."},
+ {key:"ai",ok:x.services["merqano.omniqora-ai"]?.enabled===true,required:false,detail:"Omniqora AI is optional but recommended."},
  {key:"marktpass",ok:x.services["merqano.marktpass"]?.enabled===true,required:false,detail:"MarktPass entitlement required when compliance gating is enabled."},
  {key:"domain",ok:!x.domain||(x.domain.verificationStatus==="verified"&&x.domain.sslStatus==="active"),required:Boolean(x.domain),detail:"Configured primary domain must have verified DNS and active SSL."},
  ];

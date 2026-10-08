@@ -10,7 +10,7 @@ export const merqanoFactoryCard={
   {key:"merqano.marketing",label:"Marketing",icon:Sparkles},
   {key:"merqano.marktpass",label:"MarktPass",icon:ShieldCheck},
   {key:"merqano.merqora",label:"Merqora",icon:ShoppingBag},
-  {key:"merqano.omniqora_ai",label:"Omniqora AI",icon:Sparkles},
+  {key:"merqano.omniqora-ai",label:"Omniqora AI",icon:Sparkles},
  ],
  initialTenants:["Alstero","Kalëthon","Dulcis","Meyzaar"],
 } as const;
