@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test:security": "node verification/repo-hygiene.mjs && node verification/access-controls.mjs",
+    "test:growth": "node --test verification/growth-studio.runtime.test.mjs && node verification/growth-studio.database.test.mjs && node verification/growth-studio.gateway.test.mjs",
     "test:procurement": "node verification/procurement/readiness.test.mjs && node verification/procurement/database.test.mjs",
     "test:services": "python3 verification/run-services.py",
     "test:bridges": "node --test verification/product-bridges.test.mjs",

@@ -5,7 +5,7 @@ export const merqanoServiceKeys = [
   'merqano.marketing',
   'merqano.marktpass',
   'merqano.merqora',
-  'merqano.omniqora_ai',
+  'merqano.omniqora-ai',
 ] as const;
 
 export const merqanoTenantLaunchSchema = z.object({

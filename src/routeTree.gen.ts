@@ -48,6 +48,7 @@ import { Route as AuthenticatedAppEmbeddedFinanceRouteImport } from './routes/_a
 import { Route as AuthenticatedAppFeedbackRouteImport } from './routes/_authenticated/app.feedback'
 import { Route as AuthenticatedAppFinanceAiRouteImport } from './routes/_authenticated/app.finance-ai'
 import { Route as AuthenticatedAppFranchiseSalesRouteImport } from './routes/_authenticated/app.franchise-sales'
+import { Route as AuthenticatedAppGrowthRouteImport } from './routes/_authenticated/app.growth'
 import { Route as AuthenticatedAppGrowthLabRouteImport } from './routes/_authenticated/app.growth-lab'
 import { Route as AuthenticatedAppIdentityRouteImport } from './routes/_authenticated/app.identity'
 import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
@@ -77,6 +78,7 @@ import { Route as ApiPlatformAgentRouteImport } from './routes/api.platform.agen
 import { Route as ApiPlatformBusinessIntelligenceRouteImport } from './routes/api.platform.business-intelligence'
 import { Route as ApiPlatformCrmRouteImport } from './routes/api.platform.crm'
 import { Route as ApiPlatformDeliveryRouteImport } from './routes/api.platform.delivery'
+import { Route as ApiPlatformGrowthRouteImport } from './routes/api.platform.growth'
 import { Route as ApiPlatformIntelligenceRouteImport } from './routes/api.platform.intelligence'
 import { Route as ApiPlatformOrderIntakeRouteImport } from './routes/api.platform.order-intake'
 import { Route as ApiPlatformRuntimeRouteImport } from './routes/api.platform.runtime'
@@ -309,6 +311,11 @@ const AuthenticatedAppFranchiseSalesRoute =
     path: '/franchise-sales',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppGrowthRoute = AuthenticatedAppGrowthRouteImport.update({
+  id: '/growth',
+  path: '/growth',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppGrowthLabRoute =
   AuthenticatedAppGrowthLabRouteImport.update({
     id: '/growth-lab',
@@ -475,6 +482,11 @@ const ApiPlatformDeliveryRoute = ApiPlatformDeliveryRouteImport.update({
   path: '/api/platform/delivery',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPlatformGrowthRoute = ApiPlatformGrowthRouteImport.update({
+  id: '/api/platform/growth',
+  path: '/api/platform/growth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPlatformIntelligenceRoute = ApiPlatformIntelligenceRouteImport.update({
   id: '/api/platform/intelligence',
   path: '/api/platform/intelligence',
@@ -611,6 +623,7 @@ export interface FileRoutesByFullPath {
   '/app/feedback': typeof AuthenticatedAppFeedbackRoute
   '/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
   '/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
+  '/app/growth': typeof AuthenticatedAppGrowthRoute
   '/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
   '/app/identity': typeof AuthenticatedAppIdentityRoute
   '/app/inbox': typeof AuthenticatedAppInboxRoute
@@ -640,6 +653,7 @@ export interface FileRoutesByFullPath {
   '/api/platform/business-intelligence': typeof ApiPlatformBusinessIntelligenceRoute
   '/api/platform/crm': typeof ApiPlatformCrmRoute
   '/api/platform/delivery': typeof ApiPlatformDeliveryRoute
+  '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
@@ -695,6 +709,7 @@ export interface FileRoutesByTo {
   '/app/feedback': typeof AuthenticatedAppFeedbackRoute
   '/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
   '/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
+  '/app/growth': typeof AuthenticatedAppGrowthRoute
   '/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
   '/app/identity': typeof AuthenticatedAppIdentityRoute
   '/app/inbox': typeof AuthenticatedAppInboxRoute
@@ -724,6 +739,7 @@ export interface FileRoutesByTo {
   '/api/platform/business-intelligence': typeof ApiPlatformBusinessIntelligenceRoute
   '/api/platform/crm': typeof ApiPlatformCrmRoute
   '/api/platform/delivery': typeof ApiPlatformDeliveryRoute
+  '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
@@ -783,6 +799,7 @@ export interface FileRoutesById {
   '/_authenticated/app/feedback': typeof AuthenticatedAppFeedbackRoute
   '/_authenticated/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
   '/_authenticated/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
+  '/_authenticated/app/growth': typeof AuthenticatedAppGrowthRoute
   '/_authenticated/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
   '/_authenticated/app/identity': typeof AuthenticatedAppIdentityRoute
   '/_authenticated/app/inbox': typeof AuthenticatedAppInboxRoute
@@ -812,6 +829,7 @@ export interface FileRoutesById {
   '/api/platform/business-intelligence': typeof ApiPlatformBusinessIntelligenceRoute
   '/api/platform/crm': typeof ApiPlatformCrmRoute
   '/api/platform/delivery': typeof ApiPlatformDeliveryRoute
+  '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
@@ -871,6 +889,7 @@ export interface FileRouteTypes {
     | '/app/feedback'
     | '/app/finance-ai'
     | '/app/franchise-sales'
+    | '/app/growth'
     | '/app/growth-lab'
     | '/app/identity'
     | '/app/inbox'
@@ -900,6 +919,7 @@ export interface FileRouteTypes {
     | '/api/platform/business-intelligence'
     | '/api/platform/crm'
     | '/api/platform/delivery'
+    | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
     | '/api/platform/runtime'
@@ -955,6 +975,7 @@ export interface FileRouteTypes {
     | '/app/feedback'
     | '/app/finance-ai'
     | '/app/franchise-sales'
+    | '/app/growth'
     | '/app/growth-lab'
     | '/app/identity'
     | '/app/inbox'
@@ -984,6 +1005,7 @@ export interface FileRouteTypes {
     | '/api/platform/business-intelligence'
     | '/api/platform/crm'
     | '/api/platform/delivery'
+    | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
     | '/api/platform/runtime'
@@ -1042,6 +1064,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/feedback'
     | '/_authenticated/app/finance-ai'
     | '/_authenticated/app/franchise-sales'
+    | '/_authenticated/app/growth'
     | '/_authenticated/app/growth-lab'
     | '/_authenticated/app/identity'
     | '/_authenticated/app/inbox'
@@ -1071,6 +1094,7 @@ export interface FileRouteTypes {
     | '/api/platform/business-intelligence'
     | '/api/platform/crm'
     | '/api/platform/delivery'
+    | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
     | '/api/platform/runtime'
@@ -1114,6 +1138,7 @@ export interface RootRouteChildren {
   ApiPlatformBusinessIntelligenceRoute: typeof ApiPlatformBusinessIntelligenceRoute
   ApiPlatformCrmRoute: typeof ApiPlatformCrmRoute
   ApiPlatformDeliveryRoute: typeof ApiPlatformDeliveryRoute
+  ApiPlatformGrowthRoute: typeof ApiPlatformGrowthRoute
   ApiPlatformIntelligenceRoute: typeof ApiPlatformIntelligenceRoute
   ApiPlatformOrderIntakeRoute: typeof ApiPlatformOrderIntakeRoute
   ApiPlatformRuntimeRoute: typeof ApiPlatformRuntimeRoute
@@ -1405,6 +1430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppFranchiseSalesRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/growth': {
+      id: '/_authenticated/app/growth'
+      path: '/growth'
+      fullPath: '/app/growth'
+      preLoaderRoute: typeof AuthenticatedAppGrowthRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/growth-lab': {
       id: '/_authenticated/app/growth-lab'
       path: '/growth-lab'
@@ -1608,6 +1640,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPlatformDeliveryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/platform/growth': {
+      id: '/api/platform/growth'
+      path: '/api/platform/growth'
+      fullPath: '/api/platform/growth'
+      preLoaderRoute: typeof ApiPlatformGrowthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/platform/intelligence': {
       id: '/api/platform/intelligence'
       path: '/api/platform/intelligence'
@@ -1768,6 +1807,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppFeedbackRoute: typeof AuthenticatedAppFeedbackRoute
   AuthenticatedAppFinanceAiRoute: typeof AuthenticatedAppFinanceAiRoute
   AuthenticatedAppFranchiseSalesRoute: typeof AuthenticatedAppFranchiseSalesRoute
+  AuthenticatedAppGrowthRoute: typeof AuthenticatedAppGrowthRoute
   AuthenticatedAppGrowthLabRoute: typeof AuthenticatedAppGrowthLabRoute
   AuthenticatedAppIdentityRoute: typeof AuthenticatedAppIdentityRoute
   AuthenticatedAppInboxRoute: typeof AuthenticatedAppInboxRoute
@@ -1818,6 +1858,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppFeedbackRoute: AuthenticatedAppFeedbackRoute,
   AuthenticatedAppFinanceAiRoute: AuthenticatedAppFinanceAiRoute,
   AuthenticatedAppFranchiseSalesRoute: AuthenticatedAppFranchiseSalesRoute,
+  AuthenticatedAppGrowthRoute: AuthenticatedAppGrowthRoute,
   AuthenticatedAppGrowthLabRoute: AuthenticatedAppGrowthLabRoute,
   AuthenticatedAppIdentityRoute: AuthenticatedAppIdentityRoute,
   AuthenticatedAppInboxRoute: AuthenticatedAppInboxRoute,
@@ -1897,6 +1938,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlatformBusinessIntelligenceRoute: ApiPlatformBusinessIntelligenceRoute,
   ApiPlatformCrmRoute: ApiPlatformCrmRoute,
   ApiPlatformDeliveryRoute: ApiPlatformDeliveryRoute,
+  ApiPlatformGrowthRoute: ApiPlatformGrowthRoute,
   ApiPlatformIntelligenceRoute: ApiPlatformIntelligenceRoute,
   ApiPlatformOrderIntakeRoute: ApiPlatformOrderIntakeRoute,
   ApiPlatformRuntimeRoute: ApiPlatformRuntimeRoute,
