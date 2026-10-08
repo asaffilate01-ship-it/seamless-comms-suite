@@ -223,6 +223,7 @@ const transport = (respond) => {
 // mutate an earlier authorization snapshot in the test itself.
 function fixture(options = {}) {
   const state = {
+    platformAdmin: options.platformAdmin ?? false,
     rows: {
       tenants: [{ id: scope.tenantId, status: "active" }],
       tenant_members: [
@@ -307,6 +308,22 @@ function fixture(options = {}) {
       },
       async rpc(name, args) {
         if (name === "is_platform_admin") return { data: false, error: null };
+        if (name === "growth_studio_access") {
+          assert.equal(service, false, "Access uses the authenticated client");
+          const membership = state.rows.tenant_members.find((row) => row.tenant_id === args._tenant && row.user_id === ownerId);
+          const role = state.platformAdmin ? "platform_admin" : membership?.role;
+          if (!role) return { data: null, error: { code: "42501", message: "Tenant access required" } };
+          const tenant = state.rows.tenants.find((row) => row.id === args._tenant);
+          const product = state.rows.tenant_products.find((row) => row.tenant_id === args._tenant && row.product_key === args._product);
+          const active = (key) => state.rows.tenant_services.some((row) => row.tenant_id === args._tenant && row.service_key === key &&
+            ["active", "trial"].includes(row.status) && Date.parse(row.valid_from) <= Date.now() &&
+            (!row.valid_until || Date.parse(row.valid_until) > Date.now()));
+          const allowed = tenant?.status === "active" && product?.status === "active" && active("omniqora.campaigns");
+          const canWrite = allowed && ["owner", "admin", "agent", "platform_admin"].includes(role);
+          const canReview = allowed && ["owner", "admin", "platform_admin"].includes(role);
+          return { data: { allowed, canWrite, canReview, canHandoff: canReview && active("omniqora.creative"), role,
+            reason: allowed ? undefined : "Workspace activation and current Campaigns access are required." }, error: null };
+        }
         if (name === "growth_studio_get_run") {
           const run = [...state.records.values()].find(
             (item) =>
@@ -1055,6 +1072,15 @@ await check(
       () => runtime.getGrowthAccess(missing.context, scope),
       /Tenant access required/,
     );
+    for (const withMembership of [true, false]) {
+      const admin = fixture({ role: "viewer", platformAdmin: true });
+      if (!withMembership) admin.rows.tenant_members = [];
+      const access = await runtime.getGrowthAccess(admin.context, scope);
+      assert.equal(access.role, "platform_admin");
+      assert.equal(access.canReview, true);
+      assert.equal(access.canWrite, true);
+      assert.deepEqual(admin.queries, [], "Canonical access avoids tenant RLS reads");
+    }
   },
 );
 

@@ -1,4 +1,3 @@
-import { requireTenantMembership } from "../platform/access";
 import { startStudioRun, finishStudioRun, getStudioRun } from "./studio.repository.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -9,65 +8,22 @@ import {
 } from "./studio.providers.server";
 import type { GrowthCheck, GrowthOutput, GrowthResult, GrowthScope } from "./studio.contract";
 import type { StudioInputSnapshot } from "./studio.types";
+import type { GrowthAccess } from "./setup.contract";
 
 type GrowthContext = { userId: string; supabase: SupabaseClient };
-type ServiceAccess = {
-  service_key: string;
-  status: string;
-  valid_from: string;
-  valid_until: string | null;
-};
-
 export async function getGrowthAccess(context: GrowthContext, scope: GrowthScope) {
-  const membership = await requireTenantMembership(context, scope.tenantId);
-  const db = context.supabase;
-  const [product, services, tenant] = await Promise.all([
-    db
-      .from("tenant_products")
-      .select("status")
-      .eq("tenant_id", scope.tenantId)
-      .eq("product_key", scope.productKey)
-      .maybeSingle(),
-    db
-      .from("tenant_services")
-      .select("service_key,status,valid_from,valid_until")
-      .eq("tenant_id", scope.tenantId)
-      .in("service_key", ["omniqora.campaigns", "omniqora.creative"]),
-    db.from("tenants").select("status").eq("id", scope.tenantId).maybeSingle(),
-  ]);
-  if (product.error || services.error || tenant.error)
+  const response = await (context.supabase as unknown as {
+    rpc(name: string, args: Record<string, unknown>): PromiseLike<{
+      data: unknown;
+      error: { code?: string; message: string } | null;
+    }>;
+  }).rpc("growth_studio_access", { _tenant: scope.tenantId, _product: scope.productKey });
+  if (response.error) {
+    if (response.error.code === "42501") throw new Error("Tenant access required");
     throw new Error("Workspace access could not be verified.");
-  const now = Date.now();
-  const active = (key: string): boolean =>
-    ((services.data ?? []) as ServiceAccess[]).some(
-      (service) =>
-        service.service_key === key &&
-        ["active", "trial"].includes(service.status) &&
-        (!service.valid_from || Date.parse(service.valid_from) <= now) &&
-        (!service.valid_until || Date.parse(service.valid_until) > now),
-    );
-  const allowed =
-    tenant.data?.status === "active" &&
-    product.data?.status === "active" &&
-    active("omniqora.campaigns");
-  const writer = ["owner", "admin", "agent", "platform_admin"].includes(membership.role);
-  const reviewer = ["owner", "admin", "platform_admin"].includes(membership.role);
-  return {
-    allowed,
-    canWrite: allowed && writer,
-    canReview: allowed && reviewer,
-    canHandoff: allowed && reviewer && active("omniqora.creative"),
-    reason:
-      tenant.data?.status !== "active"
-        ? "This workspace is not active. An administrator must restore access."
-        : product.data?.status !== "active"
-          ? "Activate this product for your workspace in SaaS Factory to use Growth."
-          : !active("omniqora.campaigns")
-            ? "Activate the Campaigns service for this workspace to use Growth."
-            : !writer
-              ? "Your workspace role has read access. An owner, admin or agent can prepare campaigns."
-              : undefined,
-  };
+  }
+  if (!response.data) throw new Error("Workspace access could not be verified.");
+  return response.data as GrowthAccess;
 }
 
 export async function assertGrowthAccess(

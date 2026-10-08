@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertCircle,
@@ -38,8 +38,10 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useTenant } from "@/hooks/useTenant";
 import { cn } from "@/lib/utils";
+import { GrowthSetupPanel } from "./GrowthSetupPanel";
+import { SyndrivaSourcesPanel } from "./SyndrivaSourcesPanel";
+import { getGrowthWorkspaces } from "./setup.functions";
 import {
   GROWTH_PRODUCTS,
   growthOutputSchema,
@@ -270,18 +272,41 @@ function StateBadge({ value }: { value: string }) {
 }
 
 export function GrowthWorkspace() {
-  const tenant = useTenant();
+  const loadWorkspaces = useServerFn(getGrowthWorkspaces);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
+  const workspacesQuery = useInfiniteQuery({
+    queryKey: ["growth-workspace-choices"],
+    queryFn: ({ pageParam }) => loadWorkspaces({ data: { offset: pageParam, limit: 25 } }),
+    initialPageParam: 0,
+    getNextPageParam: (page) => page.nextOffset ?? undefined,
+    retry: false,
+  });
+  const workspaces = workspacesQuery.data?.pages.flatMap((page) => page.workspaces) ?? [];
+  const workspace = workspaces.find((item) => item.id === selectedWorkspaceId) ?? workspaces[0];
   return (
     <AppShell
       title="Omniqora Growth"
       subtitle="From trusted brand knowledge to original campaigns, human review and creative drafts."
     >
       <div className="mx-auto max-w-[1440px]">
-        {tenant.loading ? (
+        {workspacesQuery.isPending ? (
           <LoadingWorkspace />
-        ) : tenant.error ? (
-          <ErrorBlock title="Your workspace could not be loaded" message={tenant.error} />
-        ) : !tenant.tenantId ? (
+        ) : workspacesQuery.isError ? (
+          <div className="space-y-4">
+            <ErrorBlock
+              title="Your workspaces could not be loaded"
+              message={errorMessage(workspacesQuery.error)}
+            />
+            <Button
+              variant="outline"
+              disabled={workspacesQuery.isFetching}
+              onClick={() => workspacesQuery.refetch()}
+            >
+              <RefreshCw />
+              Try again
+            </Button>
+          </div>
+        ) : !workspace ? (
           <EmptyState
             icon={LockKeyhole}
             title="Choose a workspace to begin"
@@ -297,7 +322,57 @@ export function GrowthWorkspace() {
             Brands, campaign sources and approvals belong to your workspace.
           </EmptyState>
         ) : (
-          <TenantGrowth key={tenant.tenantId} tenantId={tenant.tenantId} tenantName={tenant.name} />
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border bg-card px-5 py-4">
+              <div className="w-full space-y-2 sm:max-w-md">
+                <Label htmlFor="growth-workspace">Workspace</Label>
+                <select
+                  id="growth-workspace"
+                  className={selectClass}
+                  value={workspace.id}
+                  onChange={(event) => setSelectedWorkspaceId(event.target.value)}
+                >
+                  {workspaces.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                      {item.status !== "active" ? ` (${item.status})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Switching workspace clears unsaved campaign and setup forms.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="capitalize">
+                  {workspace.role.replaceAll("_", " ")}
+                </Badge>
+                {workspacesQuery.hasNextPage && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={workspacesQuery.isFetchingNextPage}
+                    onClick={() => workspacesQuery.fetchNextPage()}
+                  >
+                    {workspacesQuery.isFetchingNextPage && (
+                      <LoaderCircle className="animate-spin" />
+                    )}
+                    Load more workspaces
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Refresh workspace choices"
+                  disabled={workspacesQuery.isFetching}
+                  onClick={() => workspacesQuery.refetch()}
+                >
+                  <RefreshCw className={cn(workspacesQuery.isFetching && "animate-spin")} />
+                </Button>
+              </div>
+            </div>
+            <TenantGrowth key={workspace.id} tenantId={workspace.id} tenantName={workspace.name} />
+          </div>
         )}
       </div>
     </AppShell>
@@ -399,7 +474,11 @@ function ProductWorkspace({
 
   return (
     <div className="space-y-5">
-      <ConnectionReadiness providers={data.providers} />
+      <GrowthSetupPanel
+        scope={scope}
+        initiallyOpen={!data.access.allowed}
+        onChanged={() => query.refetch()}
+      />
       {!data.access.allowed ? (
         <Card>
           <CardContent className="p-6">
@@ -419,8 +498,8 @@ function ProductWorkspace({
             >
               <div className="space-y-3 text-left">
                 <p>
-                  Ask your workspace or platform administrator to enable {productName} and Campaigns
-                  for {tenantName || "this workspace"}.
+                  Use Workspace setup above to request {productName} and Campaigns access for{" "}
+                  {tenantName || "this workspace"}.
                 </p>
                 <ul className="list-disc space-y-2 pl-5">
                   <li>The workspace and product must be active to use Growth.</li>
@@ -497,80 +576,6 @@ function ProductWorkspace({
         </>
       )}
     </div>
-  );
-}
-
-function ConnectionReadiness({ providers }: { providers: GrowthProviderView[] }) {
-  const readyWriters = providers.filter(
-    (provider) => provider.purpose === "writer" && provider.status === "ready",
-  );
-  return (
-    <details className="group rounded-xl border bg-card px-5 py-4 shadow-sm">
-      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-muted p-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold">Writer and connection readiness</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {readyWriters.length
-                ? `${readyWriters.length} writer ${readyWriters.length === 1 ? "configuration" : "configurations"} ready to request`
-                : "No configured writer is ready to request"}{" "}
-              · Publishing is a separate step
-            </p>
-          </div>
-        </div>
-        <ChevronRight
-          className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90"
-          aria-hidden="true"
-        />
-      </summary>
-      <div className="mt-4 space-y-4 border-t pt-4">
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          “Ready to request” means a model and credentials are configured. It does not confirm a
-          successful live call. Generation results record the provider actually used.
-        </p>
-        {providers.length ? (
-          <div className="grid gap-3 md:grid-cols-2">
-            {providers.map((provider) => (
-              <div key={provider.id} className="rounded-lg border p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm font-medium">{provider.label}</span>
-                  <Badge variant="outline">
-                    {provider.status === "ready" ? "Ready to request" : "Setup needed"}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {provider.purpose === "writer" ? "Writer" : "Optional classifier"} ·{" "}
-                  {provider.providerKey} · {provider.model}
-                </p>
-                {provider.reason && (
-                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                    {provider.reason}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No writer or classifier connections are available for this product.
-          </p>
-        )}
-        <div className="space-y-2 rounded-lg bg-muted/60 p-3">
-          <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-            Ask your workspace or platform administrator to configure an AI writer connection for
-            this product and workspace.
-          </p>
-          <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-            Approved work can be handed off as saved campaign and Creative Studio drafts when both
-            services are enabled. No social account, advertising account or affiliate network is
-            assumed to be connected.
-          </p>
-        </div>
-      </div>
-    </details>
   );
 }
 
@@ -1117,6 +1122,14 @@ function EvidenceWorkspace({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
+        {scope.productKey === "syndriva" && brand && (
+          <SyndrivaSourcesPanel
+            tenantId={scope.tenantId}
+            brandId={brand.id}
+            canWrite={access.canWrite}
+            onChanged={refresh}
+          />
+        )}
         {!brand && (
           <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
             Save a brand foundation before adding its sources.
@@ -1921,6 +1934,20 @@ function RunReview({
                   </span>
                 )}
               </div>
+              <div className="space-y-2 rounded-lg border bg-muted/40 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-foreground">Run reference</span>
+                  <CopyContent text={run.id} label="Copy run ID" />
+                </div>
+                <code className="block select-all break-all text-xs">{run.id}</code>
+                {["merqora", "affivon"].includes(scope.productKey) && (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Use this ID in the product's Growth connection to retrieve the approved draft.
+                    The receiving application checks its saved workspace and brand mapping; only
+                    approved, current output can be imported.
+                  </p>
+                )}
+              </div>
             </>
           )}
         </CardContent>
@@ -2303,7 +2330,7 @@ function RunReview({
   );
 }
 
-function CopyContent({ text }: { text: string }) {
+function CopyContent({ text, label = "Copy text" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <Button
@@ -2322,7 +2349,7 @@ function CopyContent({ text }: { text: string }) {
       }}
     >
       {copied ? <Check /> : <Copy />}
-      {copied ? "Copied" : "Copy text"}
+      {copied ? "Copied" : label}
     </Button>
   );
 }
