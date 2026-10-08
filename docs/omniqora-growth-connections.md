@@ -1,5 +1,17 @@
 # Growth workspace setup and product connections
 
+## Release status — 2026-10-08
+
+| Application | Released source | Deployment |
+| ----------- | --------------- | ---------- |
+| Omniqora | [PR #83](https://github.com/asaffilate01-ship-it/seamless-comms-suite/pull/83) merged as `5c7ffdee3462e69b64bf790d329588be2fe4a6d2`; application release tree `b2b70e20ba1b049796db3f3fd97180ca078ccaf6` | Published through Lovable to [omniqora.itechlounge.co.uk](https://omniqora.itechlounge.co.uk) |
+| Merqora | [PR #1](https://github.com/asaffilate01-ship-it/daraz-amazon-hub/pull/1) merged as `2a5c3135f905025fc2f74721c121989b44e5a426` | Published through Lovable to [daraz-amazon-hub.lovable.app](https://daraz-amazon-hub.lovable.app) |
+| Affivon | Version 9, source `54305f7ca795472a221711e37686fcd31cd10fd8` | Deployment succeeded on the existing Site |
+
+Both additive migrations listed below were applied. The hosted database postflight verified canonical migration source, permissions and record-count invariants at `2026-10-08T19:13:13.228324+00:00`.
+
+At release verification, actual provider/service credentials, remote mappings, platform-administrator assignments and tenant/product/service activations remained absent. The hosted Syndriva commerce catalogue also remained absent. A real-model end-to-end run has not been performed.
+
 ## Scope
 
 This build adds a workspace selector, a working setup request/review flow, writer configuration and product adapters to the existing Growth studio. It retains the studio's brand, evidence, generation, human approval and draft handoff behavior. Installation does not activate a tenant, create a platform administrator, create a service credential or make a provider request.
@@ -46,6 +58,8 @@ The receiving application resolves the user or store against an operator-owned m
 In Omniqora, open an approved run and use **Copy run ID**. The corresponding product panel retrieves that ID under its saved mapping. Retrieval verifies the returned tenant/product/brand/run, completed state, human approval, input provenance, evidence expiry and export time. It does not publish an advertisement, send a message or create a live campaign in an external account.
 
 Affivon's offer ingestion additionally uses the actual store/product/offer records, current market and connector state, an active affiliate account, a price check less than 24 hours old, a real future offer expiry and the saved disclosure. An empty or ineligible catalogue remains empty. Its authenticated approved-output path checks the saved disclosure and current source eligibility again.
+
+Affivon labels retrieved content **Reviewed snapshot**. For locally linked affiliate offers it rereads the scoped source, checks eligibility, and compares the source URL and effective expiry with the exported provenance. Unlinked affiliate evidence is counted as unverified locally. The gateway does not export a full source-content fingerprint, so local price, affiliate-link or product-text changes that preserve the source URL and effective expiry can still require operator comparison. Review current retailer details before using the snapshot. Retrieval performs no implicit reingestion or other evidence writes.
 
 ## Migration and release order
 
