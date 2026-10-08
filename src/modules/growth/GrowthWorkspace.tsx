@@ -347,12 +347,23 @@ function TenantGrowth({ tenantId, tenantName }: { tenantId: string; tenantName: 
           </Field>
         </div>
       </section>
-      <ProductWorkspace key={`${tenantId}:${productKey}`} scope={{ tenantId, productKey }} />
+      <ProductWorkspace
+        key={`${tenantId}:${productKey}`}
+        scope={{ tenantId, productKey }}
+        tenantName={tenantName}
+      />
     </div>
   );
 }
 
-function ProductWorkspace({ scope }: { scope: GrowthScope }) {
+function ProductWorkspace({
+  scope,
+  tenantName,
+}: {
+  scope: GrowthScope;
+  tenantName: string | null;
+}) {
+  const productName = GROWTH_PRODUCTS.find((item) => item.key === scope.productKey)!.name;
   const load = useServerFn(getGrowthStudioWorkspace);
   const query = useQuery({
     queryKey: ["growth-studio", scope.tenantId, scope.productKey],
@@ -378,13 +389,11 @@ function ProductWorkspace({ scope }: { scope: GrowthScope }) {
             <RefreshCw className={cn(query.isFetching && "animate-spin")} />
             Try again
           </Button>
-          <Button variant="ghost" asChild>
-            <Link to="/app/control-plane">
-              Check product activation
-              <ArrowRight />
-            </Link>
-          </Button>
         </div>
+        <p className="text-sm text-muted-foreground">
+          Ask your workspace or platform administrator to check that{" "}
+          {tenantName || "this workspace"} is active with {productName} and Campaigns enabled.
+        </p>
       </div>
     );
 
@@ -396,23 +405,32 @@ function ProductWorkspace({ scope }: { scope: GrowthScope }) {
           <CardContent className="p-6">
             <EmptyState
               icon={LockKeyhole}
-              title="Activate Growth for this product"
+              title="Growth setup required"
               action={
-                <div className="flex flex-wrap justify-center gap-2">
-                  <Button asChild>
-                    <Link to="/app/control-plane">
-                      Product activation
-                      <ArrowRight />
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <Link to="/app/platform-kernel">Campaign entitlement</Link>
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  disabled={query.isFetching}
+                  onClick={() => query.refetch()}
+                >
+                  <RefreshCw className={cn(query.isFetching && "animate-spin")} />
+                  Refresh access
+                </Button>
               }
             >
-              {data.access.reason ||
-                "This workspace needs an active product and the campaigns entitlement before brand or campaign work can be saved."}
+              <div className="space-y-3 text-left">
+                <p>
+                  Ask your workspace or platform administrator to enable {productName} and Campaigns
+                  for {tenantName || "this workspace"}.
+                </p>
+                <ul className="list-disc space-y-2 pl-5">
+                  <li>The workspace and product must be active to use Growth.</li>
+                  <li>A configured AI writer connection is required to generate drafts.</li>
+                  <li>
+                    Creative Studio must also be enabled before an owner or administrator can hand
+                    off approved work.
+                  </li>
+                </ul>
+              </div>
             </EmptyState>
           </CardContent>
         </Card>
@@ -537,20 +555,19 @@ function ConnectionReadiness({ providers }: { providers: GrowthProviderView[] })
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            No writer or classifier bindings are available for this product.
+            No writer or classifier connections are available for this product.
           </p>
         )}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/60 p-3">
+        <div className="space-y-2 rounded-lg bg-muted/60 p-3">
           <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-            This workspace creates saved campaign and Creative Studio drafts after approval. No
-            social account, advertising account or affiliate network is assumed to be connected.
+            Ask your workspace or platform administrator to configure an AI writer connection for
+            this product and workspace.
           </p>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/app/platform-kernel">
-              Configure AI providers
-              <ArrowRight />
-            </Link>
-          </Button>
+          <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
+            Approved work can be handed off as saved campaign and Creative Studio drafts when both
+            services are enabled. No social account, advertising account or affiliate network is
+            assumed to be connected.
+          </p>
         </div>
       </div>
     </details>
@@ -1661,11 +1678,8 @@ function CampaignGeneration({
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>A writer needs to be configured</AlertTitle>
             <AlertDescription>
-              Ask your workspace administrator to configure a writer binding and credentials in{" "}
-              <Link to="/app/platform-kernel" className="font-medium underline underline-offset-4">
-                Platform Kernel
-              </Link>
-              .
+              Ask your workspace or platform administrator to configure an AI writer connection for
+              this product and workspace.
             </AlertDescription>
           </Alert>
         )}
@@ -2255,14 +2269,8 @@ function RunReview({
                 </p>
                 {!access.canHandoff && (
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Handoff requires an owner or admin and an active Creative Studio service.{" "}
-                    <Link
-                      to="/app/platform-kernel"
-                      className="font-medium text-primary underline underline-offset-4"
-                    >
-                      Check service access
-                    </Link>
-                    .
+                    Handoff requires an owner or administrator and Creative Studio enabled for this
+                    workspace. Ask your workspace or platform administrator to arrange access.
                   </p>
                 )}
               </div>
