@@ -1,5 +1,7 @@
 # Omniqora Growth v1
 
+The next build adds [workspace setup and actual product adapters](./omniqora-growth-connections.md). The release observations below record the original v1 deployment; they do not establish the publication or activation of that next build.
+
 **Status on 8 October 2026: source and hosted database released; corrected site published and signed-out frontend verified.** Growth implementation PR #81 and release corrections PR #82 are merged. The current application release is [`af016c60be0ef23af0012e6ef6c34ec88736f87b`](https://github.com/asaffilate01-ship-it/seamless-comms-suite/commit/af016c60be0ef23af0012e6ef6c34ec88736f87b), which adds public browser configuration defaults for the connected project and regenerated database types. Application CI, the complete migration-chain check and the hosted database postflight passed. The final signed-out browser check reached the rendered sign-in screen from production `/app/growth`. Authenticated workspace acceptance, tenant activation, real provider acceptance and remote product-adapter invocation remain pending; no successful live generation is claimed.
 
 ## What this release does
