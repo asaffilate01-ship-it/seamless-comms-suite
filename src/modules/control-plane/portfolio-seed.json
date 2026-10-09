@@ -232,14 +232,14 @@
   },
   {
     "sourceRow": 11,
-    "name": "VERIS LAW",
+    "name": "VERIS LAW (legacy)",
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/law-remix.git",
     "liveUrl": "https://evolve-gather-zone.lovable.app/",
     "linksTo": "NEED TO CHECK MAY NOT BE VALID",
-    "proposedRole": "Candidate Landlord / Standalone Product",
-    "architectureRole": "standalone_candidate",
-    "parentLandlord": "VERIS LAW",
-    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "proposedRole": "Merge Candidate / Legacy Lawquo Source",
+    "architectureRole": "merge_candidate",
+    "parentLandlord": "LAWQUO",
+    "migrationStructure": "Legacy Lawquo/Veris source. Canonical Lawquo product is law-remix; retain only validated features/data and merge them into Lawquo.",
     "commonServices": [
       "Omniqora Identity",
       "Tenant",
@@ -249,9 +249,10 @@
       "Events",
       "Analytics"
     ],
-    "auditStatus": "Repo audit pending",
+    "auditStatus": "Superseded by canonical Lawquo landlord",
     "traits": [
-      "merge"
+      "merge",
+      "legacy"
     ]
   },
   {
@@ -1087,25 +1088,29 @@
   {
     "sourceRow": 47,
     "name": "LAWQUO",
-    "repositoryUrl": "https://github.com/asaffilate01-ship-it/dreamweaver-canvas-74.git",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/law-remix.git",
     "liveUrl": "https://dreamweaver-canvas-74.lovable.app",
-    "linksTo": "UK GERMANY etc, supersedes verislaw",
-    "proposedRole": "Landlord SaaS",
+    "linksTo": "Canonical Lawquo landlord product; marketplace is an internal Lawquo workspace, not a separate SaaS.",
+    "proposedRole": "Landlord SaaS / International Legal Marketplace",
     "architectureRole": "landlord",
     "parentLandlord": "LAWQUO",
-    "migrationStructure": "Legal marketplace/triage landlord; supersede or absorb Veris Law where valid.",
+    "migrationStructure": "Canonical Lawquo product. SaaS Factory provisions Lawquo; Lawquo then hosts landlord, marketplace, firm, chambers, solo-practitioner and client workspaces.",
     "commonServices": [
       "Omniqora Identity",
       "Tenant",
       "Entitlements",
       "Billing",
+      "Marketplace Core",
       "Connect",
+      "AI",
       "Events",
       "Analytics"
     ],
-    "auditStatus": "Repo audit pending",
+    "auditStatus": "Canonical repository confirmed",
     "traits": [
-      "marketplace"
+      "marketplace",
+      "legal",
+      "canonical"
     ]
   },
   {
