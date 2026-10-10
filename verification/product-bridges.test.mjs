@@ -12,6 +12,38 @@ const {bindingSchema,bearerBinding,gatewayInput,eventInput,haccoraInput,readBody
 const base={id:'parts',product:'sparesgrid',tenant:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',project:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',serviceUser:'cccccccc-cccc-4ccc-8ccc-cccccccccccc',externalTenant:'source-a',allowedScopes:['source-a'],secretEnv:'OQ_BRIDGE_TEST',protocol:'bearer',enabled:true,expiresAt:'2099-01-01T00:00:00Z',contracts:['sparesgrid_question','sparesgrid_enquiry'],profile:'product',dailyLimit:20};
 const key='test-credential-32-characters-long-for-offline-checks';
 const env={OQ_BRIDGE_TEST:key,OMNIQORA_BRIDGES_JSON:JSON.stringify([base])};
+test('MoneyBridge registry admits only explicitly bound generic advisory scopes', () => {
+ const b={...base,id:'moneybridge-gb',product:'fastremit',externalTenant:'moneybridge-gb',allowedScopes:['moneybridge-gb'],contracts:['generic_draft'],profile:'finance'};
+ const settings={...env,OMNIQORA_BRIDGES_JSON:JSON.stringify([b])};
+ assert.equal(readBindings(settings)[0].product,'fastremit');
+ const input={tenantId:'moneybridge-gb',scopeId:'moneybridge-gb',contract:'generic_draft',question:'Review snapshot counts',context:{source_ids:['snapshot-1'],credits:{count:2}},policy:{readOnly:true,noExternalActions:true,requireReview:true}};
+ assert.equal(gatewayInput(b,input).contract,'generic_draft');
+ for(const change of [{tenantId:'foreign'},{scopeId:'foreign'},{contract:'epos_report'},{policy:{readOnly:false}}])assert.throws(()=>gatewayInput(b,{...input,...change}));
+});
+test('MoneyBridge catalogue migration preserves existing bindings and does not activate a tenant', async () => {
+ const {PGlite}=await import('@electric-sql/pglite'); const db=new PGlite();
+ try {
+  await db.exec(`
+   CREATE TABLE product_catalogue(product_key text PRIMARY KEY,name text,description text,category text,deployment_mode text,status text,metadata jsonb DEFAULT '{}',updated_at timestamptz);
+   CREATE TABLE service_catalogue(service_key text PRIMARY KEY);
+   INSERT INTO service_catalogue VALUES('omniqora.ai'),('omniqora.analytics');
+   CREATE TABLE product_services(product_key text REFERENCES product_catalogue,service_key text REFERENCES service_catalogue,default_enabled boolean,required boolean,PRIMARY KEY(product_key,service_key));
+   CREATE TABLE tenant_blueprints(blueprint_key text PRIMARY KEY,name text,description text,country_code text,category text,status text,metadata jsonb);
+   CREATE TABLE blueprint_products(blueprint_key text REFERENCES tenant_blueprints,product_key text REFERENCES product_catalogue,required boolean,config jsonb,PRIMARY KEY(blueprint_key,product_key));
+   CREATE TABLE tenant_products(tenant_id text,product_key text REFERENCES product_catalogue,status text);
+   INSERT INTO product_catalogue(product_key,name,status,metadata) VALUES('fastremit','FastRemit','internal','{"keep":true}');
+   INSERT INTO tenant_products VALUES('existing','fastremit','suspended');
+  `);
+  const sql=await readFile(new URL('../supabase/migrations/20261005071500_moneybridge_factory_advisory.sql',import.meta.url),'utf8');
+  await db.exec(sql);await db.exec(sql);
+  const product=(await db.query("SELECT * FROM product_catalogue WHERE product_key='fastremit'")).rows[0];
+  assert.equal(product.name,'MoneyBridge');assert.equal(product.status,'internal');assert.equal(product.metadata.keep,true);
+  assert.deepEqual((await db.query('SELECT * FROM tenant_products')).rows,[{tenant_id:'existing',product_key:'fastremit',status:'suspended'}]);
+  assert.equal((await db.query('SELECT status FROM tenant_blueprints')).rows[0].status,'draft');
+  assert.equal((await db.query('SELECT config FROM blueprint_products')).rows[0].config.omniqora_mode,'off');
+  assert.equal((await db.query('SELECT count(*)::int AS count FROM product_services WHERE default_enabled OR required')).rows[0].count,0);
+ } finally {await db.close();}
+});
 const req=(token=key)=>new Request('https://gateway.invalid',{headers:{authorization:`Bearer ${token}`}});
 test('keys bind one source and cannot be reused across connections',()=>{
  assert.equal(bearerBinding(req(),env).id,'parts');assert.throws(()=>bearerBinding(req('forged'),env));
