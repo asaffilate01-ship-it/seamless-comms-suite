@@ -1,0 +1,30 @@
+name: AutoHashi auction vision runner
+
+on:
+  schedule:
+    - cron: "7,27,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VISION_RUNNER_URL: ${{ secrets.AUTOHASHI_AUCTION_VISION_RUNNER_URL }}
+      VISION_RUNNER_SECRET: ${{ secrets.AUTOHASHI_AUCTION_VISION_RUNNER_SECRET }}
+    steps:
+      - name: Process queued auction-sheet intelligence
+        shell: bash
+        run: |
+          if [ -z "$VISION_RUNNER_URL" ] || [ -z "$VISION_RUNNER_SECRET" ]; then
+            echo "::notice::AutoHashi auction vision deployment secrets are not configured; skipping."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error \
+            --request POST "$VISION_RUNNER_URL" \
+            --header "content-type: application/json" \
+            --header "x-autohashi-vision-runner-secret: $VISION_RUNNER_SECRET" \
+            --data '{"maxJobs":5,"workerKey":"github-scheduled-auction-vision"}'

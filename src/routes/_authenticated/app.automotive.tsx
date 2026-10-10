@@ -10,7 +10,7 @@ import {Badge} from "@/components/ui/badge";
 import {useTenant} from "@/hooks/useTenant";
 import {getTenantControlPlane} from "@/lib/control-plane.functions";
 import {createAutomotiveAppraisal,createBidModel,getAutomotiveWorkspace,queueAutomotiveIntelligence,recordAutomotiveValuation,saveAutomotiveVehicle,upsertAuctionLot} from "@/modules/automotive/functions";
-import {AlertTriangle,BrainCircuit,Gauge,Gavel,RefreshCw,ShieldCheck,Truck} from "lucide-react";
+import {AlertTriangle,BellRing,BrainCircuit,Gauge,Gavel,RefreshCw,ShieldCheck,TrendingUp,Truck} from "lucide-react";
 import {toast} from "sonner";
 
 export const Route=createFileRoute("/_authenticated/app/automotive")({component:Automotive,head:()=>({meta:[{title:"Automotive Intelligence — Omniqora"},{name:"robots",content:"noindex"}]})});
@@ -42,6 +42,15 @@ function Automotive(){
    </CardContent></Card>
    <Card><CardContent className="p-5"><h2 className="font-semibold">Auction intelligence v3</h2><p className="mt-1 text-xs text-muted-foreground">Structured sheet evidence, relisting/mileage checks, UK asking vs completed-sale comparables and deterministic BUY / REVIEW / DO NOT BID decisions. AI never self-approves.</p>
     <div className="mt-4 space-y-2">{(q.data?.auctionDecisions??[]).filter((d:any)=>d.status!=="superseded").slice(0,10).map((d:any)=><div key={d.id} className="rounded-lg border p-3 text-sm"><div className="flex items-center justify-between gap-3"><div><b>{String(d.recommendation).replaceAll("_"," ").toUpperCase()}</b><p className="text-xs text-muted-foreground">Score {d.score}/100 · {Math.round(Number(d.confidence||0)*100)}% confidence · {d.status}</p></div><Badge variant={d.recommendation==="do_not_bid"?"destructive":d.recommendation==="buy"?"default":"secondary"}>{d.recommendation}</Badge></div>{(d.blockers?.length??0)>0&&<p className="mt-2 flex items-center gap-1 text-xs font-semibold text-destructive"><AlertTriangle className="h-3 w-3"/>{d.blockers.join(", ")}</p>}<p className="mt-1 text-xs text-muted-foreground">{(d.reasons??[]).slice(0,2).join(" ")}</p></div>)}{!(q.data?.auctionDecisions??[]).length&&<p className="text-sm text-muted-foreground">No auction-intelligence decisions yet.</p>}</div>
+   </CardContent></Card>
+   <Card><CardContent className="p-5"><h2 className="font-semibold">Auction learning v4</h2><p className="mt-1 text-xs text-muted-foreground">Human correction history, verified hammer outcomes, auditable price curves/predictions and saved-search opportunity watches. Learning data never grants bid authority.</p>
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="rounded-lg bg-muted p-3 text-sm"><div className="flex items-center justify-between text-xs text-muted-foreground"><span>Corrections</span><BrainCircuit className="h-4 w-4"/></div><b className="mt-1 block text-lg">{q.data?.auctionCorrections?.length??0}</b></div>
+      <div className="rounded-lg bg-muted p-3 text-sm"><div className="flex items-center justify-between text-xs text-muted-foreground"><span>Verified outcomes</span><TrendingUp className="h-4 w-4"/></div><b className="mt-1 block text-lg">{q.data?.auctionPriceOutcomes?.length??0}</b></div>
+      <div className="rounded-lg bg-muted p-3 text-sm"><div className="flex items-center justify-between text-xs text-muted-foreground"><span>Price curves</span><TrendingUp className="h-4 w-4"/></div><b className="mt-1 block text-lg">{q.data?.auctionPriceCurves?.length??0}</b></div>
+      <div className="rounded-lg bg-muted p-3 text-sm"><div className="flex items-center justify-between text-xs text-muted-foreground"><span>Active watches</span><BellRing className="h-4 w-4"/></div><b className="mt-1 block text-lg">{(q.data?.auctionWatchRules??[]).filter((w:any)=>w.enabled).length}</b></div>
+    </div>
+    <div className="mt-4 space-y-2">{(q.data?.auctionPredictions??[]).filter((p:any)=>p.status!=="superseded").slice(0,8).map((p:any)=><div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"><div><b>{p.predicted_hammer_jpy==null?"Insufficient data":`¥${Number(p.predicted_hammer_jpy).toLocaleString()}`}</b><p className="text-xs text-muted-foreground">{p.method} · n={p.sample_count} · {Math.round(Number(p.confidence||0)*100)}% confidence</p></div>{p.actual_hammer_jpy!=null?<Badge variant="outline">actual ¥{Number(p.actual_hammer_jpy).toLocaleString()} · error {Number(p.error_pct||0).toFixed(1)}%</Badge>:<Badge variant="secondary">{p.status}</Badge>}</div>)}</div>
    </CardContent></Card>
   </div>
  </AppShell>

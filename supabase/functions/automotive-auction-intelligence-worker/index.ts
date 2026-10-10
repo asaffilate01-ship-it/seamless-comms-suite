@@ -76,7 +76,16 @@ async function contextForJob(db:any,job:any){
   const cost=await db.from("automotive_bid_cost_models_v2").select("*").eq("tenant_id",job.tenant_id).eq("auction_lot_id",lotId)
     .in("status",["approved","review","draft"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(cost.error)throw cost.error;
-  return {lot:lot.data,vehicle,history,comparables:comps.data??[],costModel:cost.data};
+  const make=String(lot.data.auction_sheet?.make??vehicle?.make??"").trim();
+  const model=String(lot.data.auction_sheet?.model??vehicle?.model??"").trim();
+  let correctionQuery=db.from("automotive_auction_review_corrections")
+    .select("changed_fields,original_payload,corrected_payload,note,created_at,context")
+    .eq("tenant_id",job.tenant_id).eq("product_key",job.product_key);
+  if(make)correctionQuery=correctionQuery.filter("context->>make","ilike",make);
+  if(model)correctionQuery=correctionQuery.filter("context->>model","ilike",model);
+  const corrections=await correctionQuery.order("created_at",{ascending:false}).limit(20);
+  if(corrections.error)throw corrections.error;
+  return {lot:lot.data,vehicle,history,comparables:comps.data??[],costModel:cost.data,learningExamples:corrections.data??[]};
 }
 function decisionInput(ctx:any,extractionValue:AuctionSheetExtraction|null){
   const lotSheet=ctx.lot.auction_sheet??{};
@@ -123,6 +132,10 @@ Deno.serve(async req=>{
           auctionAt:ctx.lot.auction_at,providerGrade:ctx.lot.grade,providerOdometerKm:ctx.lot.odometer_km,
           structuredAuctionSheet:ctx.lot.auction_sheet,imageRefs:ctx.lot.images},
         history:ctx.history,comparables:ctx.comparables,costModel:ctx.costModel,
+        learningExamples:(ctx.learningExamples??[]).map((row:any)=>({
+          changedFields:row.changed_fields,original:row.original_payload,corrected:row.corrected_payload,note:row.note,createdAt:row.created_at,
+          instruction:"Reference only. Use these reviewed corrections to avoid repeated extraction mistakes; never copy a value that is not visible in the current evidence."
+        })),
       }});
     }
     if(action==="complete"){
