@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.masked_voice_sessions (
   expires_at timestamptz NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  consent_attested_at timestamptz NOT NULL DEFAULT now(),
   CHECK(participant_a <> participant_b),
   CHECK(mask_number <> participant_a AND mask_number <> participant_b),
   CHECK(expires_at > created_at),
@@ -47,7 +48,8 @@ GRANT ALL ON public.masked_voice_call_receipts TO service_role;
 CREATE OR REPLACE FUNCTION public.platform_create_masked_voice_session(
   _tenant uuid, _product text, _channel uuid,
   _participant_a text, _participant_b text,
-  _provider_account_sid text, _ttl_minutes integer DEFAULT 30
+  _provider_account_sid text, _ttl_minutes integer DEFAULT 30,
+  _consent_attested boolean DEFAULT false
 ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE
   configured public.order_intake_channels%rowtype;
@@ -55,6 +57,9 @@ DECLARE
 BEGIN
   IF auth.uid() IS NULL OR NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Platform administrator required';
+  END IF;
+  IF _consent_attested IS DISTINCT FROM true THEN
+    RAISE EXCEPTION 'Participant consent attestation required';
   END IF;
   IF _ttl_minutes NOT BETWEEN 1 AND 60 OR
     _participant_a !~ '^\+[1-9][0-9]{7,14}$' OR
@@ -107,7 +112,7 @@ BEGIN
 END; $$;
 
 REVOKE ALL ON FUNCTION public.platform_create_masked_voice_session(
-  uuid,text,uuid,text,text,text,integer) FROM PUBLIC,anon;
+  uuid,text,uuid,text,text,text,integer,boolean) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.platform_create_masked_voice_session(
   uuid,text,uuid,text,text,text,integer) TO authenticated;
 
