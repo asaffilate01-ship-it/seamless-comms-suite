@@ -4,6 +4,20 @@ on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
+    inputs:
+      operation:
+        description: "Read-only preflight (default) or explicitly approved job drain"
+        type: choice
+        required: true
+        default: preflight
+        options:
+          - preflight
+          - drain
+      confirmation:
+        description: "To drain manually, type DRAIN-PROVISIONING"
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -13,7 +27,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  drain:
+  worker:
+    # A scheduled drain is opt-in. An operator can always request a read-only
+    # preflight manually without enabling the scheduled production worker.
     if: ${{ github.event_name == 'workflow_dispatch' || vars.PROVISIONING_WORKER_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -22,19 +38,55 @@ jobs:
       OMNIQORA_PUBLIC_URL: ${{ secrets.OMNIQORA_PUBLIC_URL }}
       CONTROL_PLANE_WORKER_SECRET: ${{ secrets.CONTROL_PLANE_WORKER_SECRET }}
     steps:
-      - name: Validate worker configuration
+      - name: Validate production worker configuration
         shell: bash
         run: |
           set -euo pipefail
           test -n "${OMNIQORA_PUBLIC_URL:-}" || { echo "Missing OMNIQORA_PUBLIC_URL"; exit 1; }
           test -n "${CONTROL_PLANE_WORKER_SECRET:-}" || { echo "Missing CONTROL_PLANE_WORKER_SECRET"; exit 1; }
-          case "$OMNIQORA_PUBLIC_URL" in
-            https://*) ;;
-            *) echo "OMNIQORA_PUBLIC_URL must use HTTPS"; exit 1 ;;
-          esac
           test "${#CONTROL_PLANE_WORKER_SECRET}" -ge 32 || { echo "CONTROL_PLANE_WORKER_SECRET must be at least 32 characters"; exit 1; }
+          node -e '
+            const u = new URL(process.env.OMNIQORA_PUBLIC_URL);
+            if (u.protocol !== "https:" || u.username || u.password || u.pathname !== "/" || u.search || u.hash) {
+              throw new Error("OMNIQORA_PUBLIC_URL must be a clean HTTPS origin");
+            }
+          '
+
+      - name: Require explicit confirmation for manual drain
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'drain' }}
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = "DRAIN-PROVISIONING" || {
+            echo "Manual drain requires DRAIN-PROVISIONING confirmation"
+            exit 1
+          }
+
+      - name: Check deployed worker and database without claiming jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="${OMNIQORA_PUBLIC_URL%/}/api/control-plane/workers/provisioning"
+          response="$(
+            curl --silent --show-error --fail-with-body \
+              --retry 2 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 \
+              --request GET \
+              --header "authorization: Bearer ${CONTROL_PLANE_WORKER_SECRET}" \
+              "$endpoint"
+          )"
+          READY_JSON="$response" node -e '
+            const body = JSON.parse(process.env.READY_JSON || "{}");
+            if (body.ready !== true || body.mode !== "read-only") {
+              throw new Error("Deployed worker preflight is not ready");
+            }
+            console.log("Read-only worker preflight verified");
+          '
 
       - name: Drain queued provisioning jobs
+        if: ${{ github.event_name == 'schedule' || inputs.operation == 'drain' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -42,7 +94,14 @@ jobs:
 
           for batch in 1 2 3 4 5; do
             response="$(
-              curl --silent --show-error --fail-with-body                 --retry 2 --retry-all-errors                 --connect-timeout 10 --max-time 60                 --request POST                 --header "authorization: Bearer ${CONTROL_PLANE_WORKER_SECRET}"                 --header "content-type: application/json"                 --data '{}'                 "$endpoint"
+              curl --silent --show-error --fail-with-body \
+                --retry 2 --retry-all-errors \
+                --connect-timeout 10 --max-time 60 \
+                --request POST \
+                --header "authorization: Bearer ${CONTROL_PLANE_WORKER_SECRET}" \
+                --header "content-type: application/json" \
+                --data '{}' \
+                "$endpoint"
             )"
 
             claimed="$(

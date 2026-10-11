@@ -2,7 +2,7 @@
 
 Omniqora exposes a secured provisioning worker at:
 
-`POST /api/control-plane/workers/provisioning`
+`POST /api/control-plane/workers/provisioning` (job drain)\n\n`GET /api/control-plane/workers/provisioning` (read-only preflight; same 32+ character Bearer secret)
 
 The worker claims queued jobs with database locking and processes up to 20 jobs per request.
 
@@ -19,7 +19,11 @@ Production environment secrets required:
 - `OMNIQORA_PUBLIC_URL` — HTTPS public origin of the deployed Omniqora application.
 - `CONTROL_PLANE_WORKER_SECRET` — same 32+ character server-only secret configured in the Omniqora runtime.
 
-The workflow can also be run manually with `workflow_dispatch`; manual runs still require both secrets.
+The workflow can also be run manually with `workflow_dispatch`. **Manual runs default to `preflight`**, which authenticates to the deployed GET endpoint and verifies that the core provisioning tables are readable; it does not claim, start or complete any job. Both secrets are still required. This is a technical readiness probe, not confirmation of external product credentials, migrations or successful provisioning.
+
+Manual `drain` must be explicitly selected and accompanied by the exact confirmation text `DRAIN-PROVISIONING`. The workflow runs the read-only preflight before the first POST. Scheduled drains are opt-in using the **repository** variable `PROVISIONING_WORKER_ENABLED=true` and retain the five-minute schedule.
+
+The GET endpoint and POST both require the worker Bearer token; errors and environment values are not exposed in preflight responses. **Do not enable scheduled production drainage until the hosted schema is reconciled, adapter secrets are installed, and a non-production tenant has passed an end-to-end provisioning test.**
 
 ## Haccora
 
