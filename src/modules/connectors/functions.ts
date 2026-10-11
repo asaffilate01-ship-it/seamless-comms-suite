@@ -13,7 +13,7 @@ export const getConnectorHub=createServerFn({method:"POST"}).middleware([require
   db.from("provider_catalogue").select("*").neq("status","retired").order("provider_kind").order("name"),
   db.from("product_provider_requirements").select("*").eq("product_key",data.productKey).order("provider_key"),
   db.from("provider_bindings").select("id,tenant_id,product_key,provider_key,environment,status,last_verified_at").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("provider_key"),
-  db.from("connector_health_checks").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("checked_at",{ascending:false}).limit(100),
+  db.from("connector_health_checks").select("id,provider_key,binding_id,status,latency_ms,checked_at").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("checked_at",{ascending:false}).limit(100),
   db.from("connector_sync_state").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("provider_key"),
   db.from("connector_webhook_inbox").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("received_at",{ascending:false}).limit(100),
   db.from("connector_reconciliations").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(100),
