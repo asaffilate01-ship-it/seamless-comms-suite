@@ -26,6 +26,7 @@ test("operator health notes cannot activate, authenticate or verify provider bin
  assert.match(functions,/recordConnectorObservation=createServerFn/);
  assert.match(functions,/provider_bindings"\)\.select\("id,tenant_id,product_key,provider_key,environment,status,last_verified_at"\)/);
  assert.doesNotMatch(functions,/provider_bindings"\)\.select\("\*"\)/);
+ assert.match(functions,/connector_health_checks"\)\.select\("id,provider_key,binding_id,status,latency_ms,checked_at"\)/);
  assert.match(functions,/status:z\.literal\("unverified"\)/);
  assert.match(functions,/requireAdminRole\(access\.role\)/);
  assert.match(functions,/\.eq\("provider_key",data\.providerKey\)\.eq\("id",data\.bindingId\)/);
