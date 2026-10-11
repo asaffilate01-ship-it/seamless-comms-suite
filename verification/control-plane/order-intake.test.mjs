@@ -101,4 +101,34 @@ assert.equal(revokedMask,true);
 const newMask = await asUser(admin,async()=>(await startMask()).rows[0].id);
 assert.notEqual(newMask,maskedId);
 
+// Twilio inbound message receipts must append without overwriting previous messages.
+const inboundAccount="AC"+"a".repeat(32);
+const msg1="SM"+"b".repeat(32),msg2="SM"+"c".repeat(32);
+const receptionId=await asService(async()=>(
+  await db.query(
+    "INSERT INTO public.reception_sessions(tenant_id,product_key,channel,provider,provider_session_id) VALUES ($1,'dishbee','sms','twilio',$2) RETURNING id",
+    [luton.tenantId,msg1],
+  )
+).rows[0].id);
+const append=(sid,body)=>db.query(
+  "SELECT public.server_append_twilio_reception_message($1,$2,$3,$4) AS inserted",
+  [receptionId,inboundAccount,sid,body],
+);
+const recFirst=await asService(async()=>(await append(msg1,"First incoming SMS")).rows[0].inserted);
+const recRepeated=await asService(async()=>(await append(msg1,"Unexpected retry")).rows[0].inserted);
+const recSecond=await asService(async()=>(await append(msg2,"Second SMS")).rows[0].inserted);
+assert.equal(recFirst,true);
+assert.equal(recRepeated,false);
+assert.equal(recSecond,true);
+const transcriptRows=await asService(()=>db.query(
+  "SELECT jsonb_array_length(transcript) AS length,transcript FROM public.reception_sessions WHERE id=$1",
+  [receptionId],
+));
+assert.equal(transcriptRows.rows[0].length,2);
+assert.equal(transcriptRows.rows[0].transcript[1].body,"Second SMS");
+await assert.rejects(asUser(admin,()=>append("SM"+"d".repeat(32),"should fail")),/permission denied/);
+await assert.rejects(asUser(admin,()=>db.query(
+  "SELECT * FROM public.twilio_reception_message_receipts",
+)),/permission denied/);
+
 await db.close();console.log("assisted ordering payment and Dishbee pull/ack handoff verified");

@@ -167,3 +167,36 @@ The new masked voice endpoint must **not** be used as a generic inbound or Whats
 
 See [Twilio signed webhooks](https://www.twilio.com/docs/usage/webhooks/webhooks-security)
 and [TwiML Dial](https://www.twilio.com/docs/voice/twiml/dial).
+
+## Twilio inbound order intake hardening — October 2026
+
+The separate `POST /api/public/twilio/order-intake` receiver supports inbound
+**voice, SMS and Twilio WhatsApp** messages. This endpoint is distinct from
+Meta's direct WhatsApp Cloud API transport and from the masked-voice relay.
+
+- Configure a **single approved Twilio account** with server-only
+  `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`, plus a clean HTTPS
+  `OMNIQORA_PUBLIC_URL`. Subaccount support requires account-scoped
+  credentials and sender mapping before enabling multiple Twilio accounts.
+- Set the Twilio number webhook to
+  `https://omniqora.itechlounge.co.uk/api/public/twilio/order-intake`
+  using form-encoded POST. Signatures are validated against this fixed public
+  callback URL and account SID; duplicate form keys, oversized bodies and
+  misclassified message/voice IDs fail closed.
+- Inbound SMS and WhatsApp require a real `order_intake_channels` binding
+  and use an idempotent service-role SQL append routine. Duplicate Twilio
+  `MessageSid` deliveries no longer overwrite the transcript or cause an
+  additional auto-reply. Message receipts contain only tenant, session and
+  provider IDs; ordinary authenticated clients cannot read them.
+- **AI is not automatically activated by the channel's UI checkbox.** Until
+  a real approved voice/agent runtime and handoff are proven, newly created
+  reception sessions are human-managed rather than falsely `ai_active`.
+- Incoming voice forwarding requires both `human_handoff_enabled` and the
+  exact E.164 recipient in server-only `TWILIO_APPROVED_FORWARD_NUMBERS`
+  (comma separated). Without approval, the call ends with a truthful
+  unavailable greeting, rather than an unauthorised chargeable forward.
+- Receipts/transcripts contain customer content and require GDPR retention,
+  permission checks and deletion policies. Provider live delivery and reply
+  acceptance cannot be inferred from source or CI.
+
+Twilio validation: https://www.twilio.com/docs/usage/webhooks/webhooks-security
