@@ -105,3 +105,65 @@ Alerts, compliance status, temperature, checks and incident workflows.
 5. Active Omniqora source binding/secret.
 6. Source-specific inbound AI/tool adapter before AI may take operational actions.
 7. Usage/billing metering and packaging for the paid add-on.
+
+## Twilio masked voice — platform-controlled pilot (11 October 2026)
+
+Source: `src/modules/connect/masked-voice.server.ts`, `masked-voice.functions.ts`,
+`/api/public/twilio/masked-voice` and the `20261011181000` migration.
+
+**This is a guarded relay foundation, not a certified production masking product.**
+The existing direct Meta WhatsApp provider and Twilio assisted-ordering channel remain separate.
+The new masked voice endpoint must **not** be used as a generic inbound or WhatsApp webhook.
+
+### Pilot lifecycle
+1. Platform operator owns and verifies a Twilio voice number and the exact account SID,
+   tests that it supports outbound caller ID, and explicitly allocates it to one Omniqora
+   tenant/product in `order_intake_channels`. The channel must have provider `twilio`,
+   channel `voice`, `enabled=true`, `routing.masking_mode="enabled"` and
+   `metadata.twilioAccountSid` equal to the approved SID. Do not let a tenant choose
+   any number merely by typing it into an input field.
+2. Enable the separately deployed server environment with all of
+   `OMNIQORA_MASKED_VOICE_ENABLED=true`, `TWILIO_AUTH_TOKEN`,
+   `TWILIO_MASKED_VOICE_ACCOUNT_SID`, `TWILIO_MASKED_VOICE_NUMBERS` (comma-separated
+   allowlisted E.164 numbers) and a clean `OMNIQORA_PUBLIC_URL` HTTPS origin.
+   These are **server secrets/config**; never use `VITE_` or check them into git.
+3. Activate the tenant/product and a valid `omniqora.voice` entitlement. An authenticated
+   **platform administrator** can then call `createMaskedVoiceSession` with the
+   approved channel ID, two distinct E.164 numbers, an explicit statement that both
+   parties have consented, and a TTL between 1 and 60 minutes. The database independently
+   checks authority, the channel's current mapping, entitlement, expiry and whether
+   that mask number is already in use. It retains a consent-attestation timestamp.
+4. Configure the approved Twilio voice number webhook as **POST**
+   `https://omniqora.itechlounge.co.uk/api/public/twilio/masked-voice`.
+   The endpoint verifies the Twilio signature against the fixed public URL, ensures
+   the account and relay number match the allowlist and active private session,
+   rechecks live channel approval, and routes only the two authorised participants
+   through TwiML `<Dial callerId="...">` with recording disabled.
+5. Expired/revoked/unapproved/unknown numbers or callers receive only `<Reject/>`.
+   Call SID receipts are idempotent and retained in a service-role-only table without
+   participant numbers. Platform administrators can revoke a session even after
+   the feature switch is disabled.
+
+### Mandatory controls before any external customer use
+
+- **Caller-ID spoofing:** a signed Twilio webhook authenticates Twilio as the sender,
+  not the true identity of the PSTN caller. The pilot currently matches the inbound
+  `From` number against pre-approved participants; **do not** use it to protect
+  sensitive communications until caller identity/PIN verification is added.
+- Verify provider number ownership and voice caller-ID permission by a real Twilio
+  account API check; database `metadata` is operator evidence, not independent
+  account verification.
+- Do not advertise this as anonymising all data. Both participant phone numbers are
+  stored in a private table and are sent to Twilio when it connects calls. Restrict
+  access, configure deletion after retention expiry and document the call-provider DPA.
+- Consent, opt-out, non-emergency use, UK call-recording rules, incident response and
+  abuse/rate limits need live policies. The pilot disables Twilio recording by default.
+- Add a provider-side verified number inventory, a real caller identity challenge,
+  production usage caps, call status callbacks and an operator audit view before
+  self-service customer provisioning. Session issuance creates routing permission;
+  it does **not** initiate outbound calls itself.
+- Production feature switch must remain **false** until a staged end-to-end
+  voice session, renewal/revocation, unknown-caller, cross-tenant and replay test pass.
+
+See [Twilio signed webhooks](https://www.twilio.com/docs/usage/webhooks/webhooks-security)
+and [TwiML Dial](https://www.twilio.com/docs/voice/twiml/dial).
