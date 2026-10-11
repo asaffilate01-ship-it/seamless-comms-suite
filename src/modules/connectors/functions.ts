@@ -28,15 +28,32 @@ export const getConnectorHub=createServerFn({method:"POST"}).middleware([require
   receptionSettings:rs[9].data??null,receptionRequests:rs[10].data??[]};
 });
 
-const health=scope.extend({providerKey:z.string().min(2).max(120),bindingId:uuid.nullish(),
- status:z.enum(["healthy","degraded","failed","unverified"]),latencyMs:z.number().int().min(0).nullish(),detail:z.record(z.string(),z.unknown()).default({})});
-export const recordConnectorHealth=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
-.inputValidator((i:z.input<typeof health>)=>health.parse(i)).handler(async({context,data})=>{
- const a=await requireService(context,data.tenantId,"omniqora.connectors");requireWriteRole(a.role);const db=context.supabase as any;
- const {data:row,error}=await db.from("connector_health_checks").insert({tenant_id:data.tenantId,product_key:data.productKey,provider_key:data.providerKey,
-  binding_id:data.bindingId??null,status:data.status,latency_ms:data.latencyMs??null,detail:data.detail}).select("*").single();if(error)throw new Error(error.message);
- await db.from("provider_bindings").update({status:data.status==="healthy"?"active":data.status==="failed"?"failed":"degraded",
-  last_verified_at:new Date().toISOString()}).eq("tenant_id",data.tenantId).eq("product_key",data.productKey).eq("provider_key",data.providerKey);
+// A browser operator can flag a provider binding for review, but cannot promote
+// it to healthy/active. Provider success requires independent server-side proof.
+const observation=scope.extend({
+ providerKey:z.string().min(2).max(120),
+ bindingId:uuid,
+ status:z.literal("unverified"),
+ note:z.string().trim().max(500).default("Operator requested verification"),
+});
+export const recordConnectorObservation=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:z.input<typeof observation>)=>observation.parse(i)).handler(async({context,data})=>{
+ const access=await requireService(context,data.tenantId,"omniqora.connectors");
+ requireAdminRole(access.role);
+ const db=context.supabase as any;
+ const binding=await db.from("provider_bindings").select("id")
+  .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
+  .eq("provider_key",data.providerKey).eq("id",data.bindingId).maybeSingle();
+ if(binding.error)throw new Error("Connector binding lookup failed");
+ if(!binding.data)throw new Error("Connector binding not found in this workspace");
+ const {data:row,error}=await db.from("connector_health_checks").insert({
+  tenant_id:data.tenantId,product_key:data.productKey,provider_key:data.providerKey,
+  binding_id:data.bindingId,status:"unverified",latency_ms:null,
+  detail:{source:"operator_observation",note:data.note},
+ }).select("*").single();
+ if(error)throw new Error("Connector observation could not be saved");
+ // Deliberately NEVER update provider_bindings.status or last_verified_at.
+ // A real provider probe and authenticated delivery receipt must authorise that.
  return row;
 });
 
