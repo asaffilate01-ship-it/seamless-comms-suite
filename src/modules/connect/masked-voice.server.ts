@@ -4,6 +4,7 @@ type ActiveMask = {
   id: string;
   tenant_id: string;
   product_key: string;
+  channel_id: string;
   mask_number: string;
   participant_a: string;
   participant_b: string;
@@ -95,7 +96,7 @@ export async function serveMaskedVoice(
   }
 
   const result = await db.from("masked_voice_sessions")
-    .select("id,tenant_id,product_key,mask_number,participant_a,participant_b,provider_account_sid,expires_at,status")
+    .select("id,tenant_id,product_key,channel_id,mask_number,participant_a,participant_b,provider_account_sid,expires_at,status")
     .eq("mask_number", to).eq("provider_account_sid", sid)
     .eq("status", "active").gt("expires_at", new Date(now()).toISOString()).maybeSingle();
 
@@ -104,6 +105,18 @@ export async function serveMaskedVoice(
   const record = result.data as ActiveMask;
   const destination = resolveMaskedVoiceDestination(record, { from, to, accountSid: sid, at: now() });
   if (!destination) return reject();
+
+  // A tenant admin may disable or reassign the channel after session issuance.
+  // Never forward a call unless the exact channel is still explicitly approved.
+  const channel = await db.from("order_intake_channels")
+    .select("id,tenant_id,product_key,provider,channel,address,enabled,routing,metadata")
+    .eq("id", record.channel_id).eq("tenant_id", record.tenant_id)
+    .eq("product_key", record.product_key).eq("provider", "twilio")
+    .eq("channel", "voice").eq("enabled", true).maybeSingle();
+  if (channel.error || !channel.data ||
+      channel.data.address !== to ||
+      channel.data.routing?.masking_mode !== "enabled" ||
+      channel.data.metadata?.twilioAccountSid !== sid) return reject();
 
   // Capture only call SID and session binding, not raw participant numbers.
   const receipt = await db.from("masked_voice_call_receipts").upsert({
