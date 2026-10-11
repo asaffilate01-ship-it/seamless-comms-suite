@@ -23,6 +23,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Public release smoke contract tests
         run: node --test verification/public-smoke.test.mjs
+      - name: Provisioning worker preflight and manual-drain safety
+        run: bun verification/control-plane/provisioning-preflight.test.ts
       - name: Sales cadence, isolation and suppression regressions
         run: |
           node verification/control-plane/sales-runtime.test.mjs
