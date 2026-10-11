@@ -26,6 +26,21 @@ async function session(db:any,ch:any,p:Record<string,string>,kind:TwilioInboundK
     return existing.data;
   }
 
+  if (kind==="sms" || kind==="whatsapp") {
+    // MessageSid identifies a delivery event, not a customer conversation.
+    // Reuse the same human reception session for this caller and receiving number
+    // within one customer-service day; each MessageSid is deduped separately.
+    const recent=await db.from("reception_sessions").select("*")
+      .eq("tenant_id",ch.tenant_id).eq("channel_id",ch.id)
+      .eq("channel",kind).eq("provider","twilio")
+      .eq("customer_phone",(p.From||"").replace(/^whatsapp:/,""))
+      .eq("status","human_active")
+      .gte("started_at",new Date(Date.now()-24*60*60*1000).toISOString())
+      .order("started_at",{ascending:false}).limit(1).maybeSingle();
+    if(recent.error)throw new Error("Reception conversation lookup failed");
+    if(recent.data)return recent.data;
+  }
+
   // No AI agent is assumed to exist merely because a channel checkbox is set.
   // Use human reception until an approved AI provider session is actually wired.
   const created=await db.from("reception_sessions").insert({
