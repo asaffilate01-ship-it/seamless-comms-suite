@@ -3,7 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3, ContactRound,
-  Handshake, Settings, Search, Bell, Plus, MessageCircle, ShieldCheck,
+  Handshake, Settings, Search, MessageCircle, ShieldCheck,
   Menu, LogOut, Boxes, Cpu, ShoppingBasket, Truck, Store, Wrench, Palette,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -30,12 +30,12 @@ type NavItem = {
 };
 const nav: NavItem[] = [
   { to: "/app", labelKey: "app.nav.overview", icon: LayoutDashboard, exact: true },
-  { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle, badge: "LIVE" },
+  { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle },
   { to: "/app/order-intake", labelKey: "", label: "Assisted Ordering", icon: ShoppingBasket },
   { to: "/app/dispatch", labelKey: "", label: "Dispatch & Tracking", icon: Truck },
   { to: "/app/commerce", labelKey: "", label: "Syndriva Commerce", icon: Store },
   { to: "/app/connected-operations", labelKey: "", label: "Connected Operations", icon: Wrench },
-  { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox, badge: "12" },
+  { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox },
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
   { to: "/app/crm", labelKey: "", label: "CRM & Customer 360", icon: ContactRound },
@@ -75,6 +75,55 @@ const nav: NavItem[] = [
   { to: "/app/childcare", labelKey: "", label: "Childcare Operations", icon: Users },
   { to: "/app/settings", labelKey: "app.nav.settings", icon: Settings },
 ];
+
+/** Workspace-page navigation. This is deliberately not presented as a cross-product data search. */
+function NavigationSearch() {
+  const navigate = useNavigate();
+  const t = useT();
+  const [query, setQuery] = useState("");
+  const term = query.trim().toLocaleLowerCase();
+  const matches = term
+    ? nav.filter((item) => (item.label ?? t(item.labelKey)).toLocaleLowerCase().includes(term)
+      || item.to.toLocaleLowerCase().includes(term)).slice(0, 7)
+    : [];
+
+  function openPage(to: string) {
+    setQuery("");
+    navigate({ to: to as "/app" });
+  }
+
+  return (
+    <div className="relative hidden max-w-sm flex-1 md:block">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        aria-label="Find an Omniqora workspace page"
+        placeholder="Find a page (CRM, Growth, Dispatch…)"
+        className="pl-9"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setQuery("");
+          if (event.key === "Enter" && matches[0]) openPage(matches[0].to);
+        }}
+      />
+      {term && (
+        <div role="listbox" aria-label="Matching workspace pages"
+          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-md border border-border bg-background p-1 shadow-lg">
+          {matches.length ? matches.map((item) => (
+            <button key={item.to} type="button" role="option" aria-selected={false}
+              onClick={() => openPage(item.to)}
+              className="flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm hover:bg-muted focus-visible:bg-muted">
+              <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span>{item.label ?? t(item.labelKey)}</span>
+            </button>
+          )) : (
+            <p className="px-3 py-2 text-sm text-muted-foreground">No matching workspace page.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -198,19 +247,10 @@ export function AppShell({ children, title, subtitle, actions }: {
             </SheetContent>
           </Sheet>
 
-          <div className="relative hidden max-w-sm flex-1 md:block">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder={t("app.search")} className="pl-9" />
-          </div>
+          <NavigationSearch />
           <div className="ml-auto flex items-center gap-2">
             <LanguageToggle />
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
-            </Button>
-            <Button size="sm" className="hidden sm:inline-flex">
-              <Plus className="mr-1 h-4 w-4" /> {t("app.new")}
-            </Button>
+
             <AccountMenu />
           </div>
         </header>
