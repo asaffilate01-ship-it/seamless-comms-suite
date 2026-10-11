@@ -1,5 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { decideProvisioning } from "./provisioning-policy";
+import { probeProvisioningSchema } from "./provisioning-preflight";
 import { verifyDomainOwnership } from "./domain-verification.server";
 import { approvedOrigin, FactoryBindingError, provisionDishbeeFactory } from "./dishbee-binding.server";
 import { MerqanoProvisioningBlock, provisionMerqanoFactory } from "./merqano-binding.server";
@@ -436,7 +437,7 @@ function json(body: unknown, status = 200) {
   });
 }
 
-export async function serveProvisioningWorker(request: Request) {
+export async function serveProvisioningWorker(request: Request, preflight = false) {
   const expected = process.env.CONTROL_PLANE_WORKER_SECRET;
   const auth = request.headers.get("authorization") ?? "";
   if (!expected || expected.length < 32)
@@ -446,6 +447,22 @@ export async function serveProvisioningWorker(request: Request) {
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
+
+  if (preflight) {
+    // Authenticated GET is a deliberately read-only readiness probe. Do not
+    // invoke server_claim_provisioning_jobs or product adapters in this branch.
+    try {
+      const ready = await probeProvisioningSchema(db);
+      return json({
+        ready,
+        mode: "read-only",
+        checkedAt: new Date().toISOString(),
+      }, ready ? 200 : 503);
+    } catch {
+      // Do not return database error messages or configuration values.
+      return json({ ready: false, mode: "read-only" }, 503);
+    }
+  }
 
   const { data: claimed, error: claimError } = await db.rpc("server_claim_provisioning_jobs", {
     _limit: 20,
