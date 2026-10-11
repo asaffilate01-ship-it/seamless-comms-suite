@@ -24,6 +24,8 @@ test("operator health notes cannot activate, authenticate or verify provider bin
  const functions=await readFile(new URL("../../src/modules/connectors/functions.ts",import.meta.url),"utf8");
  const hub=await readFile(new URL("../../src/routes/_authenticated/app.connector-hub.tsx",import.meta.url),"utf8");
  assert.match(functions,/recordConnectorObservation=createServerFn/);
+ assert.match(functions,/provider_bindings"\)\.select\("id,tenant_id,product_key,provider_key,environment,status,last_verified_at"\)/);
+ assert.doesNotMatch(functions,/provider_bindings"\)\.select\("\*"\)/);
  assert.match(functions,/status:z\.literal\("unverified"\)/);
  assert.match(functions,/requireAdminRole\(access\.role\)/);
  assert.match(functions,/\.eq\("provider_key",data\.providerKey\)\.eq\("id",data\.bindingId\)/);
