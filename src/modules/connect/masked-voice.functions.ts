@@ -35,6 +35,7 @@ export const createMaskedVoiceSession = createServerFn({ method: "POST" })
         _tenant: data.tenantId, _product: data.productKey, _channel: data.channelId,
         _participant_a: data.participantA, _participant_b: data.participantB,
         _provider_account_sid: account, _ttl_minutes: data.ttlMinutes,
+        _consent_attested: data.bothParticipantsConsented,
       },
     );
     if (error || typeof sessionId !== "string") {
