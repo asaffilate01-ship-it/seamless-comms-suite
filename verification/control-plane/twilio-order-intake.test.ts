@@ -68,6 +68,8 @@ test("the route uses atomic transcript receipts and never asserts an unwired AI 
  assert.match(source,/validateTwilioOrderWebhook\(request\)/);
  assert.match(source,/mode:"human",status:"human_active"/);
  assert.match(source,/server_append_twilio_reception_message/);
+ assert.match(source,/MessageSid identifies a delivery event, not a customer conversation/);
+ assert.match(source,/\.eq\("customer_phone",\(p.From\|\|""\)\.replace/);
  assert.match(source,/append\.data===false/);
  assert.doesNotMatch(source,/status:mode==="ai"\?"ai_active"/);
  assert.match(sql,/UNIQUE\(provider_account_sid,provider_message_sid\)/);
