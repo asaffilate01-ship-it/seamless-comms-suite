@@ -29,6 +29,7 @@ function makeDb(mask: any = {}) {
     id: "f5d2a1b4-a386-430c-8726-559b70b21a56",
     tenant_id: "f140eb9c-1836-49a2-aac3-0b81bb20b101",
     product_key: "dishbee",
+    channel_id: "2614e79b-f6fc-4c93-a69a-48769a7e6ce8",
     mask_number: number,
     participant_a: a,
     participant_b: b,
@@ -37,6 +38,11 @@ function makeDb(mask: any = {}) {
     status: "active",
     ...mask,
   };
+  const channel = {
+    id:row.channel_id,tenant_id:row.tenant_id,product_key:row.product_key,
+    provider:"twilio",channel:"voice",address:number,enabled:true,
+    routing:{masking_mode:"enabled"},metadata:{twilioAccountSid:sid},
+  };
   const db = {
     from(table:string) {
       actions.push({table, action:"from"});
@@ -44,7 +50,7 @@ function makeDb(mask: any = {}) {
         select() {return this;},
         eq() {return this;},
         gt() {return this;},
-        async maybeSingle() {return {data:row,error:null};},
+        async maybeSingle() {return {data:table==="masked_voice_sessions"?row:channel,error:null};},
         async upsert(value:unknown, options:unknown) {
           actions.push({table,action:"upsert",value:{value,options}});
           return {error:null};
@@ -132,6 +138,8 @@ test("SQL and HTTP route restrict masked sessions and receipts to service role",
  assert.match(migration,/public.is_platform_admin\(auth.uid\(\)\)/);
  assert.match(migration,/routing->>'masking_mode'='enabled'/);
  assert.match(functions,/bothParticipantsConsented: z.literal\(true\)/);
+ assert.match(functions,/_consent_attested: data.bothParticipantsConsented/);
+ assert.match(migration,/Participant consent attestation required/);
  assert.match(route,/POST: async \(\{ request \}\)/);
  assert.doesNotMatch(route,/GET:.*serveMaskedVoice/);
 });
