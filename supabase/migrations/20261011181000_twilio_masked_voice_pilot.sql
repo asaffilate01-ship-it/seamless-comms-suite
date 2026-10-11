@@ -114,7 +114,7 @@ END; $$;
 REVOKE ALL ON FUNCTION public.platform_create_masked_voice_session(
   uuid,text,uuid,text,text,text,integer,boolean) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.platform_create_masked_voice_session(
-  uuid,text,uuid,text,text,text,integer) TO authenticated;
+  uuid,text,uuid,text,text,text,integer,boolean) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.platform_revoke_masked_voice_session(
   _tenant uuid, _session uuid
