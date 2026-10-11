@@ -21,6 +21,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: bun install --frozen-lockfile
+      - name: Public release smoke contract tests
+        run: node --test verification/public-smoke.test.mjs
       - name: Sales cadence, isolation and suppression regressions
         run: |
           node verification/control-plane/sales-runtime.test.mjs
