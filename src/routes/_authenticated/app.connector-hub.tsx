@@ -11,6 +11,7 @@ import {useTenant} from "@/hooks/useTenant";
 import {getTenantControlPlane} from "@/lib/control-plane.functions";
 import {getConnectorHub,recordConnectorObservation,saveReceptionSettings,upsertCommunicationIdentity} from "@/modules/connectors/functions";
 import {Cable,HeartPulse,Inbox,RefreshCw,Radio} from "lucide-react";
+import {connectorSetupCatalogue} from "@/modules/connectors/onboarding-catalogue";
 import {toast} from "sonner";
 
 export const Route=createFileRoute("/_authenticated/app/connector-hub")({component:ConnectorHub,head:()=>({meta:[{title:"Connector Hub — Omniqora"},{name:"robots",content:"noindex"}]})});
@@ -35,6 +36,29 @@ function ConnectorHub(){
    <div className="mt-4 space-y-2">{(q.data?.communicationIdentities??[]).map((x:any)=><div key={x.id} className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm"><div><b>{x.channel}</b><p className="text-xs text-muted-foreground">{x.address}</p></div><StatusBadge status={x.status}/></div>)}</div></CardContent></Card>
   </div>
   <Card className="mt-6"><CardContent className="p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Reception / AI front door</h2><p className="text-xs text-muted-foreground">Channel intake can create a reception request; consequential actions remain limited to the configured allow-list.</p></div><Button variant="outline" onClick={()=>run(()=>receptionFn({data:{tenantId,productKey,enabled:true,greeting:"",businessHours:{},escalationRules:{},allowedActions:["crm.note","task.create"],config:{}}}),"Reception enabled")}>Enable controlled reception</Button></div><div className="mt-4 grid gap-2 md:grid-cols-2">{(q.data?.receptionRequests??[]).slice(0,12).map((x:any)=><div key={x.id} className="rounded-lg border p-3 text-sm"><div className="flex justify-between"><b>{x.intent||"Unclassified"}</b><StatusBadge status={x.status}/></div><p className="mt-1 text-xs text-muted-foreground">{x.channel} · {x.summary||"No summary"}</p></div>)}</div></CardContent></Card>
+  <Card className="mt-6"><CardContent className="p-5">
+   <h2 className="font-semibold">Third-party accounts and setup links</h2>
+   <p className="mt-2 text-sm text-muted-foreground">This is a setup directory, not a live connection monitor. A link or a saved API key never means the provider is active. Actual product/tenant status is shown in the bindings and independent receipts above.</p>
+   <div className="mt-4 grid gap-3 md:grid-cols-2">
+    {(["Infrastructure","AI and agents","Communications","Payments","Geo and delivery","Business data","Media and knowledge"] as const).map(family=>(
+     <details key={family} className="rounded-lg border p-3">
+      <summary className="cursor-pointer text-sm font-semibold">{family} · {connectorSetupCatalogue.filter(item=>item.family===family).length} integrations</summary>
+      <div className="mt-3 space-y-3">
+       {connectorSetupCatalogue.filter(item=>item.family===family).map(item=>(
+        <div className="border-t pt-3 text-sm" key={item.key}>
+         <div className="flex flex-wrap items-center justify-between gap-2">
+          <a href={item.url} target="_blank" rel="noreferrer noopener" className="font-medium text-primary underline underline-offset-2">{item.name} ↗</a>
+          <Badge variant="outline">{item.priority==="pilot"?"First pilot":item.priority==="next"?"Next phase":"Optional"}</Badge>
+         </div>
+         <p className="mt-1 text-xs text-muted-foreground">{item.required}</p>
+        </div>
+       ))}
+      </div>
+     </details>
+    ))}
+   </div>
+   <p className="mt-3 text-xs text-muted-foreground">Do not paste provider secrets into this interface or the repository. Configure secrets only in the appropriate server vault and record binding references in the control plane.</p>
+  </CardContent></Card>
  </AppShell>;
 }
 function Metric({icon:Icon,label,value}:{icon:typeof Cable;label:string;value:number}){return <Card><CardContent className="p-5"><div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground"><span>{label}</span><Icon className="h-4 w-4"/></div><div className="mt-2 font-display text-2xl font-semibold">{value}</div></CardContent></Card>}
