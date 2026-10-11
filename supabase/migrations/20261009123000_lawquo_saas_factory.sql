@@ -167,7 +167,7 @@ VALUES
 ON CONFLICT (blueprint_key,service_key) DO UPDATE SET required=EXCLUDED.required,config=EXCLUDED.config;
 
 CREATE OR REPLACE FUNCTION public.get_control_plane_catalogue()
-RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
 SELECT jsonb_build_object(
  'isPlatformAdmin',public.is_platform_admin(auth.uid()),
  'products',(SELECT COALESCE(jsonb_agg(to_jsonb(p) ORDER BY p.name),'[]'::jsonb) FROM public.product_catalogue p WHERE p.status IN ('active','beta')),
@@ -176,7 +176,7 @@ SELECT jsonb_build_object(
  'blueprints',(SELECT COALESCE(jsonb_agg(to_jsonb(b) ORDER BY b.category,b.name),'[]'::jsonb) FROM public.tenant_blueprints b WHERE b.status='active'),
  'workspaceTypes',(SELECT COALESCE(jsonb_agg(to_jsonb(w) ORDER BY w.product_key,w.system_workspace DESC,w.name),'[]'::jsonb) FROM public.product_workspace_types w)
 );
-$;
+$$;
 REVOKE ALL ON FUNCTION public.get_control_plane_catalogue() FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_control_plane_catalogue() TO authenticated,service_role;
 
