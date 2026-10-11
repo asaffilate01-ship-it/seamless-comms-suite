@@ -29,6 +29,8 @@ jobs:
         run: bun test verification/control-plane/connector-onboarding.test.ts
       - name: Twilio masked voice, signature and tenant isolation gates
         run: bun test verification/control-plane/masked-voice.test.ts
+      - name: Twilio inbound ordering identity and SMS/WhatsApp safety
+        run: bun test verification/control-plane/twilio-order-intake.test.ts
       - name: Sales cadence, isolation and suppression regressions
         run: |
           node verification/control-plane/sales-runtime.test.mjs
