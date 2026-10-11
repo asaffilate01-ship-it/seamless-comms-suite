@@ -1,0 +1,23 @@
+name: Omniqora public release smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test release smoke contracts (no live traffic)
+        run: node --test verification/public-smoke.test.mjs
+      - name: Verify published pages and protected endpoint rejection
+        env:
+          OMNIQORA_PUBLIC_URL: https://omniqora.itechlounge.co.uk
+        run: node scripts/omniqora-public-smoke.mjs
