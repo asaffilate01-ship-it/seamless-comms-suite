@@ -47,6 +47,13 @@ Twilio links:
 - Voice caller IDs/TwiML Dial: https://www.twilio.com/docs/voice/twiml/dial
 - WhatsApp Sandbox: https://www.twilio.com/docs/whatsapp/quickstart
 
+Deliveroo Express (formerly Signature) official onboarding:
+- Developer Portal: https://developers.deliveroo.com/
+- Express API overview: https://api-docs.deliveroo.com/docs/overview
+- UK Express merchant enquiry: https://merchants.deliveroo.com/en-gb/what-we-offer/deliveroo-express
+
+Developer portal sandbox access alone is not production approval: Deliveroo documents contract approval and API scenario certification before live credentials.
+
 ## Pilot account/approval order
 
 | Gate | Account/provider | Minimum operator evidence |
@@ -57,7 +64,7 @@ Twilio links:
 | P0 | Twilio Programmable Voice | Inbound phone/verified business forwarding, signed request, consent and human handoff |
 | P0 | Google Routes / Geocoding | Restricted Cloud keys, valid route/geocode request, usage and quota controls |
 | P0 | Adyen *or* another pilot PSP | Merchant sandbox, authorisation, signed webhook, refund and reconciliation; split payouts require platform approval |
-| P0 | Dishbee carrier (Uber Direct / Just Eat Go) | Provider test client, merchant/store mapping, quote/delivery status callback, certification as applicable |
+| P0 | Dishbee carrier (Uber Direct / Just Eat Go / Deliveroo Express) | Provider test client, merchant/store mapping, quote/delivery status callback, certification as applicable |
 | P1 | Business360 / RRCI / Neo4j | Separately deployed services, database and permissions, signed bridge, evidence-cited output |
 | P1 | SendGrid / push | Verified domain, SPF/DKIM, unsubscribe/bounce receipts, push project |
 | P1 | Accounting / Microsoft Graph | OAuth/delegated scopes, grants, audit, tenant consent and compliance/filing approvals |
