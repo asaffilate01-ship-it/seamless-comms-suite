@@ -129,9 +129,11 @@ export function PricingSection({
                     </li>
                   ))}
                 </ul>
-                <button
-                  type="button"
-                  onClick={onCta}
+                <a
+                  href={isEnterprise
+                    ? "mailto:hallo@omniqora.com?subject=Omniqora%20Enterprise%20enquiry"
+                    : "/auth"}
+                  onClick={onCta ? (event) => { event.preventDefault(); onCta(); } : undefined}
                   className={[
                     "mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl text-xs font-semibold transition",
                     plan.highlight
@@ -141,7 +143,7 @@ export function PricingSection({
                 >
                   {isEnterprise ? copy.ctaEnterprise : copy.cta}
                   <ArrowRight className="h-3.5 w-3.5" />
-                </button>
+                </a>
               </article>
             );
           })}

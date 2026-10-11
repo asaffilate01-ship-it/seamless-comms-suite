@@ -1,190 +1,133 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { VeyumoMobile } from "@/components/veyumo/VeyumoMobile";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/app/shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { roleMatrix } from "@/lib/mockData";
-import { Bot, ShieldCheck, KeyRound, Phone, Palette } from "lucide-react";
+import { useTenant } from "@/hooks/useTenant";
+import { getTenantControlPlane } from "@/lib/control-plane.functions";
+import {
+  Building2, Globe2, KeyRound, MessageCircle, ShieldCheck,
+  Bot, GitBranch, Settings2, ArrowUpRight, AlertCircle,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/settings")({
   component: Settings,
+  head: () => ({ meta: [{ title: "Settings — Omniqora" }, { name: "robots", content: "noindex" }] }),
 });
 
+const settingsAreas = [
+  {
+    title: "Workspace, products and branding",
+    description: "Manage organisation, tenant, products, services, locations, branding and verified domains.",
+    to: "/app/tenant-factory",
+    icon: Building2,
+  },
+  {
+    title: "WhatsApp and messaging",
+    description: "Configure real channels, sender numbers, conversations, approved templates and provider setup.",
+    to: "/app/whatsapp",
+    icon: MessageCircle,
+  },
+  {
+    title: "Roles and access control",
+    description: "Manage product-scoped teams and resource access policies. Changes are enforced by the server.",
+    to: "/app/access-control",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Identity and customer portals",
+    description: "Manage identity policies and portal invitations for authorised product workspaces.",
+    to: "/app/identity",
+    icon: KeyRound,
+  },
+  {
+    title: "AI permissions and approvals",
+    description: "Review use cases, model policy, agent runs, budgets and action proposals.",
+    to: "/app/intelligence",
+    icon: Bot,
+  },
+  {
+    title: "Integrations and service health",
+    description: "Check configured connectors and service readiness before using external providers.",
+    to: "/app/connector-hub",
+    icon: GitBranch,
+  },
+  {
+    title: "Compliance and regulatory monitoring",
+    description: "Review supported compliance records and regulatory monitoring workflows.",
+    to: "/app/regulatory-monitoring",
+    icon: ShieldCheck,
+  },
+] as const;
+
 function Settings() {
+  const current = useTenant();
+  const tenantId = current.tenantId ?? "";
+  const lookup = useServerFn(getTenantControlPlane);
+  const workspace = useQuery({
+    queryKey: ["settings-workspace", tenantId],
+    enabled: !!tenantId && !current.loading,
+    retry: false,
+    queryFn: () => lookup({ data: { tenantId } }),
+  });
+  const detail = workspace.data;
+
   return (
-    <AppShell
-      title="Settings"
-      subtitle="Tenant, roles, channel, AI, compliance and branding"
-    >
-      <VeyumoMobile />
-      <Tabs defaultValue="tenant" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="tenant">Tenant</TabsTrigger>
-          <TabsTrigger value="channel">Channel</TabsTrigger>
-          <TabsTrigger value="roles">Roles & permissions</TabsTrigger>
-          <TabsTrigger value="ai">AI controls</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="tenant">
-          <Card><CardContent className="p-6 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Legal entity" value="Beauty Studio München GmbH" />
-              <Field label="USt-IdNr." value="DE 812 345 678" />
-              <Field label="Contact email" value="hallo@studio-muc.de" />
-              <Field label="Support hours" value="Mo–Fr 09:00–18:00 CET" />
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <Toggle label="Sandbox tenant" hint="Message sending disabled outside opt-in list" on={false} />
-              <Toggle label="SSO / SAML" hint="Enterprise sign-on" on />
-              <Toggle label="SCIM provisioning" hint="Automated user lifecycle" on={false} />
-            </div>
-          </CardContent></Card>
-        </TabsContent>
-
-        <TabsContent value="channel">
-          <Card><CardContent className="p-6 space-y-6">
-            <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 p-4">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Phone className="h-4 w-4" /></span>
-              <div className="flex-1">
-                <div className="font-semibold">+49 89 1234 5678 · WhatsApp Business</div>
-                <div className="text-xs text-muted-foreground">Cloud API · Meta authorised BSP · Business verified</div>
+    <AppShell title="Settings" subtitle="Your real workspace configuration, access policies and integrations">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Card>
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Current workspace</h2>
               </div>
-              <Badge variant="outline" className="border-success/40 bg-success/10 text-success">Live</Badge>
+              {detail?.tenant.status && <Badge variant="outline">{detail.tenant.status}</Badge>}
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Toggle label="Auto-reply outside hours" hint="Sends approved template out_of_hours_de" on />
-              <Toggle label="Delivery receipts" hint="Store WhatsApp delivered/read events" on />
-              <Toggle label="Fallback to SMS" hint="If WhatsApp fails after 20 min" on={false} />
-              <Toggle label="Media retention 30 days" hint="Purge attachments after 30d unless referenced" on />
-            </div>
-          </CardContent></Card>
-        </TabsContent>
+            {current.loading || workspace.isPending && !!tenantId ? (
+              <p role="status" className="mt-4 text-sm text-muted-foreground">Loading tenant configuration…</p>
+            ) : current.error || workspace.error ? (
+              <p role="alert" className="mt-4 flex items-center gap-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {current.error ?? (workspace.error instanceof Error ? workspace.error.message : "Configuration unavailable")}
+              </p>
+            ) : !detail ? (
+              <p role="status" className="mt-4 text-sm text-muted-foreground">
+                No configured workspace is available. Sign in with an authorised account.
+              </p>
+            ) : (
+              <div className="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                <div><p className="text-xs text-muted-foreground">Tenant</p><p className="mt-1 font-medium">{detail.tenant.name}</p></div>
+                <div><p className="text-xs text-muted-foreground">Organisation</p><p className="mt-1 font-medium">{detail.organisation?.name ?? "Not linked"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Your role</p><p className="mt-1 font-medium capitalize">{current.role ?? "Unavailable"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Country and currency</p><p className="mt-1 font-medium">{detail.tenant.country_code} · {detail.tenant.currency}</p></div>
+                <div><p className="text-xs text-muted-foreground">Active products / services</p><p className="mt-1 font-medium">{detail.products.filter(p => p.status === "active").length} / {detail.services.filter(s => s.status === "active").length}</p></div>
+                <div><p className="text-xs text-muted-foreground">Domains registered</p><p className="mt-1 flex items-center gap-2 font-medium"><Globe2 className="h-4 w-4" />{detail.domains.length}</p></div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <TabsContent value="roles">
-          <Card className="overflow-hidden"><div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3">Inbox</th>
-                  <th className="px-4 py-3">Cases</th>
-                  <th className="px-4 py-3">Finance</th>
-                  <th className="px-4 py-3">Workflows</th>
-                  <th className="px-4 py-3">Admin</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {roleMatrix.map((r) => (
-                  <tr key={r.role} className="hover:bg-surface-2">
-                    <td className="px-4 py-3 font-medium">{r.role}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.inbox}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.cases}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.finance}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.workflows}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.admin}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div></Card>
-          <p className="mt-3 text-xs text-muted-foreground">Approvals: dual-control triggered on quotes &gt; €500, template edits and role changes.</p>
-        </TabsContent>
-
-        <TabsContent value="ai">
-          <Card><CardContent className="p-6 space-y-4">
-            <div className="flex items-center gap-3 rounded-lg border border-border bg-primary-soft/50 p-4">
-              <Bot className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <div className="font-semibold">AI · Aida</div>
-                <div className="text-xs text-muted-foreground">Model preset: Beauty-DE · Handoff threshold: 0.72</div>
-              </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Toggle label="AI drafts customer replies" on />
-              <Toggle label="AI can send without approval on low-risk intents" on />
-              <Toggle label="AI captures structured data" on />
-              <Toggle label="AI can commit to money, timeslots > 30min or IDs" on={false} />
-              <Toggle label="Log AI reasoning excerpts" on />
-              <Toggle label="Redact PII in AI training exports" on />
-            </div>
-          </CardContent></Card>
-        </TabsContent>
-
-        <TabsContent value="compliance">
-          <Card><CardContent className="p-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Data residency" value="Multiple data centres" />
-              <Field label="Retention · business class" value="36 months" />
-              <Field label="Retention · sensitive class" value="30 days after case close" />
-              <Field label="DPA version" value="v3.1 · signed 2026-04-11" />
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-lg border border-border p-4">
-                <ShieldCheck className="h-4 w-4 text-primary" />
-                <div className="mt-2 font-semibold">Break-glass</div>
-                <div className="text-xs text-muted-foreground">Requires reason, expiry, alert, post-access review.</div>
-              </div>
-              <div className="rounded-lg border border-border p-4">
-                <KeyRound className="h-4 w-4 text-primary" />
-                <div className="mt-2 font-semibold">Key rotation</div>
-                <div className="text-xs text-muted-foreground">Message keys rotated every 90 days.</div>
-              </div>
-              <div className="rounded-lg border border-border p-4">
-                <ShieldCheck className="h-4 w-4 text-primary" />
-                <div className="mt-2 font-semibold">Subject rights</div>
-                <div className="text-xs text-muted-foreground">Export, rectification, erasure per purpose.</div>
-              </div>
-            </div>
-          </CardContent></Card>
-        </TabsContent>
-
-        <TabsContent value="branding">
-          <Card><CardContent className="p-6 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Brand name" value="Beauty Studio München" />
-              <Field label="From-name (portal & email)" value="Studio München" />
-              <Field label="Custom domain" value="chat.studio-muc.de" />
-              <Field label="Primary colour" value="#137F4E" />
-            </div>
-            <div className="rounded-lg border border-dashed border-border p-4">
-              <Palette className="h-4 w-4 text-primary" />
-              <div className="mt-2 text-sm">
-                White-label controls apply to portal, email templates, and partner tenants.
-              </div>
-            </div>
-          </CardContent></Card>
-        </TabsContent>
-      </Tabs>
+        <div className="grid gap-4 md:grid-cols-2">
+          {settingsAreas.map(({ title, description, to, icon: Icon }) => (
+            <Card key={to} className="transition-colors hover:border-primary/40">
+              <CardContent className="flex h-full flex-col p-5">
+                <Icon className="h-5 w-5 text-primary" />
+                <h3 className="mt-3 font-semibold">{title}</h3>
+                <p className="mt-2 flex-1 text-sm text-muted-foreground">{description}</p>
+                <Link to={to} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+                  Open configuration <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Settings are managed by the connected, permission-checked workspaces. No example phone numbers,
+          simulated live statuses or unsaved switches are displayed here.
+        </p>
+      </div>
     </AppShell>
   );
 }
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input defaultValue={value} className="mt-1" />
-    </div>
-  );
-}
-
-function Toggle({ label, hint = "", on }: { label: string; hint?: string; on?: boolean }) {
-  return (
-    <div className="flex items-start justify-between rounded-lg border border-border p-4">
-      <div className="pr-4">
-        <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-muted-foreground">{hint}</div>
-      </div>
-      <Switch defaultChecked={on} />
-    </div>
-  );
-}
-
-export function _unusedButton() { return <Button />; }
