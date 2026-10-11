@@ -59,4 +59,46 @@ assert.equal(hidden.rows.length,0);
 const impl=await db.query("SELECT service_key,implementation_status FROM public.service_catalogue WHERE service_key IN ('omniqora.voice','dishbee.assisted-ordering') ORDER BY service_key");
 assert(impl.rows.every(r=>r.implementation_status==="built_main"));
 
+// Twilio masked voice must remain tenant-scoped and platform-controlled.
+// These database checks do not call or certify a real Twilio provider.
+const maskingAccount = "AC" + "a".repeat(32);
+const maskedNumber = "+447000000101";
+await asService(() => db.query(
+  "UPDATE public.tenant_products SET status='active' WHERE tenant_id=$1 AND product_key='dishbee'",
+  [luton.tenantId],
+));
+await asUser(admin, () => db.query(
+  "SELECT public.platform_set_tenant_service($1,'omniqora.voice',true,'{}'::jsonb)",
+  [luton.tenantId],
+));
+await asService(() => db.query(
+  "UPDATE public.tenant_services SET status='active' WHERE tenant_id=$1 AND service_key='omniqora.voice'",
+  [luton.tenantId],
+));
+const maskingChannel = await asService(async () => (await db.query(
+  "INSERT INTO public.order_intake_channels(tenant_id,product_key,provider,channel,address,enabled,routing,metadata) VALUES ($1,'dishbee','twilio','voice',$2,true,$3::jsonb,$4::jsonb) RETURNING id",
+  [luton.tenantId,maskedNumber,JSON.stringify({masking_mode:"enabled"}),JSON.stringify({twilioAccountSid:maskingAccount})],
+)).rows[0].id);
+const startMask = () => db.query(
+  "SELECT public.platform_create_masked_voice_session($1,'dishbee',$2,$3,$4,$5,10,true) AS id",
+  [luton.tenantId,maskingChannel,"+447000000102","+447000000103",maskingAccount],
+);
+const maskedId = await asUser(admin,async () => (await startMask()).rows[0].id);
+assert(maskedId);
+await assert.rejects(asUser(admin,async()=>startMask()),/Mask number is already assigned/);
+await assert.rejects(asUser(stranger,async()=>startMask()),/Platform administrator required/);
+await assert.rejects(asUser(admin,async()=>db.query(
+  "SELECT public.platform_create_masked_voice_session($1,'dishbee',$2,$3,$4,$5,10,false)",
+  [luton.tenantId,maskingChannel,"+447000000102","+447000000103",maskingAccount],
+)),/Participant consent attestation required/);
+await assert.rejects(asUser(admin,async()=>db.query(
+  "SELECT participant_a FROM public.masked_voice_sessions",
+)),/permission denied/);
+const revokedMask = await asUser(admin,async()=>(
+  await db.query("SELECT public.platform_revoke_masked_voice_session($1,$2) AS revoked",[luton.tenantId,maskedId])
+).rows[0].revoked);
+assert.equal(revokedMask,true);
+const newMask = await asUser(admin,async()=>(await startMask()).rows[0].id);
+assert.notEqual(newMask,maskedId);
+
 await db.close();console.log("assisted ordering payment and Dishbee pull/ack handoff verified");
