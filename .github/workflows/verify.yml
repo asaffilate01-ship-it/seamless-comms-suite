@@ -25,6 +25,8 @@ jobs:
         run: node --test verification/public-smoke.test.mjs
       - name: Provisioning worker preflight and manual-drain safety
         run: bun test verification/control-plane/provisioning-preflight.test.ts
+      - name: Provider onboarding directory and manual-health isolation
+        run: bun test verification/control-plane/connector-onboarding.test.ts
       - name: Sales cadence, isolation and suppression regressions
         run: |
           node verification/control-plane/sales-runtime.test.mjs
