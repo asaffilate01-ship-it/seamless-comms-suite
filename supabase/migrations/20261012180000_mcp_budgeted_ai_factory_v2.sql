@@ -322,7 +322,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.cancel_budgeted_ai_agent(
  _tenant uuid,_run uuid
 ) RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $budget_cancel$
 DECLARE res public.ai_budgeted_run_reservations;
   item public.ai_agent_runs;
   job public.intelligence_jobs;
@@ -357,7 +357,7 @@ BEGIN
  UPDATE public.ai_spend_budgets SET reserved_minor=reserved_minor-res.reserved_minor,updated_at=now()
   WHERE tenant_id=res.tenant_id AND product_key=res.product_key AND period_month=res.period_month AND currency=res.currency;
  RETURN jsonb_build_object('runId',_run,'releasedMinor',res.reserved_minor,'alreadyCancelled',false);
-END $;
+END $budget_cancel$;
 
 REVOKE ALL ON FUNCTION public.request_mcp_setup(uuid,text,text,text,text) FROM PUBLIC,anon;
 REVOKE ALL ON FUNCTION public.review_mcp_setup(uuid,text,text) FROM PUBLIC,anon;
