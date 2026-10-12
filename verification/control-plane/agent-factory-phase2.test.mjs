@@ -75,7 +75,7 @@ test("operator UI routes through trusted RPCs with no browser tool execution",as
 
 test("budget configuration and reviewed tariffs do not imply funded or live accounts",async()=>{
  const doc=await file("docs/ai-factory/MCP-BUDGET-PHASE2.md");
- assert.match(doc,/not a usable connection/i);
+ assert.match(doc,/Shortlisted does not mean installed/i);
  assert.match(doc,/No third-party MCP tool is invoked/i);
  assert.match(doc,/No model is automatically invoked/i);
  assert.match(doc,/reservation.*not actual expenditure/i);
