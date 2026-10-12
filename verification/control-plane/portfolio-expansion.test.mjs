@@ -80,7 +80,7 @@ test("source registration does not manufacture tenant authorisation or payment/l
 test("factory registry is scoped to existing owner/admin portfolio workspace",async()=>{
  const service=await read("src/modules/control-plane/control-plane.functions.ts");
  const ui=await read("src/modules/control-plane/ControlPlaneWorkspace.tsx");
- assert.match(service,/await requireWorkspaceAdmin\(context,data\.tenantId\)/);
+ assert.match(service,/await requireWorkspaceAdmin\s*\(context,\s*data\.tenantId\s*\)/);
  assert.match(service,/factoryRegistry/);
  assert.match(ui,/PortfolioFactoryDirectory/);
  const brandGroup=registry.brandGroups.find(x=>x.parentTenantKey==="mealdeck");
