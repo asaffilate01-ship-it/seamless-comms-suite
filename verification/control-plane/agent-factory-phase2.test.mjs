@@ -49,6 +49,21 @@ test("settlement is denied to clients and reports provider overspend",()=>{
  assert.match(migration,/reserved_minor=reserved_minor-res\.reserved_minor,spent_minor=spent_minor\+_actual_minor/);
 });
 
+test("queued-only cancellation releases reserved funds without hiding provider expenses",async()=>{
+ assert.match(migration,/CREATE OR REPLACE FUNCTION public\.cancel_budgeted_ai_agent/);
+ assert.match(migration,/item\.status<>'queued'/);
+ assert.match(migration,/job\.status<>'queued'/);
+ assert.match(migration,/EXISTS\(SELECT 1 FROM public\.ai_agent_steps WHERE run_id=_run\)/);
+ assert.match(migration,/UPDATE public\.ai_budgeted_run_reservations SET status='released'/);
+ assert.match(migration,/reserved_minor=reserved_minor-res\.reserved_minor/);
+ assert.match(migration,/Agent has started or has incurred charges/);
+ const intelligence=await file("src/modules/intelligence/functions.ts");
+ const ui=await file("src/modules/agent-factory/AgentFactoryPanel.tsx");
+ assert.match(intelligence,/\.rpc\("cancel_budgeted_ai_agent"/);
+ assert.match(ui,/Cancel before processing/);
+ assert.match(ui,/cancelAgentRun/);
+});
+
 test("operator UI routes through trusted RPCs with no browser tool execution",async()=>{
  const server=await file("src/modules/agent-factory/operations.functions.ts");
  const ui=await file("src/modules/agent-factory/AgentFactoryPanel.tsx");
