@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getPortfolioControlPlane, updatePortfolioAsset } from './control-plane.functions';
+import PortfolioFactoryDirectory from './PortfolioFactoryDirectory';
 import {
   migrationStages,
   targetModeSchema,
@@ -266,6 +267,8 @@ export default function ControlPlaneWorkspace() {
             icon={Globe2}
           />
         </div>
+
+        <PortfolioFactoryDirectory registry={query.data?.factoryRegistry} />
 
         <Card>
           <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_220px_220px]">
