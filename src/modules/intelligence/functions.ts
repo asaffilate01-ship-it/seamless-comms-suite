@@ -74,8 +74,9 @@ export const startAgentRun=createServerFn({method:"POST"}).middleware([requireSu
 .inputValidator((i:z.input<typeof run>)=>run.parse(i)).handler(async({context,data})=>{
  const access=await requireService(context,data.tenantId,"omniqora.intelligence-runtime");requireWriteRole(access.role);const db=context.supabase as any;
  if(data.useCaseId){
-  const uc=await db.from("ai_use_cases").select("status").eq("tenant_id",data.tenantId).eq("id",data.useCaseId).single();
+  const uc=await db.from("ai_use_cases").select("status,provider_route").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).eq("id",data.useCaseId).single();
   if(uc.error||!["approved","pilot"].includes(uc.data?.status))throw new Error("Approved AI use case required");
+  if(uc.data?.provider_route?.factoryBlueprint)throw new Error("AI Factory tasks require the budgeted task queue and reviewed provider pricing");
  }
  const {data:row,error}=await db.from("ai_agent_runs").insert({tenant_id:data.tenantId,product_key:data.productKey,use_case_id:data.useCaseId??null,
   profile:data.profile,goal:data.goal,status:"queued",max_steps:data.maxSteps,provider_key:data.providerKey??null,model:data.model??null,
