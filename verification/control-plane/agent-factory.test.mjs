@@ -80,5 +80,5 @@ test("agent registration is explicitly an assessed use case, not implicit live e
  assert.match(route,/AgentFactoryPanel/);
  const doc=await readFile(new URL("../../docs/ai-factory/UNIVERSAL-AGENT-FACTORY.md",import.meta.url),"utf8");
  assert.match(doc,/budget reservations/i);
- assert.match(doc,/no assumed savings/i);
+ assert.match(doc,/made-up percentage savings/i);
 });
