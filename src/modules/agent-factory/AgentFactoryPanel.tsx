@@ -6,7 +6,7 @@ import {Card,CardContent} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Badge} from "@/components/ui/badge";
-import {upsertAiUseCase} from "@/modules/intelligence/functions";
+import {startAgentRun,upsertAiUseCase} from "@/modules/intelligence/functions";
 import {agentsForProduct,mcpConnectorFamilies,OFFICIAL_MCP_REGISTRY,type AgentBlueprint} from "./catalogue";
 import {searchPublicMcpRegistry,type DiscoveredMcpServer} from "./registry.functions";
 
@@ -15,6 +15,7 @@ type Props={
   tenantId:string;
   productKey:string;
   useCases?:UseCase[];
+  providers?:{provider_key:string;status:string;last_verified_at?:string|null}[];
   onChanged?:()=>Promise<unknown>;
 };
 const classifications=[
@@ -28,12 +29,16 @@ const classifications=[
  * Does not call models or connect MCPs. Creates a governed AI use-case assessment
  * in the EXISTING intelligence control-plane; independent approval is still required.
  */
-export function AgentFactoryPanel({tenantId,productKey,useCases=[],onChanged}:Props){
+export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],onChanged}:Props){
  const [search,setSearch]=useState("");
  const [selectedKey,setSelectedKey]=useState("");
  const [classification,setClassification]=useState("internal");
  const [saving,setSaving]=useState(false);
+ const [running,setRunning]=useState(false);
+ const [lastQueuedRun,setLastQueuedRun]=useState("");
+ const [customGoal,setCustomGoal]=useState("");
  const saveFn=useServerFn(upsertAiUseCase);
+ const queueFn=useServerFn(startAgentRun);
  const registryFn=useServerFn(searchPublicMcpRegistry);
  const [directoryQuery,setDirectoryQuery]=useState("");
  const [directoryItems,setDirectoryItems]=useState<DiscoveredMcpServer[]>([]);
@@ -54,9 +59,24 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],onChanged}:Pr
  const items=useMemo(()=>all.filter(a=>[a.name,a.key,a.department,a.purpose].join(" ").toLowerCase().includes(search.toLowerCase())),[all,search]);
  const selected=all.find(a=>a.key===selectedKey)??null;
  const existing=selected?useCases.find(c=>c.use_case_key===selected.key):null;
+ const providerReady=providers.some(p=>p.status==="active"&&!!p.last_verified_at&&
+  Date.now()-Date.parse(p.last_verified_at)>=0&&Date.now()-Date.parse(p.last_verified_at)<86400000);
  const requireClassification=!!selected&&(selected.risk==="regulated"||selected.risk==="sensitive");
  const sensitiveClass=classification!=="internal";
  const departments=new Set(all.map(a=>a.department)).size;
+ async function queueApproved(agent:AgentBlueprint,useCaseId:string){
+  if(!providerReady){toast.error("A recently verified active AI provider is required before queuing a task");return;}
+  try{
+   setRunning(true);setLastQueuedRun("");
+   const result=await queueFn({data:{tenantId,productKey,useCaseId,profile:agent.profile,
+    goal:customGoal.trim()||agent.suggestedGoal,maxSteps:agent.defaultMaxSteps,
+    providerKey:null,model:null,inputVersion:null}});
+   setLastQueuedRun(result.run.id);
+   toast.success("Agent task queued; execution and approvals depend on the authorised worker.");
+   await onChanged?.();
+  }catch(e){toast.error(e instanceof Error?e.message:String(e));}
+  finally{setRunning(false);}
+ }
  async function submit(agent:AgentBlueprint){
   if(!tenantId||!productKey){toast.error("Select a tenant and product");return;}
   if(useCases.some(u=>u.use_case_key===agent.key)){toast.error("Use case already registered; review it in AI Control");return;}
@@ -120,7 +140,16 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],onChanged}:Pr
      {saving?"Saving…":"Register for independent review"}
     </Button>
    </div>}
-   {existing&&<p className="text-sm">Existing AI use case: <b>{existing.status}</b>. Use the AI Control & Governance section below to review it. Reapproval is required after material changes.</p>}
+   {existing&&<div className="space-y-2">
+    <p className="text-sm">Existing AI use case: <b>{existing.status}</b>. A different authorised reviewer must approve it before running.</p>
+    {["approved","pilot"].includes(existing.status)&&<>
+     <label htmlFor="factory-run-goal" className="text-xs font-medium">Task instruction (optional)</label>
+     <Input id="factory-run-goal" value={customGoal} maxLength={5000} onChange={e=>setCustomGoal(e.target.value)} placeholder={selected.suggestedGoal}/>
+     <Button size="sm" disabled={running||!providerReady} onClick={()=>queueApproved(selected,existing.id)}>{running?"Queueing…":"Queue approved task"}</Button>
+     {!providerReady&&<p className="text-xs text-muted-foreground">An active AI provider with a server-verified connection within 24 hours is required before queuing from the factory.</p>}
+     {lastQueuedRun&&<p className="text-xs text-muted-foreground">Queued run: <code>{lastQueuedRun}</code>. Track its actual status in AI Control.</p>}
+    </>}
+   </div>}
   </div>}
   <div className="rounded-lg border p-3 space-y-3">
    <div><strong className="flex items-center gap-2 text-sm"><Cable className="h-4 w-4"/> Search the public MCP server directory</strong>
