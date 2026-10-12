@@ -7,7 +7,7 @@ import {Card,CardContent} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Badge} from "@/components/ui/badge";
-import {upsertAiUseCase} from "@/modules/intelligence/functions";
+import {cancelAgentRun,upsertAiUseCase} from "@/modules/intelligence/functions";
 import {getAgentFactoryOperations,queueBudgetedFactoryTask,setAgentFactoryBudget,requestAgentMcpSetup} from "./operations.functions";
 import {agentsForProduct,mcpConnectorFamilies,OFFICIAL_MCP_REGISTRY,type AgentBlueprint} from "./catalogue";
 import {searchPublicMcpRegistry,type DiscoveredMcpServer} from "./registry.functions";
@@ -41,6 +41,7 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
  const [customGoal,setCustomGoal]=useState("");
  const saveFn=useServerFn(upsertAiUseCase);
  const queueFn=useServerFn(queueBudgetedFactoryTask);
+ const cancelFn=useServerFn(cancelAgentRun);
  const getOperationsFn=useServerFn(getAgentFactoryOperations);
  const setBudgetFn=useServerFn(setAgentFactoryBudget);
  const requestMcpFn=useServerFn(requestAgentMcpSetup);
@@ -119,6 +120,17 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
  const requireClassification=!!selected&&(selected.risk==="regulated"||selected.risk==="sensitive");
  const sensitiveClass=classification!=="internal";
  const departments=new Set(all.map(a=>a.department)).size;
+ async function cancelQueuedRun(){
+  if(!lastQueuedRun)return;
+  setRunning(true);
+  try{
+   const result=await cancelFn({data:{tenantId,runId:lastQueuedRun}});
+   toast.success(result.budgetReleased?"Queued task cancelled; reserved budget released":"Task cancelled");
+   setLastQueuedRun("");
+   await operations.refetch();await onChanged?.();
+  }catch(e){toast.error(e instanceof Error?e.message:String(e));}
+  finally{setRunning(false);}
+ }
  async function queueApproved(agent:AgentBlueprint,useCaseId:string){
   if(!currentRate||!activeProviderForRate||expected===null||!budget){
    toast.error("Verified model pricing, an active provider and this month's budget are all required");return;
@@ -227,7 +239,10 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
      {budget&&<p className="text-xs text-muted-foreground">Monthly {budget.currency} budget: {(budget.limit_minor/100).toFixed(2)} · Reserved: {(budget.reserved_minor/100).toFixed(2)} · Incurred: {(budget.spent_minor/100).toFixed(2)}</p>}
      <Button size="sm" disabled={running||!activeProviderForRate||expected===null||!budget||expected<=0} onClick={()=>queueApproved(selected,existing.id)}>{running?"Reserving…":"Reserve budget & queue approved task"}</Button>
      {(!providerReady||!rates.length||!budget)&&<p className="text-xs text-muted-foreground">Set a monthly budget and connect an independently verified, evaluated AI model before queueing. This action does not itself execute the task.</p>}
-     {lastQueuedRun&&<p className="text-xs text-muted-foreground">Queued run: <code>{lastQueuedRun}</code>. Track its actual status in AI Control.</p>}
+     {lastQueuedRun&&<div className="flex flex-wrap items-center gap-2">
+      <p className="text-xs text-muted-foreground">Queued run: <code>{lastQueuedRun}</code>. Track status in AI Control.</p>
+      <Button size="sm" variant="outline" disabled={running} onClick={cancelQueuedRun}>Cancel before processing</Button>
+     </div>}
     </>}
    </div>}
   </div>}
