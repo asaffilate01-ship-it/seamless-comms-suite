@@ -198,7 +198,7 @@ DECLARE
 BEGIN
  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
  SELECT role INTO member_role FROM public.tenant_members WHERE tenant_id=_tenant AND user_id=auth.uid();
- IF member_role NOT IN('owner','admin','agent') AND NOT public.is_platform_admin(auth.uid()) THEN
+ IF COALESCE(member_role,'') NOT IN('owner','admin','agent') AND NOT public.is_platform_admin(auth.uid()) THEN
   RAISE EXCEPTION 'Tenant agent access required'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.tenant_products WHERE tenant_id=_tenant AND product_key=_product AND status='active') THEN
   RAISE EXCEPTION 'Active tenant SaaS required'; END IF;
