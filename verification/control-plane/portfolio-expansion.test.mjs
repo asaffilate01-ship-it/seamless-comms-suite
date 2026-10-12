@@ -74,7 +74,7 @@ test("source registration does not manufacture tenant authorisation or payment/l
  assert.doesNotMatch(sql,/INSERT INTO public\.provider_bindings\b/i);
  assert.doesNotMatch(sql,/INSERT INTO public\.tenant_services\b/i);
  assert.doesNotMatch(sql,/MIGRATE-PRODUCTION/);
- assert.ok(sql.indexOf("ON CONFLICT DO NOTHING")>=0);
+ assert.match(sql,/ON CONFLICT\s*(\([^)]*\))?\s*DO NOTHING/);
 });
 
 test("factory registry is scoped to existing owner/admin portfolio workspace",async()=>{
