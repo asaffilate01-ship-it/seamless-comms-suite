@@ -1,0 +1,113 @@
+/**
+ * Omniqora AI Agent Factory: versioned, product-aware agent templates.
+ *
+ * Catalogue entries are blueprints, not connected services or permission grants.
+ * Every SaaS product receives universal agents. Vertical agents are additive.
+ * The existing SaaS Factory owns tenants, entitlements and product connections;
+ * the existing Intelligence runtime owns governed runs and action proposals.
+ */
+export type AgentProfile =
+  | "discovery" | "finance" | "technical" | "compliance" | "product"
+  | "transaction" | "accounting" | "tax" | "operations";
+export type AgentMode = "read_only" | "draft" | "approval_required";
+export type AgentRisk = "standard" | "sensitive" | "regulated";
+export type AgentDepartment =
+  | "executive" | "crm" | "hr" | "accounting" | "finance" | "marketing"
+  | "creative" | "operations" | "compliance" | "customer_service" | "legal"
+  | "technology" | "commerce";
+
+export interface AgentBlueprint {
+  key: string;
+  name: string;
+  department: AgentDepartment;
+  profile: AgentProfile;
+  purpose: string;
+  suggestedGoal: string;
+  productKeys: readonly string[];
+  requiredCapabilities: readonly string[];
+  mode: AgentMode;
+  risk: AgentRisk;
+  defaultMaxSteps: number;
+  humanReview: string;
+}
+export interface McpConnectorFamily {
+  key: string;
+  name: string;
+  sectors: readonly string[];
+  examples: readonly string[];
+  capabilities: readonly string[];
+  /** A discovery listing never establishes a working integration. */
+  status: "catalogue_only";
+}
+
+const universal: AgentBlueprint[] = [
+  {key:"shared.daily-brief",name:"Executive Daily Brief",department:"executive",profile:"discovery",purpose:"Summarise verified metrics, tasks, exceptions and priorities.",suggestedGoal:"Draft today's executive brief with source references, exceptions and follow-up actions.",productKeys:["*"],requiredCapabilities:["analytics.read"],mode:"draft",risk:"standard",defaultMaxSteps:6,humanReview:"Review before distribution."},
+  {key:"shared.crm-assistant",name:"CRM & Pipeline Assistant",department:"crm",profile:"operations",purpose:"Summarise accounts, opportunities, leads and follow-up priorities.",suggestedGoal:"Identify CRM follow-ups, explain their evidence and draft next steps.",productKeys:["*"],requiredCapabilities:["crm.read"],mode:"draft",risk:"standard",defaultMaxSteps:8,humanReview:"Approve outbound messages or CRM updates."},
+  {key:"shared.hr-assistant",name:"People & HR Assistant",department:"hr",profile:"operations",purpose:"Prepare onboarding, employee FAQs and policy summaries without personnel decisions.",suggestedGoal:"Draft an onboarding checklist and identify missing HR documents.",productKeys:["*"],requiredCapabilities:["hr.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:6,humanReview:"Human approval for employment and personal-data decisions."},
+  {key:"shared.accounting-assistant",name:"Accounting Assistant",department:"accounting",profile:"accounting",purpose:"Reconcile evidence, explain anomalies and draft bookkeeping proposals.",suggestedGoal:"Identify unmatched transactions and prepare an accountant review pack.",productKeys:["*"],requiredCapabilities:["accounting.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"An authorised accountant approves postings and filings."},
+  {key:"shared.finance-insights",name:"Financial Intelligence",department:"finance",profile:"finance",purpose:"Explain cash flow, budgets, forecasts and financial variances.",suggestedGoal:"Prepare a cash-flow and budget variance commentary using verified data.",productKeys:["*"],requiredCapabilities:["finance.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:8,humanReview:"Approve significant financial decisions."},
+  {key:"shared.marketing-copilot",name:"Marketing Campaign Copilot",department:"marketing",profile:"product",purpose:"Draft campaigns, audiences, SEO ideas and marketing calendars.",suggestedGoal:"Produce a multichannel campaign proposal with audiences, creative and measurement plan.",productKeys:["*"],requiredCapabilities:["marketing.read"],mode:"draft",risk:"standard",defaultMaxSteps:8,humanReview:"Human approves spend, publication and outreach."},
+  {key:"shared.creative-studio",name:"Creative Production Agent",department:"creative",profile:"product",purpose:"Plan branded text, image, audio and video production.",suggestedGoal:"Prepare a brand-safe creative brief and an asset production plan.",productKeys:["*"],requiredCapabilities:["creative.brand-kit.read"],mode:"draft",risk:"standard",defaultMaxSteps:8,humanReview:"Approve generation cost, rights and publication."},
+  {key:"shared.support-triage",name:"Customer Support Triage",department:"customer_service",profile:"operations",purpose:"Classify tickets and draft evidence-backed responses.",suggestedGoal:"Summarise open tickets, prioritise issues and draft customer responses.",productKeys:["*"],requiredCapabilities:["support.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:8,humanReview:"Approve consequential messages, refunds and account changes."},
+  {key:"shared.compliance-watch",name:"Compliance Evidence Assistant",department:"compliance",profile:"compliance",purpose:"Organise regulatory evidence, policy gaps and overdue reviews.",suggestedGoal:"Prepare a cited compliance exceptions register and action plan.",productKeys:["*"],requiredCapabilities:["compliance.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Qualified reviewer determines legal/regulatory compliance."},
+  {key:"shared.data-analyst",name:"Business Intelligence Analyst",department:"executive",profile:"discovery",purpose:"Analyse tenant-authorised data with sourced KPIs and quality warnings.",suggestedGoal:"Investigate the latest KPI movements and explain anomalies.",productKeys:["*"],requiredCapabilities:["analytics.read"],mode:"read_only",risk:"standard",defaultMaxSteps:8,humanReview:"Validate source quality before making decisions."},
+  {key:"shared.automation-builder",name:"Workflow Designer",department:"technology",profile:"technical",purpose:"Propose event triggers, steps, connector permissions and approvals.",suggestedGoal:"Design a reusable workflow including idempotency, retries, audit and human approval.",productKeys:["*"],requiredCapabilities:["workflow.read"],mode:"draft",risk:"standard",defaultMaxSteps:8,humanReview:"Admin approves deployment and action permissions."},
+];
+const specialised: AgentBlueprint[] = [
+  {key:"xpertjobs.candidate-review",name:"Recruitment Review Assistant",department:"hr",profile:"operations",purpose:"Help recruiters review applications against disclosed, job-related criteria, without making autonomous hiring or rejection decisions.",suggestedGoal:"Draft a skills-evidence matrix, flag uncertainty and suggest human interview questions.",productKeys:["xpertjobs"],requiredCapabilities:["recruitment.applications.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Qualified recruiter reviews all assessments and hiring outcomes."},
+  {key:"xpertjobs.interview-coordinator",name:"Interview Coordinator",department:"hr",profile:"operations",purpose:"Prepare candidate communications and interview schedules.",suggestedGoal:"Draft interview invitations for shortlisted candidates without sending them.",productKeys:["xpertjobs"],requiredCapabilities:["recruitment.applications.read","calendar.availability.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:6,humanReview:"Recruiter approves invitations and personal data access."},
+  {key:"autohashi.vehicle-research",name:"Vehicle Sourcing & Landed Cost",department:"commerce",profile:"discovery",purpose:"Research vehicles, auction data, inspection evidence, transport and estimated landed costs.",suggestedGoal:"Compare candidate vehicles and draft a traceable landed-cost estimate.",productKeys:["autohashi"],requiredCapabilities:["automotive.vehicles.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:8,humanReview:"Buyer verifies fitment, costs and auction decisions."},
+  {key:"zivvo.sales-agent",name:"Automotive Leads & Valuations",department:"crm",profile:"finance",purpose:"Prepare verified stock comparisons, valuation ranges and follow-ups.",suggestedGoal:"Find actionable leads and draft evidence-based sales follow-ups.",productKeys:["zivvo"],requiredCapabilities:["automotive.stock.read","crm.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:8,humanReview:"Approve valuations, customer communications and commitments."},
+  {key:"craftvaro.catalogue",name:"Product Design & Commerce",department:"creative",profile:"product",purpose:"Draft product descriptions, designs, catalogue merchandising and campaigns.",suggestedGoal:"Create a branded product launch plan, descriptions and asset brief.",productKeys:["craftvaro"],requiredCapabilities:["commerce.catalogue.read"],mode:"draft",risk:"standard",defaultMaxSteps:8,humanReview:"Approve intellectual property, pricing and publication."},
+  {key:"gabley.business-assistant",name:"Gabley Operations Assistant",department:"operations",profile:"operations",purpose:"Generic business operations pack until the Gabley domain adapter is confirmed.",suggestedGoal:"Summarise Gabley priorities and prepare proposed operational tasks.",productKeys:["gabley"],requiredCapabilities:["analytics.read"],mode:"draft",risk:"standard",defaultMaxSteps:6,humanReview:"Match the adapter to Gabley's authoritative business records."},
+  {key:"taxnuvia.tax-research",name:"Tax Research & Preparation",department:"accounting",profile:"tax",purpose:"Prepare jurisdiction-specific, dated tax research and evidence checklists.",suggestedGoal:"Draft a sourced tax research note with uncertainty and required review.",productKeys:["taxnuvia"],requiredCapabilities:["tax.documents.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Tax professional validates law, computation, advice and filing."},
+  {key:"lawquo.lawyer-matching",name:"Cross-Border Lawyer Discovery",department:"legal",profile:"discovery",purpose:"Prepare a verified lawyer shortlist for the client's jurisdiction and matter.",suggestedGoal:"Find relevant verified lawyers and explain jurisdiction and practice fit.",productKeys:["lawquo"],requiredCapabilities:["lawquo.directory.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Verify lawyer credentials; no autonomous legal advice or referral outcome."},
+  {key:"eventplanr.event-planning",name:"Event & Supplier Planner",department:"operations",profile:"operations",purpose:"Draft event timelines, budgets, supplier options and contingency plans.",suggestedGoal:"Draft the event run-sheet, supplier comparison and budget.",productKeys:["eventplanr"],requiredCapabilities:["events.bookings.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:8,humanReview:"Approve supplier bookings, spend and customer promises."},
+  {key:"dishbee.restaurant-insights",name:"Restaurant Sales & Menu Intelligence",department:"operations",profile:"finance",purpose:"Analyse orders, wastage, menu mix, labour and dispatch performance.",suggestedGoal:"Review yesterday's menu profitability, exceptions and recommended adjustments.",productKeys:["dishbee","meal-deck","mealdeck","cafe1"],requiredCapabilities:["hospitality.orders.read"],mode:"draft",risk:"standard",defaultMaxSteps:8,humanReview:"Approve price, stock and kitchen configuration changes."},
+  {key:"finvessa.accounts-review",name:"Accountant Review Pack",department:"accounting",profile:"accounting",purpose:"Draft bookkeeping reconciliation, accounts preparation and client queries.",suggestedGoal:"Compile unresolved bookkeeping items and a review-ready working paper.",productKeys:["finvessa","accountancy-saas","iq-practice","taxcenda"],requiredCapabilities:["accounting.read","documents.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Practising accountant approves journals, statutory accounts and returns."},
+  {key:"haccora.food-safety",name:"HACCP Exceptions & Evidence",department:"compliance",profile:"compliance",purpose:"Find overdue temperature checks, training evidence and compliance gaps.",suggestedGoal:"Prepare a traceable food-safety exceptions and corrective-action report.",productKeys:["haccora"],requiredCapabilities:["haccora.records.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Food-safety manager validates corrective actions."},
+  {key:"kindelo.ofsted-readiness",name:"Childcare Agency Evidence Pack",department:"compliance",profile:"compliance",purpose:"Prepare Ofsted readiness checklists and missing evidence reports.",suggestedGoal:"Draft a childcare-agency regulatory readiness pack from authorised evidence.",productKeys:["kindelo","kinderstars"],requiredCapabilities:["childcare.compliance.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Designated safeguarding lead and registered manager review; do not automate safeguarding decisions."},
+  {key:"moneybridge.financial-crime",name:"Financial Crime Case Preparation",department:"compliance",profile:"compliance",purpose:"Organise KYC/AML exceptions and evidence for an authorised compliance officer.",suggestedGoal:"Draft an evidence-indexed KYC exceptions case file.",productKeys:["moneybridge","fastremit"],requiredCapabilities:["compliance.cases.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Authorised officer decides escalation and reporting; no autonomous fund movement."},
+  {key:"unipathway.student-progress",name:"Education Progress & Attendance",department:"operations",profile:"discovery",purpose:"Summarise student progress, attendance and tutor interventions.",suggestedGoal:"Prepare a reviewed cohort progress dashboard and support actions.",productKeys:["unipathway","lesson-ahead","lessonahead","stemcoach"],requiredCapabilities:["education.attendance.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:8,humanReview:"Educator approves communications, interventions and grades."},
+  {key:"formation-genie.company-formation",name:"Company Formation Case Preparation",department:"compliance",profile:"compliance",purpose:"Prepare entity-formation evidence and filing checklists.",suggestedGoal:"Draft a jurisdiction-specific incorporation preparation checklist.",productKeys:["formation-genie","formationgenie"],requiredCapabilities:["formation.cases.read"],mode:"draft",risk:"regulated",defaultMaxSteps:8,humanReview:"Licensed/authorised staff review identity checks and submissions."},
+  {key:"merqano.marketplace-insights",name:"Marketplace Trading Intelligence",department:"commerce",profile:"finance",purpose:"Analyse marketplace conversion, sellers, fulfilment and economics.",suggestedGoal:"Analyse marketplace performance and recommend experiments.",productKeys:["merqano","merqora","syndriva"],requiredCapabilities:["commerce.orders.read"],mode:"draft",risk:"standard",defaultMaxSteps:8,humanReview:"Approve seller changes, pricing and payouts."},
+  {key:"all-road-aid.dispatch",name:"Roadside Service Dispatcher",department:"operations",profile:"operations",purpose:"Prepare jobs, technician selection and ETA exceptions from live source data.",suggestedGoal:"Draft the best service allocation using verified availability and travel times.",productKeys:["all-road-aid","motoresq"],requiredCapabilities:["dispatch.jobs.read"],mode:"draft",risk:"sensitive",defaultMaxSteps:8,humanReview:"Dispatcher verifies assignments and customer commitments."},
+];
+
+export const agentBlueprints: readonly AgentBlueprint[] = [...universal,...specialised];
+
+export function agentsForProduct(productKey: string): AgentBlueprint[] {
+  const key=productKey.trim().toLowerCase();
+  return agentBlueprints.filter((agent)=>agent.productKeys.includes("*")||agent.productKeys.includes(key));
+}
+export function agentForProduct(productKey:string, blueprintKey:string):AgentBlueprint|undefined{
+  return agentsForProduct(productKey).find((agent)=>agent.key===blueprintKey);
+}
+
+/**
+ * Connector families are discovery/adapter categories. Names are possible
+ * integrations, not claims of official MCP servers, live credentials or approval.
+ * Server discovery must happen separately against an allowlisted registry source.
+ */
+export const mcpConnectorFamilies: readonly McpConnectorFamily[] = [
+  {key:"ai",name:"Models & Agents",sectors:["all"],examples:["OpenAI","Anthropic","Google Gemini","Azure AI Foundry","Amazon Bedrock","Private models"],capabilities:["ai.inference"],status:"catalogue_only"},
+  {key:"crm",name:"CRM & Sales",sectors:["all"],examples:["Salesforce","HubSpot","Dynamics 365","Pipedrive"],capabilities:["crm.read","crm.write"],status:"catalogue_only"},
+  {key:"hr",name:"HR, Recruitment & Payroll",sectors:["recruitment","all"],examples:["Workday","BambooHR","Greenhouse","Lever","Employment Hero"],capabilities:["hr.read","recruitment.applications.read"],status:"catalogue_only"},
+  {key:"accounting",name:"Accounting & Tax",sectors:["accounting","all"],examples:["Xero","QuickBooks","Sage","FreeAgent","HMRC","Companies House"],capabilities:["accounting.read","tax.documents.read"],status:"catalogue_only"},
+  {key:"finance",name:"Finance & Banking",sectors:["fintech","all"],examples:["Adyen","Stripe","GoCardless","Open Banking providers"],capabilities:["finance.read","payments.read"],status:"catalogue_only"},
+  {key:"communications",name:"Email, Calls & Messages",sectors:["all"],examples:["Twilio","WhatsApp Business","Gmail","Outlook","SendGrid"],capabilities:["messaging.send","communications.read"],status:"catalogue_only"},
+  {key:"calendar",name:"Calendars & Scheduling",sectors:["all"],examples:["Google Calendar","Microsoft 365 Calendar","Calendly"],capabilities:["calendar.availability.read"],status:"catalogue_only"},
+  {key:"marketing",name:"Marketing & Advertising",sectors:["all"],examples:["Meta","Google Ads","TikTok","Mailchimp","Klaviyo"],capabilities:["marketing.read","marketing.write"],status:"catalogue_only"},
+  {key:"creative",name:"Images, Video & Voice",sectors:["all"],examples:["OpenAI Images","fal.ai","Runway","HeyGen","ElevenLabs"],capabilities:["creative.brand-kit.read","creative.generate"],status:"catalogue_only"},
+  {key:"documents",name:"Documents & Knowledge",sectors:["all"],examples:["Google Drive","SharePoint","OneDrive","Dropbox","DocuSign"],capabilities:["documents.read","documents.write"],status:"catalogue_only"},
+  {key:"development",name:"Development & Cloud",sectors:["all"],examples:["GitHub","GitLab","Supabase","AWS","Vercel"],capabilities:["code.read","infrastructure.write"],status:"catalogue_only"},
+  {key:"hospitality",name:"Hospitality & Delivery",sectors:["restaurants"],examples:["Uber Direct","Deliveroo Express","Just Eat Go","Stuart","EPOS providers"],capabilities:["hospitality.orders.read"],status:"catalogue_only"},
+  {key:"automotive",name:"Automotive & Auctions",sectors:["automotive"],examples:["Vehicle data","Auction providers","DVLA-compatible sources","Shipping providers"],capabilities:["automotive.vehicles.read","automotive.stock.read"],status:"catalogue_only"},
+  {key:"legal",name:"Legal Practice & Research",sectors:["legal"],examples:["Document management","Court/public legal data","Law firm calendars"],capabilities:["lawquo.directory.read"],status:"catalogue_only"},
+  {key:"childcare",name:"Education & Childcare",sectors:["education","childcare"],examples:["Microsoft Teams","LMS providers","Attendance systems","Ofsted evidence"],capabilities:["education.attendance.read","childcare.compliance.read"],status:"catalogue_only"},
+  {key:"analytics",name:"Analytics & BI",sectors:["all"],examples:["Power BI","Snowflake","BigQuery","Databricks"],capabilities:["analytics.read"],status:"catalogue_only"},
+  {key:"operations",name:"Commerce, Supply Chain & Operations",sectors:["all"],examples:["Shopify","WooCommerce","ERP systems","Warehouse systems","Mapping providers"],capabilities:["commerce.orders.read","dispatch.jobs.read"],status:"catalogue_only"},
+  {key:"compliance",name:"Risk, Governance & Compliance",sectors:["all"],examples:["Sanctions data","Company registries","Regulatory bulletins","Audit systems"],capabilities:["compliance.read","compliance.cases.read"],status:"catalogue_only"},
+];
+
+export const OFFICIAL_MCP_REGISTRY="https://registry.modelcontextprotocol.io/";
