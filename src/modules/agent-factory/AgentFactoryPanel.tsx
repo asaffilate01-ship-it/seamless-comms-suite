@@ -8,6 +8,7 @@ import {Input} from "@/components/ui/input";
 import {Badge} from "@/components/ui/badge";
 import {upsertAiUseCase} from "@/modules/intelligence/functions";
 import {agentsForProduct,mcpConnectorFamilies,OFFICIAL_MCP_REGISTRY,type AgentBlueprint} from "./catalogue";
+import {searchPublicMcpRegistry,type DiscoveredMcpServer} from "./registry.functions";
 
 type UseCase={id:string;use_case_key:string;status:string;allowed_tools?:string[];risk_level?:string};
 type Props={
@@ -33,6 +34,22 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],onChanged}:Pr
  const [classification,setClassification]=useState("internal");
  const [saving,setSaving]=useState(false);
  const saveFn=useServerFn(upsertAiUseCase);
+ const registryFn=useServerFn(searchPublicMcpRegistry);
+ const [directoryQuery,setDirectoryQuery]=useState("");
+ const [directoryItems,setDirectoryItems]=useState<DiscoveredMcpServer[]>([]);
+ const [directoryCursor,setDirectoryCursor]=useState<string|null>(null);
+ const [directoryBusy,setDirectoryBusy]=useState(false);
+ const [directoryError,setDirectoryError]=useState("");
+ async function discover(cursor:string|null=null){
+  if(!tenantId)return;
+  setDirectoryBusy(true);setDirectoryError("");
+  try{
+   const found=await registryFn({data:{tenantId,search:directoryQuery,cursor}});
+   setDirectoryItems(previous=>cursor?[...previous,...found.servers]:found.servers);
+   setDirectoryCursor(found.nextCursor);
+  }catch(e){setDirectoryError(e instanceof Error?e.message:String(e));}
+  finally{setDirectoryBusy(false);}
+ }
  const all=useMemo(()=>agentsForProduct(productKey),[productKey]);
  const items=useMemo(()=>all.filter(a=>[a.name,a.key,a.department,a.purpose].join(" ").toLowerCase().includes(search.toLowerCase())),[all,search]);
  const selected=all.find(a=>a.key===selectedKey)??null;
@@ -105,6 +122,20 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],onChanged}:Pr
    </div>}
    {existing&&<p className="text-sm">Existing AI use case: <b>{existing.status}</b>. Use the AI Control & Governance section below to review it. Reapproval is required after material changes.</p>}
   </div>}
+  <div className="rounded-lg border p-3 space-y-3">
+   <div><strong className="flex items-center gap-2 text-sm"><Cable className="h-4 w-4"/> Search the public MCP server directory</strong>
+    <p className="mt-1 text-xs text-muted-foreground">Read-only official registry metadata. No server is connected, verified, installed or granted tenant access by searching.</p>
+   </div>
+   <div className="flex gap-2"><Input value={directoryQuery} onChange={e=>setDirectoryQuery(e.target.value)} aria-label="Search public MCP servers" placeholder="Examples: accounting, crm, calendar, marketing"/>
+    <Button variant="outline" disabled={directoryBusy||!tenantId} onClick={()=>discover()}>{directoryBusy?"Searching…":"Search"}</Button>
+   </div>
+   {directoryError&&<p role="alert" className="text-sm text-destructive">{directoryError}</p>}
+   <div className="space-y-2">{directoryItems.map((item,i)=><div key={item.name+item.version+i} className="rounded-md bg-muted/50 p-2">
+    <div className="flex flex-wrap justify-between gap-2"><b className="text-xs break-all">{item.name}</b><Badge variant="outline">Unverified · {item.version||"version unknown"}</Badge></div>
+    <p className="mt-1 text-xs text-muted-foreground">{item.description||"No description provided by registry."}</p>
+   </div>)}</div>
+   {directoryCursor&&<Button size="sm" variant="outline" disabled={directoryBusy} onClick={()=>discover(directoryCursor)}>Load more results</Button>}
+  </div>
   <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
    <div className="flex gap-2 font-semibold"><Coins className="h-4 w-4"/> Model-cost routing design</div>
    Verified provider prices, cached-token rates, quality evaluations, region restrictions and per-run budgets are required for a real estimate. No assumed savings or production billing are displayed.
