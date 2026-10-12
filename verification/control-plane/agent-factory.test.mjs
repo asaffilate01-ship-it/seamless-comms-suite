@@ -76,7 +76,7 @@ test("agent registration is explicitly an assessed use case, not implicit live e
  assert.match(ui,/upsertAiUseCase/);
  assert.match(ui,/execution:"not_enabled"/);
  assert.match(ui,/Register for independent review/);
- assert.match(ui,/startAgentRun/);
+ assert.match(ui,/queueBudgetedFactoryTask/);
  assert.match(ui,/providerReady/);
  assert.doesNotMatch(ui,/createActionProposal|fetch\(/);
  assert.match(route,/AgentFactoryPanel/);
