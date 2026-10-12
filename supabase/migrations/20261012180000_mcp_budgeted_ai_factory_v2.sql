@@ -317,6 +317,48 @@ BEGIN
  RETURN jsonb_build_object('runId',_run,'status',new_status,'actualMinor',_actual_minor,'alreadyExists',false);
 END $$;
 
+-- Cancel only work that has not started; processing or billed work cannot
+-- free an unspent reservation without a worker-side usage receipt.
+CREATE OR REPLACE FUNCTION public.cancel_budgeted_ai_agent(
+ _tenant uuid,_run uuid
+) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+DECLARE res public.ai_budgeted_run_reservations;
+  item public.ai_agent_runs;
+  job public.intelligence_jobs;
+  role_name text;
+BEGIN
+ IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+ SELECT * INTO STRICT res FROM public.ai_budgeted_run_reservations
+  WHERE tenant_id=_tenant AND run_id=_run FOR UPDATE;
+ SELECT * INTO STRICT item FROM public.ai_agent_runs
+  WHERE tenant_id=_tenant AND id=_run FOR UPDATE;
+ SELECT role INTO role_name FROM public.tenant_members WHERE tenant_id=_tenant AND user_id=auth.uid();
+ IF item.initiated_by IS DISTINCT FROM auth.uid() AND COALESCE(role_name,'') NOT IN('owner','admin')
+    AND NOT public.is_platform_admin(auth.uid()) THEN
+  RAISE EXCEPTION 'Agent task cancellation not permitted'; END IF;
+ IF res.status='released' AND item.status='cancelled' THEN
+  RETURN jsonb_build_object('runId',_run,'releasedMinor',0,'alreadyCancelled',true); END IF;
+ IF res.status<>'reserved' OR item.status<>'queued' OR
+  EXISTS(SELECT 1 FROM public.ai_agent_steps WHERE run_id=_run) THEN
+  RAISE EXCEPTION 'Agent has started or has incurred charges; request worker-side cancellation'; END IF;
+ SELECT * INTO STRICT job FROM public.intelligence_jobs
+  WHERE tenant_id=_tenant AND product_key=res.product_key AND subject_type='ai_agent_run'
+   AND subject_id=_run::text FOR UPDATE;
+ IF job.status<>'queued' THEN RAISE EXCEPTION 'Job is no longer safely cancellable'; END IF;
+ PERFORM 1 FROM public.ai_spend_budgets WHERE tenant_id=res.tenant_id AND product_key=res.product_key
+  AND period_month=res.period_month AND currency=res.currency FOR UPDATE;
+ UPDATE public.intelligence_jobs SET status='cancelled',updated_at=now(),completed_at=now()
+  WHERE id=job.id;
+ UPDATE public.ai_agent_runs SET status='cancelled',updated_at=now(),completed_at=now()
+  WHERE id=_run;
+ UPDATE public.ai_budgeted_run_reservations SET status='released',settled_at=now(),actual_minor=0
+  WHERE id=res.id;
+ UPDATE public.ai_spend_budgets SET reserved_minor=reserved_minor-res.reserved_minor,updated_at=now()
+  WHERE tenant_id=res.tenant_id AND product_key=res.product_key AND period_month=res.period_month AND currency=res.currency;
+ RETURN jsonb_build_object('runId',_run,'releasedMinor',res.reserved_minor,'alreadyCancelled',false);
+END $;
+
 REVOKE ALL ON FUNCTION public.request_mcp_setup(uuid,text,text,text,text) FROM PUBLIC,anon;
 REVOKE ALL ON FUNCTION public.review_mcp_setup(uuid,text,text) FROM PUBLIC,anon;
 REVOKE ALL ON FUNCTION public.configure_ai_spend_budget(uuid,text,text,bigint) FROM PUBLIC,anon;
@@ -327,4 +369,6 @@ GRANT EXECUTE ON FUNCTION public.review_mcp_setup(uuid,text,text) TO authenticat
 GRANT EXECUTE ON FUNCTION public.configure_ai_spend_budget(uuid,text,text,bigint) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.queue_budgeted_ai_agent(uuid,text,uuid,text,text,text,text,text,bigint,bigint,bigint,bigint,integer,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.settle_budgeted_ai_agent(uuid,bigint,text) TO service_role;
+REVOKE ALL ON FUNCTION public.cancel_budgeted_ai_agent(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.cancel_budgeted_ai_agent(uuid,uuid) TO authenticated;
 COMMIT;
