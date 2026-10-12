@@ -8,8 +8,36 @@ const scope=z.object({tenantId:uuid,productKey:z.string().regex(/^[a-z0-9][a-z0-
 const currency=z.enum(["GBP","USD","EUR"]);
 const mcpServer=z.string().min(3).max(160).regex(/^[A-Za-z0-9._/-]+$/);
 
+export interface AgentFactoryBudget{
+ tenant_id:string;product_key:string;period_month:string;
+ currency:"GBP"|"USD"|"EUR";limit_minor:number;reserved_minor:number;spent_minor:number;updated_at:string;
+}
+export interface AgentFactoryRate{
+ provider_key:string;model_key:string;rate_version:string;
+ currency:"GBP"|"USD"|"EUR";input_minor_per_million:number;
+ cached_input_minor_per_million:number|null;output_minor_per_million:number;
+ minimum_risk_grade:"standard"|"sensitive"|"regulated";
+ supported_regions:string[];verified_at:string;status:"approved";evaluation_passed:boolean;
+}
+export interface AgentFactoryReservation{
+ id:string;run_id:string;use_case_id:string;period_month:string;
+ currency:string;reserved_minor:number;actual_minor:number|null;
+ provider_key:string;model_key:string;rate_version:string;status:string;created_at:string;settled_at:string|null;
+}
+export interface AgentFactoryMcpRequest{
+ id:string;tenant_id:string;product_key:string;registry_name:string;registry_version:string;
+ reason:string;status:"requested"|"shortlisted"|"rejected"|"revoked";
+ review_note:string|null;created_at:string;reviewed_at:string|null;
+}
+export type AgentMcpPlatformReview=AgentFactoryMcpRequest &{requested_by:string};
+export interface AgentFactoryOperations{
+ budgets:AgentFactoryBudget[];reservations:AgentFactoryReservation[];
+ rates:AgentFactoryRate[];mcpRequests:AgentFactoryMcpRequest[];
+}
+
+
 export const getAgentFactoryOperations=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
-.inputValidator((i:z.input<typeof scope>)=>scope.parse(i)).handler(async({context,data})=>{
+.inputValidator((i:z.input<typeof scope>)=>scope.parse(i)).handler(async({context,data}):Promise<AgentFactoryOperations>=>{
  await requireTenantMembership(context,data.tenantId);
  const db=context.supabase as any;
  const [budget,reservations,modelRates,requests]=await Promise.all([
@@ -33,7 +61,7 @@ export const getAgentFactoryOperations=createServerFn({method:"POST"}).middlewar
  ]);
  for(const result of [budget,reservations,modelRates,requests])if(result.error)throw new Error(result.error.message);
  // The schema's read policies prevent non-admins from viewing MCP requests.
- return{budgets:budget.data??[],reservations:reservations.data??[],rates:modelRates.data??[],mcpRequests:requests.data??[]};
+ return{budgets:(budget.data??[]) as AgentFactoryBudget[],reservations:(reservations.data??[]) as AgentFactoryReservation[],rates:(modelRates.data??[]) as AgentFactoryRate[],mcpRequests:(requests.data??[]) as AgentFactoryMcpRequest[]};
 });
 
 export const setAgentFactoryBudget=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
@@ -62,7 +90,7 @@ export const requestAgentMcpSetup=createServerFn({method:"POST"}).middleware([re
 });
 
 export const listAgentMcpPlatformReview=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
-.inputValidator((i:unknown)=>z.object({}).parse(i)).handler(async({context})=>{
+.inputValidator((i:unknown)=>z.object({}).parse(i)).handler(async({context}):Promise<AgentMcpPlatformReview[]>=>{
  const db=context.supabase as any;
  const r=await db.rpc("is_platform_admin",{_user:context.userId});
  if(r.error||!r.data)throw new Error("Platform review permission required");
@@ -70,7 +98,7 @@ export const listAgentMcpPlatformReview=createServerFn({method:"POST"}).middlewa
   .select("id,tenant_id,product_key,registry_name,registry_version,reason,requested_by,status,created_at,review_note")
   .in("status",["requested","shortlisted"]).order("created_at",{ascending:true}).limit(100);
  if(q.error)throw new Error(q.error.message);
- return q.data??[];
+ return (q.data??[]) as AgentMcpPlatformReview[];
 });
 
 export const reviewAgentMcpSetup=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
