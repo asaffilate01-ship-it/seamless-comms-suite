@@ -9,6 +9,7 @@ This phase extends the approved-recipe and MCP-directory feature of Omniqora PR 
 - A **budgeted one-click task queue**: only independently approved Agent Factory use cases with active SaaS product/AI entitlement, fresh independently verified provider binding, qualified rate, country clearance, sufficient monthly balance and valid idempotency key can be enqueued.
 - Atomic SQL creation of budget reserve + `ai_agent_runs` + `intelligence_jobs`. A failure rolls the entire operation back. Reusing an idempotency key with altered payload is rejected.
 - Trusted service-role-only **receipt settlement** records actual provider billing against the reservation, releases unused reserve, and reports provider overage rather than hiding it. Neither browsers nor tenant members can fabricate charges.
+- An independently authorised cancellation RPC cancels only queued, unclaimed work with no agent steps; budget is released atomically. In-progress work requires worker-side cancellation and actual receipts.
 - Read-only operator panels and an independent **MCP Platform Review** route, all under existing Omniqora authentication. The generic legacy run route rejects Factory recipe use cases to avoid bypassing their reservation path.
 
 ## Code paths
@@ -29,7 +30,7 @@ This phase extends the approved-recipe and MCP-directory feature of Omniqora PR 
 2. The current tenant/source product access and exact allowed tool bindings.
 3. Independent per-action approvals for writes, payment, financial-regulatory actions and sensitive data export.
 4. Provider capability/region compliance, account rotation, retry/idempotency and revocation, including mid-run.
-5. Trusted final usage receipt and calls to `settle_budgeted_ai_agent`; if execution never starts, a separately reviewed cancellation/release path is required.
+5. Trusted final usage receipt and calls to `settle_budgeted_ai_agent`; queued work can be atomically cancelled with `cancel_budgeted_ai_agent` before any worker claim or model step. Once processing starts, the worker must cancel and settle its actual usage; the UI cannot prematurely release funds.
 
 Current **reservation** is a reliable atomic *pre-run admission limit*, not a guarantee that a misconfigured external model worker cannot overspend. Actual charge can exceed reserve and will be recorded as overage.
 
