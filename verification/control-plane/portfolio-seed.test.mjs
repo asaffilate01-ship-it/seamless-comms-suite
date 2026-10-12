@@ -8,10 +8,10 @@ const rows = JSON.parse(
   ),
 );
 
-assert.equal(rows.length, 120, 'portfolio seed must preserve all 120 classified rows');
+assert.ok(rows.length >= 120, 'portfolio seed must preserve its original 120 classified rows while allowing append-only additions');
 assert.deepEqual(
   rows.map((row) => row.sourceRow),
-  Array.from({ length: 120 }, (_, index) => index + 1),
+  Array.from({ length: rows.length }, (_, index) => index + 1),
   'source rows must remain stable and contiguous',
 );
 assert.equal(
