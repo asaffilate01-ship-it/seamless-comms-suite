@@ -92,6 +92,14 @@ export const cancelAgentRun=createServerFn({method:"POST"}).middleware([requireS
  await requireTenantMembership(context,data.tenantId);const db=context.supabase as any;
  const run=await db.from("ai_agent_runs").select("initiated_by,status").eq("tenant_id",data.tenantId).eq("id",data.runId).single();
  if(run.error)throw new Error(run.error.message);
+ const reservation=await db.from("ai_budgeted_run_reservations").select("id,status")
+  .eq("tenant_id",data.tenantId).eq("run_id",data.runId).maybeSingle();
+ if(reservation.error)throw new Error(reservation.error.message);
+ if(reservation.data){
+  const cancelled=await db.rpc("cancel_budgeted_ai_agent",{_tenant:data.tenantId,_run:data.runId});
+  if(cancelled.error)throw new Error(cancelled.error.message);
+  return{ok:true,budgetReleased:true,...cancelled.data};
+ }
  const membership=await db.from("tenant_members").select("role").eq("tenant_id",data.tenantId).eq("user_id",context.userId).maybeSingle();
  if(run.data.initiated_by!==context.userId&&!["owner","admin"].includes(membership.data?.role??""))throw new Error("Run cancellation denied");
  await db.from("ai_agent_runs").update({status:"cancelled",updated_at:new Date().toISOString()}).eq("id",data.runId);
