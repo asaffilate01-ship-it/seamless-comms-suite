@@ -160,7 +160,10 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
    <div><h2 className="flex items-center gap-2 text-lg font-semibold"><Bot className="h-5 w-5"/> AI Agent Factory</h2>
     <p className="mt-1 text-sm text-muted-foreground">Reusable agents for every SaaS product. This catalogue is not a live connector, model or agent execution guarantee.</p>
    </div>
-   <a href={OFFICIAL_MCP_REGISTRY} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">Explore official MCP registry</a>
+   <div className="flex flex-wrap gap-3 text-sm">
+    <a href={OFFICIAL_MCP_REGISTRY} target="_blank" rel="noopener noreferrer" className="text-primary underline">Public MCP registry</a>
+    <a href="/app/mcp-review" className="text-primary underline">Platform review queue (restricted)</a>
+   </div>
   </div>
   <div className="grid gap-2 sm:grid-cols-3">
    <div className="rounded-lg border p-3"><p className="flex gap-2 text-xs text-muted-foreground"><Bot className="h-4 w-4"/> Available agent blueprints</p><strong className="text-xl">{all.length}</strong></div>
