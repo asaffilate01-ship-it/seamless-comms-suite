@@ -76,7 +76,9 @@ test("agent registration is explicitly an assessed use case, not implicit live e
  assert.match(ui,/upsertAiUseCase/);
  assert.match(ui,/execution:"not_enabled"/);
  assert.match(ui,/Register for independent review/);
- assert.doesNotMatch(ui,/startAgentRun|createActionProposal|fetch\(/);
+ assert.match(ui,/startAgentRun/);
+ assert.match(ui,/providerReady/);
+ assert.doesNotMatch(ui,/createActionProposal|fetch\(/);
  assert.match(route,/AgentFactoryPanel/);
  const doc=await readFile(new URL("../../docs/ai-factory/UNIVERSAL-AGENT-FACTORY.md",import.meta.url),"utf8");
  assert.match(doc,/budget reservations/i);
