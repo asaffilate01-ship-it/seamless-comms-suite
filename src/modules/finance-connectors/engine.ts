@@ -12,6 +12,7 @@ export type FinanceBinding = Readonly<{
   contracted:boolean; complianceApproved:boolean; countryApproved:boolean;
   categoryApproved:boolean; settlementApproved:boolean;
   exactProgrammes:readonly string[];
+  regulatedCreditBrokerApproved?:boolean; consumerDutyJourneyApproved?:boolean;
 }>;
 export type FinanceTransaction = Readonly<{
   tenantId:string;productKey:string;brand?:string;providerKey:string;
@@ -36,9 +37,9 @@ export function evaluateFinanceTransaction(
    (!p.brand||p.brand.toLowerCase()===input.brand?.toLowerCase())&&p.financeFamilies.includes(provider.family));
  if(!matches)reasons.push("product_or_brand_not_mapped");
  if(input.countryCode!=="GB"||input.merchantCountryCode!=="GB"||input.currency!=="GBP")reasons.push("unsupported_market");
- if(input.audience==="consumer"&&provider.family!=="consumer_checkout")reasons.push("audience_mismatch");
- if(input.audience==="business"&&provider.family==="consumer_checkout")reasons.push("audience_mismatch");
- if(!input.sourceVerified||!input.verifiedOrderTotal)reasons.push("unverified_source_order_or_sales");
+ if(input.audience==="consumer"&&provider.family!=="consumer_checkout"&&provider.family!=="personal_finance")reasons.push("audience_mismatch");
+ if(input.audience==="business"&&(provider.family==="consumer_checkout"||provider.family==="personal_finance"))reasons.push("audience_mismatch");
+ if(!input.sourceVerified||(provider.family==="consumer_checkout"||provider.family==="b2b_terms")&&!input.verifiedOrderTotal)reasons.push("unverified_source_order_or_sales");
  if(!input.hasCustomerConsent)reasons.push("consent_missing");
  if(input.isCrossMerchantBasket&&!input.sellerOfRecordApproved)reasons.push("marketplace_seller_of_record_unapproved");
  if(!binding)reasons.push("binding_missing");
@@ -51,6 +52,7 @@ export function evaluateFinanceTransaction(
     reasons.push("provider_verification_stale");
   if(!binding.contracted)reasons.push("provider_contract_missing");
   if(!binding.complianceApproved)reasons.push("regulatory_review_missing");
+  if(provider.family==="personal_finance"&&(!binding.regulatedCreditBrokerApproved||!binding.consumerDutyJourneyApproved))reasons.push("personal_credit_broking_authorisation_missing");
   if(!binding.countryApproved||!binding.categoryApproved)reasons.push("merchant_market_or_category_not_approved");
   if(!binding.settlementApproved)reasons.push("funds_flow_not_approved");
   if(!binding.exactProgrammes.includes(input.programme))reasons.push("programme_not_approved");
