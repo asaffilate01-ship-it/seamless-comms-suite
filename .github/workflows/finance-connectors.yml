@@ -25,5 +25,7 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Finance factory and tenant isolation tests
         run: bun run test:finance
+      - name: Generate TanStack route types and build Finance Factory
+        run: bun run build
       - name: TypeScript API and UI validation
         run: bun run typecheck
