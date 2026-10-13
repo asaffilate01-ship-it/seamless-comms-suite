@@ -38,7 +38,7 @@ export function FinanceJourneyWorkspace({tenantId,productKey,availableKeys}:{
  const cases=useQuery({queryKey:["finance-case-drafts",tenantId,productKey],queryFn:()=>list({data:{tenantId,productKey}}),
   enabled,retry:false});
  const amountPence=parsePence(amount);
- const valid=enabled&&selection&&uuid.test(subjectRef)&&amountPence!==null&&!busy;
+ const valid=enabled&&!!selection&&uuid.test(subjectRef)&&amountPence!==null&&!busy;
  async function submit(){
   if(!valid||amountPence===null)return;
   setBusy(true);
