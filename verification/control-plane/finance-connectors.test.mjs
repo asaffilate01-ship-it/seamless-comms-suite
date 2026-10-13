@@ -15,6 +15,17 @@ assert.equal(catalogue.recommendFinanceConnectors("travenexa","MarocWays").some(
 assert.equal(catalogue.recommendFinanceConnectors("travenexa","MarocWays","US").length,0);
 assert.equal(catalogue.recommendFinanceConnectors("dishbee","Cafe 1").some(p=>p.family==="b2b_terms"),false);
 assert(catalogue.FINANCE_PLACEMENTS.every(p=>!p.enabledByDefault));
+const adaptersSource=await readFile(new URL("src/modules/finance-connectors/adapters.ts",root),"utf8");
+const adaptersUrl="data:text/javascript;base64,"+Buffer.from(compile(adaptersSource)
+ .replace('from "./catalogue"',`from "${catUrl}"`)
+ .replace("from './catalogue'",`from "${catUrl}"`)).toString("base64");
+const adapters=await import(adaptersUrl);
+assert.equal(adapters.CONNECTOR_STUBS.length,23);
+assert(adapters.CONNECTOR_STUBS.every(c=>c.certified===false&&c.isOperational()===false));
+await assert.rejects(()=>adapters.connectorFor("finance.youlend").prequalify({}),/not contracted/);
+await assert.rejects(()=>adapters.connectorFor("checkout.klarna").begin({}),/not contracted/);
+await assert.rejects(()=>adapters.connectorFor("trade.kriya").request({}),/not contracted/);
+
 const engineSource=await readFile(new URL("src/modules/finance-connectors/engine.ts",root),"utf8");
 const engineUrl="data:text/javascript;base64,"+Buffer.from(compile(engineSource)
   .replace('from "./catalogue"',`from "${catUrl}"`)
