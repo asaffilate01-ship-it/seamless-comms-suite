@@ -1,0 +1,20 @@
+{
+  "name": "UK Travel USA",
+  "short_name": "UK Travel USA",
+  "description": "Plan your visit to Britain",
+  "lang": "en-US",
+  "start_url": "/us/",
+  "scope": "/us/",
+  "id": "/us/",
+  "display": "standalone",
+  "background_color": "#0b263c",
+  "theme_color": "#0b263c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
