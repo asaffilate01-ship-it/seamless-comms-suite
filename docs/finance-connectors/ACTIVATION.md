@@ -1,7 +1,7 @@
 # Omniqora Finance Connectors Factory — UK pilot (13 October 2026)
 
 **Authoritative landlord repo:** `asaffilate01-ship-it/seamless-comms-suite`.
-**Status of this change:** catalogue, central policy, tenant management UI, read-only SaaS API and test scaffolding. **Not** 23 production API integrations. No API credentials, merchant finance agreements or lending approvals have been provisioned.
+**Status of this change:** catalogue, central policy, tenant management UI, read-only SaaS API and test scaffolding. **Not** 25 production API integrations. No API credentials, merchant finance agreements or lending approvals have been provisioned.
 
 ## Architecture
 
@@ -12,13 +12,15 @@ iTechLounge SaaS Factory → Omniqora control plane → product landlord → ten
 - Zoryn Pay is an optional acquiring/distribution layer, not a lender. Adyen is a prospective shared payment rail where the relevant merchant account and payment methods are independently approved.
 - Separate merchant-funding providers from consumer checkout financing and business buyer trade credit. Never treat a Klarna programme as YouLend working capital, or vice versa.
 
-### Catalogue (23 providers, all uncontracted candidates)
+### Catalogue (25 providers, all uncontracted candidates)
 
 Merchant capital (10): YouLend, Liberis, Wayflyer, iwoca, 365 Finance, Capify, Funding Circle, Capitalise, Swoop Funding, Funding Options by Tide.
 
 Consumer checkout (10): Klarna, PayPal Pay Later, **separate** PayPal Credit, Clearpay, Affirm (proposed Adyen orchestration); Zopa Retail Finance, Snap Finance, V12 Retail Finance, Novuna Consumer Finance and Newpay (proposed direct partners).
 
 B2B trade credit (3): Kriya, Billie, Mondu (proposed direct partner integrations).
+
+Personal finance (2): Monevo and ClearScore Partner API (regulated UK credit comparison; separate licensing and consumer data boundary).
 
 **No provider catalogue entry is a live API connector.** Contracts, API schema and credentials are needed before individual lender-specific adapters can be implemented, tested and certified.
 
@@ -43,7 +45,7 @@ Brand tenancy is resolved from the existing actual parent landlord and brand IDs
 
 ## Implemented paths
 
-- `src/modules/finance-connectors/catalogue.ts` — 23 providers, family categorisation, product/brand recommendation registry.
+- `src/modules/finance-connectors/catalogue.ts` — 25 providers, family categorisation, product/brand recommendation registry.
 - `src/modules/finance-connectors/engine.ts` — transaction fail-closed requirements (tenancy, country, category, funding/legal-entity, current verification, consent, programme, seller-of-record, provider returned payment method).
 - `src/modules/finance-connectors/functions.ts` — authenticated, membership-scoped dashboard read API.
 - `src/modules/finance-connectors/catalogue.server.ts` + `src/routes/api.finance.catalogue.ts` — read-only service-to-service provider candidate list.
@@ -102,3 +104,7 @@ bun run test:security
 ```
 
 Do not run live lender requests or apply migrations to production as part of these validations. Confirm GitHub CI and staging deployment independently. No secrets, simulated lender offers or fabricated rates are in the catalogue.
+
+
+## Internal draft journeys (Phase 2)
+See [FOUR_FAMILY_ROLLOUT.md](FOUR_FAMILY_ROLLOUT.md) for new personal-loan partner candidates, strict regulatory permission gates, idempotent operator draft records and withdrawal/audit. These do not contact providers or collect applicant financial information.
