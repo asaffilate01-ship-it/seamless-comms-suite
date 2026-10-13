@@ -48,7 +48,7 @@ Brand tenancy is resolved from the existing actual parent landlord and brand IDs
 - `src/modules/finance-connectors/functions.ts` — authenticated, membership-scoped dashboard read API.
 - `src/modules/finance-connectors/catalogue.server.ts` + `src/routes/api.finance.catalogue.ts` — read-only service-to-service provider candidate list.
 - `src/routes/_authenticated/app.finance-connectors.tsx` — finance connectors control centre, reached by Omniqora sidebar.
-- `supabase/migrations/20261013193000_finance_connector_registry.sql` — real platform-kernel provider catalogue and product requirements (all optional), service-only programme approvals, tenant-scoped RLS.
+- `supabase/migrations/20261013193000_finance_connector_registry.sql` — real platform-kernel provider catalogue and separate finance_product_applicability mappings (candidates off by default), service-only programme approvals, tenant-scoped RLS. Existing product_provider_requirements and unrelated SaaS supplier counts are unchanged.
 - `adapters/finance-connectors/client.mjs` — package-neutral source-server consumer.
 - `verification/control-plane/finance-connectors.test.mjs` and `adapters/finance-connectors/client.test.mjs` — guard, catalogue, PGlite, RLS and adapter tests.
 
