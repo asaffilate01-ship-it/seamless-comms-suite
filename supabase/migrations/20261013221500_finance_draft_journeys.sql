@@ -59,11 +59,11 @@ GRANT ALL ON public.finance_case_drafts,public.finance_case_audit TO service_rol
 GRANT SELECT ON public.finance_case_drafts,public.finance_case_audit TO authenticated;
 
 CREATE POLICY finance_case_owner_read ON public.finance_case_drafts FOR SELECT TO authenticated
- USING(created_by=auth.uid() AND public.is_tenant_member(tenant_id,auth.uid()));
+ USING(created_by=auth.uid() AND (public.is_tenant_member(tenant_id,auth.uid()) OR public.is_platform_admin(auth.uid())));
 CREATE POLICY finance_case_audit_owner_read ON public.finance_case_audit FOR SELECT TO authenticated
  USING(EXISTS(
   SELECT 1 FROM public.finance_case_drafts c WHERE c.id=case_id AND c.tenant_id=finance_case_audit.tenant_id
-  AND c.created_by=auth.uid() AND public.is_tenant_member(c.tenant_id,auth.uid())
+  AND c.created_by=auth.uid() AND (public.is_tenant_member(c.tenant_id,auth.uid()) OR public.is_platform_admin(auth.uid()))
  ));
 
 -- Deliberately exposes only draft creation. No application "submit" method exists.
@@ -117,7 +117,7 @@ CREATE OR REPLACE FUNCTION public.finance_withdraw_draft(_tenant uuid,_case uuid
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE _changed uuid;
 BEGIN
- IF auth.uid() IS NULL OR NOT public.is_tenant_member(_tenant,auth.uid())
+ IF auth.uid() IS NULL OR NOT (public.is_tenant_member(_tenant,auth.uid()) OR public.is_platform_admin(auth.uid()))
  THEN RAISE EXCEPTION 'Tenant access denied'; END IF;
  UPDATE public.finance_case_drafts SET stage='withdrawn',updated_at=now()
  WHERE id=_case AND tenant_id=_tenant AND created_by=auth.uid() AND stage='draft'
