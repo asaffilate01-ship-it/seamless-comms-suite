@@ -45,7 +45,7 @@ const services = (await db.query(`
  WHERE service_key LIKE 'travenexa.%'
  ORDER BY service_key
 `)).rows;
-assert.equal(services.length, 14);
+assert.equal(services.length, 20);
 assert(services.every(x => x.implementation_status === 'external_product'));
 
 const providers = (await db.query(`
@@ -53,35 +53,56 @@ const providers = (await db.query(`
  WHERE provider_key LIKE 'travel.%'
  ORDER BY provider_key
 `)).rows;
-assert.equal(providers.length, 13);
+assert.equal(providers.length, 16);
 assert(providers.every(x => x.status === 'planned' && x.implementation_status === 'catalogue_only'));
 
 const requirements = (await db.query(`
  SELECT provider_key,required FROM public.product_provider_requirements
  WHERE product_key='travenexa'
 `)).rows;
-assert.equal(requirements.length, 13);
+assert.equal(requirements.length, 16);
 assert(requirements.every(x => x.required === false));
 
 const blueprints = (await db.query(`
  SELECT blueprint_key,metadata FROM public.tenant_blueprints
- WHERE blueprint_key LIKE 'travenexa-%' ORDER BY blueprint_key
+ WHERE blueprint_key LIKE 'travenexa%' ORDER BY blueprint_key
 `)).rows;
-assert.equal(blueprints.length, 5);
+assert.equal(blueprints.length, 9);
 assert.equal(blueprints.find(x => x.blueprint_key === 'travenexa-flightlounge')?.metadata?.workspaceType,'flight_metasearch');
+
+
+for(const [market, locale, currency] of [
+  ['kr','ko-KR','KRW'], ['jp','ja-JP','JPY'], ['cn','zh-CN','CNY'], ['us','en-US','USD'],
+]) {
+  const item=blueprints.find(x=>x.blueprint_key===`travenexa.uk-inbound.${market}`);
+  assert(item,`missing inbound UK site for ${market}`);
+  assert.equal(item.metadata.destinationCountry,'GB');
+  assert.equal(item.metadata.operatingCountry,'GB');
+  assert.equal(item.metadata.locale,locale);
+  assert.equal(item.metadata.presentationCurrency,currency);
+  assert.equal(item.metadata.paymentStatus,'requires-acquirer-approval');
+  assert.equal(item.metadata.domainStatus,'not-registered-or-verified');
+  assert.equal(item.metadata.supplierBookingStatus,'not-connected');
+}
+for(const key of ['travenexa.ground-transport','travenexa.rail-coach','travenexa.local-sites','travenexa.inbound-uk']) {
+  assert(services.some(x=>x.service_key===key),`missing travel service ${key}`);
+}
+for(const key of ['travel.omio','travel.rdg-rail','travel.uk-phv-partners']) {
+  assert(providers.some(x=>x.provider_key===key),`missing ground travel provider ${key}`);
+}
 
 const productBlueprints = (await db.query(`
  SELECT blueprint_key,product_key FROM public.blueprint_products
- WHERE blueprint_key LIKE 'travenexa-%'
+ WHERE blueprint_key LIKE 'travenexa%'
 `)).rows;
-assert.equal(productBlueprints.length, 5);
+assert.equal(productBlueprints.length, 9);
 assert(productBlueprints.every(x => x.product_key === 'travenexa'));
 
 const workspaces = (await db.query(`
  SELECT workspace_type FROM public.product_workspace_types
  WHERE product_key='travenexa'
 `)).rows.map(x => x.workspace_type).sort();
-assert.deepEqual(workspaces, ['agency','comparison','destination','flight_metasearch','landlord']);
+assert.deepEqual(workspaces, ['agency','comparison','destination','flight_metasearch','inbound_uk_site','landlord']);
 
 const noFakeActivation = await db.query(`
  SELECT count(*)::int AS total FROM public.provider_bindings WHERE product_key='travenexa'
