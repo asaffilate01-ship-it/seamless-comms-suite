@@ -9,7 +9,7 @@ function compile(source){const {outputText}=ts.transpileModule(source,{compilerO
 const catSource=await readFile(new URL("src/modules/finance-connectors/catalogue.ts",root),"utf8");
 const catUrl="data:text/javascript;base64,"+Buffer.from(compile(catSource)).toString("base64");
 const catalogue=await import(catUrl);
-assert.equal(catalogue.FINANCE_PROVIDERS.length,23);
+assert.equal(catalogue.FINANCE_PROVIDERS.length,25);
 assert(catalogue.FINANCE_PROVIDERS.every(p=>p.status==="candidate"&&p.contractRequired));
 assert.equal(catalogue.recommendFinanceConnectors("travenexa","MarocWays").some(p=>p.key==="checkout.klarna"),true);
 assert.equal(catalogue.recommendFinanceConnectors("travenexa","MarocWays","US").length,0);
@@ -20,11 +20,14 @@ const adaptersUrl="data:text/javascript;base64,"+Buffer.from(compile(adaptersSou
  .replace('from "./catalogue"',`from "${catUrl}"`)
  .replace("from './catalogue'",`from "${catUrl}"`)).toString("base64");
 const adapters=await import(adaptersUrl);
-assert.equal(adapters.CONNECTOR_STUBS.length,23);
+assert.equal(adapters.CONNECTOR_STUBS.length,25);
 assert(adapters.CONNECTOR_STUBS.every(c=>c.certified===false&&c.isOperational()===false));
 await assert.rejects(()=>adapters.connectorFor("finance.youlend").prequalify({}),/not contracted/);
 await assert.rejects(()=>adapters.connectorFor("checkout.klarna").begin({}),/not contracted/);
 await assert.rejects(()=>adapters.connectorFor("trade.kriya").request({}),/not contracted/);
+await assert.rejects(()=>adapters.connectorFor("personal.monevo").quote({}),/not contracted/);
+assert.equal(catalogue.recommendFinanceConnectors("zoryn").some(p=>p.family==="personal_finance"),true);
+assert.equal(catalogue.recommendFinanceConnectors("dishbee").some(p=>p.family==="personal_finance"),false);
 
 const engineSource=await readFile(new URL("src/modules/finance-connectors/engine.ts",root),"utf8");
 const engineUrl="data:text/javascript;base64,"+Buffer.from(compile(engineSource)
@@ -54,6 +57,15 @@ assert.equal(engine.evaluateFinanceTransaction(tx,binding,new Date("2026-10-15T1
 assert.equal(engine.evaluateFinanceTransaction({...tx,hasCustomerConsent:false},binding,now).allowed,false);
 assert.equal(engine.evaluateFinanceTransaction({...tx,isCrossMerchantBasket:true},binding,now).allowed,false);
 assert.equal(engine.evaluateFinanceTransaction({...tx,sellerOfRecordApproved:true,isCrossMerchantBasket:true},binding,now).allowed,true);
+const personalTx={...tx,productKey:"zoryn",providerKey:"personal.monevo",merchantAccount:undefined,
+ audience:"consumer",programme:"personal-loan",isCrossMerchantBasket:false,verifiedOrderTotal:false,
+ providerReturnedMethod:false};
+const personalBinding={...binding,productKey:"zoryn",providerKey:"personal.monevo",merchantAccount:undefined,
+ exactProgrammes:["personal-loan"],regulatedCreditBrokerApproved:false,consumerDutyJourneyApproved:false};
+assert.equal(engine.evaluateFinanceTransaction(personalTx,personalBinding,now).allowed,false);
+assert(engine.evaluateFinanceTransaction(personalTx,personalBinding,now).reasonCodes.includes("personal_credit_broking_authorisation_missing"));
+assert.equal(engine.evaluateFinanceTransaction(personalTx,{...personalBinding,regulatedCreditBrokerApproved:true,consumerDutyJourneyApproved:true},now).allowed,true);
+
 assert.deepEqual(engine.verifiedCheckoutMethods(["klarna","paypal","klarna"],["klarna"]),["klarna"]);
 assert.throws(()=>engine.invoiceTotalPence([{qty:2,unitPence:1500}],2999),/mismatch/);
 await assert.rejects(()=>engine.disabledFinanceConnector("finance.youlend").execute({}),/not contracted/);
@@ -87,6 +99,37 @@ const travelSuppliers=await db.query("SELECT count(*)::int AS total FROM public.
 assert.equal(travelSuppliers.rows[0].total,16,"Finance placements must not change existing travel supplier requirements");
 assert.equal((await db.query("SELECT count(*)::int AS total FROM public.provider_bindings WHERE provider_key='finance.youlend'")).rows[0].total,0);
 assert.equal((await db.query("SELECT count(*)::int AS total FROM public.finance_programme_approvals")).rows[0].total,0);
+const personalRows=await db.query("SELECT provider_key FROM public.provider_catalogue WHERE provider_kind='personal_finance'");
+assert.deepEqual(personalRows.rows.map(x=>x.provider_key).sort(),["personal.clearscore","personal.monevo"]);
+const fcaTable=await db.query("SELECT column_name FROM information_schema.columns WHERE table_name='finance_case_drafts' AND column_name IN('name','email','date_of_birth','national_insurance')");
+assert.equal(fcaTable.rows.length,0,"Omniqora finance drafts must not store consumer PII");
+const admin="eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[admin,admin+"@example.invalid"]);
+await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
+async function asAdmin(fn){
+ await db.exec("BEGIN;SET LOCAL ROLE authenticated");
+ await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[admin]);
+ try{const v=await fn();await db.exec("COMMIT");return v;}
+ catch(e){await db.exec("ROLLBACK");throw e;}
+}
+const bootstrap=await asAdmin(async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);
+const cafe=bootstrap.tenants.find(x=>x.tenantSlug==="cafe1-luton");
+assert(cafe?.tenantId);
+await db.exec("SET ROLE service_role");
+await db.query("UPDATE public.tenant_products SET status='active' WHERE tenant_id=$1 AND product_key='dishbee'",[cafe.tenantId]);
+await db.exec("RESET ROLE");
+const requestKey="11111111-1111-4111-8111-111111111111",recordKey="22222222-2222-4222-8222-222222222222";
+const createArgs=[cafe.tenantId,"dishbee","finance.youlend",recordKey,1500000,requestKey,null];
+const caseId=await asAdmin(async()=> (await db.query("SELECT public.finance_create_draft($1,$2,$3,$4,$5,$6,$7) AS id",createArgs)).rows[0].id);
+assert(caseId);
+const repeated=await asAdmin(async()=> (await db.query("SELECT public.finance_create_draft($1,$2,$3,$4,$5,$6,$7) AS id",createArgs)).rows[0].id);
+assert.equal(repeated,caseId,"Repeated keys must be idempotent");
+await assert.rejects(()=>asAdmin(()=>db.query("SELECT public.finance_create_draft($1,$2,$3,$4,$5,$6,$7)",[...createArgs.slice(0,4),999,requestKey,null])),/Idempotency key/);
+const withdrawn=await asAdmin(async()=> (await db.query("SELECT public.finance_withdraw_draft($1,$2) AS result",[cafe.tenantId,caseId])).rows[0].result);
+assert.equal(withdrawn,true);
+assert.equal(await asAdmin(async()=> (await db.query("SELECT public.finance_withdraw_draft($1,$2) AS result",[cafe.tenantId,caseId])).rows[0].result),false);
+const logged=await db.query("SELECT action FROM public.finance_case_audit WHERE case_id=$1 ORDER BY occurred_at",[caseId]);
+assert.deepEqual(logged.rows.map(x=>x.action),["draft_created","draft_withdrawn"]);
 const stranger="ffffffff-ffff-4fff-8fff-ffffffffffff";
 await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[stranger,stranger+"@example.invalid"]);
 await db.exec("BEGIN;SET LOCAL ROLE authenticated");
