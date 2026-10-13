@@ -6,7 +6,7 @@ import {
   ShieldCheck, Sparkles, Ticket, TrainFront, UsersRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { airports, cities, fromDocument, markets, productKeys, type ProductKey } from './markets';
+import { airports, cities, fromDocument, markets, type ProductKey } from './markets';
 import './styles.css';
 
 const market = fromDocument();
@@ -54,7 +54,7 @@ function SearchPanel({ onProductChange, activeProduct }: {
   onProductChange: (key: ProductKey) => void;
   activeProduct: ProductKey;
 }) {
-  const [origin, setOrigin] = useState<string>('LHR');
+  const [origin, setOrigin] = useState<string>(activeProduct === 'airport' ? 'LHR' : 'London');
   const [city, setCity] = useState<string>('London');
   const [endCity, setEndCity] = useState<string>('Oxford');
   const [travelDate, setTravelDate] = useState('');
@@ -279,7 +279,7 @@ function Site() {
             </button>
           ))}</div>
         </section>
-        <SearchPanel activeProduct={activeProduct} onProductChange={setActiveProduct}/>
+        <SearchPanel key={activeProduct} activeProduct={activeProduct} onProductChange={setActiveProduct}/>
         <section className="process" id="how"><div className="container">
           <div className="process-heading"><span className="eyebrow eyebrow-dark">{copy.howItWorks}</span><h2>{copy.processTitle}</h2></div>
           <div className="process-grid">{steps.map(({title,body,icon:Icon},i)=><div className="step" key={title}><div className="step-heading"><span className="step-count">0{i+1}</span><Icon size={23}/></div><h3>{title}</h3><p>{body}</p></div>)}</div>
