@@ -1,0 +1,20 @@
+{
+  "name": "UK Travel Japan",
+  "short_name": "UK Travel Japan",
+  "description": "英国旅行を計画",
+  "lang": "ja-JP",
+  "start_url": "/jp/",
+  "scope": "/jp/",
+  "id": "/jp/",
+  "display": "standalone",
+  "background_color": "#0b263c",
+  "theme_color": "#0b263c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
