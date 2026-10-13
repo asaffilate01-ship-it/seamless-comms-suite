@@ -8,10 +8,10 @@ const rows = JSON.parse(
   ),
 );
 
-assert.equal(rows.length, 120, 'portfolio seed must preserve all 120 classified rows');
+assert.equal(rows.length, 124, 'portfolio seed must preserve the original 120 rows plus four travel assets');
 assert.deepEqual(
   rows.map((row) => row.sourceRow),
-  Array.from({ length: 120 }, (_, index) => index + 1),
+  Array.from({ length: 124 }, (_, index) => index + 1),
   'source rows must remain stable and contiguous',
 );
 assert.equal(
@@ -31,5 +31,15 @@ assert.ok(
   rows.some((row) => row.traits.includes('site_only')),
   'site-only products must be classified',
 );
+
+
+const travel = rows.filter((row) => ['TRAVENEXA','FLIGHTLOUNGE','BESTFARES BESTRATES','MAROCWAYS'].includes(row.name));
+assert.equal(travel.length, 4, 'all four discussed travel portfolio assets must be present');
+assert.equal(travel.find((row) => row.name === 'TRAVENEXA')?.architectureRole, 'landlord');
+for (const row of travel.filter((row) => row.name !== 'TRAVENEXA')) {
+  assert.equal(row.architectureRole, 'tenant');
+  assert.equal(row.parentLandlord, 'TRAVENEXA');
+  assert.equal(row.repositoryUrl, null, 'do not invent a source repository');
+}
 
 console.log(`portfolio seed verified: ${rows.length} rows`);
