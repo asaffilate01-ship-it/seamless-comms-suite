@@ -23,6 +23,7 @@ import {
   upsertProviderBinding,
 } from "@/modules/platform/kernel.functions";
 import { Cpu, Globe2, KeyRound, Network, RefreshCw, ShieldCheck } from "lucide-react";
+import {FINANCE_PLACEMENTS} from "@/modules/finance-connectors/catalogue";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/platform-kernel")({
@@ -114,9 +115,12 @@ function PlatformKernel() {
     !region?.supported_locales?.length || region.supported_locales.includes(l.locale)
   );
   const readiness=(kernel.data?.readiness??{}) as {ready?:boolean;blockers?:string[];warnings?:string[]};
-  const serviceCapabilities=selectedProduct==="dishbee"
+  const baseServiceCapabilities=selectedProduct==="dishbee"
     ?["orders.consume","orders.ack","events.write","usage.write","crm.write"]
     :["events.write","usage.write"];
+  const serviceCapabilities=FINANCE_PLACEMENTS.some(x=>x.productKey===selectedProduct)
+    ?[...baseServiceCapabilities,"finance.catalogue.read"]
+    :baseServiceCapabilities;
 
   async function refresh(){await Promise.all([tenant.refetch(),kernel.refetch(),kernelCatalogue.refetch()]);}
 
