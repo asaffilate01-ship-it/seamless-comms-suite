@@ -130,7 +130,7 @@ const caseId=await asAdmin(async()=> (await db.query("SELECT public.finance_crea
 assert(caseId);
 const repeated=await asAdmin(async()=> (await db.query("SELECT public.finance_create_draft($1,$2,$3,$4,$5,$6,$7) AS id",createArgs)).rows[0].id);
 assert.equal(repeated,caseId,"Repeated keys must be idempotent");
-await assert.rejects(()=>asAdmin(()=>db.query("SELECT public.finance_create_draft($1,$2,$3,$4,$5,$6,$7)",[...createArgs.slice(0,4),999,requestKey,null])),/Idempotency key/);
+await assert.rejects(()=>asAdmin(()=>db.query("SELECT public.finance_create_draft($1,$2,$3,$4,$5,$6,$7)",[...createArgs.slice(0,4),1499000,requestKey,null])),/Idempotency key/);
 const withdrawn=await asAdmin(async()=> (await db.query("SELECT public.finance_withdraw_draft($1,$2) AS result",[cafe.tenantId,caseId])).rows[0].result);
 assert.equal(withdrawn,true);
 assert.equal(await asAdmin(async()=> (await db.query("SELECT public.finance_withdraw_draft($1,$2) AS result",[cafe.tenantId,caseId])).rows[0].result),false);
