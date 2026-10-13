@@ -11,6 +11,8 @@ Four independent market-oriented consumer website entrypoints share one travel b
 
 **TraveNexa is the *only* travel supplier connector and multi-tenant data-plane landlord.** Each website must become a tenant of TraveNexa with its own verified hostname and control-plane identity. FlightLounge is an optional flight-specialist brand and interface; never a second travel API landlord.
 
+This same landlord also supports the branded travel tenants **MarocWays**, **Route50**, **FlightLounge** and **BestFares BestRates**, as well as these four local-market UK-inbound sites. Route50's region/website source has not been verified; it is listed only as a generic branded travel tenant, with no independent supplier credentials. The market-site code here is one tenant-facing frontend template, **not** the canonical TraveNexa supplier backend.
+
 All brand labels in this app are working titles. No domains, Chinese ICP licence, local company incorporation, payment methods or supplier API permissions are implied by these builds.
 
 ## Features in the website UI
