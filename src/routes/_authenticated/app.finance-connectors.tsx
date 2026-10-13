@@ -10,6 +10,7 @@ import {useTenant} from "@/hooks/useTenant";
 import {getTenantControlPlane} from "@/lib/control-plane.functions";
 import {getFinanceConnectorCatalogue,getFinanceTenantView} from "@/modules/finance-connectors/functions";
 import {recommendFinanceConnectors,type FinanceFamily} from "@/modules/finance-connectors/catalogue";
+import {FinanceJourneyWorkspace} from "@/modules/finance-connectors/FinanceJourneyWorkspace";
 import {ArrowRight,Building2,Landmark,LockKeyhole,RefreshCw,ShieldCheck,ShoppingBag,WalletCards} from "lucide-react";
 
 export const Route=createFileRoute("/_authenticated/app/finance-connectors")({
@@ -19,7 +20,8 @@ export const Route=createFileRoute("/_authenticated/app/finance-connectors")({
 const families:{key:FinanceFamily;label:string;description:string;icon:typeof Landmark}[]=[
  {key:"merchant_capital",label:"Business funding",description:"YouLend, Liberis, iwoca and specialist SME lenders",icon:Landmark},
  {key:"consumer_checkout",label:"Pay Later checkout",description:"Klarna, PayPal, Clearpay, Affirm and retail finance",icon:ShoppingBag},
- {key:"b2b_terms",label:"Business trade terms",description:"Kriya, Billie and Mondu for approved wholesale buyers",icon:WalletCards}
+ {key:"b2b_terms",label:"Business trade terms",description:"Kriya, Billie and Mondu for approved wholesale buyers",icon:WalletCards},
+ {key:"personal_finance",label:"Personal finance",description:"Regulated personal-loan matching partners; broker approval required",icon:ShieldCheck}
 ];
 function FinanceConnectorsPage(){
  const current=useTenant(),tenantId=current.tenantId??"";
@@ -56,7 +58,7 @@ function FinanceConnectorsPage(){
     <div className="flex items-start gap-3"><LockKeyhole className="mt-0.5 size-5 text-amber-500"/><div><p className="text-sm font-semibold">Catalogue and integration scaffolding only</p><p className="mt-1 text-xs text-muted-foreground">No provider contract, customer borrowing approval, checkout finance, funds movement or production deployment is represented by these records.</p></div></div>
     <Badge variant="outline">UK pilot · all disabled</Badge>
    </div>
-   <div className="grid gap-4 md:grid-cols-3">
+   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
     {families.map(f=><button type="button" key={f.key} onClick={()=>setFamily(x=>x===f.key?"all":f.key)}
       className={"rounded-xl border bg-card p-5 text-left transition hover:border-primary/50 "+(family===f.key?"border-primary ring-1 ring-primary/20":"border-border")}>
      <f.icon className="size-5 text-primary"/>
@@ -109,6 +111,7 @@ function FinanceConnectorsPage(){
     })}
     {!visible.length&&<Card><CardContent className="p-6 text-sm text-muted-foreground">No finance connector is recommended for this selected context. That does not prevent a future reviewed integration.</CardContent></Card>}
    </div>
+   <FinanceJourneyWorkspace tenantId={tenantId} productKey={productKey} availableKeys={recommendations.map(p=>p.key)}/>
    <Card><CardContent className="p-5">
     <h2 className="font-semibold">Activation checklist</h2>
     <p className="mt-1 text-sm text-muted-foreground">An Omniqora provider binding or a finance programme row alone is not proof of live eligibility.</p>
