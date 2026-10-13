@@ -6,7 +6,7 @@
 - **B2B trade credit:** Kriya, Billie, Mondu; buyer and supplier identity, invoice and programme agreement required.
 - **Personal finance:** Monevo (personal loans comparison marketplace/REST API) and ClearScore Partner API (redirect integration). Separate credit-broking regulation and customer protection arrangements are required; neither is integrated or contracted.
 
-**25 candidates in all; 25 fail-closed provider adapter slots. None are verified live.**
+**25 candidates in all; 25 fail-closed provider adapter slots. None are verified live.** The shared generic Omniqora provider selector additionally refuses all four finance families, so a manually changed provider binding cannot bypass the dedicated certification workflow.
 
 ## SaaS distribution and security boundaries
 - Omniqora is the platform-level landlord: central candidate registry, applicability, legal/technical approval evidence and scoped service identity.
