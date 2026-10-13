@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Inbox, LayoutDashboard, Users, GitBranch, Megaphone, BarChart3, ContactRound,
   Handshake, Settings, Search, MessageCircle, ShieldCheck,
-  Menu, LogOut, Boxes, Cpu, ShoppingBasket, Truck, Store, Wrench, Palette,
+  Menu, LogOut, Boxes, Cpu, ShoppingBasket, Truck, Store, Wrench, Palette, Landmark,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,7 @@ const nav: NavItem[] = [
   { to: "/app/platform-depth", labelKey: "", label: "Billing, Mobile & Depth", icon: Boxes },
   { to: "/app/daily-brief", labelKey: "", label: "Welcome to your day", icon: BarChart3 },
   { to: "/app/embedded-finance", labelKey: "", label: "Embedded Finance", icon: Store },
+  { to: "/app/finance-connectors", labelKey: "", label: "Finance Connectors", icon: Landmark },
   { to: "/app/access-control", labelKey: "", label: "Access Control", icon: ShieldCheck },
   { to: "/landlord", labelKey: "", label: "Landlord Control Centre", icon: Boxes },
   { to: "/app/finance-ai", labelKey: "", label: "Finance & Tax AI", icon: BarChart3 },
