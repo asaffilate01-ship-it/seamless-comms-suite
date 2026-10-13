@@ -10,6 +10,12 @@ const catSource=await readFile(new URL("src/modules/finance-connectors/catalogue
 const catUrl="data:text/javascript;base64,"+Buffer.from(compile(catSource)).toString("base64");
 const catalogue=await import(catUrl);
 assert.equal(catalogue.FINANCE_PROVIDERS.length,25);
+const platformSource=await readFile(new URL("src/modules/platform/providers.ts",root),"utf8");
+const platformProviders=await import("data:text/javascript;base64,"+Buffer.from(compile(platformSource)).toString("base64"));
+for(const kind of ["merchant_capital","consumer_checkout","b2b_terms","personal_finance"]){
+ assert.throws(()=>platformProviders.chooseProvider({kind,definitions:[],bindings:[]}),/dedicated Finance Factory/);
+}
+
 assert(catalogue.FINANCE_PROVIDERS.every(p=>p.status==="candidate"&&p.contractRequired));
 assert.equal(catalogue.recommendFinanceConnectors("travenexa","MarocWays").some(p=>p.key==="checkout.klarna"),true);
 assert.equal(catalogue.recommendFinanceConnectors("travenexa","MarocWays","US").length,0);
