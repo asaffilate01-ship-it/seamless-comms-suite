@@ -94,15 +94,15 @@ function FinanceConnectorsPage(){
    </div>
    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
     {visible.map(p=>{
-     const b=bindings.find(x=>x.providerKey===p.key);
-     const approved=programmes.filter(x=>x.providerKey===p.key);
+     const b=bindings.find((x:{providerKey:string;status:string;environment:string})=>x.providerKey===p.key);
+     const approved=programmes.filter((x:{providerKey:string;programmeKey:string;status:string})=>x.providerKey===p.key);
      return <Card key={p.key}><CardContent className="p-5">
       <div className="flex items-start justify-between gap-3"><div><p className="text-[11px] uppercase tracking-wider text-muted-foreground">{p.family.replaceAll("_"," ")}</p><h3 className="mt-1 font-semibold">{p.name}</h3></div><Badge variant="outline">Candidate</Badge></div>
       <p className="mt-3 min-h-10 text-sm text-muted-foreground">{p.purpose}</p>
       <div className="mt-4 space-y-2 border-t pt-4 text-xs">
        <p><b>Integration:</b> {p.rail==="adyen"?"Adyen merchant-level enablement":p.rail==="multi_lender"?"Marketplace/referral agreement":"Direct partner API / referral"}</p>
        <p><b>Provider binding:</b> {b?b.status+" · "+b.environment:"Not configured"}</p>
-       <p><b>Programme approvals:</b> {approved.length?approved.map(a=>a.programmeKey+" ("+a.status+")").join(", "):"None"}</p>
+       <p><b>Programme approvals:</b> {approved.length?approved.map((a:{programmeKey:string;status:string})=>a.programmeKey+" ("+a.status+")").join(", "):"None"}</p>
        <p className="text-muted-foreground">Always requires contract, legal review and merchant/transaction eligibility.</p>
       </div>
      </CardContent></Card>;
