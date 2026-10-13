@@ -31,6 +31,24 @@ INSERT INTO public.provider_catalogue(
  ('trade.mondu','Mondu','b2b_terms',ARRAY['discovery','application_status']::text[],ARRAY['GB']::text[],ARRAY[]::text[],ARRAY[]::text[],'planned','catalogue_only','{"rail":"direct_partner","contractRequired":true,"merchantApprovalRequired":true,"liveIntegration":false,"financialPromotionReview":true,"supportedMarket":"GB","upstream":null}'::jsonb)
 ON CONFLICT (provider_key) DO NOTHING;
 
+-- Finance applicability is separate from supplier/payment provider REQUIREMENTS.
+-- Existing product_provider_requirements counts and launch readiness remain unchanged.
+CREATE TABLE IF NOT EXISTS public.finance_product_applicability (
+ product_key text NOT NULL REFERENCES public.product_catalogue(product_key) ON DELETE CASCADE,
+ finance_family text NOT NULL CHECK(finance_family IN ('merchant_capital','consumer_checkout','b2b_terms')),
+ country_code text NOT NULL DEFAULT 'GB' CHECK(country_code='GB'),
+ candidate_only boolean NOT NULL DEFAULT true CHECK(candidate_only=true),
+ enabled_by_default boolean NOT NULL DEFAULT false CHECK(enabled_by_default=false),
+ restrictions jsonb NOT NULL DEFAULT '{}'::jsonb,
+ PRIMARY KEY(product_key,finance_family)
+);
+ALTER TABLE public.finance_product_applicability ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.finance_product_applicability FROM anon,authenticated;
+GRANT SELECT ON public.finance_product_applicability TO authenticated;
+GRANT ALL ON public.finance_product_applicability TO service_role;
+CREATE POLICY finance_product_candidate_read ON public.finance_product_applicability
+ FOR SELECT TO authenticated USING(true);
+
 WITH placements(product_key, family) AS (VALUES
  ('dishbee','merchant_capital'),
  ('dishbee','consumer_checkout'),
@@ -60,24 +78,12 @@ WITH placements(product_key, family) AS (VALUES
  ('zoryn','merchant_capital'),
  ('zoryn','b2b_terms')
 )
-INSERT INTO public.product_provider_requirements(product_key,provider_key,required,purpose,config)
-SELECT p.product_key, v.provider_key, false,
- CASE placement.family
-  WHEN 'merchant_capital' THEN 'Potential UK business-capital introduction; requires provider merchant underwriting'
-  WHEN 'consumer_checkout' THEN 'Potential UK shopper instalment payment; merchant/category approval required'
-  ELSE 'Potential UK B2B trade-payment terms; business buyer checks required'
- END,
- jsonb_build_object(
-  'financeFamily',placement.family,'candidateOnly',true,'enabledByDefault',false,
-  'jurisdiction','GB','noAutoActivation',true,
-  'requiresMerchantApproval',true,'commercialAndComplianceReview',true,
-  'sellerOfRecordAndFundsFlowApproval',true
- )
+INSERT INTO public.finance_product_applicability(product_key,finance_family,country_code,candidate_only,enabled_by_default,restrictions)
+SELECT p.product_key,placement.family,'GB',true,false,
+ jsonb_build_object('merchantApproval',true,'legalReview',true,'fundsFlow',true,'sourceDataAuthority','external')
 FROM placements placement
 JOIN public.product_catalogue p ON p.product_key=placement.product_key
-JOIN public.provider_catalogue v ON v.provider_kind=placement.family
-AND v.provider_key SIMILAR TO '(finance|checkout|trade).%'
-ON CONFLICT(product_key,provider_key) DO NOTHING;
+ON CONFLICT(product_key,finance_family) DO NOTHING;
 
 -- Finance-specific approval proof is ADDITIONAL to provider_bindings.
 -- Never infer a finance programme is active from a general provider binding.
