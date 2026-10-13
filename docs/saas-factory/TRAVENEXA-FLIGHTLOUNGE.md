@@ -1,15 +1,34 @@
 # TraveNexa + FlightLounge in the Omniqora SaaS Factory
 
-**Status (13 October 2026): catalogue, source inventory, blueprints and provider onboarding directory are committed in a feature branch. Not deployed, not API-connected, not production-bookable.**
+**Status (13 October 2026): SaaS Factory catalogue, travel tenant blueprints and four local-market storefront sources are on the main branch. Supplier connections and live bookings remain unverified and disabled.**
 
 ## Existing product decisions recovered
 
 - **TraveNexa** is the canonical *multi-tenant travel technology landlord*: travel offers, partner APIs, shared supplier adapters, search/booking/referral control, pricing provenance, tenant configuration and white-label travel SaaS.
 - **FlightLounge** is the premium consumer flight discovery/metasearch brand **and** the branded flight-access surface that consumes the shared TraveNexa flight connector layer. It must not duplicate supplier auth or tenant-level secrets.
-- **BestFares BestRates** is a comparison tenant; **MarocWays** is a destination-specialist tenant.
+- **BestFares BestRates** is a comparison tenant; **MarocWays** is a destination-specialist tenant; **Route50** is a branded tenant whose exact geographical and product focus has not yet been verified.
 - Future travel agents and travel brands can be created as independent white-label tenants.
 - **Omniqora** remains the top-level SaaS/AI factory, not the travel domain system of record. It supplies identity, CRM, omnichannel support, AI agents, analytics, billing entitlement control, partner onboarding, connectors and provisioning.
 - No source repository or deployed product URL for TraveNexa/FlightLounge has been verified in this GitHub connection. Do not replace this with an assumed repository or a separate fictional FlightLounge landlord.
+
+## Canonical landlord/tenant contract
+
+**There is exactly one travel-domain SaaS landlord: `travenexa`.** iTechLounge/Omniqora is the global SaaS Factory platform above it, not a second travel supplier engine. Every travel consumer brand or local-language storefront is a **TraveNexa tenant**. Names of tenant websites are *not* independent product landlords, even if they have their own frontend repository.
+
+| Travel SaaS role | Representative tenants | Ownership of travel integration |
+| --- | --- | --- |
+| Landlord | **TraveNexa** only | Central provider integrations, credential vault, inventory normalization, offer/booking/referral orchestration, commissions, governance, provisioning and tenant lifecycle |
+| Specialist flight tenants | **FlightLounge** | Tenant UI, flight filters, marketing and reporting; uses TraveNexa flight search/redirect connectors |
+| Comparison tenants | **BestFares BestRates** | Branded comparison frontend, marketing and attribution; uses TraveNexa APIs |
+| Destination / regional tenants | **MarocWays** and future destination brands | Branded destination marketplace; reuses TraveNexa permitted hotels, transfers, activities, flight and eSIM capabilities |
+| General travel-brand tenants | **Route50** and similar future travel brands | Tenant-branded website/app, commercial rules, customer/account workspace and analytics; only permitted TraveNexa APIs |
+| Inbound-UK source-market tenants | South Korea, Japan, China and USA local sites | Local language, SEO, currency presentation, regional marketing, support; UK travel inventory and supplier APIs belong to TraveNexa |
+
+**Tenant requirements:** Each tenant can have separate domain, visual identity, account access, customer records, travel enquiries, trip records, booking records, commissions, fee/markup rules, payment configuration, regional content, analytics and admin dashboards. Tenant boundaries and access controls must apply to every API request, quote, booking, webhook, payment, loyalty record and AI task. Shared supplier credentials are stored by TraveNexa and accessed only through server-side, entitlement-checked adapters; no customer data leak between tenant brands.
+
+**Factory hierarchy:** The Omniqora factory knows the single product key `travenexa`. It exposes **ten** travel launch blueprints: TraveNexa landlord, FlightLounge, BestFares BestRates, MarocWays, Route50, generic white-label agency, and four UK-inbound source-market websites. A blueprint is merely a launch template, *not evidence that a tenant was provisioned or a supplier is connected*. The generic `travel_brand` workspace type prevents inventing Route50's geography or speciality.
+
+**Source verification:** Route50 is confirmed as a tenant name and relationship. No Route50 repository, domain, geographical coverage or product-specific feature set has been verified. These must be assessed before publishing a branded website, rather than fabricating a domain or destination.
 
 ## What is registered in the SaaS Factory
 
@@ -21,6 +40,7 @@
 | BestFares BestRates blueprint | `travenexa-bestfares` | TraveNexa `comparison` workspace |
 | MarocWays blueprint | `travenexa-marocways` | TraveNexa `destination` workspace |
 | Future agency blueprint | `travenexa-white-label` | TraveNexa `agency` workspace |
+| Route50 brand tenant | `travenexa-route50` | TraveNexa `travel_brand` workspace; source repo/domain and specialty TBD |
 | Supplier directory | `travel.*` keys | 13 catalogue-only providers; **none authenticated** |
 | Product inventory | Rows 121–124 | Original source inventory rows 1–120 preserved |
 
