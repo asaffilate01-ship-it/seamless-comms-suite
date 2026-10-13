@@ -535,6 +535,14 @@ const rows: readonly (readonly [
     "coordination",
     "confirmed",
   ],
+  [
+    "route50",
+    "Route50",
+    "Travel & hospitality",
+    "Branded travel tenant of TraveNexa, using shared supplier APIs and isolated customer journeys",
+    "coordination",
+    "confirmed",
+  ],
 ];
 export const portfolioProducts = rows.map((r) => ({
   slug: r[0],
