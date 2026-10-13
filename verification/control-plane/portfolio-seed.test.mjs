@@ -8,10 +8,10 @@ const rows = JSON.parse(
   ),
 );
 
-assert.equal(rows.length, 124, 'portfolio seed must preserve the original 120 rows plus four travel assets');
+assert.equal(rows.length, 125, 'portfolio seed must preserve the original 120 rows plus five travel assets');
 assert.deepEqual(
   rows.map((row) => row.sourceRow),
-  Array.from({ length: 124 }, (_, index) => index + 1),
+  Array.from({ length: 125 }, (_, index) => index + 1),
   'source rows must remain stable and contiguous',
 );
 assert.equal(
@@ -33,8 +33,8 @@ assert.ok(
 );
 
 
-const travel = rows.filter((row) => ['TRAVENEXA','FLIGHTLOUNGE','BESTFARES BESTRATES','MAROCWAYS'].includes(row.name));
-assert.equal(travel.length, 4, 'all four discussed travel portfolio assets must be present');
+const travel = rows.filter((row) => ['TRAVENEXA','FLIGHTLOUNGE','BESTFARES BESTRATES','MAROCWAYS','ROUTE50'].includes(row.name));
+assert.equal(travel.length, 5, 'all five discussed travel portfolio assets must be present');
 assert.equal(travel.find((row) => row.name === 'TRAVENEXA')?.architectureRole, 'landlord');
 for (const row of travel.filter((row) => row.name !== 'TRAVENEXA')) {
   assert.equal(row.architectureRole, 'tenant');
