@@ -81,8 +81,10 @@ for(const p of catalogue.FINANCE_PROVIDERS){
  assert.equal(row.status,"planned");
  assert.equal(row.implementation_status,"catalogue_only");
 }
-const mapped=await db.query("SELECT required FROM public.product_provider_requirements WHERE product_key='dishbee' AND provider_key='finance.youlend'");
-assert.equal(mapped.rows[0]?.required,false);
+const mapped=await db.query("SELECT candidate_only,enabled_by_default FROM public.finance_product_applicability WHERE product_key='dishbee' AND finance_family='merchant_capital'");
+assert.deepEqual(mapped.rows[0],{candidate_only:true,enabled_by_default:false});
+const travelSuppliers=await db.query("SELECT count(*)::int AS total FROM public.product_provider_requirements WHERE product_key='travenexa'");
+assert.equal(travelSuppliers.rows[0].total,16,"Finance placements must not change existing travel supplier requirements");
 assert.equal((await db.query("SELECT count(*)::int AS total FROM public.provider_bindings WHERE provider_key='finance.youlend'")).rows[0].total,0);
 assert.equal((await db.query("SELECT count(*)::int AS total FROM public.finance_programme_approvals")).rows[0].total,0);
 const stranger="ffffffff-ffff-4fff-8fff-ffffffffffff";
