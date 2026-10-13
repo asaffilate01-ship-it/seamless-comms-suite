@@ -1,5 +1,5 @@
 /** Omniqora Finance Connectors, shared by every SaaS landlord. Catalogue is NOT live availability. */
-export type FinanceFamily = "merchant_capital" | "consumer_checkout" | "b2b_terms";
+export type FinanceFamily = "merchant_capital" | "consumer_checkout" | "b2b_terms" | "personal_finance";
 export type IntegrationRail = "embedded_direct" | "adyen" | "direct_partner" | "multi_lender";
 export type ProviderCandidate = Readonly<{
   key:string; name:string; family:FinanceFamily; rail:IntegrationRail;
@@ -35,7 +35,9 @@ export const FINANCE_PROVIDERS:readonly ProviderCandidate[]=[
  candidate("checkout.newpay","Newpay (NewDay)","consumer_checkout","direct_partner","Revolving consumer retail credit"),
  candidate("trade.kriya","Kriya","b2b_terms","direct_partner","B2B deferred payment at eligible checkout"),
  candidate("trade.billie","Billie","b2b_terms","direct_partner","B2B invoice financing"),
- candidate("trade.mondu","Mondu","b2b_terms","direct_partner","B2B trade terms")
+ candidate("trade.mondu","Mondu","b2b_terms","direct_partner","B2B trade terms"),
+ candidate("personal.monevo","Monevo","personal_finance","multi_lender","Consumer personal-loan and credit comparison; subject to regulated broker approval"),
+ candidate("personal.clearscore","ClearScore Partner API","personal_finance","multi_lender","Consumer credit eligibility and controlled lender redirect; subject to commercial approval")
 ];
 export type Placement = Readonly<{
   productKey:string; brand?:string; financeFamilies:readonly FinanceFamily[];
@@ -71,7 +73,7 @@ export const FINANCE_PLACEMENTS:readonly Placement[]=[
  placement("taxnuvia",["merchant_capital"],"Introductions for established business clients",["No automatic lending from advisory profiles"]),
  placement("lawquo",["merchant_capital"],"Firm/chambers business working capital",["Client funds and legal fees excluded from automatic sweeps"]),
  placement("kinderstars",["merchant_capital"],"Established childminder businesses",["UK childcare programme eligibility required"],"Kindelo"),
- placement("zoryn",["consumer_checkout","merchant_capital","b2b_terms"],"Zoryn Pay as merchant payment distribution",["Payments permissions, merchant contracts and credit-broking approval"])
+ placement("zoryn",["consumer_checkout","merchant_capital","b2b_terms","personal_finance"],"Zoryn Pay as merchant payment distribution",["Payments permissions, merchant contracts and credit-broking approval"])
 ];
 export const FINANCE_PROVIDER_KEYS=new Set(FINANCE_PROVIDERS.map(p=>p.key));
 export function recommendFinanceConnectors(productKey:string,brand?:string,market="GB"){
