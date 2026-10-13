@@ -29,6 +29,11 @@ export function providerBindingMissingSecrets(definition: ProviderDefinition, bi
   return definition.requiredSecretNames.filter((key) => !binding.secretRefs[key]);
 }
 
+/** Finance providers require dedicated regulated-product certification.
+ * Never select them through the generic no-extra-verification provider fallback.
+ */
+const REGULATED_FINANCE_FAMILIES = new Set(["merchant_capital","consumer_checkout","b2b_terms","personal_finance"]);
+
 export function chooseProvider(input: {
   kind: string;
   countryCode?: string | null;
@@ -36,6 +41,8 @@ export function chooseProvider(input: {
   definitions: ProviderDefinition[];
   bindings: ProviderBinding[];
 }) {
+  if(REGULATED_FINANCE_FAMILIES.has(input.kind))
+    throw new Error("Regulated finance connectors require the dedicated Finance Factory certification gate");
   const candidates = input.bindings
     .filter((binding) => binding.environment === "production" && binding.status === "active")
     .map((binding) => ({
