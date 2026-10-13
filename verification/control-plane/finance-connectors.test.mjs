@@ -92,7 +92,7 @@ for(const name of (await readdir(migrations)).filter(name=>name.endsWith(".sql")
  ])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,"fixture@example.invalid"]);
  await db.exec(await readFile(new URL(name,migrations),"utf8"));
 }
-const rows=await db.query("SELECT provider_key,status,implementation_status FROM public.provider_catalogue WHERE provider_key LIKE 'finance.%' OR provider_key LIKE 'checkout.%' OR provider_key LIKE 'trade.%'");
+const rows=await db.query("SELECT provider_key,status,implementation_status FROM public.provider_catalogue WHERE provider_key LIKE 'finance.%' OR provider_key LIKE 'checkout.%' OR provider_key LIKE 'trade.%' OR provider_key LIKE 'personal.%'");
 for(const p of catalogue.FINANCE_PROVIDERS){
  const row=rows.rows.find(r=>r.provider_key===p.key);
  assert(row,`Provider ${p.key} must be in the central platform catalogue`);
