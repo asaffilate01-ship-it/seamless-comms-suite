@@ -16,6 +16,17 @@ The draft integrated Factory work is in Omniqora PR #97, based on its source reg
 
 Do not merge or activate draft provisioning solely because a product appears in this inventory. The 14 unmapped product keys need a repo, explicit "concept only" classification, or a documented exception.
 
+## GitHub visibility reconciliation — 15 October 2026
+
+Compared the 77 distinct registry repository references with the 100 repositories currently visible to the linked GitHub account:
+
+- **7 registry references were not found in the accessible inventory:** learnbridge-pathway, pixel-perfect-render-6809, pixel-perfect-replicator-884, propertysphere-global, screen-snapshot-magic-973, teamup-connect-anywhere, voxavelle.
+- **30 accessible repositories are not referenced by this Factory registry**, including digital-creations-hub (iTechLounge master site), Cafe 1 repos, the Zoryn family, and experimentation/prototype repos.
+
+This is **a visibility and classification gap**, not evidence of repository deletion, a failed deployment, or 30 new SaaS products. Each entry needs an owner decision: canonical product, dependent/tenant repo, shared infrastructure, archived concept, alias, or out-of-scope. Do not auto-provision them.
+
+Private-repository GitHub Actions checks across several products are currently failing without usable steps or logs, while selected public-repository checks pass. Verify owner account GitHub Actions minutes, valid payment method, spending budgets, and runner access before treating these as application code failures. GitHub documentation: https://docs.github.com/en/billing/concepts/product-billing/github-actions . The root cause remains unverified.
+
 ### Repeatable, read-only commands
 
 From the branch containing the expanded registry:
