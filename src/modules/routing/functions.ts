@@ -1,7 +1,7 @@
 import {createServerFn} from "@tanstack/react-start";
 import {z} from "zod";
 import {requireSupabaseAuth} from "@/integrations/supabase/auth-middleware";
-import {requireAdminRole,requireService,requireTenantMembership,requireWriteRole} from "@/modules/platform/access";
+import {requireAdminRole,requireService,requireTenantMembership} from "@/modules/platform/access";
 import {optimiseNativeRoutes,type RoutingJob,type RoutingResource} from "@/modules/routing/service.server";
 
 const uuid=z.string().uuid();
@@ -52,7 +52,7 @@ const matrix=scope.extend({
 });
 export const createRoutingMatrixJob=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:z.input<typeof matrix>)=>matrix.parse(i)).handler(async({context,data})=>{
- const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireWriteRole(access.role);
+ const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireAdminRole(access.role);
  const db=context.supabase as any;
  const ranked=await db.rpc("routing_rank_providers",{_tenant:data.tenantId,_product:data.productKey,_operation:"matrix",_lookback_hours:168});
  if(ranked.error)throw new Error(ranked.error.message);
@@ -68,7 +68,7 @@ export const createRoutingOptimisation=createServerFn({method:"POST"}).middlewar
  reason:z.enum(["manual","scheduled","job_added","job_cancelled","agent_unavailable","vehicle_unavailable","sla_risk","traffic_change"]).default("manual"),
  objective:z.enum(["distance","duration","cost","balanced","sla"]).default("balanced")
 }).parse(i)).handler(async({context,data})=>{
- const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireWriteRole(access.role);
+ const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireAdminRole(access.role);
  const r=await(context.supabase as any).rpc("routing_create_optimisation",{_tenant:data.tenantId,_product:data.productKey,_reason:data.reason,_objective:data.objective});
  if(r.error)throw new Error(r.error.message);return{optimisationId:r.data as string};
 });
@@ -153,7 +153,7 @@ export const applyRoutingOptimisation=createServerFn({method:"POST"}).middleware
 export const generateDispatchRecommendations=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:{tenantId:string;productKey:string;jobId:string;limit?:number})=>scope.extend({jobId:uuid,limit:z.number().int().min(1).max(20).default(5)}).parse(i))
 .handler(async({context,data})=>{
- const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireWriteRole(access.role);
+ const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireAdminRole(access.role);
  const r=await(context.supabase as any).rpc("dispatch_generate_assignment_recommendations",{
   _tenant:data.tenantId,_product:data.productKey,_job:data.jobId,_limit:data.limit
  });if(r.error)throw new Error(r.error.message);return{count:r.data as number};
@@ -162,7 +162,7 @@ export const generateDispatchRecommendations=createServerFn({method:"POST"}).mid
 export const applyDispatchRecommendation=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:{tenantId:string;recommendationId:string})=>z.object({tenantId:uuid,recommendationId:uuid}).parse(i))
 .handler(async({context,data})=>{
- const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireWriteRole(access.role);
+ const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireAdminRole(access.role);
  const r=await(context.supabase as any).rpc("dispatch_apply_assignment_recommendation",{_recommendation:data.recommendationId});
  if(r.error)throw new Error(r.error.message);return{ok:true};
 });
