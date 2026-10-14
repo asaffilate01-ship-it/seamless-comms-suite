@@ -252,14 +252,14 @@ END $$;
 
 
 -- Route plans cannot be forged by ordinary driver accounts.
-DO $ DECLARE t text;BEGIN
+DO $$ DECLARE t text;BEGIN
  FOREACH t IN ARRAY ARRAY['routing_policies','routing_optimisation_jobs',
   'routing_route_plans','routing_route_plan_stops','routing_assignment_recommendations']
  LOOP
   EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I','routing tenant write '||t,t);
   EXECUTE format('CREATE POLICY %I ON public.%I FOR ALL TO authenticated USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY[''owner'',''admin'']::public.app_role[])) WITH CHECK(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),ARRAY[''owner'',''admin'']::public.app_role[]))','routing admin write '||t,t);
  END LOOP;
-END $;
+END $$;
 REVOKE INSERT,UPDATE,DELETE ON public.routing_matrix_cells FROM authenticated;
 
 -- Provider observations are integration evidence: tenant users may read but not fabricate them.
