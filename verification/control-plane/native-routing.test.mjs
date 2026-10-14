@@ -43,7 +43,9 @@ assert.equal(rec.rows[0].agent_id,agent);assert.equal(rec.rows[0].vehicle_id,veh
 await asUser(admin,()=>db.query("SELECT public.dispatch_apply_assignment_recommendation($1)",[rec.rows[0].id]));
 const assigned=await asUser(admin,()=>db.query("SELECT status,assigned_agent_id,assigned_vehicle_id FROM public.dispatch_jobs WHERE id=$1",[job]));
 assert.equal(assigned.rows[0].status,"assigned");assert.equal(assigned.rows[0].assigned_agent_id,agent);assert.equal(assigned.rows[0].assigned_vehicle_id,vehicle);
-await asUser(admin,()=>db.query("SELECT public.dispatch_update_status($1,'completed')",[job]));
+for(const nextStatus of ["accepted","en_route","arrived","in_progress","completed"]){
+ await asUser(admin,()=>db.query("SELECT public.dispatch_update_status($1,$2)",[job,nextStatus]));
+}
 
 const job2=(await asUser(admin,()=>db.query("INSERT INTO public.dispatch_jobs(tenant_id,product_key,job_type,status,priority) VALUES($1,'mealdeck','service','unassigned','normal') RETURNING id",[tenant.tenantId]))).rows[0].id;
 const stop2=(await asUser(admin,()=>db.query("INSERT INTO public.dispatch_job_stops(job_id,tenant_id,position,stop_kind,latitude,longitude,service_seconds,status) VALUES($1,$2,0,'service',51.8850,-0.4100,90,'pending') RETURNING id",[job2,tenant.tenantId]))).rows[0].id;
