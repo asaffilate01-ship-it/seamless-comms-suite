@@ -8,7 +8,7 @@ import {Button} from "@/components/ui/button";
 import {Badge} from "@/components/ui/badge";
 import {useTenant} from "@/hooks/useTenant";
 import {getTenantControlPlane} from "@/lib/control-plane.functions";
-import {applyDispatchRecommendation,applyRoutingOptimisation,createRoutingOptimisation,generateDispatchRecommendations,getRoutingWorkspace,runNativeRoutingOptimisation,saveRoutingPolicy} from "@/modules/routing/functions";
+import {applyDispatchRecommendation,applyRoutingOptimisation,createRoutingOptimisation,createRoutingMatrixJob,runRoadMatrixPreview,generateDispatchRecommendations,getRoutingWorkspace,runNativeRoutingOptimisation,saveRoutingPolicy} from "@/modules/routing/functions";
 import {GitBranch,MapPinned,RefreshCw,Route as RouteIcon,Truck} from "lucide-react";
 import {toast} from "sonner";
 
@@ -16,13 +16,17 @@ export const RouteDef=createFileRoute("/_authenticated/app/routing")({component:
 export {RouteDef as Route};
 
 function RoutingWorkspace(){
- const t=useTenant(),tenantId=t.tenantId??"";const tenantFn=useServerFn(getTenantControlPlane),getFn=useServerFn(getRoutingWorkspace),policyFn=useServerFn(saveRoutingPolicy),createFn=useServerFn(createRoutingOptimisation),runFn=useServerFn(runNativeRoutingOptimisation),applyFn=useServerFn(applyRoutingOptimisation),recommendFn=useServerFn(generateDispatchRecommendations),applyRecFn=useServerFn(applyDispatchRecommendation);
+ const t=useTenant(),tenantId=t.tenantId??"";const tenantFn=useServerFn(getTenantControlPlane),getFn=useServerFn(getRoutingWorkspace),policyFn=useServerFn(saveRoutingPolicy),createFn=useServerFn(createRoutingOptimisation),runFn=useServerFn(runNativeRoutingOptimisation),applyFn=useServerFn(applyRoutingOptimisation),recommendFn=useServerFn(generateDispatchRecommendations),applyRecFn=useServerFn(applyDispatchRecommendation),queueMatrixFn=useServerFn(createRoutingMatrixJob),runMatrixFn=useServerFn(runRoadMatrixPreview);
  const tenant=useQuery({queryKey:["routing-tenant",tenantId],queryFn:()=>tenantFn({data:{tenantId}}),enabled:!!tenantId,retry:false});
  const products=(tenant.data?.products??[]).map((p:any)=>p.product_key);const[productKey,setProductKey]=useState("");
  useEffect(()=>{if(!productKey&&products[0])setProductKey(products[0]);},[productKey,products.join("|")]);
  const q=useQuery({queryKey:["routing",tenantId,productKey],queryFn:()=>getFn({data:{tenantId,productKey}}),enabled:!!tenantId&&!!productKey,retry:false});
  async function run(fn:()=>Promise<unknown>,msg:string){try{await fn();toast.success(msg);await q.refetch();}catch(e){toast.error(e instanceof Error?e.message:String(e));}}
  const unassigned=(q.data?.jobs??[]).filter((x:any)=>x.status==="unassigned"),latest=(q.data?.optimisations??[])[0];
+ const geoPoints=unassigned.flatMap((j:any)=>(j.stops??[]).slice().sort((a:any,b:any)=>a.position-b.position)).filter((s:any)=>Number.isFinite(Number(s.latitude))&&Number.isFinite(Number(s.longitude))).slice(0,8).map((s:any)=>({lat:Number(s.latitude),lng:Number(s.longitude)}));
+ const matrixJobs=(q.data?.matrixJobs??[]) as any[];
+ const newest=matrixJobs[0] as any|undefined;
+ const sample=(newest?.cells??[]).find((c:any)=>c.origin_index===0&&c.destination_index===Math.min(1,(newest?.destinations?.length??1)-1));
  return <AppShell title="Native Routing & VRP" subtitle="Omniqora-owned assignment, batching, time windows, capacity/skills, re-optimisation and provider scoring. No Jungleworks dependency."
  actions={<Button size="sm" variant="outline" onClick={()=>q.refetch()}><RefreshCw className="mr-2 h-4 w-4"/>Refresh</Button>}>
   <Card><CardContent className="p-5"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={productKey} onChange={e=>setProductKey(e.target.value)}>{products.map((p:string)=><option key={p}>{p}</option>)}</select></CardContent></Card>
@@ -31,6 +35,41 @@ function RoutingWorkspace(){
    <Card><CardContent className="p-5"><h2 className="font-semibold">Routing policy</h2><p className="mt-1 text-xs text-muted-foreground">Google/Mapbox/openrouteservice matrices are optional adapters. Haversine fallback and the VRP solver stay native.</p><Button className="mt-4" onClick={()=>run(()=>policyFn({data:{tenantId,productKey,policyKey:"default",objective:"balanced",providerOrder:["maps.google","maps.mapbox","maps.openrouteservice"],allowHaversineFallback:true,maxStopsPerRoute:100,reoptimiseTriggers:["job_added","job_cancelled","agent_unavailable","vehicle_unavailable","sla_risk","traffic_change"]}}),"Routing policy saved")}>Save native default</Button><div className="mt-4 flex flex-wrap gap-2">{(q.data?.providerRanking??[]).map((x:any)=><Badge key={x.provider_key} variant="outline">{x.provider_key} · {Number(x.score).toFixed(1)}</Badge>)}</div></CardContent></Card>
    <Card><CardContent className="p-5"><h2 className="font-semibold">Run optimiser</h2><div className="mt-3 flex flex-wrap gap-2"><Button onClick={()=>run(()=>createFn({data:{tenantId,productKey,reason:"manual",objective:"balanced"}}),"Optimisation queued")}>Queue</Button>{latest?.status==="queued"&&<Button variant="outline" onClick={()=>run(()=>runFn({data:{tenantId,optimisationId:latest.id}}),"Native route plan built")}>Run native solver</Button>}{latest?.status==="review"&&<Button onClick={()=>run(()=>applyFn({data:{tenantId,optimisationId:latest.id}}),"Route plan applied")}>Approve & apply</Button>}</div>{latest&&<div className="mt-4 rounded-lg border p-3 text-sm"><div className="flex justify-between"><b>{latest.algorithm}</b><StatusBadge status={latest.status}/></div><p className="mt-1 text-xs text-muted-foreground">{latest.reason} · {latest.objective}</p><p className="mt-2 text-xs">{latest.routes?.length??0} route(s) · {latest.score?.distanceMetres??0} m · {latest.score?.constraintBreaches??0} breach(es)</p></div>}</CardContent></Card>
   </div>
+  <Card className="mt-6"><CardContent className="space-y-3 p-5">
+   <div><h2 className="font-semibold">Road-network matrix preview</h2>
+    <p className="mt-1 text-xs text-muted-foreground">
+     Compare driving distances using a separately approved openrouteservice connector.
+     If unavailable, a policy-approved straight-line fallback shows distance only, never a road ETA.
+     Google traffic-aware routing is held behind separate licensing and activation review.
+    </p>
+   </div>
+   <p className="text-xs text-muted-foreground">
+    Up to 8×8 stops per preview, maximum eight requests and 256 route pairs per tenant/product per UTC day.
+    API provider charges and billing alerts remain separate from these request limits.
+   </p>
+   <div className="flex flex-wrap gap-2">
+    <Button size="sm" disabled={!tenantId||!productKey||geoPoints.length<2} onClick={()=>run(async()=>{
+      await queueMatrixFn({data:{tenantId,productKey,travelMode:"driving",
+       origins:geoPoints,destinations:geoPoints,trafficAware:false,
+       requestKey:crypto.randomUUID()}});
+     },"Road matrix preview queued")}>Queue road matrix</Button>
+    {newest?.status==="queued"&&<Button size="sm" variant="outline"
+     onClick={()=>run(()=>runMatrixFn({data:{tenantId,productKey,matrixJobId:newest.id}}),
+      "Road matrix computed")}>Calculate approved matrix</Button>}
+   </div>
+   {newest&&<div className="rounded-lg border p-3 text-sm">
+    <div className="flex flex-wrap items-center gap-2"><b>{newest.provider_key??"Awaiting provider"}</b>
+      <StatusBadge status={newest.status}/><Badge variant="outline">{newest.quality??"pending"}</Badge></div>
+    {sample&&<p className="mt-2 text-xs">
+     Sample route pair: {sample.distance_metres!=null?Number(sample.distance_metres).toLocaleString()+" m":"unreachable"}
+     {" · "}{sample.duration_seconds!=null?Number(sample.duration_seconds).toLocaleString()+" seconds":"No verified road ETA"}
+    </p>}
+    {newest.status==="failed"&&<p role="alert" className="mt-2 text-xs text-destructive">
+     Preview failed. Provider readiness and service logs require operator review.</p>}
+    {newest.quality==="straight_line_estimate"&&<p className="mt-2 text-xs text-muted-foreground">
+     Straight-line only. Do not use this preview as driving time or live dispatch evidence.</p>}
+   </div>}
+  </CardContent></Card>
   <Card className="mt-6"><CardContent className="p-5"><h2 className="font-semibold">Automatic assignment</h2><div className="mt-4 space-y-2">{unassigned.slice(0,12).map((job:any)=>{const rec=(q.data?.recommendations??[]).find((r:any)=>r.job_id===job.id&&r.status==="candidate");return <div key={job.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm"><div><b>{job.job_type}</b><p className="text-xs text-muted-foreground">{job.priority} · {(job.stops??[]).length} stop(s)</p></div><div className="flex gap-2">{rec?<><Badge variant="outline">score {Number(rec.score).toFixed(1)}</Badge><Button size="sm" onClick={()=>run(()=>applyRecFn({data:{tenantId,recommendationId:rec.id}}),"Assignment applied")}>Apply</Button></>:<Button size="sm" variant="outline" onClick={()=>run(()=>recommendFn({data:{tenantId,productKey,jobId:job.id,limit:5}}),"Assignment candidates generated")}>Recommend</Button>}</div></div>})}</div></CardContent></Card>
  </AppShell>
 }
