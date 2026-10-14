@@ -27,12 +27,10 @@ export function canonicalGithubRepo(value) {
   if (typeof raw !== "string" || !raw.trim()) return null;
   const input = raw.trim();
   let normalized;
-  if (/^https:\/\/github\.com\//i.test(input)) {
-    try {
-      const url = new URL(input);
-      if (url.hostname !== "github.com" || url.username || url.password || url.search || url.hash) return null;
-      normalized = url.pathname.replace(/^\/+|\/+$/g, "").replace(/\.git$/i, "");
-    } catch { return null; }
+  if (/^https:\/\//i.test(input)) {
+    const match = /^https:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9_.-]+)\/?$/i.exec(input);
+    if (!match) return null;
+    normalized = match[1] + "/" + match[2].replace(/\.git$/i, "");
   } else {
     normalized = input.replace(/\.git$/i, "");
   }
