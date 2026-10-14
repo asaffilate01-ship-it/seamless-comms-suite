@@ -22,7 +22,9 @@ export const getFinanceTenantView=createServerFn({method:"POST"})
     .eq("tenant_id",data.tenantId).eq("product_key",data.productKey).maybeSingle();
   if(member.error||!member.data)throw new Error("Tenant product access denied");
   const recommendations=recommendFinanceConnectors(data.productKey,data.brand);
-  if(!recommendations.length)return {recommendations:[],bindings:[],programmes:[],liveCount:0};
+  if(!recommendations.length)return {recommendations:[],bindings:[],programmes:[],addon:null,
+   commercialOwners:{externalFinance:"Zoryn Pay",saasSubscription:"Omniqora"},
+   liveCount:0,verifiedForRealMoney:false,notice:"No approved finance provider available"};
   const keys=recommendations.map(r=>r.key);
   const [bindings,approvals,addon]=await Promise.all([
     db.from("provider_bindings").select("id,tenant_id,product_key,provider_key,environment,status,last_verified_at")
