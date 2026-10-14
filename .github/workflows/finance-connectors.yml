@@ -1,0 +1,31 @@
+name: Verify Finance Factory
+on:
+  pull_request:
+    paths:
+      - 'src/modules/finance-connectors/**'
+      - 'src/modules/platform/providers.ts'
+      - 'src/routes/_authenticated/app.finance-connectors.tsx'
+      - 'src/routes/api.finance.catalogue.ts'
+      - 'supabase/migrations/*finance*.sql'
+      - 'verification/control-plane/finance-connectors.test.mjs'
+      - 'adapters/finance-connectors/**'
+      - 'package.json'
+      - '.github/workflows/finance-connectors.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  finance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Dependencies
+        run: bun install --frozen-lockfile
+      - name: Finance factory and tenant isolation tests
+        run: bun run test:finance
+      - name: Generate TanStack route types and build Finance Factory
+        run: bun run build
+      - name: TypeScript API and UI validation
+        run: bun run typecheck
