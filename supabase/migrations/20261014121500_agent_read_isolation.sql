@@ -18,31 +18,31 @@ CREATE POLICY "dispatch jobs own read" ON public.dispatch_jobs FOR SELECT TO aut
   ARRAY['owner','admin']::public.app_role[]) OR
   (public.is_tenant_member(tenant_id,auth.uid()) AND EXISTS(
    SELECT 1 FROM public.dispatch_agents a WHERE a.id=assigned_agent_id
-    AND a.tenant_id=tenant_id AND a.product_key=product_key
+    AND a.tenant_id=dispatch_jobs.tenant_id AND a.product_key=dispatch_jobs.product_key
     AND a.user_id=auth.uid() AND a.status<>'suspended')));
 CREATE POLICY "dispatch stops own read" ON public.dispatch_job_stops FOR SELECT TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),
   ARRAY['owner','admin']::public.app_role[]) OR EXISTS(
-   SELECT 1 FROM public.dispatch_jobs j WHERE j.id=job_id AND j.tenant_id=tenant_id));
+   SELECT 1 FROM public.dispatch_jobs j WHERE j.id=dispatch_job_stops.job_id AND j.tenant_id=dispatch_job_stops.tenant_id));
 CREATE POLICY "dispatch vehicles own read" ON public.dispatch_vehicles FOR SELECT TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),
   ARRAY['owner','admin']::public.app_role[]) OR EXISTS(
-   SELECT 1 FROM public.dispatch_jobs j WHERE j.assigned_vehicle_id=id
-    AND j.tenant_id=tenant_id AND j.product_key=product_key));
+   SELECT 1 FROM public.dispatch_jobs j WHERE j.assigned_vehicle_id=dispatch_vehicles.id
+    AND j.tenant_id=dispatch_vehicles.tenant_id AND j.product_key=dispatch_vehicles.product_key));
 CREATE POLICY "dispatch positions own read" ON public.dispatch_agent_positions FOR SELECT TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),
   ARRAY['owner','admin']::public.app_role[]) OR EXISTS(
-   SELECT 1 FROM public.dispatch_agents a WHERE a.id=agent_id AND a.tenant_id=tenant_id
-    AND a.product_key=product_key AND a.user_id=auth.uid() AND a.status<>'suspended'));
+   SELECT 1 FROM public.dispatch_agents a WHERE a.id=agent_id AND a.tenant_id=dispatch_agent_positions.tenant_id
+    AND a.product_key=dispatch_agent_positions.product_key AND a.user_id=auth.uid() AND a.status<>'suspended'));
 CREATE POLICY "dispatch pod own read" ON public.dispatch_pod FOR SELECT TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),
   ARRAY['owner','admin']::public.app_role[]) OR EXISTS(
-   SELECT 1 FROM public.dispatch_jobs j WHERE j.id=job_id AND j.tenant_id=tenant_id));
+   SELECT 1 FROM public.dispatch_jobs j WHERE j.id=dispatch_pod.job_id AND j.tenant_id=dispatch_pod.tenant_id));
 CREATE POLICY "dispatch tracking own read" ON public.tracking_snapshots FOR SELECT TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),
   ARRAY['owner','admin']::public.app_role[]) OR (
    subject_type='dispatch_job' AND EXISTS(
-    SELECT 1 FROM public.dispatch_jobs j WHERE j.id::text=subject_id AND j.tenant_id=tenant_id)));
+    SELECT 1 FROM public.dispatch_jobs j WHERE j.id::text=tracking_snapshots.subject_id AND j.tenant_id=tracking_snapshots.tenant_id)));
 CREATE POLICY "dispatch signed tokens admin read" ON public.public_tracking_tokens FOR SELECT TO authenticated
  USING(public.is_platform_admin(auth.uid()) OR public.has_tenant_role(tenant_id,auth.uid(),
   ARRAY['owner','admin']::public.app_role[]));
