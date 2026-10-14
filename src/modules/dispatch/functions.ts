@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHash } from "node:crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireService, requireAdminRole } from "@/modules/platform/access";
 const uuid = z.string().uuid();
 export const listDispatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -245,14 +246,19 @@ export const createTrackingToken = createServerFn({ method: "POST" })
       z
         .object({
           tenantId: uuid,
-          subjectType: z.string().min(1).max(80),
-          subjectId: z.string().min(1).max(200),
+          subjectType: z.literal("dispatch_job"),
+          subjectId: uuid,
           hours: z.number().int().min(1).max(168).default(24),
         })
         .parse(i),
   )
   .handler(async ({ context, data }) => {
+    const access = await requireService(context, data.tenantId, "omniqora.tracking");
+    requireAdminRole(access.role);
     const db = context.supabase as any;
+    const { data: job, error: jobError } = await db.from("dispatch_jobs")
+      .select("id").eq("tenant_id", data.tenantId).eq("id", data.subjectId).maybeSingle();
+    if (jobError || !job) throw new Error("Tracking subject not found in tenant");
     const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
       b.toString(16).padStart(2, "0"),
     ).join("");
