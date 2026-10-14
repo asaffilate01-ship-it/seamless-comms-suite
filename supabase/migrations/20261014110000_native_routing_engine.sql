@@ -406,7 +406,7 @@ BEGIN
   EXISTS(
     SELECT 1 FROM public.fleet_shifts s2
     WHERE s2.tenant_id=_tenant AND s2.product_key=_product AND s2.agent_id=a.id
-      AND s2.planned_status IN('scheduled','confirmed')
+      AND s2.status IN('scheduled','active')
   ) has_any_shift
  ) sh ON true
  LEFT JOIN LATERAL(
