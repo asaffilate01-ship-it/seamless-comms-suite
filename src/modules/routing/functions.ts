@@ -102,7 +102,7 @@ export const runRoadMatrixPreview=createServerFn({method:"POST"})
   .eq("status","active").is("brand_id",null).is("location_id",null).limit(5);
  if(bindingError)throw new Error("Map provider readiness not available");
  const now=Date.now();
- const verified=(bindings??[]).some((row:any)=>{
+ const verifiedBinding=(bindings??[]).find((row:any)=>{
   const age=now-Date.parse(String(row.last_verified_at??""));
   return Number.isFinite(age)&&age>=0&&age<7*86400000&&
    row.health?.matrixReady===true&&row.health?.independentlyVerified===true&&
@@ -110,7 +110,7 @@ export const runRoadMatrixPreview=createServerFn({method:"POST"})
  });
  const key=process.env.OMNIQORA_OPENROUTESERVICE_API_KEY??"";
  const approved=Array.isArray(policy.provider_order)&&
-  policy.provider_order.includes("maps.openrouteservice")&&verified&&!!key;
+  policy.provider_order.includes("maps.openrouteservice")&&!!verifiedBinding&&!!key;
  if(!approved&&policy.allow_haversine_fallback!==true)
   throw new Error("No verified road matrix provider; fallback disabled by policy");
 
@@ -126,9 +126,26 @@ export const runRoadMatrixPreview=createServerFn({method:"POST"})
   const result=approved
    ?await orsRoadMatrix({origins,destinations,mode:job.travel_mode as MatrixMode,apiKey:key})
    :straightLineMatrix(origins,destinations);
-  // Recheck current entitlement/role after a potentially slow external call.
+  // Recheck current entitlement, role, product and provider approval after network I/O.
   const current=await requireService(context,data.tenantId,"omniqora.routing-engine");
   requireAdminRole(current.role);
+  const {data:productNow,error:productError}=await db.from("tenant_products")
+   .select("status").eq("tenant_id",data.tenantId)
+   .eq("product_key",data.productKey).maybeSingle();
+  if(productError||productNow?.status!=="active")throw new Error("Product no longer active");
+  if(approved){
+   const {data:bindingNow,error:bindingNowError}=await db.from("provider_bindings")
+    .select("status,health,last_verified_at,secret_refs")
+    .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
+    .eq("provider_key","maps.openrouteservice").eq("environment","production")
+    .eq("status","active").is("brand_id",null).is("location_id",null).limit(5);
+   if(bindingNowError||!(bindingNow??[]).some((row:any)=>{
+    const age=Date.now()-Date.parse(String(row.last_verified_at??""));
+    return age>=0&&age<7*86400000&&row.health?.matrixReady===true&&
+     row.health?.independentlyVerified===true&&
+     typeof row.secret_refs?.api_key==="string"&&row.secret_refs.api_key.length>0;
+   }))throw new Error("Provider binding revoked during road matrix request");
+  }
   const{data:written,error:writeError}=await service.rpc("service_complete_road_matrix",{
    _tenant:data.tenantId,_product:data.productKey,_job:data.matrixJobId,
    _provider:result.provider,_quality:result.quality,_cells:result.cells
