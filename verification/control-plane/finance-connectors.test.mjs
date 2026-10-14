@@ -10,6 +10,23 @@ const catSource=await readFile(new URL("src/modules/finance-connectors/catalogue
 const catUrl="data:text/javascript;base64,"+Buffer.from(compile(catSource)).toString("base64");
 const catalogue=await import(catUrl);
 assert.equal(catalogue.FINANCE_PROVIDERS.length,25);
+const commercialSource=await readFile(new URL("src/modules/finance-connectors/commercial.ts",root),"utf8");
+const commercial=await import("data:text/javascript;base64,"+Buffer.from(compile(commercialSource)).toString("base64"));
+assert.equal(commercial.ownerOfFinanceRevenue("lender_referral_commission"),"zoryn_pay");
+assert.equal(commercial.ownerOfFinanceRevenue("checkout_provider_share"),"zoryn_pay");
+assert.equal(commercial.ownerOfFinanceRevenue("personal_credit_referral_commission"),"zoryn_pay");
+assert.equal(commercial.ownerOfFinanceRevenue("finance_connector_subscription"),"omniqora");
+assert.equal(commercial.ownerOfFinanceRevenue("finance_connector_setup_fee"),"omniqora");
+assert.throws(()=>commercial.assertCommercialPayee({kind:"lender_referral_commission",payee:"omniqora"}),/Revenue ownership conflict/);
+assert.throws(()=>commercial.assertCommercialPayee({kind:"finance_connector_subscription",payee:"zoryn_pay"}),/Revenue ownership conflict/);
+assert.equal(commercial.recognisedCommercialIncome({kind:"funding_principal",amountMinor:2500000,status:"settled",contractVerified:true}),0);
+assert.equal(commercial.recognisedCommercialIncome({kind:"checkout_gmv",amountMinor:150000,status:"settled",contractVerified:true}),0);
+assert.equal(commercial.recognisedCommercialIncome({kind:"lender_referral_commission",amountMinor:30000,status:"candidate",contractVerified:true}),0);
+assert.equal(commercial.recognisedCommercialIncome({kind:"lender_referral_commission",amountMinor:30000,status:"settled",contractVerified:false}),0);
+assert.equal(commercial.recognisedCommercialIncome({kind:"lender_referral_commission",amountMinor:30000,status:"settled",contractVerified:true}),30000);
+assert.equal(commercial.recognisedCommercialIncome({kind:"finance_connector_subscription",amountMinor:2900,status:"invoiced",contractVerified:true}),2900);
+assert(commercial.FINANCE_ADDON_PLANS.every(p=>p.pricing==="quote_required"));
+
 const platformSource=await readFile(new URL("src/modules/platform/providers.ts",root),"utf8");
 const platformProviders=await import("data:text/javascript;base64,"+Buffer.from(compile(platformSource)).toString("base64"));
 for(const kind of ["merchant_capital","consumer_checkout","b2b_terms","personal_finance"]){
@@ -124,6 +141,19 @@ assert(cafe?.tenantId);
 await db.exec("SET ROLE service_role");
 await db.query("UPDATE public.tenant_products SET status='active' WHERE tenant_id=$1 AND product_key='dishbee'",[cafe.tenantId]);
 await db.exec("RESET ROLE");
+const requestedAddon=await asAdmin(async()=> (await db.query(
+ "SELECT public.finance_request_connector_addon($1,$2,$3) AS id",
+ [cafe.tenantId,"dishbee","finance_connect_pro"])).rows[0].id);
+assert(requestedAddon,"Finance SaaS add-on quote must be requestable by authorised SaaS owner");
+const secondAddon=await asAdmin(async()=> (await db.query(
+ "SELECT public.finance_request_connector_addon($1,$2,$3) AS id",
+ [cafe.tenantId,"dishbee","finance_connect_pro"])).rows[0].id);
+assert.equal(secondAddon,requestedAddon,"Same tenant SaaS product must not create duplicate subscriptions");
+const addonRecord=(await db.query("SELECT plan_key,payee,pricing_status,monthly_fee_minor,status FROM public.finance_connector_addon_subscriptions WHERE id=$1",[requestedAddon])).rows[0];
+assert.deepEqual(addonRecord,{plan_key:"finance_connect_pro",payee:"omniqora",pricing_status:"quote_required",monthly_fee_minor:null,status:"requested"});
+await assert.rejects(()=>asAdmin(()=>db.query(
+ "SELECT public.finance_request_connector_addon($1,$2,$3)",
+ [cafe.tenantId,"dishbee","unapproved_fake_plan"])),/Invalid finance connector plan/);
 const requestKey="11111111-1111-4111-8111-111111111111",recordKey="22222222-2222-4222-8222-222222222222";
 const createArgs=[cafe.tenantId,"dishbee","finance.youlend",recordKey,1500000,requestKey,null];
 const caseId=await asAdmin(async()=> (await db.query("SELECT public.finance_create_draft($1,$2,$3,$4,$5,$6,$7) AS id",createArgs)).rows[0].id);
