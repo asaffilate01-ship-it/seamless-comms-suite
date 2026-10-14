@@ -8,7 +8,9 @@ import {Button} from "@/components/ui/button";
 import {Badge} from "@/components/ui/badge";
 import {useTenant} from "@/hooks/useTenant";
 import {getTenantControlPlane} from "@/lib/control-plane.functions";
-import {getFinanceConnectorCatalogue,getFinanceTenantView} from "@/modules/finance-connectors/functions";
+import {getFinanceConnectorCatalogue,getFinanceTenantView,requestFinanceConnectorAddon} from "@/modules/finance-connectors/functions";
+import {FINANCE_ADDON_PLANS} from "@/modules/finance-connectors/commercial";
+import {toast} from "sonner";
 import {recommendFinanceConnectors,type FinanceFamily} from "@/modules/finance-connectors/catalogue";
 import {FinanceJourneyWorkspace} from "@/modules/finance-connectors/FinanceJourneyWorkspace";
 import {ArrowRight,Building2,Landmark,LockKeyhole,RefreshCw,ShieldCheck,ShoppingBag,WalletCards} from "lucide-react";
@@ -28,6 +30,9 @@ function FinanceConnectorsPage(){
  const getTenant=useServerFn(getTenantControlPlane);
  const getCatalogue=useServerFn(getFinanceConnectorCatalogue);
  const getReadiness=useServerFn(getFinanceTenantView);
+ const requestAddon=useServerFn(requestFinanceConnectorAddon);
+ const [addonPlan,setAddonPlan]=useState<"finance_connect_access"|"finance_connect_pro"|"finance_connect_enterprise">("finance_connect_pro");
+ const [addonBusy,setAddonBusy]=useState(false);
  const tenant=useQuery({queryKey:["finance-control-plane",tenantId],
   queryFn:()=>getTenant({data:{tenantId}}),enabled:!!tenantId,retry:false});
  const catalogue=useQuery({queryKey:["finance-connectors-catalogue"],
@@ -111,6 +116,33 @@ function FinanceConnectorsPage(){
     })}
     {!visible.length&&<Card><CardContent className="p-6 text-sm text-muted-foreground">No finance connector is recommended for this selected context. That does not prevent a future reviewed integration.</CardContent></Card>}
    </div>
+   <Card><CardContent className="p-5">
+    <h2 className="font-semibold">Finance connectors — subscription add-on</h2>
+    <p className="mt-2 text-sm text-muted-foreground"><b>Omniqora</b> receives only the agreed technology subscription/setup fee. <b>Zoryn Pay</b> receives any contracted external lender, BNPL, payment margin or referral income. Other SaaS brands are distribution channels, not the external commission payee.</p>
+    <div className="mt-4 grid gap-3 md:grid-cols-3">
+     {FINANCE_ADDON_PLANS.map(plan=><button type="button" key={plan.key}
+      onClick={()=>setAddonPlan(plan.key)} className={"rounded-lg border p-4 text-left "+(addonPlan===plan.key?"border-primary bg-primary/5":"border-border")}>
+      <b className="text-sm">{plan.name}</b><p className="mt-2 text-xs text-muted-foreground">Price to be agreed in the SaaS contract.</p>
+      <p className="mt-2 text-xs text-muted-foreground">{plan.includes.join(" · ").replaceAll("_"," ")}</p>
+     </button>)}
+    </div>
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+     <div className="text-xs text-muted-foreground">
+      Current subscription: <b>{tenantView.data?.addon?.status??"Not requested"}</b>
+      {tenantView.data?.addon?.pricingStatus==="agreed"&&tenantView.data.addon.monthlyFeeMinor!==null
+       ? " · "+new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(tenantView.data.addon.monthlyFeeMinor/100)+"/month"
+       :" · Quote required"}
+     </div>
+     <Button disabled={!tenantId||!productKey||addonBusy||Boolean(tenantView.data?.addon&&tenantView.data.addon.status!=="requested")}
+      onClick={async()=>{setAddonBusy(true);try{
+       await requestAddon({data:{tenantId,productKey,planKey:addonPlan}});
+       toast.success("Omniqora finance add-on quote requested; no payment taken");
+       await tenantView.refetch();
+      }catch(e){toast.error(e instanceof Error?e.message:"Unable to request add-on");}
+      finally{setAddonBusy(false);}}}>Request SaaS add-on quote</Button>
+    </div>
+    <p className="mt-3 text-xs text-muted-foreground">A quote request never activates a lender, processes a credit application, creates an invoice or accepts a finance provider's terms.</p>
+   </CardContent></Card>
    <FinanceJourneyWorkspace tenantId={tenantId} productKey={productKey} availableKeys={recommendations.map(p=>p.key)}/>
    <Card><CardContent className="p-5">
     <h2 className="font-semibold">Activation checklist</h2>
