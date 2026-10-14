@@ -3,6 +3,7 @@ import {z} from "zod";
 import {requireSupabaseAuth} from "@/integrations/supabase/auth-middleware";
 import {requireAdminRole,requireService,requireTenantMembership} from "@/modules/platform/access";
 import {optimiseNativeRoutes,type RoutingJob,type RoutingResource} from "@/modules/routing/service.server";
+import {orsRoadMatrix,straightLineMatrix,type MatrixPoint,type MatrixMode} from "@/modules/routing/road-matrix.provider";
 
 const uuid=z.string().uuid();
 const product=z.string().min(2).max(80);
@@ -10,11 +11,11 @@ const scope=z.object({tenantId:uuid,productKey:product});
 
 export const getRoutingWorkspace=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:z.infer<typeof scope>)=>scope.parse(i)).handler(async({context,data})=>{
- await requireTenantMembership(context,data.tenantId);const db=context.supabase as any;
+ const access=await requireTenantMembership(context,data.tenantId);requireAdminRole(access.role);const db=context.supabase as any;
  const rs=await Promise.all([
   db.from("routing_policies").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("policy_key"),
   db.from("routing_optimisation_jobs").select("*,routes:routing_route_plans(*,stops:routing_route_plan_stops(*))").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(30),
-  db.from("routing_matrix_jobs").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(50),
+  db.from("routing_matrix_jobs").select("*,cells:routing_matrix_cells(origin_index,destination_index,status,distance_metres,duration_seconds)").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(10),
   db.from("routing_assignment_recommendations").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("generated_at",{ascending:false}).limit(100),
   db.from("routing_provider_observations").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("observed_at",{ascending:false}).limit(200),
   db.from("dispatch_jobs").select("*,stops:dispatch_job_stops(*)").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200)
@@ -44,23 +45,123 @@ export const saveRoutingPolicy=createServerFn({method:"POST"}).middleware([requi
  if(error)throw new Error(error.message);return row;
 });
 
-const matrix=scope.extend({
- travelMode:z.enum(["driving","cycling","walking","truck","motorcycle"]).default("driving"),
- origins:z.array(z.object({lat:z.number().min(-90).max(90),lng:z.number().min(-180).max(180)})).min(1).max(100),
- destinations:z.array(z.object({lat:z.number().min(-90).max(90),lng:z.number().min(-180).max(180)})).min(1).max(100),
- options:z.record(z.string(),z.unknown()).default({})
+// Admission is one database transaction; client cannot issue 10,000-element matrices.
+const coordinate=z.object({lat:z.number().finite().min(-90).max(90),
+ lng:z.number().finite().min(-180).max(180)}).strict();
+const queueInput=scope.extend({
+ travelMode:z.enum(["driving","walking","cycling"]).default("driving"),
+ origins:z.array(coordinate).min(1).max(8),
+ destinations:z.array(coordinate).min(1).max(8),
+ trafficAware:z.boolean().default(false),
+ requestKey:uuid
+}).strict().refine(x=>x.origins.length*x.destinations.length<=64,
+ {message:"Maximum 64 route matrix elements"});
+export const createRoutingMatrixJob=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth]).inputValidator((i:unknown)=>queueInput.parse(i))
+.handler(async({context,data})=>{
+ const access=await requireService(context,data.tenantId,"omniqora.routing-engine");
+ requireAdminRole(access.role);
+ if(data.trafficAware)throw new Error("Google traffic mode requires licensing and retention activation first");
+ const{data:id,error}=await(context.supabase as any).rpc("routing_queue_matrix",{
+  _tenant:data.tenantId,_product:data.productKey,_mode:data.travelMode,
+  _origins:data.origins,_destinations:data.destinations,
+  _traffic_aware:false,_request_key:data.requestKey
+ });
+ if(error)throw new Error(error.message);
+ return{matrixJobId:id as string,status:"queued" as const,
+  elementCount:data.origins.length*data.destinations.length};
 });
-export const createRoutingMatrixJob=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
-.inputValidator((i:z.input<typeof matrix>)=>matrix.parse(i)).handler(async({context,data})=>{
- const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireAdminRole(access.role);
+
+const matrixExecutionInput=scope.extend({matrixJobId:uuid}).strict();
+export const runRoadMatrixPreview=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:unknown)=>matrixExecutionInput.parse(i))
+.handler(async({context,data})=>{
+ const access=await requireService(context,data.tenantId,"omniqora.routing-engine");
+ requireAdminRole(access.role);
  const db=context.supabase as any;
- const ranked=await db.rpc("routing_rank_providers",{_tenant:data.tenantId,_product:data.productKey,_operation:"matrix",_lookback_hours:168});
- if(ranked.error)throw new Error(ranked.error.message);
- const providerKey=ranked.data?.[0]?.provider_key??"routing.native";
- const{data:row,error}=await db.from("routing_matrix_jobs").insert({
-  tenant_id:data.tenantId,product_key:data.productKey,provider_key:providerKey,travel_mode:data.travelMode,
-  origins:data.origins,destinations:data.destinations,options:data.options,status:"queued",requested_by:context.userId
- }).select("*").single();if(error)throw new Error(error.message);return row;
+ const {data:job,error:jobError}=await db.from("routing_matrix_jobs").select("*")
+  .eq("id",data.matrixJobId).eq("tenant_id",data.tenantId)
+  .eq("product_key",data.productKey).maybeSingle();
+ if(jobError||!job||job.status!=="queued")throw new Error("Queued tenant routing matrix required");
+ if(job.options?.trafficAware===true)throw new Error("Traffic-aware Google matrix not enabled");
+ if(!["driving","walking","cycling"].includes(job.travel_mode))
+  throw new Error("Unsupported matrix travel mode");
+ const origins=coordinate.array().min(1).max(8).parse(job.origins) as MatrixPoint[];
+ const destinations=coordinate.array().min(1).max(8).parse(job.destinations) as MatrixPoint[];
+ if(origins.length*destinations.length>64)throw new Error("Oversized stored routing matrix");
+ const {data:policy,error:policyError}=await db.from("routing_policies")
+  .select("provider_order,allow_haversine_fallback,status")
+  .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
+  .eq("policy_key","default").eq("status","active").maybeSingle();
+ if(policyError||!policy)throw new Error("Active routing policy required");
+ const {data:bindings,error:bindingError}=await db.from("provider_bindings")
+  .select("provider_key,status,environment,health,last_verified_at,secret_refs")
+  .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
+  .eq("provider_key","maps.openrouteservice").eq("environment","production")
+  .eq("status","active").is("brand_id",null).is("location_id",null).limit(5);
+ if(bindingError)throw new Error("Map provider readiness not available");
+ const now=Date.now();
+ const verifiedBinding=(bindings??[]).find((row:any)=>{
+  const age=now-Date.parse(String(row.last_verified_at??""));
+  return Number.isFinite(age)&&age>=0&&age<7*86400000&&
+   row.health?.matrixReady===true&&row.health?.independentlyVerified===true&&
+   typeof row.secret_refs?.api_key==="string"&&row.secret_refs.api_key.length>0;
+ });
+ const key=process.env.OMNIQORA_OPENROUTESERVICE_API_KEY??"";
+ const approved=Array.isArray(policy.provider_order)&&
+  policy.provider_order.includes("maps.openrouteservice")&&!!verifiedBinding&&!!key;
+ if(!approved&&policy.allow_haversine_fallback!==true)
+  throw new Error("No verified road matrix provider; fallback disabled by policy");
+
+ // Claim before a provider call; a duplicate click cannot cause a second charge.
+ const{ supabaseAdmin }=await import("@/integrations/supabase/client.server");
+ const service=supabaseAdmin as any;
+ const{data:claimed,error:claimError}=await service.from("routing_matrix_jobs")
+  .update({status:"running",error:null}).eq("id",data.matrixJobId)
+  .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
+  .eq("status","queued").select("id").maybeSingle();
+ if(claimError||!claimed)throw new Error("Road matrix already claimed or cancelled");
+ try{
+  const result=approved
+   ?await orsRoadMatrix({origins,destinations,mode:job.travel_mode as MatrixMode,apiKey:key})
+   :straightLineMatrix(origins,destinations);
+  // Recheck current entitlement, role, product and provider approval after network I/O.
+  const current=await requireService(context,data.tenantId,"omniqora.routing-engine");
+  requireAdminRole(current.role);
+  const {data:productNow,error:productError}=await db.from("tenant_products")
+   .select("status").eq("tenant_id",data.tenantId)
+   .eq("product_key",data.productKey).maybeSingle();
+  if(productError||productNow?.status!=="active")throw new Error("Product no longer active");
+  if(approved){
+   const {data:bindingNow,error:bindingNowError}=await db.from("provider_bindings")
+    .select("status,health,last_verified_at,secret_refs")
+    .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
+    .eq("provider_key","maps.openrouteservice").eq("environment","production")
+    .eq("status","active").is("brand_id",null).is("location_id",null).limit(5);
+   if(bindingNowError||!(bindingNow??[]).some((row:any)=>{
+    const age=Date.now()-Date.parse(String(row.last_verified_at??""));
+    return age>=0&&age<7*86400000&&row.health?.matrixReady===true&&
+     row.health?.independentlyVerified===true&&
+     typeof row.secret_refs?.api_key==="string"&&row.secret_refs.api_key.length>0;
+   }))throw new Error("Provider binding revoked during road matrix request");
+  }
+  const{data:written,error:writeError}=await service.rpc("service_complete_road_matrix",{
+   _tenant:data.tenantId,_product:data.productKey,_job:data.matrixJobId,
+   _provider:result.provider,_quality:result.quality,_cells:result.cells
+  });
+  if(writeError)throw new Error("Unable to store verified matrix receipt");
+  return{jobId:data.matrixJobId,status:result.quality==="straight_line_estimate"?"fallback":"completed",
+   provider:result.provider,quality:result.quality,elementCount:Number(written),
+   warning:result.quality==="straight_line_estimate"
+    ?"Straight-line distance only. No road ETA calculated.":null};
+ }catch(e){
+  await service.from("routing_matrix_jobs").update({
+   status:"failed",error:"Road matrix execution unavailable",completed_at:new Date().toISOString()
+  }).eq("id",data.matrixJobId).eq("tenant_id",data.tenantId)
+   .eq("product_key",data.productKey).eq("status","running");
+  throw new Error(e instanceof Error?e.message:"Road matrix failed");
+ }
 });
 
 export const createRoutingOptimisation=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
