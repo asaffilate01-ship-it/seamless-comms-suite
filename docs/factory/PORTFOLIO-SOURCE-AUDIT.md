@@ -26,7 +26,7 @@ From the branch containing the expanded registry:
 
 An explicit optional GitHub check is also available:
 
-    GH_TOKEN=<read-only-token> node scripts/factory-portfolio-audit.mjs --github
+    GH_TOKEN=YOUR_READ_ONLY_TOKEN node scripts/factory-portfolio-audit.mjs --github
 
 Use a fine-grained, **read-only** token with access to the intended private repositories; keep it in the environment or an approved secret manager, never in Git. Without sufficient permissions, GitHub's 404 response cannot distinguish a deleted repository from a private repository the caller cannot view. A successful lookup confirms access only, not code quality or deployment. The default offline audit requires no credentials and makes no network calls.
 
