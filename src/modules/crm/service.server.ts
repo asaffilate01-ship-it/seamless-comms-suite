@@ -10,6 +10,21 @@ const schema=z.discriminatedUnion("operation",[
  base.extend({operation:z.literal("company.upsert"),externalRef:z.string().min(1).max(200),name:z.string().min(1).max(240),
   legalName:z.string().max(240).nullish(),website:z.string().url().max(500).nullish(),industry:z.string().max(160).nullish(),
   status:z.enum(["active","inactive","prospect","customer","partner","supplier"]).default("active"),metadata:z.record(z.string(),z.unknown()).default({})}),
+
+ base.extend({operation:z.literal("lead.upsert"),externalRef:z.string().min(1).max(200),
+  title:z.string().trim().min(1).max(240),source:z.string().max(120).nullish(),
+  status:z.enum(["new","working","qualified","unqualified","converted","closed"]).default("new"),
+  score:z.number().min(0).max(1000).nullish(),
+  personExternalRef:z.string().max(200).nullish(),companyExternalRef:z.string().max(200).nullish(),
+  metadata:z.record(z.string(),z.unknown()).default({})}),
+ base.extend({operation:z.literal("opportunity.upsert"),externalRef:z.string().min(1).max(200),
+  title:z.string().trim().min(1).max(240),pipelineKey:z.string().min(1).max(120),
+  stageKey:z.string().min(1).max(120),personExternalRef:z.string().max(200).nullish(),
+  companyExternalRef:z.string().max(200).nullish(),amount:z.number().nonnegative().nullish(),
+  currency:z.string().regex(/^[A-Z]{3}$/).nullish(),
+  expectedCloseAt:z.string().datetime().nullish(),
+  status:z.enum(["open","won","lost","cancelled"]).default("open"),
+  metadata:z.record(z.string(),z.unknown()).default({})}),
  base.extend({operation:z.literal("activity.record"),externalRef:z.string().min(1).max(200),activityType:z.enum(["note","call","email","sms","whatsapp","meeting","task","status_change","lead_event","opportunity_event","case_event","system_event"]),
   summary:z.string().min(1).max(1000),personExternalRef:z.string().max(200).nullish(),companyExternalRef:z.string().max(200).nullish(),
   occurredAt:z.string().datetime().optional(),metadata:z.record(z.string(),z.unknown()).default({})}),
@@ -32,6 +47,19 @@ async function entitlement(db:any,tenantId:string){
  const{data,error}=await db.from("tenant_services").select("status,valid_until").eq("tenant_id",tenantId).eq("service_key","omniqora.crm").maybeSingle();
  if(error)throw new Error(error.message);
  if(!data||!["active","trial"].includes(data.status)||(data.valid_until&&Date.parse(data.valid_until)<=Date.now()))throw new Error("Omniqora CRM entitlement required");
+}
+
+
+/** Link only within the exact authorised product. Never auto-merge on email or phone. */
+async function linkedSourceId(db:any,table:"crm_people"|"crm_companies",
+ input:{tenantId:string;productKey:string},externalRef?:string|null):Promise<string|null>{
+ if(!externalRef)return null;
+ const {data,error}=await db.from(table).select("id")
+   .eq("tenant_id",input.tenantId).eq("source_product_key",input.productKey)
+   .eq("external_ref",externalRef).maybeSingle();
+ if(error)throw new Error(error.message);
+ if(!data)throw new Error("Source-linked CRM record not found in tenant/product");
+ return String(data.id);
 }
 
 export async function serveCrmService(request:Request){
@@ -68,6 +96,58 @@ export async function serveCrmService(request:Request){
    const query=existing.data?db.from("crm_companies").update(values).eq("id",existing.data.id):db.from("crm_companies").insert(values);
    const{data,error}=await query.select("*").single();if(error||!data)throw new Error(error?.message??"CRM company write failed");
    await db.from("platform_service_credentials").update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+   return reply(data,existing.data?200:201);
+  }
+
+
+  if(input.operation==="lead.upsert"){
+   const [personId,companyId]=await Promise.all([
+    linkedSourceId(db,"crm_people",input,input.personExternalRef),
+    linkedSourceId(db,"crm_companies",input,input.companyExternalRef)]);
+   const values={tenant_id:input.tenantId,source_product_key:input.productKey,external_ref:input.externalRef,
+    title:input.title,source:input.source??null,status:input.status,score:input.score??null,
+    person_id:personId,company_id:companyId,metadata:input.metadata};
+   const existing=await db.from("crm_leads").select("id").eq("tenant_id",input.tenantId)
+    .eq("source_product_key",input.productKey).eq("external_ref",input.externalRef).maybeSingle();
+   if(existing.error)throw new Error(existing.error.message);
+   const q=existing.data?db.from("crm_leads").update(values).eq("id",existing.data.id)
+     .eq("tenant_id",input.tenantId).eq("source_product_key",input.productKey):
+     db.from("crm_leads").insert(values);
+   const{data,error}=await q.select("*").single();
+   if(error||!data)throw new Error(error?.message??"CRM source lead sync failed");
+   return reply(data,existing.data?200:201);
+  }
+
+  if(input.operation==="opportunity.upsert"){
+   const [personId,companyId]=await Promise.all([
+    linkedSourceId(db,"crm_people",input,input.personExternalRef),
+    linkedSourceId(db,"crm_companies",input,input.companyExternalRef)]);
+   const pipeline=await db.from("crm_pipelines").select("id")
+    .eq("tenant_id",input.tenantId).eq("pipeline_key",input.pipelineKey)
+    .eq("is_active",true).maybeSingle();
+   if(pipeline.error||!pipeline.data)throw new Error("Approved tenant CRM pipeline required");
+   const stage=await db.from("crm_pipeline_stages")
+    .select("id,probability_percent,is_closed_won,is_closed_lost")
+    .eq("tenant_id",input.tenantId).eq("pipeline_id",pipeline.data.id)
+    .eq("stage_key",input.stageKey).maybeSingle();
+   if(stage.error||!stage.data)throw new Error("Valid stage for the tenant pipeline required");
+   const status=stage.data.is_closed_won?"won":stage.data.is_closed_lost?"lost":input.status;
+   if(status==="won"&&stage.data.is_closed_lost||status==="lost"&&stage.data.is_closed_won)
+     throw new Error("Opportunity outcome conflicts with pipeline stage");
+   const values={tenant_id:input.tenantId,source_product_key:input.productKey,
+    external_ref:input.externalRef,pipeline_id:pipeline.data.id,stage_id:stage.data.id,
+    title:input.title,person_id:personId,company_id:companyId,amount:input.amount??null,
+    currency:input.currency??null,expected_close_at:input.expectedCloseAt??null,
+    status,probability_percent:stage.data.probability_percent,metadata:input.metadata};
+   const existing=await db.from("crm_opportunities").select("id")
+     .eq("tenant_id",input.tenantId).eq("source_product_key",input.productKey)
+     .eq("external_ref",input.externalRef).maybeSingle();
+   if(existing.error)throw new Error(existing.error.message);
+   const q=existing.data?db.from("crm_opportunities").update(values).eq("id",existing.data.id)
+     .eq("tenant_id",input.tenantId).eq("source_product_key",input.productKey):
+     db.from("crm_opportunities").insert(values);
+   const{data,error}=await q.select("*").single();
+   if(error||!data)throw new Error(error?.message??"CRM source opportunity sync failed");
    return reply(data,existing.data?200:201);
   }
 
