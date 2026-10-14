@@ -9,3 +9,5 @@ Driver attestation records recipient name and note with verifiedByRecipient=fals
 This migration tightens inherited dispatch write policies and dispatcher SECURITY DEFINER RPCs to owners/admins so general tenant agents cannot change other workers' jobs. Existing external fleet or mobile workers stay on their separate authenticated service interface, which must be retested before activation.
 
 Before any live usage: pass full migrations and RLS tests with an owner, linked driver and stranger; verify cross-tenant and other-agent denials; test on-device geolocation, connection loss, suspended users, two open jobs, revoked links, POD, stale timestamps and retained location information. Offline queue, automatic road navigation, traffic-aware ETA, background location and verified recipient POD are later phases. No production migration or product cutover occurs in this change.
+
+A job with a dropoff stop requires explicit arrival at that dropoff before the driver can attest a handover. Drivers must never mark pickup as recipient delivery. Agent users see only their assigned job data through RLS and the authenticated workspace.

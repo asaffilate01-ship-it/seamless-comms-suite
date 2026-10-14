@@ -117,7 +117,9 @@ function FieldAgentWorkspace(){
 function JobPanel({job,busy,onStatus,onGps,onProof}:{job:AgentJob;busy:boolean;
   onStatus:(status:string)=>void;onGps:()=>void;onProof:(recipient:string,note:string)=>void}){
   const [recipient,setRecipient]=useState(""),[note,setNote]=useState("");
-  const eligibleProof=["arrived","in_progress","arrived_dropoff"].includes(job.status);
+  const hasDropoff=(job.stops??[]).some(s=>s.stop_kind==="dropoff");
+  const eligibleProof=hasDropoff?job.status==="arrived_dropoff":
+    ["arrived","in_progress"].includes(job.status);
   return <Card><CardContent className="space-y-3 p-5">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><h3 className="font-semibold">{job.job_type.replace(/_/g," ")}</h3>

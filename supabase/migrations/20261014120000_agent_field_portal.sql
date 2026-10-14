@@ -229,6 +229,8 @@ BEGIN
  IF j.assigned_agent_id IS DISTINCT FROM bound.agent_id OR
    j.status NOT IN('arrived','in_progress','arrived_dropoff')
  THEN RAISE EXCEPTION 'Driver is not at a recipient stop'; END IF;
+ IF EXISTS(SELECT 1 FROM public.dispatch_job_stops WHERE job_id=j.id AND stop_kind='dropoff')
+   AND j.status<>'arrived_dropoff' THEN RAISE EXCEPTION 'Dropoff arrival required before driver attestation'; END IF;
  IF length(trim(COALESCE(_recipient,'')))<2 OR length(_recipient)>160 OR
   length(COALESCE(_note,''))>1000 THEN RAISE EXCEPTION 'Invalid recipient'; END IF;
  INSERT INTO public.dispatch_pod(tenant_id,job_id,methods,recipient_name,note,metadata)
