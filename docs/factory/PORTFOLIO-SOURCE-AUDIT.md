@@ -18,14 +18,15 @@ Do not merge or activate draft provisioning solely because a product appears in 
 
 ## GitHub visibility reconciliation — 15 October 2026
 
-Compared the 77 distinct registry repository references with the 100 repositories currently visible to the linked GitHub account:
+The authenticated GitHub inventory was paginated (100 repositories on page 1, 12 on page 2). With **all 112 accessible repositories**, the source reconciliation is:
 
-- **7 registry references were not found in the accessible inventory:** learnbridge-pathway, pixel-perfect-render-6809, pixel-perfect-replicator-884, propertysphere-global, screen-snapshot-magic-973, teamup-connect-anywhere, voxavelle.
-- **30 accessible repositories are not referenced by this Factory registry**, including digital-creations-hub (iTechLounge master site), Cafe 1 repos, the Zoryn family, and experimentation/prototype repos.
+- **77 of 77 distinct Factory registry repository references are accessible** through the linked GitHub account.
+- **35 accessible repositories are not referenced by this Factory registry**, including digital-creations-hub (iTechLounge master site), Cafe 1 repos, Zoryn, and likely experiment/prototype or tenant-specific repositories. All require classification, not automatic SaaS provisioning.
+- **14 of 87 product identities still have no repository mapping**. Some may be valid concepts without source; the registrar must explicitly classify them.
 
-This is **a visibility and classification gap**, not evidence of repository deletion, a failed deployment, or 30 new SaaS products. Each entry needs an owner decision: canonical product, dependent/tenant repo, shared infrastructure, archived concept, alias, or out-of-scope. Do not auto-provision them.
+An early first-page-only comparison incorrectly flagged seven repository references as unavailable. That warning was cleared after fetching the second GitHub page. Repository visibility does **not** establish code quality, operational readiness or tenant activation.
 
-Private-repository GitHub Actions checks across several products are currently failing without usable steps or logs, while selected public-repository checks pass. Verify owner account GitHub Actions minutes, valid payment method, spending budgets, and runner access before treating these as application code failures. GitHub documentation: https://docs.github.com/en/billing/concepts/product-billing/github-actions . The root cause remains unverified.
+Private-repository GitHub Actions checks across several products are currently failing without usable steps or logs, while selected public-repository checks pass. Verify the GitHub owner account's Actions minutes, payment method, spending budgets, and runner access before treating these as application code failures. GitHub documentation: https://docs.github.com/en/billing/concepts/product-billing/github-actions . Root cause remains unverified.
 
 ### Repeatable, read-only commands
 
