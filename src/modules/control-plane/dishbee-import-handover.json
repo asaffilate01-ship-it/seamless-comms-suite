@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "purpose": "dishbee-import-handover",
+  "status": "registry_only_not_live",
+  "landlord": {
+    "productKey": "dishbee",
+    "sourceRepo": "asaffilate01-ship-it/dishbee-helper"
+  },
+  "rules": {
+    "independentDishbeeTenantIds": true,
+    "noAutomaticTenantCreation": true,
+    "noProductionCutover": true,
+    "noSharedPaymentCredentials": true,
+    "brandNotTenant": "Cafe1 within MealDeck St Albans is a MealDeck brand, not an independent Cafe 1 tenant.",
+    "futureProviders": [
+      "uber_direct",
+      "deliveroo_express",
+      "just_eat_go"
+    ]
+  },
+  "handovers": [
+    {
+      "factoryTenantKey": "cafe1stalbans",
+      "factoryBlueprintKey": "dishbee.cafe1stalbans",
+      "dishbeeBlueprintKey": "cafe1-st-albans",
+      "dishbeeTenantSlug": "cafe-1-st-albans",
+      "sourceRepo": "asaffilate01-ship-it/cafe1-connect-dash",
+      "expectedLocations": [
+        "st-albans-crown-court"
+      ],
+      "importPath": "cafe1_v3_full_parity",
+      "phase": "awaiting_draft_tenant_and_staging"
+    },
+    {
+      "factoryTenantKey": "cafe1luton",
+      "factoryBlueprintKey": "dishbee.cafe1luton",
+      "dishbeeBlueprintKey": "cafe1-luton",
+      "dishbeeTenantSlug": "cafe-1-luton",
+      "sourceRepo": "asaffilate01-ship-it/cafe-1-luton",
+      "expectedLocations": [
+        "luton-crown-court",
+        "futures-house"
+      ],
+      "importPath": "cafe1_v3_full_parity",
+      "phase": "awaiting_draft_tenant_and_staging"
+    },
+    {
+      "factoryTenantKey": "mealdeck",
+      "factoryBlueprintKey": "mealdeck-uk",
+      "dishbeeBlueprintKey": "mealdeck",
+      "dishbeeTenantSlug": "mealdeck",
+      "sourceRepo": "asaffilate01-ship-it/pixel-perfect-71",
+      "expectedLocations": [
+        "mealdeck-luton",
+        "mealdeck-st-albans"
+      ],
+      "importPath": "native_dishbee_multibrand_no_legacy_cafe_import",
+      "phase": "awaiting_draft_tenant_and_staging"
+    }
+  ]
+}
