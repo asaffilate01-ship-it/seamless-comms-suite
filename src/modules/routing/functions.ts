@@ -2,7 +2,9 @@ import {createServerFn} from "@tanstack/react-start";
 import {z} from "zod";
 import {requireSupabaseAuth} from "@/integrations/supabase/auth-middleware";
 import {requireAdminRole,requireService,requireTenantMembership} from "@/modules/platform/access";
-import {optimiseNativeRoutes,type RoutingJob,type RoutingResource} from "@/modules/routing/service.server";
+import {optimiseNativeRoutes} from "@/modules/routing/service.server";
+import {sourceRoutingWorkload} from "@/modules/routing/workload.server";
+import {collectRoadTopology,type RoadMatrixEvidence} from "@/modules/routing/road-graph";
 import {orsRoadMatrix,straightLineMatrix,type MatrixPoint,type MatrixMode} from "@/modules/routing/road-matrix.provider";
 
 const uuid=z.string().uuid();
@@ -174,6 +176,28 @@ export const createRoutingOptimisation=createServerFn({method:"POST"}).middlewar
  if(r.error)throw new Error(r.error.message);return{optimisationId:r.data as string};
 });
 
+export const queueRoadMatrixForOptimisation=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:unknown)=>z.object({tenantId:uuid,optimisationId:uuid}).strict().parse(i))
+.handler(async({context,data})=>{
+ const db=context.supabase as any;
+ const access=await requireService(context,data.tenantId,"omniqora.routing-engine");
+ requireAdminRole(access.role);
+ const {data:opt,error}=await db.from("routing_optimisation_jobs")
+  .select("id,product_key,status,matrix_job_id")
+  .eq("id",data.optimisationId).eq("tenant_id",data.tenantId).maybeSingle();
+ if(error||!opt||opt.status!=="queued")throw new Error("Queued tenant optimisation required");
+ if(opt.matrix_job_id)return{matrixJobId:opt.matrix_job_id,reused:true};
+ const {jobs,resources}=await sourceRoutingWorkload(db,data.tenantId,opt.product_key,true);
+ const nodes=collectRoadTopology(resources,jobs);
+ if(nodes.length>8)throw new Error("Pilot road matrix requires no more than eight unique locations");
+ const {data:matrixId,error:queued}=await db.rpc("routing_queue_optimisation_matrix",{
+  _optimisation:opt.id,_nodes:nodes,_request_key:crypto.randomUUID()
+ });
+ if(queued)throw new Error(queued.message);
+ return{matrixJobId:String(matrixId),reused:false,positions:nodes.length};
+});
+
 export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:{tenantId:string;optimisationId:string})=>z.object({tenantId:uuid,optimisationId:uuid}).parse(i))
 .handler(async({context,data})=>{
@@ -182,42 +206,41 @@ export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middle
  if(optError||!opt)throw new Error(optError?.message??"Routing optimisation not found");
  const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireAdminRole(access.role);
  if(!["queued","failed","review"].includes(opt.status))throw new Error("Routing optimisation is not runnable");
- await db.from("routing_optimisation_jobs").update({status:"running"}).eq("id",opt.id);
-
- const [jobsR,agentsR,vehiclesR,positionsR,shiftsR]=await Promise.all([
-  db.from("dispatch_jobs").select("*,stops:dispatch_job_stops(*)").eq("tenant_id",data.tenantId).eq("product_key",opt.product_key).eq("status","unassigned").order("priority").limit(500),
-  db.from("dispatch_agents").select("*").eq("tenant_id",data.tenantId).eq("product_key",opt.product_key).eq("status","available"),
-  db.from("dispatch_vehicles").select("*").eq("tenant_id",data.tenantId).eq("product_key",opt.product_key).eq("status","available"),
-  db.from("dispatch_agent_positions").select("*").eq("tenant_id",data.tenantId).eq("product_key",opt.product_key).order("observed_at",{ascending:false}).limit(2000),
-  db.from("fleet_shifts").select("*").eq("tenant_id",data.tenantId).eq("product_key",opt.product_key).in("status",["scheduled","active"]).lte("starts_at",new Date().toISOString()).gte("ends_at",new Date().toISOString())
- ]);
- for(const r of[jobsR,agentsR,vehiclesR,positionsR,shiftsR])if(r.error)throw new Error(r.error.message);
-
- const positions=new Map<string,any>();
- for(const p of positionsR.data??[])if(!positions.has(p.agent_id))positions.set(p.agent_id,p);
- const shifts=new Map<string,any>();
- for(const s of shiftsR.data??[])if(!shifts.has(s.agent_id))shifts.set(s.agent_id,s);
- const vehicles=[...(vehiclesR.data??[])],usedVehicles=new Set<string>();
- const resources:RoutingResource[]=[];
- for(const a of agentsR.data??[]){
-  const pos=positions.get(a.id),homeLat=Number(a.metadata?.homeLat),homeLng=Number(a.metadata?.homeLng);
-  const lat=pos?.latitude??(Number.isFinite(homeLat)?homeLat:null),lng=pos?.longitude??(Number.isFinite(homeLng)?homeLng:null);
-  if(lat==null||lng==null)continue;
-  let vehicle:any=null;
-  const preferred=typeof a.metadata?.currentVehicleId==="string"?vehicles.find(v=>v.id===a.metadata.currentVehicleId&&!usedVehicles.has(v.id)):null;
-  vehicle=preferred??vehicles.find(v=>!usedVehicles.has(v.id))??null;if(vehicle)usedVehicles.add(vehicle.id);
-  resources.push({agentId:a.id,vehicleId:vehicle?.id??null,skills:a.skills??[],vehicleType:vehicle?.vehicle_type??null,
-   capacity:vehicle?.capacity??a.capacity??null,start:{lat:Number(lat),lng:Number(lng)},shiftEnd:shifts.get(a.id)?.ends_at??null});
+ const {jobs,resources}=await sourceRoutingWorkload(db,data.tenantId,opt.product_key,!!opt.matrix_job_id);
+ let roadMatrix:RoadMatrixEvidence|undefined;
+ if(opt.matrix_job_id){
+  const {data:receipt,error:receiptError}=await db.from("routing_matrix_jobs")
+   .select("id,tenant_id,product_key,travel_mode,origins,destinations,status,quality,provider_key,completed_at,cells:routing_matrix_cells(origin_index,destination_index,status,distance_metres,duration_seconds)")
+   .eq("id",opt.matrix_job_id).eq("tenant_id",data.tenantId)
+   .eq("product_key",opt.product_key).maybeSingle();
+  if(receiptError||!receipt||receipt.status!=="completed"||
+   receipt.travel_mode!=="driving"||!["road","traffic"].includes(receipt.quality))
+   throw new Error("Complete approved driving road matrix required; estimates are not permitted");
+  const points=collectRoadTopology(resources,jobs);
+  const same=(x:any,y:any)=>Number(x?.lat)===Number(y?.lat)&&Number(x?.lng)===Number(y?.lng);
+  if(!Array.isArray(receipt.origins)||!Array.isArray(receipt.destinations)||
+   receipt.origins.length!==points.length||receipt.destinations.length!==points.length||
+   !receipt.origins.every((x:any,k:number)=>same(x,receipt.destinations[k])))
+   throw new Error("Road matrix axes no longer match dispatch source");
+  roadMatrix={provider:receipt.provider_key,quality:receipt.quality,observedAt:receipt.completed_at,
+   origins:receipt.origins,destinations:receipt.destinations,
+   cells:(receipt.cells??[]).map((c:any)=>({
+    originIndex:Number(c.origin_index),destinationIndex:Number(c.destination_index),
+    status:c.status,distanceMetres:c.distance_metres==null?null:Number(c.distance_metres),
+    durationSeconds:c.duration_seconds==null?null:Number(c.duration_seconds)
+   }))
+  } as RoadMatrixEvidence;
  }
- const jobs:RoutingJob[]=(jobsR.data??[]).map((j:any)=>({
-  jobId:j.id,priority:j.priority,demand:Number(j.capacity_demand??0),requiredSkills:j.required_skills??[],
-  requiredVehicleTypes:j.required_vehicle_types??[],scheduledAt:j.scheduled_at??null,
-  stops:[...(j.stops??[])].sort((a:any,b:any)=>a.position-b.position).map((s:any)=>({
-   lat:Number(s.latitude),lng:Number(s.longitude),windowStart:s.window_start??null,windowEnd:s.window_end??null,
-   serviceSeconds:s.service_seconds??0,stopId:s.id
-  }))
- }));
- const result=optimiseNativeRoutes({jobs,resources,startedAt:new Date().toISOString(),maxStopsPerRoute:opt.policy?.max_stops_per_route??100});
+ const result=optimiseNativeRoutes({jobs,resources,roadMatrix,startedAt:new Date().toISOString(),
+  maxStopsPerRoute:opt.policy?.max_stops_per_route??100});
+ if(opt.matrix_job_id&&(result.score.constraintBreaches>0||result.unassignedJobIds.length>0))
+  throw new Error("Road routing cannot apply unreachable jobs or breached constraints");
+ const claimed=await db.from("routing_optimisation_jobs")
+  .update({status:"running"}).eq("id",opt.id).eq("tenant_id",data.tenantId)
+  .eq("status",opt.status).select("id").maybeSingle();
+ if(claimed.error||!claimed.data)throw new Error("Optimisation already claimed");
+ try {
+
 
  await db.from("routing_route_plans").delete().eq("optimisation_job_id",opt.id);
  for(const route of result.routes){
@@ -225,7 +248,7 @@ export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middle
    tenant_id:data.tenantId,product_key:opt.product_key,optimisation_job_id:opt.id,route_no:route.routeNo,
    agent_id:route.agentId,vehicle_id:route.vehicleId??null,planned_distance_metres:route.plannedDistanceMetres,
    planned_duration_seconds:route.plannedDurationSeconds,planned_load:route.plannedLoad,capacity:route.capacity??null,
-   planned_finish_at:route.plannedFinishAt,status:"review",metadata:{algorithm:"native_greedy_2opt"}
+   planned_finish_at:route.plannedFinishAt,status:"review",metadata:{algorithm:"native_greedy_2opt",routeQuality:result.routeQuality,providerKey:result.providerKey}
   }).select("*").single();
   if(planError)throw new Error(planError.message);
   if(route.stops.length){
@@ -238,9 +261,22 @@ export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middle
   }
  }
  const{error:updateError}=await db.from("routing_optimisation_jobs").update({
-  status:"review",score:result.score,warnings:result.warnings,completed_at:new Date().toISOString()
+  status:"review",score:result.score,warnings:result.warnings,
+  input_snapshot:{...(opt.input_snapshot??{}),routeQuality:result.routeQuality,
+   providerKey:result.providerKey,plannedAt:new Date().toISOString()},
+  completed_at:new Date().toISOString()
  }).eq("id",opt.id);if(updateError)throw new Error(updateError.message);
- return{routeCount:result.routes.length,unassignedJobIds:result.unassignedJobIds,warnings:result.warnings,score:result.score};
+ return{routeCount:result.routes.length,unassignedJobIds:result.unassignedJobIds,routeQuality:result.routeQuality,
+  providerKey:result.providerKey,warnings:result.warnings,score:result.score};
+ }catch(error){
+  // A failed insert must never leave an apparently reviewable half-written route.
+  await db.from("routing_route_plans").delete().eq("optimisation_job_id",opt.id)
+   .eq("tenant_id",data.tenantId);
+  await db.from("routing_optimisation_jobs")
+   .update({status:"failed",warnings:["Route planning receipt persistence failed"]})
+   .eq("id",opt.id).eq("tenant_id",data.tenantId).eq("status","running");
+  throw new Error("Road route planning could not be completed safely");
+ }
 });
 
 export const applyRoutingOptimisation=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
