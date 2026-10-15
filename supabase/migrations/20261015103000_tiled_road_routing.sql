@@ -119,7 +119,7 @@ CREATE OR REPLACE FUNCTION public.routing_finalize_optimisation_tiles(_optimisat
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE o public.routing_optimisation_jobs%rowtype;
  b public.routing_matrix_batches%rowtype;
- t record; n integer;tile_count integer;cell_count integer;
+ t record; n integer;tile_count integer;verified_tiles integer:=0;cell_count integer;
  inserted_count integer;aggregate_id uuid;
  first_provider text;oldest timestamptz;
  axis_origins jsonb;axis_destinations jsonb;
@@ -135,6 +135,10 @@ BEGIN
  THEN RAISE EXCEPTION 'Routing administrator required'; END IF;
  IF NOT public.has_tenant_entitlement(o.tenant_id,'omniqora.routing-engine')
  THEN RAISE EXCEPTION 'Routing entitlement required'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.tenant_products tp
+  WHERE tp.tenant_id=o.tenant_id AND tp.product_key=o.product_key
+   AND tp.status='active')
+ THEN RAISE EXCEPTION 'Active tenant product required for finalisation'; END IF;
  SELECT * INTO b FROM public.routing_matrix_batches
  WHERE optimisation_job_id=o.id AND tenant_id=o.tenant_id
   AND product_key=o.product_key FOR UPDATE;
@@ -184,7 +188,9 @@ BEGIN
   IF first_provider<>t.provider_key THEN
    RAISE EXCEPTION 'Road provider changed between tiles'; END IF;
   oldest:=LEAST(COALESCE(oldest,t.completed_at),t.completed_at);
+  verified_tiles:=verified_tiles+1;
  END LOOP;
+ IF verified_tiles<>4 THEN RAISE EXCEPTION 'Batch tiles do not match this tenant/product'; END IF;
  SELECT EXISTS(
   SELECT 1 FROM public.provider_bindings p
   WHERE p.tenant_id=o.tenant_id AND p.product_key=o.product_key
