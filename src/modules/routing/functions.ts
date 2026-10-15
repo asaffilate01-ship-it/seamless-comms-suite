@@ -231,14 +231,15 @@ export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middle
    }))
   } as RoadMatrixEvidence;
  }
- const claimed=await db.from("routing_optimisation_jobs")
-  .update({status:"running"}).eq("id",opt.id).eq("tenant_id",data.tenantId)
-  .eq("status",opt.status).select("id").maybeSingle();
- if(claimed.error||!claimed.data)throw new Error("Optimisation already claimed");
  const result=optimiseNativeRoutes({jobs,resources,roadMatrix,startedAt:new Date().toISOString(),
   maxStopsPerRoute:opt.policy?.max_stops_per_route??100});
  if(opt.matrix_job_id&&(result.score.constraintBreaches>0||result.unassignedJobIds.length>0))
   throw new Error("Road routing cannot apply unreachable jobs or breached constraints");
+ const claimed=await db.from("routing_optimisation_jobs")
+  .update({status:"running"}).eq("id",opt.id).eq("tenant_id",data.tenantId)
+  .eq("status",opt.status).select("id").maybeSingle();
+ if(claimed.error||!claimed.data)throw new Error("Optimisation already claimed");
+ try {
 
 
  await db.from("routing_route_plans").delete().eq("optimisation_job_id",opt.id);
@@ -267,6 +268,15 @@ export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middle
  }).eq("id",opt.id);if(updateError)throw new Error(updateError.message);
  return{routeCount:result.routes.length,unassignedJobIds:result.unassignedJobIds,routeQuality:result.routeQuality,
   providerKey:result.providerKey,warnings:result.warnings,score:result.score};
+ }catch(error){
+  // A failed insert must never leave an apparently reviewable half-written route.
+  await db.from("routing_route_plans").delete().eq("optimisation_job_id",opt.id)
+   .eq("tenant_id",data.tenantId);
+  await db.from("routing_optimisation_jobs")
+   .update({status:"failed",warnings:["Route planning receipt persistence failed"]})
+   .eq("id",opt.id).eq("tenant_id",data.tenantId).eq("status","running");
+  throw new Error("Road route planning could not be completed safely");
+ }
 });
 
 export const applyRoutingOptimisation=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
