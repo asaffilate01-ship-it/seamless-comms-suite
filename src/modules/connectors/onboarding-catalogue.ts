@@ -5,7 +5,7 @@
  */
 export type ConnectorSetup = {
   key: string;
-  family: "AI and agents" | "Communications" | "Payments" | "Geo and delivery" | "Business data" | "Media and knowledge" | "Infrastructure";
+  family: "AI and agents" | "Communications" | "Payments" | "Geo and delivery" | "Business data" | "Media and knowledge" | "Infrastructure" | "Travel suppliers";
   name: string;
   url: string;
   priority: "pilot" | "next" | "optional";
@@ -47,4 +47,21 @@ export const connectorSetupCatalogue: readonly ConnectorSetup[] = [
   {key:"fal",family:"Media and knowledge",name:"fal.ai Media",url:"https://docs.fal.ai/",priority:"optional",required:"API key, approved model, callback and storage"},
   {key:"runway",family:"Media and knowledge",name:"Runway API",url:"https://docs.dev.runwayml.com/",priority:"optional",required:"API credentials, approved generation use and usage limits"},
   {key:"docusign",family:"Business data",name:"DocuSign eSignature",url:"https://developers.docusign.com/docs/esign-rest-api/",priority:"optional",required:"Developer account, OAuth app, redirect URI and signer consent"},
+  {key:"travel-travelpayouts",family:"Travel suppliers",name:"Travelpayouts",url:"https://support.travelpayouts.com/",priority:"pilot",required:"Travelpayouts partner account, campaign/marker ID, approved API or affiliate access, server-side token and attribution settings"},
+  {key:"travel-skyscanner",family:"Travel suppliers",name:"Skyscanner Travel APIs",url:"https://developers.skyscanner.net/docs/intro",priority:"next",required:"Approved Skyscanner partner/API agreement, API key, use-case and traffic approval, allowed markets and rate quotas"},
+  {key:"travel-duffel",family:"Travel suppliers",name:"Duffel Flights API",url:"https://duffel.com/docs/api",priority:"next",required:"Duffel business account, test/live access token, commercial onboarding, approved order flow and webhooks"},
+  {key:"travel-amadeus",family:"Travel suppliers",name:"Amadeus for Developers",url:"https://developers.amadeus.com/",priority:"next",required:"Amadeus application credentials, selected APIs, test/live approval and permitted booking role"},
+  {key:"travel-travelfusion",family:"Travel suppliers",name:"Travelfusion / tfNDC",url:"https://www.travelfusion.com/",priority:"optional",required:"Supplier/aggregator contract, commercial approval, authentication and environment-specific integration documents"},
+  {key:"travel-booking-demand",family:"Travel suppliers",name:"Booking.com Demand API",url:"https://developers.booking.com/demand/docs",priority:"next",required:"Demand API partner approval, affiliate ID, API token, selected content/redirect/booking flow and sandbox"},
+  {key:"travel-hotelbeds",family:"Travel suppliers",name:"Hotelbeds API",url:"https://developer.hotelbeds.com/",priority:"optional",required:"Hotelbeds distribution contract, approved API account, API key/secret, sandbox and permitted markets"},
+  {key:"travel-ratehawk",family:"Travel suppliers",name:"RateHawk API",url:"https://docs.ratehawk.com/",priority:"optional",required:"RateHawk trade partner/API agreement, credentials, test environment, billing and booking terms"},
+  {key:"travel-viator",family:"Travel suppliers",name:"Viator Partnerships",url:"https://partnerresources.viator.com/",priority:"optional",required:"Viator travel partner account, permitted affiliate/API access, tracking and approved content use"},
+  {key:"travel-getyourguide",family:"Travel suppliers",name:"GetYourGuide Partners",url:"https://partner.getyourguide.com/",priority:"optional",required:"GetYourGuide partner account, affiliate/API approval, commercial tracking and brand asset permissions"},
+  {key:"travel-discovercars",family:"Travel suppliers",name:"Discover Cars Affiliate",url:"https://www.discovercars.com/",priority:"optional",required:"Discover Cars affiliate approval, tracking ID or permitted integration access and referral terms"},
+  {key:"travel-welcome-pickups",family:"Travel suppliers",name:"Welcome Pickups Partners",url:"https://www.welcomepickups.com/",priority:"optional",required:"Welcome Pickups partner agreement, integration method, market coverage, lead handling and commission terms"},
+  {key:"travel-airalo",family:"Travel suppliers",name:"Airalo Partners",url:"https://partners.airalo.com/",priority:"optional",required:"Airalo partner approval, approved referral/API scope, credential, tracking and customer-fulfilment terms"},
+  {key:"omio-uk",family:"Travel suppliers",name:"Omio UK Rail & Coach Partners",url:"https://www.omio.com/corporate/omio-b2b/",priority:"pilot",required:"Approved Omio B2B/affiliate account, partner/API entitlement, agreed search/booking/redirect scope, attribution and rate quota"},
+  {key:"rdg-rail-retailing",family:"Travel suppliers",name:"Rail Delivery Group Retail Licence",url:"https://www.raildeliverygroup.com/our-services/retail-commercial/how-to-become-a-retailer/third-party-licences.html",priority:"optional",required:"Retailing licence, appropriate system accreditation or accredited ticketing partner, settlement arrangements and sales/refunds terms"},
+  {key:"uk-transfer-operators",family:"Travel suppliers",name:"UK Licensed Private Hire and Airport Transfer Operators",url:"https://www.gov.uk/operator-licence-private-hire-vehicle",priority:"pilot",required:"Supplier/operator licence and vehicle/driver verification, legal responsibility for bookings, commercial agreement, insurance, airport permissions, API or dispatch connector and refunds"},
+  {key:"travel-market-payments",family:"Payments",name:"Adyen Local Methods for UK-Inbound Travel",url:"https://docs.adyen.com/payment-methods/",priority:"next",required:"UK merchant/payment eligibility review per market: KR local wallets only if approved, JP JCB/PayPay eligibility, CN Alipay/WeChat/UnionPay, US cards and Apple/Google Pay; settlement currency, refunds and FX terms"},
 ] as const;

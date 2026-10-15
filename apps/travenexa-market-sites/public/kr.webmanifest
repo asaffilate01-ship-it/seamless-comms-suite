@@ -1,0 +1,20 @@
+{
+  "name": "UK Travel Korea",
+  "short_name": "UK Travel Korea",
+  "description": "영국 여행을 준비하세요",
+  "lang": "ko-KR",
+  "start_url": "/kr/",
+  "scope": "/kr/",
+  "id": "/kr/",
+  "display": "standalone",
+  "background_color": "#0b263c",
+  "theme_color": "#0b263c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -40,7 +40,7 @@ function ConnectorHub(){
    <h2 className="font-semibold">Third-party accounts and setup links</h2>
    <p className="mt-2 text-sm text-muted-foreground">This is a setup directory, not a live connection monitor. A link or a saved API key never means the provider is active. Actual product/tenant status is shown in the bindings and independent receipts above.</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
-    {(["Infrastructure","AI and agents","Communications","Payments","Geo and delivery","Business data","Media and knowledge"] as const).map(family=>(
+    {(["Infrastructure","AI and agents","Communications","Payments","Geo and delivery","Business data","Media and knowledge","Travel suppliers"] as const).map(family=>(
      <details key={family} className="rounded-lg border p-3">
       <summary className="cursor-pointer text-sm font-semibold">{family} · {connectorSetupCatalogue.filter(item=>item.family===family).length} integrations</summary>
       <div className="mt-3 space-y-3">

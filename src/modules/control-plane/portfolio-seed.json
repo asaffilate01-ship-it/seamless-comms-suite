@@ -2923,5 +2923,136 @@
     "traits": [
       "tenant"
     ]
+  },
+  {
+    "sourceRow": 123,
+    "name": "TRAVENEXA",
+    "repositoryUrl": null,
+    "liveUrl": null,
+    "linksTo": "Travel supplier APIs: Travelpayouts, Skyscanner, Duffel, Amadeus, Travelfusion, Booking.com and vertical partners",
+    "proposedRole": "Travel SaaS Landlord",
+    "architectureRole": "landlord",
+    "parentLandlord": "TRAVENEXA",
+    "migrationStructure": "Canonical travel technology landlord: tenant provisioning, supplier gateway, normalized offers, booking/referral lifecycle and white-label travel operations; Omniqora is the global platform control plane.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics",
+      "AI"
+    ],
+    "auditStatus": "Previous product discussion recovered; canonical repository and live adapter status not verified",
+    "traits": [
+      "travel",
+      "landlord"
+    ]
+  },
+  {
+    "sourceRow": 124,
+    "name": "FLIGHTLOUNGE",
+    "repositoryUrl": null,
+    "liveUrl": null,
+    "linksTo": "TraveNexa flights connector, affiliate redirects, Duffel bookings after approval, alerts",
+    "proposedRole": "Flight Brand / Travel Tenant",
+    "architectureRole": "tenant",
+    "parentLandlord": "TRAVENEXA",
+    "migrationStructure": "Premium consumer flight metasearch and flight API surface using tenant-scoped TraveNexa supplier adapters; do not duplicate flight provider credentials per brand.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics",
+      "AI"
+    ],
+    "auditStatus": "Previous product discussion recovered; canonical repository and live adapter status not verified",
+    "traits": [
+      "travel",
+      "tenant",
+      "flight-metasearch"
+    ]
+  },
+  {
+    "sourceRow": 125,
+    "name": "BESTFARES BESTRATES",
+    "repositoryUrl": null,
+    "liveUrl": null,
+    "linksTo": "TraveNexa flight, accommodation, car hire and offers APIs",
+    "proposedRole": "Travel Comparison Tenant",
+    "architectureRole": "tenant",
+    "parentLandlord": "TRAVENEXA",
+    "migrationStructure": "Travel comparison tenant under TraveNexa, with isolated branding, offers and attribution.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics",
+      "AI"
+    ],
+    "auditStatus": "Previous product discussion recovered; canonical repository and live adapter status not verified",
+    "traits": [
+      "travel",
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 126,
+    "name": "MAROCWAYS",
+    "repositoryUrl": null,
+    "liveUrl": null,
+    "linksTo": "TraveNexa accommodation, experiences, transfers and flight APIs",
+    "proposedRole": "Destination Travel Tenant",
+    "architectureRole": "tenant",
+    "parentLandlord": "TRAVENEXA",
+    "migrationStructure": "Destination travel brand tenant under TraveNexa; reuse hotels, transfers, experiences and permitted flight connectors.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics",
+      "AI"
+    ],
+    "auditStatus": "Previous product discussion recovered; canonical repository and live adapter status not verified",
+    "traits": [
+      "travel",
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 127,
+    "name": "ROUTE50",
+    "repositoryUrl": null,
+    "liveUrl": null,
+    "linksTo": "TraveNexa shared travel supplier APIs, brand storefront and tenant-scoped booking/referral engine",
+    "proposedRole": "Travel Brand / Tenant",
+    "architectureRole": "tenant",
+    "parentLandlord": "TRAVENEXA",
+    "migrationStructure": "Route50 is a branded TraveNexa travel tenant, not a separate landlord. Tenant branding, customers, domains, permissions and reporting are isolated. Travel API adapters, fulfilment orchestration and supplier credentials remain in TraveNexa. Exact geography and brand specialty still need source verification.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics",
+      "AI"
+    ],
+    "auditStatus": "User-confirmed TraveNexa tenant; original Route50 repository, domain and travel specialty not yet verified",
+    "traits": [
+      "travel",
+      "tenant"
+    ]
   }
 ]

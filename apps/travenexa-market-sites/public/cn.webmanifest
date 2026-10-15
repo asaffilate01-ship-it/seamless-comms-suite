@@ -1,0 +1,20 @@
+{
+  "name": "UK Travel China",
+  "short_name": "UK Travel China",
+  "description": "英国旅行一站式预订",
+  "lang": "zh-CN",
+  "start_url": "/cn/",
+  "scope": "/cn/",
+  "id": "/cn/",
+  "display": "standalone",
+  "background_color": "#0b263c",
+  "theme_color": "#0b263c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

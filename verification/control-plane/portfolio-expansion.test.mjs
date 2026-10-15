@@ -9,10 +9,10 @@ const registry=JSON.parse(await read("src/modules/control-plane/portfolio-factor
 const sql=await read("supabase/migrations/20261012130000_portfolio_factory_expansion.sql");
 
 test("inventory preserves source records and every named tenant without duplicate SaaS identities",()=>{
- assert.equal(seed.length,122);
+ assert.equal(seed.length,127);
  assert.equal(registry.sourceRowCount,seed.length);
  assert.equal(new Set(seed.map(x=>x.sourceRow)).size,seed.length);
- assert.equal(registry.products.length,87);
+ assert.equal(registry.products.length,88);
  assert.equal(new Set(registry.products.map(x=>x.productKey)).size,registry.products.length);
  const tenantSources=seed.filter(x=>x.architectureRole==="tenant");
  assert.equal(registry.tenants.length,tenantSources.length);
@@ -87,4 +87,28 @@ test("factory registry is scoped to existing owner/admin portfolio workspace",as
  for(const item of ["Paratique","Taconelle","Tavo Chicken","Skorch Burgers","TarkaBox"]){
   assert.ok(brandGroup?.brands.includes(item));
  }
+});
+
+test("travel landlord and existing draft travel brands survive main-branch reconciliation",()=> {
+ const landlord=registry.products.find(x=>x.productKey==="travenexa");
+ assert.ok(landlord);
+ assert.deepEqual(landlord.sourceRows,[123]);
+ assert.equal(landlord.tenantProvisioning,"not_activated");
+ const expected=[
+  ["flightlounge",124,"travenexa-flightlounge"],
+  ["bestfares-bestrates",125,"travenexa-bestfares"],
+  ["marocways",126,"travenexa-marocways"],
+  ["route50",127,"travenexa-route50"]
+ ];
+ for(const [key,row,blueprint] of expected){
+  const t=registry.tenants.find(x=>x.tenantKey===key);
+  assert.ok(t,"missing travel tenant: "+key);
+  assert.equal(t.sourceRow,row);
+  assert.equal(t.parentLandlord,"travenexa");
+  assert.equal(t.productKey,"travenexa");
+  assert.equal(t.blueprintKey,blueprint);
+  assert.equal(t.provisioning,"not_activated");
+ }
+ assert.equal(registry.tenants.length,17);
+ assert.equal(seed.filter(x=>x.architectureRole==="tenant").length,17);
 });
