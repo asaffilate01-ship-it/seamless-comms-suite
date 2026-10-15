@@ -44,6 +44,26 @@ Use a fine-grained, **read-only** token with access to the intended private repo
 
 The dedicated GitHub Action validates registry structure and uploads a safe JSON evidence artifact. It deliberately does not publish private values or activate anything.
 
+## Portfolio GitHub Actions blocker triage
+
+A separate **opt-in, read-only** helper classifies recent workflow outcomes without changing repository or billing settings:
+
+    GH_TOKEN=YOUR_ACTIONS_READ_ONLY_TOKEN node scripts/factory-ci-diagnose.mjs \
+      --repo asaffilate01-ship-it/dishbee-helper \
+      --repo asaffilate01-ship-it/creative-studio \
+      --repo asaffilate01-ship-it/kinderstars-childcare-saas \
+      --markdown
+
+Use a fine-grained token with **Actions:read** on the selected private repositories. Pass tokens via the environment, not command-line flags; never paste tokens into tickets. A maximum of 20 explicitly selected repositories prevents an unexpected portfolio-wide scan.
+
+- **possible_pre_runner_failure:** a failed run ended within 15 seconds and the API exposed no steps. Check the run's **annotations**, owner Actions spending budget, invoices, payment method and runner assignments. This is *not* proof of a billing issue.
+- **executed_steps_failed:** actual steps were observed; inspect the failing step logs and fix application/CI code.
+- **workflow_passed:** verification passed, but production deployment, data isolation, provider activation and regulatory readiness remain separate gates.
+- **workflow_skipped / cancelled_unverified:** not acceptance evidence.
+- **check_unavailable:** missing token permissions, API rate limit or transient error; never treat as green.
+
+The helper does not rerun jobs, bypass a billing restriction, contact arbitrary URLs, install tools or expose credential values. Run tests offline with \`node --test verification/control-plane/portfolio-ci-triage.test.mjs\`.
+
 ## Development tooling: Codex + ECC + Agency Agents
 
 These are optional engineering assistants, not deployment dependencies. Do not install arbitrary agent packages automatically in CI or production; review and pin trusted upstream commits, extension permissions, hooks and MCP servers before installation.
