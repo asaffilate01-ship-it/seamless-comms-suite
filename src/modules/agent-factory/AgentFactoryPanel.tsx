@@ -1,4 +1,5 @@
 import {useMemo,useState} from "react";
+import {useQuery} from "@tanstack/react-query";
 import {useServerFn} from "@tanstack/react-start";
 import {Bot,Cable,Search,ShieldCheck,Coins,AlertTriangle,ClipboardList} from "lucide-react";
 import {toast} from "sonner";
@@ -6,7 +7,8 @@ import {Card,CardContent} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Badge} from "@/components/ui/badge";
-import {startAgentRun,upsertAiUseCase} from "@/modules/intelligence/functions";
+import {cancelAgentRun,upsertAiUseCase} from "@/modules/intelligence/functions";
+import {getAgentFactoryOperations,queueBudgetedFactoryTask,setAgentFactoryBudget,requestAgentMcpSetup} from "./operations.functions";
 import {agentsForProduct,mcpConnectorFamilies,OFFICIAL_MCP_REGISTRY,type AgentBlueprint} from "./catalogue";
 import {searchPublicMcpRegistry,type DiscoveredMcpServer} from "./registry.functions";
 
@@ -38,7 +40,22 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
  const [lastQueuedRun,setLastQueuedRun]=useState("");
  const [customGoal,setCustomGoal]=useState("");
  const saveFn=useServerFn(upsertAiUseCase);
- const queueFn=useServerFn(startAgentRun);
+ const queueFn=useServerFn(queueBudgetedFactoryTask);
+ const cancelFn=useServerFn(cancelAgentRun);
+ const getOperationsFn=useServerFn(getAgentFactoryOperations);
+ const setBudgetFn=useServerFn(setAgentFactoryBudget);
+ const requestMcpFn=useServerFn(requestAgentMcpSetup);
+ const operations=useQuery({queryKey:["agent-factory-operations",tenantId,productKey],
+  queryFn:()=>getOperationsFn({data:{tenantId,productKey}}),enabled:!!tenantId&&!!productKey,retry:false});
+ const [budgetAmount,setBudgetAmount]=useState("");
+ const [budgetCurrency,setBudgetCurrency]=useState<"GBP"|"USD"|"EUR">("GBP");
+ const [budgetBusy,setBudgetBusy]=useState(false);
+ const [requestBusy,setRequestBusy]=useState("");
+ const [selectedRate,setSelectedRate]=useState("");
+ const [maxInputTokens,setMaxInputTokens]=useState("20000");
+ const [maxOutputTokens,setMaxOutputTokens]=useState("4000");
+ const [cachedTokens,setCachedTokens]=useState("0");
+ const [maxToolCost,setMaxToolCost]=useState("0");
  const registryFn=useServerFn(searchPublicMcpRegistry);
  const [directoryQuery,setDirectoryQuery]=useState("");
  const [directoryItems,setDirectoryItems]=useState<DiscoveredMcpServer[]>([]);
@@ -61,19 +78,74 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
  const existing=selected?useCases.find(c=>c.use_case_key===selected.key):null;
  const providerReady=providers.some(p=>p.status==="active"&&!!p.last_verified_at&&
   Date.now()-Date.parse(p.last_verified_at)>=0&&Date.now()-Date.parse(p.last_verified_at)<86400000);
+ const rates=operations.data?.rates??[];
+ const currentRate=rates.find(r=>r.provider_key+"|"+r.model_key+"|"+r.currency===selectedRate);
+ const budget=operations.data?.budgets?.find(b=>b.currency===(currentRate?.currency??budgetCurrency)&&
+  b.period_month===new Date().toISOString().slice(0,7)+"-01");
+ const activeProviderForRate=!!currentRate&&providers.some(p=>p.provider_key===currentRate.provider_key&&p.status==="active"&&
+  !!p.last_verified_at&&Date.now()-Date.parse(p.last_verified_at)<86400000&&Date.now()>=Date.parse(p.last_verified_at));
+ const numeric=(value:string)=>{const n=Number(value);return Number.isSafeInteger(n)&&n>=0?n:null;};
+ const expected=(function(){
+  if(!currentRate)return null;
+  const input=numeric(maxInputTokens),cached=numeric(cachedTokens),output=numeric(maxOutputTokens),tool=numeric(maxToolCost);
+  if(input===null||cached===null||output===null||tool===null||cached>input)return null;
+  const million=(n:number,rate:number)=>Math.ceil(n*rate/1_000_000);
+  return million(input-cached,currentRate.input_minor_per_million)+
+   million(cached,currentRate.cached_input_minor_per_million??currentRate.input_minor_per_million)+
+   million(output,currentRate.output_minor_per_million)+tool;
+ })();
+ async function saveBudget(){
+  const major=Number(budgetAmount);
+  if(!Number.isFinite(major)||major<0||Math.round(major*100)!==major*100||major>10_000_000){
+   toast.error("Enter a valid monthly limit in whole pence");return;
+  }
+  setBudgetBusy(true);
+  try{
+   await setBudgetFn({data:{tenantId,productKey,currency:budgetCurrency,limitMinor:Math.round(major*100)}});
+   toast.success("Monthly AI spending limit updated");
+   await operations.refetch();
+  }catch(e){toast.error(e instanceof Error?e.message:String(e));}
+  finally{setBudgetBusy(false);}
+ }
+ async function requestConnector(item:DiscoveredMcpServer){
+  setRequestBusy(item.name);
+  try{
+   await requestMcpFn({data:{tenantId,productKey,registryName:item.name,
+    registryVersion:item.version||"unversioned",reason:"Request security review and secure onboarding for this SaaS product."}});
+   toast.success("MCP server setup requested; this does not connect it.");
+   await operations.refetch();
+  }catch(e){toast.error(e instanceof Error?e.message:String(e));}
+  finally{setRequestBusy("");}
+ }
  const requireClassification=!!selected&&(selected.risk==="regulated"||selected.risk==="sensitive");
  const sensitiveClass=classification!=="internal";
  const departments=new Set(all.map(a=>a.department)).size;
+ async function cancelQueuedRun(){
+  if(!lastQueuedRun)return;
+  setRunning(true);
+  try{
+   const result=await cancelFn({data:{tenantId,runId:lastQueuedRun}});
+   toast.success(result.budgetReleased?"Queued task cancelled; reserved budget released":"Task cancelled");
+   setLastQueuedRun("");
+   await operations.refetch();await onChanged?.();
+  }catch(e){toast.error(e instanceof Error?e.message:String(e));}
+  finally{setRunning(false);}
+ }
  async function queueApproved(agent:AgentBlueprint,useCaseId:string){
-  if(!providerReady){toast.error("A recently verified active AI provider is required before queuing a task");return;}
+  if(!currentRate||!activeProviderForRate||expected===null||!budget){
+   toast.error("Verified model pricing, an active provider and this month's budget are all required");return;
+  }
+  const input=numeric(maxInputTokens),cached=numeric(cachedTokens),output=numeric(maxOutputTokens),tool=numeric(maxToolCost);
+  if(input===null||cached===null||output===null||tool===null||cached>input){toast.error("Invalid token limits");return;}
   try{
    setRunning(true);setLastQueuedRun("");
    const result=await queueFn({data:{tenantId,productKey,useCaseId,profile:agent.profile,
     goal:customGoal.trim()||agent.suggestedGoal,maxSteps:agent.defaultMaxSteps,
-    providerKey:null,model:null,inputVersion:null}});
-   setLastQueuedRun(result.run.id);
-   toast.success("Agent task queued; execution and approvals depend on the authorised worker.");
-   await onChanged?.();
+    providerKey:currentRate.provider_key,modelKey:currentRate.model_key,currency:currentRate.currency as "GBP"|"USD"|"EUR",
+    inputTokens:input,cachedInputTokens:cached,outputTokens:output,toolCeilingMinor:tool,idempotencyKey:crypto.randomUUID()}});
+   setLastQueuedRun(result.runId);
+   toast.success("Budget reserved and authorised AI task queued. Execution is subject to the separate worker.");
+   await operations.refetch();await onChanged?.();
   }catch(e){toast.error(e instanceof Error?e.message:String(e));}
   finally{setRunning(false);}
  }
@@ -100,7 +172,10 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
    <div><h2 className="flex items-center gap-2 text-lg font-semibold"><Bot className="h-5 w-5"/> AI Agent Factory</h2>
     <p className="mt-1 text-sm text-muted-foreground">Reusable agents for every SaaS product. This catalogue is not a live connector, model or agent execution guarantee.</p>
    </div>
-   <a href={OFFICIAL_MCP_REGISTRY} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">Explore official MCP registry</a>
+   <div className="flex flex-wrap gap-3 text-sm">
+    <a href={OFFICIAL_MCP_REGISTRY} target="_blank" rel="noopener noreferrer" className="text-primary underline">Public MCP registry</a>
+    <a href="/app/mcp-review" className="text-primary underline">Platform review queue (restricted)</a>
+   </div>
   </div>
   <div className="grid gap-2 sm:grid-cols-3">
    <div className="rounded-lg border p-3"><p className="flex gap-2 text-xs text-muted-foreground"><Bot className="h-4 w-4"/> Available agent blueprints</p><strong className="text-xl">{all.length}</strong></div>
@@ -145,9 +220,29 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
     {["approved","pilot"].includes(existing.status)&&<>
      <label htmlFor="factory-run-goal" className="text-xs font-medium">Task instruction (optional)</label>
      <Input id="factory-run-goal" value={customGoal} maxLength={5000} onChange={e=>setCustomGoal(e.target.value)} placeholder={selected.suggestedGoal}/>
-     <Button size="sm" disabled={running||!providerReady} onClick={()=>queueApproved(selected,existing.id)}>{running?"Queueing…":"Queue approved task"}</Button>
-     {!providerReady&&<p className="text-xs text-muted-foreground">An active AI provider with a server-verified connection within 24 hours is required before queuing from the factory.</p>}
-     {lastQueuedRun&&<p className="text-xs text-muted-foreground">Queued run: <code>{lastQueuedRun}</code>. Track its actual status in AI Control.</p>}
+     <div className="grid gap-2 sm:grid-cols-2">
+      <label className="text-xs">Evaluated model / currency
+       <select className="mt-1 w-full rounded-md border bg-background p-2 text-sm" value={selectedRate} onChange={e=>setSelectedRate(e.target.value)}>
+        <option value="">Select verified rate</option>
+        {rates.map(r=><option key={r.provider_key+"|"+r.model_key+"|"+r.currency} value={r.provider_key+"|"+r.model_key+"|"+r.currency}>
+         {r.provider_key} · {r.model_key} · {r.currency}</option>)}
+       </select>
+      </label>
+      <label className="text-xs">Estimated maximum cost
+       <div className="mt-1 rounded-md border px-3 py-2 text-sm">{expected===null||!currentRate?"Choose rate first":currentRate.currency+" "+(expected/100).toFixed(2)}</div>
+      </label>
+      <label className="text-xs">Max input tokens<Input inputMode="numeric" value={maxInputTokens} onChange={e=>setMaxInputTokens(e.target.value)}/></label>
+      <label className="text-xs">Max output tokens<Input inputMode="numeric" value={maxOutputTokens} onChange={e=>setMaxOutputTokens(e.target.value)}/></label>
+      <label className="text-xs">Expected cached input tokens<Input inputMode="numeric" value={cachedTokens} onChange={e=>setCachedTokens(e.target.value)}/></label>
+      <label className="text-xs">Tool cost ceiling (minor units)<Input inputMode="numeric" value={maxToolCost} onChange={e=>setMaxToolCost(e.target.value)}/></label>
+     </div>
+     {budget&&<p className="text-xs text-muted-foreground">Monthly {budget.currency} budget: {(budget.limit_minor/100).toFixed(2)} · Reserved: {(budget.reserved_minor/100).toFixed(2)} · Incurred: {(budget.spent_minor/100).toFixed(2)}</p>}
+     <Button size="sm" disabled={running||!activeProviderForRate||expected===null||!budget||expected<=0} onClick={()=>queueApproved(selected,existing.id)}>{running?"Reserving…":"Reserve budget & queue approved task"}</Button>
+     {(!providerReady||!rates.length||!budget)&&<p className="text-xs text-muted-foreground">Set a monthly budget and connect an independently verified, evaluated AI model before queueing. This action does not itself execute the task.</p>}
+     {lastQueuedRun&&<div className="flex flex-wrap items-center gap-2">
+      <p className="text-xs text-muted-foreground">Queued run: <code>{lastQueuedRun}</code>. Track status in AI Control.</p>
+      <Button size="sm" variant="outline" disabled={running} onClick={cancelQueuedRun}>Cancel before processing</Button>
+     </div>}
     </>}
    </div>}
   </div>}
@@ -162,8 +257,25 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
    <div className="space-y-2">{directoryItems.map((item,i)=><div key={item.name+item.version+i} className="rounded-md bg-muted/50 p-2">
     <div className="flex flex-wrap justify-between gap-2"><b className="text-xs break-all">{item.name}</b><Badge variant="outline">Unverified · {item.version||"version unknown"}</Badge></div>
     <p className="mt-1 text-xs text-muted-foreground">{item.description||"No description provided by registry."}</p>
+    <Button size="sm" variant="outline" className="mt-2" disabled={!item.version||!!requestBusy}
+     onClick={()=>requestConnector(item)}>{requestBusy===item.name?"Requesting…":"Request setup review"}</Button>
    </div>)}</div>
    {directoryCursor&&<Button size="sm" variant="outline" disabled={directoryBusy} onClick={()=>discover(directoryCursor)}>Load more results</Button>}
+  </div>
+  <div className="rounded-lg border p-3 space-y-3">
+   <strong className="flex items-center gap-2 text-sm"><Coins className="h-4 w-4"/> Monthly AI spending controls</strong>
+   <p className="text-xs text-muted-foreground">Configure a limit before budgeted AI tasks can be queued. No charges are created by setting a limit.</p>
+   <div className="flex flex-wrap gap-2">
+    <select aria-label="Budget currency" value={budgetCurrency} onChange={e=>setBudgetCurrency(e.target.value as "GBP"|"USD"|"EUR")}
+     className="rounded-md border bg-background px-2 text-sm"><option>GBP</option><option>USD</option><option>EUR</option></select>
+    <Input className="max-w-[160px]" value={budgetAmount} onChange={e=>setBudgetAmount(e.target.value)} aria-label="Monthly AI budget in major currency units" placeholder="100.00"/>
+    <Button size="sm" variant="outline" disabled={budgetBusy||!tenantId||!productKey||!budgetAmount} onClick={saveBudget}>{budgetBusy?"Saving…":"Set monthly limit"}</Button>
+   </div>
+   <div className="space-y-1">{(operations.data?.budgets??[]).slice(0,6).map(b=><p key={b.period_month+b.currency} className="text-xs text-muted-foreground">
+    {b.period_month} · {b.currency} {(b.limit_minor/100).toFixed(2)} limit · {(b.reserved_minor/100).toFixed(2)} reserved · {(b.spent_minor/100).toFixed(2)} used
+   </p>)}</div>
+   {operations.error&&<p role="alert" className="text-xs text-destructive">AI operating data unavailable; production migrations and permissions must be verified.</p>}
+   <p className="text-xs text-muted-foreground">MCP onboarding requests: {(operations.data?.mcpRequests??[]).length}. {operations.data?.mcpRequests?.slice(0,3).map(q=>q.registry_name+" ("+q.status+")").join(" · ")}</p>
   </div>
   <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
    <div className="flex gap-2 font-semibold"><Coins className="h-4 w-4"/> Model-cost routing design</div>
