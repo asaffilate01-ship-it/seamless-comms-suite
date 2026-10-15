@@ -88,6 +88,13 @@ export default function PortfolioFactoryDirectory({registry}:Props){
          <p className="mt-1 text-xs text-muted-foreground">Dishbee slug: <code>{x.dishbeeTenantSlug}</code></p>
          <p className="mt-1 text-xs text-muted-foreground">Blueprint: <code>{x.dishbeeBlueprintKey}</code></p>
          <p className="mt-1 text-xs text-muted-foreground">Locations: {x.expectedLocations.join(" · ")}</p>
+         <div className="mt-3 rounded-lg border border-dashed p-2 text-xs">
+           <b>Courier onboarding: not connected</b>
+           {x.deliveryLocationPlans.map(site=><p key={site.locationKey} className="mt-1 text-muted-foreground">
+             {site.locationKey}: Uber Direct · Deliveroo Express · Just Eat Go — all require location approval
+           </p>)}
+           <p className="mt-2 text-muted-foreground">Delivery activation is separate from data import. Check the real location UUIDs in Dishbee Landlord before enabling any provider.</p>
+         </div>
          <p className="mt-1 break-all text-xs text-muted-foreground">Source: {x.sourceRepo}</p>
        </div>)}
      </div>
