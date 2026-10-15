@@ -37,6 +37,12 @@ jobs:
           node verification/control-plane/sales-queue-fairness.test.mjs
       - run: bun run build
       - run: bun run typecheck
+      - name: Build four local-language TraveNexa UK travel storefronts
+        run: bun run build:travel-sites
+      - name: Typecheck the market-specific travel app
+        run: bun run typecheck:travel-sites
+      - name: Verify market isolation, no false supplier availability and redirects
+        run: bun run test:travel-sites
       - run: bun run test:security
       - name: Growth runtime, tenant isolation and product gateway
         run: bun run test:growth

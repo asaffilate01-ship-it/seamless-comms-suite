@@ -1,0 +1,40 @@
+name: Audit SaaS Factory source registry
+
+on:
+  pull_request:
+    paths:
+      - 'src/modules/control-plane/portfolio-factory-registry.json'
+      - 'scripts/factory-portfolio-audit.mjs'
+      - 'scripts/factory-ci-diagnose.mjs'
+      - 'src/modules/control-plane/PortfolioFactoryDirectory.tsx'
+      - 'verification/control-plane/portfolio-factory-audit.test.mjs'
+      - 'verification/control-plane/portfolio-ci-triage.test.mjs'
+      - '.github/workflows/portfolio-source-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check auditor regression tests
+        run: node --test verification/control-plane/portfolio-factory-audit.test.mjs
+      - name: Check CI diagnostics classification (no network)
+        run: node --test verification/control-plane/portfolio-ci-triage.test.mjs
+      - name: Validate source mappings (no network, no secrets)
+        run: node scripts/factory-portfolio-audit.mjs --strict > portfolio-source-audit.json
+      - name: Publish source audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: omniqora-portfolio-source-audit
+          path: portfolio-source-audit.json
+          retention-days: 14

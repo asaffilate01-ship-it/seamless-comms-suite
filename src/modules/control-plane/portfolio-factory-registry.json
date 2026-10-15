@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0",
-  "reviewDate": "2026-10-12",
+  "reviewDate": "2026-10-15",
   "source": "src/modules/control-plane/portfolio-seed.json",
-  "sourceRowCount": 122,
+  "sourceRowCount": 127,
   "safety": {
     "discoveryOnly": true,
     "noCustomerTenantsCreated": true,
@@ -1232,6 +1232,22 @@
       "lifecycle": "candidate",
       "sourceAudit": "pending_unless_separately_verified",
       "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "travenexa",
+      "displayName": "TRAVENEXA",
+      "sourceRows": [
+        123
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/seamless-comms-suite.git"
+      ],
+      "editions": [
+        "UK inbound market sites"
+      ],
+      "lifecycle": "established",
+      "sourceAudit": "verified_in_main_branch_source_not_production",
+      "tenantProvisioning": "not_activated"
     }
   ],
   "tenants": [
@@ -1405,6 +1421,58 @@
       "blueprintState": "draft",
       "country": "GB",
       "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 124,
+      "tenantKey": "flightlounge",
+      "displayName": "FlightLounge",
+      "blueprintKey": "travenexa-flightlounge",
+      "productKey": "travenexa",
+      "parentLandlord": "travenexa",
+      "blueprintState": "existing_blueprint",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "travenexa_main_branch_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 125,
+      "tenantKey": "bestfares-bestrates",
+      "displayName": "BestFares BestRates",
+      "blueprintKey": "travenexa-bestfares",
+      "productKey": "travenexa",
+      "parentLandlord": "travenexa",
+      "blueprintState": "existing_blueprint",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "travenexa_main_branch_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 126,
+      "tenantKey": "marocways",
+      "displayName": "MarocWays",
+      "blueprintKey": "travenexa-marocways",
+      "productKey": "travenexa",
+      "parentLandlord": "travenexa",
+      "blueprintState": "existing_blueprint",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "travenexa_main_branch_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 127,
+      "tenantKey": "route50",
+      "displayName": "Route50",
+      "blueprintKey": "travenexa-route50",
+      "productKey": "travenexa",
+      "parentLandlord": "travenexa",
+      "blueprintState": "existing_blueprint",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "travenexa_main_branch_inventory",
       "provisioning": "not_activated",
       "aliases": []
     }
