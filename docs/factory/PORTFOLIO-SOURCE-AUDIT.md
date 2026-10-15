@@ -12,9 +12,9 @@
 
 ## Evidence snapshot — 15 October 2026
 
-The draft integrated Factory work is in Omniqora PR #97, based on its source registry. That registry currently declares **87 product identities** (72 candidates, 15 established), **73 products with at least one repository reference**, **14 with no repository reference**, **77 distinct GitHub repository references**, and **13 tenant templates**, all explicitly marked **not_activated**. Counts come from the source JSON; they do **not** establish running sites, production integrations, real revenue or active tenants. Repository URLs may require separate access and validation.
+The draft integrated Factory work is in Omniqora PR #97, based on its source registry. That registry currently declares **88 product identities** (72 candidates, 16 established), **74 products with at least one repository reference**, **14 with no repository reference**, **77 distinct GitHub repository references**, and **17 tenant templates**, all explicitly marked **not_activated**. Counts come from the source JSON; they do **not** establish running sites, production integrations, real revenue or active tenants. Repository URLs may require separate access and validation.
 
-Do not merge or activate draft provisioning solely because a product appears in this inventory. The 14 unmapped product keys need a repo, explicit "concept only" classification, or a documented exception.
+Merging source-only catalogue changes does not activate tenants, payment providers or customer operations. The 14 unmapped product keys need a repo, explicit "concept only" classification, or a documented exception.
 
 ## GitHub visibility reconciliation — 15 October 2026
 
@@ -22,7 +22,7 @@ The authenticated GitHub inventory was paginated (100 repositories on page 1, 12
 
 - **77 of 77 distinct Factory registry repository references are accessible** through the linked GitHub account.
 - **35 accessible repositories are not referenced by this Factory registry**, including digital-creations-hub (iTechLounge master site), Cafe 1 repos, Zoryn, and likely experiment/prototype or tenant-specific repositories. All require classification, not automatic SaaS provisioning.
-- **14 of 87 product identities still have no repository mapping**. Some may be valid concepts without source; the registrar must explicitly classify them.
+- **14 of 88 product identities still have no repository mapping**. Some may be valid concepts without source; the registrar must explicitly classify them.
 
 An early first-page-only comparison incorrectly flagged seven repository references as unavailable. That warning was cleared after fetching the second GitHub page. Repository visibility does **not** establish code quality, operational readiness or tenant activation.
 
