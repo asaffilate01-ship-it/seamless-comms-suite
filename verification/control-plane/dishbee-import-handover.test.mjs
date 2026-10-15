@@ -40,3 +40,36 @@ test("MealDeck is a native multi-brand tenant and Cafe 1 venues are source impor
   }
   assert.deepEqual(manifest.rules.futureProviders,["uber_direct","deliveroo_express","just_eat_go"]);
 });
+
+test("every expected physical site has three independently uncommissioned courier accounts",()=>{
+  const providers=["uber_direct","deliveroo_express","just_eat_go"];
+  const rules=manifest.rules.deliveryActivation;
+  assert.equal(rules.importWithoutProviderAllowed,true);
+  assert.equal(rules.paidOrderBeforeBooking,true);
+  assert.equal(rules.neverAutoBookUnapprovedProvider,true);
+  assert.equal(rules.doNotReplaceMarketplaceCourier,true);
+  assert.equal(rules.noCredentialsInFactoryRegistry,true);
+  let physicalSiteCount=0;
+  for(const handover of manifest.handovers){
+    assert.deepEqual(handover.deliveryLocationPlans.map(x=>x.locationKey),
+      handover.expectedLocations);
+    physicalSiteCount+=handover.deliveryLocationPlans.length;
+    for(const location of handover.deliveryLocationPlans){
+      assert.equal(location.sourceOfTruth,"dishbee");
+      assert.equal(location.approvalStatus,"not_commissioned");
+      assert.deepEqual(location.providerOptions.map(x=>x.provider),providers);
+      for(const provider of location.providerOptions){
+        assert.equal(provider.credentialStatus,"not_connected");
+        for(const field of [
+          "merchantAuthorised","collectionPointApproved","webhookCertified",
+          "sandboxQuoteAccepted","sandboxDeliveryAccepted","productionEnabled",
+        ])assert.equal(provider[field],false,
+          `${handover.factoryTenantKey}/${location.locationKey}/${provider.provider}: ${field}`);
+      }
+    }
+  }
+  assert.equal(physicalSiteCount,5);
+  assert.equal(manifest.status,"registry_only_not_live");
+  assert(!JSON.stringify(manifest).includes("sk_live_"));
+  assert(!JSON.stringify(manifest).includes("sb_secret_"));
+});
