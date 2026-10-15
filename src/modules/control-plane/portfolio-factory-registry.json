@@ -1,0 +1,1575 @@
+{
+  "schemaVersion": "1.0",
+  "reviewDate": "2026-10-15",
+  "source": "src/modules/control-plane/portfolio-seed.json",
+  "sourceRowCount": 127,
+  "safety": {
+    "discoveryOnly": true,
+    "noCustomerTenantsCreated": true,
+    "noProviderActivation": true,
+    "sourceRepositoriesNotNecessarilyCurrent": true
+  },
+  "products": [
+    {
+      "productKey": "affivon",
+      "displayName": "AFFIVON",
+      "sourceRows": [
+        117
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "ahlnikkah",
+      "displayName": "AHLNIKKAH",
+      "sourceRows": [
+        85
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/ahl-nikkah.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "all-road-aid",
+      "displayName": "MOTORESQ",
+      "sourceRows": [
+        15
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/all-road-aid.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "amityos",
+      "displayName": "AMITYOS",
+      "sourceRows": [
+        37
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/care-connect.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "apnepaas",
+      "displayName": "APNEPAAS",
+      "sourceRows": [
+        100
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/voxavelle.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "athlyvo",
+      "displayName": "ATHLYVO",
+      "sourceRows": [
+        115
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "aurevia",
+      "displayName": "AUREVIA",
+      "sourceRows": [
+        72
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/aurevia-clinic-ai.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "autohashi",
+      "displayName": "AUTOHASHI",
+      "sourceRows": [
+        8
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/nazli.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "auvane-one",
+      "displayName": "AUVANE ONE",
+      "sourceRows": [
+        111
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "axiom",
+      "displayName": "AXIOM",
+      "sourceRows": [
+        71
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/estate-zen-pro.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "beinstandplus",
+      "displayName": "BEINSTANDPLUS",
+      "sourceRows": [
+        61
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/settle-ease-connect.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "beratermarkt",
+      "displayName": "BERATERMARKT",
+      "sourceRows": [
+        50
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/professional-accountant-link.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "bidlumo",
+      "displayName": "BIDLUMO",
+      "sourceRows": [
+        49
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/bidora1.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "bidrive",
+      "displayName": "BIDRIVE",
+      "sourceRows": [
+        2
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/ridefairuk.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "bondedos",
+      "displayName": "BONDEDOS",
+      "sourceRows": [
+        81,
+        94
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "britplay",
+      "displayName": "BRITPLAY",
+      "sourceRows": [
+        1
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/welly-wonders-hub.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "cirqiva",
+      "displayName": "CIRQIVA",
+      "sourceRows": [
+        35
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/circular-pathway-app.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "clinoveya",
+      "displayName": "CLINOVEYA",
+      "sourceRows": [
+        104
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "construction-intelligence-ai",
+      "displayName": "CONSTRUCTION INTELLIGENCE AI",
+      "sourceRows": [
+        98
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/screen-snapshot-magic-973.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "courier-connect",
+      "displayName": "Courier Broker OS / Courier Connect",
+      "sourceRows": [
+        6
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/courier-connect-hub.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "craftvaro",
+      "displayName": "CRAFTVARO",
+      "sourceRows": [
+        19
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/jobflow-tradehub.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "criclume",
+      "displayName": "CRICLUME",
+      "sourceRows": [
+        32
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/app-teaser.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "dearnext",
+      "displayName": "DEARNEXT",
+      "sourceRows": [
+        55
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pixel-perfect-clone-67104.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "dishbee",
+      "displayName": "DISHBEE",
+      "sourceRows": [
+        82
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/dishbee-helper.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "domureva",
+      "displayName": "DOMUREVA",
+      "sourceRows": [
+        92
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pixel-perfect-replica.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "educloud",
+      "displayName": "EDUCLOUD",
+      "sourceRows": [
+        75
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/learnbridge-pathway.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "eventplanr",
+      "displayName": "EVENTPLANR",
+      "sourceRows": [
+        23,
+        38
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/eventplanr2.git",
+        "https://github.com/asaffilate01-ship-it/eventplanrger.git"
+      ],
+      "editions": [
+        "EVENTPLANR UK",
+        "EVENTPLANR GERMANY"
+      ],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "fanzeno",
+      "displayName": "FANZENO",
+      "sourceRows": [
+        99
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pixel-perfect-clone.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "fastremit",
+      "displayName": "MoneyBridge",
+      "sourceRows": [
+        83
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/screen-shot-magic-526.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "finmatch-ai",
+      "displayName": "FINMATCH AI",
+      "sourceRows": [
+        113
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "fleetora",
+      "displayName": "FLEETORA",
+      "sourceRows": [
+        66
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/ddelivery3pl.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "formationgenie",
+      "displayName": "FORMATION GENIE",
+      "sourceRows": [
+        58
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/formation-genie-magic.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "gabley",
+      "displayName": "GABLEY",
+      "sourceRows": [
+        40
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/remix-of-property-nexus.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "gabley-retrofit",
+      "displayName": "GABLEY RETROFIT",
+      "sourceRows": [
+        119
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "haccora",
+      "displayName": "HACCORA",
+      "sourceRows": [
+        5,
+        17
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/haccora-connect.git",
+        "https://github.com/asaffilate01-ship-it/haccora.git"
+      ],
+      "editions": [
+        "HACCORA UK",
+        "HACCORA GERMANY"
+      ],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "hmo-hub",
+      "displayName": "HMO HUB",
+      "sourceRows": [
+        74
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/hmo-buddy-pro.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "ilmvero",
+      "displayName": "ILMVERO",
+      "sourceRows": [
+        44
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/schooldash.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "immoviq",
+      "displayName": "IMMOVIQ",
+      "sourceRows": [
+        54
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pixel-perfect-clone-67104.git"
+      ],
+      "editions": [
+        "IMMOVIQ"
+      ],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "insure360",
+      "displayName": "INSURE 360",
+      "sourceRows": [
+        95
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pixel-perfect-replicator-884.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "kalethon-teams",
+      "displayName": "KALETHON TEAMS",
+      "sourceRows": [
+        93
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pixel-perfect-render-6809.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "kayan",
+      "displayName": "KAYAN",
+      "sourceRows": [
+        73
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/uae-trail-blazer.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "kiezio",
+      "displayName": "KIEZIO",
+      "sourceRows": [
+        41
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/kiezio.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "kindelo",
+      "displayName": "Kindelo",
+      "sourceRows": [
+        25,
+        63
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/kindelo-uk.git",
+        "https://github.com/asaffilate01-ship-it/kinderstars-childcare-saas.git",
+        "https://github.com/asaffilate01-ship-it/kinderstars.git"
+      ],
+      "editions": [
+        "KINDELO UK",
+        "KINDELO GERMANY (LEGACY)"
+      ],
+      "lifecycle": "candidate",
+      "sourceAudit": "canonical_uk_repository_verified_source_only",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "lawquo",
+      "displayName": "LAWQUO",
+      "sourceRows": [
+        47
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/law-remix.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "lessonahead",
+      "displayName": "LESSONAHEAD",
+      "sourceRows": [
+        39
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/nectar-design-lab.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "marktpass",
+      "displayName": "MARKTPASS",
+      "sourceRows": [
+        51
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pass-product-ready.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "menu-magic",
+      "displayName": "MENU MAGIC",
+      "sourceRows": [
+        76
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/screen-menu-magic.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "merqano",
+      "displayName": "MERQANO",
+      "sourceRows": [
+        20
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/bakery-web-bloom.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "merqora",
+      "displayName": "MERQORA",
+      "sourceRows": [
+        69
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/daraz-amazon-hub.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "nafsi",
+      "displayName": "NAFSI",
+      "sourceRows": [
+        56
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/nafsiapp.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "nearcura",
+      "displayName": "NEARCURA",
+      "sourceRows": [
+        33
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/nearcura-care-connect.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "nexusops",
+      "displayName": "NEXUSOPS",
+      "sourceRows": [
+        77
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/teamup-connect-anywhere.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "nimah",
+      "displayName": "NIMAH",
+      "sourceRows": [
+        68
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/peekabox-deals-saudi.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "oddsentia-fx",
+      "displayName": "ODDSENTIA FX",
+      "sourceRows": [
+        112
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "oddsentia-sports",
+      "displayName": "ODDSENTIA SPORTS",
+      "sourceRows": [
+        116
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "omniqora",
+      "displayName": "OMNIQORA",
+      "sourceRows": [
+        7
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/seamless-comms-suite.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "omniqora-accounts",
+      "displayName": "Omniqora Accounts / Accountancy SaaS",
+      "sourceRows": [
+        27
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/practicecraft-hub.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "onyn",
+      "displayName": "ONYN",
+      "sourceRows": [
+        57
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/onyn.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "onyn-pk",
+      "displayName": "ONYN PK",
+      "sourceRows": [
+        80
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/onynapp-pakistan.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "orvilo",
+      "displayName": "ORVILO X",
+      "sourceRows": [
+        101
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pixel-perfect-clone-ceddafea.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "parkpunkt",
+      "displayName": "PARKPUNKT",
+      "sourceRows": [
+        67
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/steady-implementor.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "premisora",
+      "displayName": "PREMISORA",
+      "sourceRows": [
+        36
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/premisora-compliance-hub.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "propconnect",
+      "displayName": "PROPCONNECT",
+      "sourceRows": [
+        78
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/propertysphere-global.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "qiyavo",
+      "displayName": "QIYAVO",
+      "sourceRows": [
+        59
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/qantra-catalyst.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "recovrable",
+      "displayName": "RECOVRABLE",
+      "sourceRows": [
+        70
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/pixel-perfect-showcase-9558.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "regulos",
+      "displayName": "REGULOS",
+      "sourceRows": [
+        108
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "rettio",
+      "displayName": "RETTIO",
+      "sourceRows": [
+        65
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/rettio.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "saathera",
+      "displayName": "SAATHERA",
+      "sourceRows": [
+        34
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/welfare.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "schonova",
+      "displayName": "SCHONOVA",
+      "sourceRows": [
+        52
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/delightful-dash-suite.git"
+      ],
+      "editions": [
+        "SCHONOVA"
+      ],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "sharedbricks",
+      "displayName": "SHAREDBRICKS",
+      "sourceRows": [
+        46
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/propluxe-world.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "skillfinch",
+      "displayName": "SKILLFINCH",
+      "sourceRows": [
+        48
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/dreamweaver-canvas-74.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "sparesgrid",
+      "displayName": "SPARESGRID",
+      "sourceRows": [
+        102,
+        103
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "stemcoach",
+      "displayName": "STEMCOACH",
+      "sourceRows": [
+        26
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/stemcoach.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "stylesync",
+      "displayName": "STYLESYNC",
+      "sourceRows": [
+        45
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/halo-suite-hub.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "tareevo",
+      "displayName": "TAREEVO",
+      "sourceRows": [
+        62
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/doc-u-sorted.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "taxcenda",
+      "displayName": "TAXCENDA",
+      "sourceRows": [
+        12
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/usataxlounge.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "taxnuvia",
+      "displayName": "TAXNUVIA",
+      "sourceRows": [
+        10
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/your-accountant-finder.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "tendryva",
+      "displayName": "TENDRYVA",
+      "sourceRows": [
+        118
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "traderos",
+      "displayName": "TRADEROS",
+      "sourceRows": [
+        60
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/remix-of-market-mind-intelligence-34.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "traindirekt",
+      "displayName": "TRAINDIREKT",
+      "sourceRows": [
+        53
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/horizon-educate.git"
+      ],
+      "editions": [
+        "TRAINDIREKT"
+      ],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "unipathway",
+      "displayName": "UNIPATHWAY",
+      "sourceRows": [
+        4,
+        29
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/ascent-education-cloud.git"
+      ],
+      "editions": [],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "veyumo",
+      "displayName": "VEYUMO",
+      "sourceRows": [
+        106
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "viazeno",
+      "displayName": "VIAZENO",
+      "sourceRows": [
+        3
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/transfer-compare.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "visa-sponsor",
+      "displayName": "VISA SPONSOR",
+      "sourceRows": [
+        107
+      ],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "voxentri",
+      "displayName": "VOXENTRI",
+      "sourceRows": [
+        86
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/creative-studio.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "xpertjobs",
+      "displayName": "XPERTJOBS",
+      "sourceRows": [
+        18,
+        64
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/xpertjobs.git",
+        "https://github.com/asaffilate01-ship-it/semantic-hire-flow.git"
+      ],
+      "editions": [
+        "STELLENXPERT"
+      ],
+      "lifecycle": "established",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "zivvo",
+      "displayName": "ZIVVO",
+      "sourceRows": [
+        24,
+        43
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/zivvo.git",
+        "https://github.com/asaffilate01-ship-it/autosouq.git"
+      ],
+      "editions": [
+        "ZIVVO GERMANY",
+        "ZIVVO UK"
+      ],
+      "lifecycle": "candidate",
+      "sourceAudit": "pending_unless_separately_verified",
+      "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "travenexa",
+      "displayName": "TRAVENEXA",
+      "sourceRows": [
+        123
+      ],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/seamless-comms-suite.git"
+      ],
+      "editions": [
+        "UK inbound market sites"
+      ],
+      "lifecycle": "established",
+      "sourceAudit": "verified_in_main_branch_source_not_production",
+      "tenantProvisioning": "not_activated"
+    }
+  ],
+  "tenants": [
+    {
+      "sourceRow": 9,
+      "tenantKey": "cafe1stalbans",
+      "displayName": "Café 1 St Albans",
+      "productKey": "dishbee-one",
+      "blueprintKey": "dishbee.cafe1stalbans",
+      "parentLandlord": "dishbee",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 13,
+      "tenantKey": "dulcis",
+      "displayName": "Dulcis",
+      "productKey": "merqano",
+      "blueprintKey": "merqano.dulcis",
+      "parentLandlord": "merqano",
+      "blueprintState": "existing_blueprint",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": [
+        "Dulicis — alternate request spelling"
+      ]
+    },
+    {
+      "sourceRow": 28,
+      "tenantKey": "cafe1luton",
+      "displayName": "Café 1 Luton",
+      "productKey": "dishbee-one",
+      "blueprintKey": "dishbee.cafe1luton",
+      "parentLandlord": "dishbee",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 31,
+      "tenantKey": "qatnov",
+      "displayName": "Qatnov",
+      "productKey": "fleetora",
+      "blueprintKey": "fleetora.qatnov",
+      "parentLandlord": "fleetora",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 79,
+      "tenantKey": "taxlounge",
+      "displayName": "TaxLounge legacy practice",
+      "productKey": "omniqora-accounts",
+      "blueprintKey": "accounts.taxlounge",
+      "parentLandlord": "omniqora-accounts",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 84,
+      "tenantKey": "mealdeck",
+      "displayName": "MealDeck",
+      "productKey": "mealdeck",
+      "blueprintKey": "mealdeck-uk",
+      "parentLandlord": "dishbee",
+      "blueprintState": "existing_blueprint",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 87,
+      "tenantKey": "alstero",
+      "displayName": "Alstero",
+      "productKey": "merqano",
+      "blueprintKey": "merqano.alstero",
+      "parentLandlord": "merqano",
+      "blueprintState": "existing_blueprint",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 88,
+      "tenantKey": "meyzaar",
+      "displayName": "Meyzaar",
+      "productKey": "merqano",
+      "blueprintKey": "merqano.meyzaar",
+      "parentLandlord": "merqano",
+      "blueprintState": "existing_blueprint",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 89,
+      "tenantKey": "zarvane",
+      "displayName": "Zarvane",
+      "productKey": "merqano",
+      "blueprintKey": "merqano.zarvane",
+      "parentLandlord": "merqano",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 90,
+      "tenantKey": "kalethon",
+      "displayName": "Kalëthon",
+      "productKey": "merqano",
+      "blueprintKey": "merqano.kalethon",
+      "parentLandlord": "merqano",
+      "blueprintState": "existing_blueprint",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 110,
+      "tenantKey": "sofevella",
+      "displayName": "Sofevella",
+      "productKey": "merqano",
+      "blueprintKey": "merqano.sofevella",
+      "parentLandlord": "merqano",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": [
+        "Sofellea — historic spelling, verification required"
+      ]
+    },
+    {
+      "sourceRow": 121,
+      "tenantKey": "chefzhub",
+      "displayName": "ChefzHub",
+      "productKey": "dishbee",
+      "blueprintKey": "dishbee.chefzhub",
+      "parentLandlord": "dishbee",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 122,
+      "tenantKey": "finvessa",
+      "displayName": "Finvessa",
+      "productKey": "omniqora-accounts",
+      "blueprintKey": "accounts.finvessa",
+      "parentLandlord": "omniqora-accounts",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "historical_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 124,
+      "tenantKey": "flightlounge",
+      "displayName": "FlightLounge",
+      "blueprintKey": "travenexa-flightlounge",
+      "productKey": "travenexa",
+      "parentLandlord": "travenexa",
+      "blueprintState": "existing_blueprint",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "travenexa_main_branch_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 125,
+      "tenantKey": "bestfares-bestrates",
+      "displayName": "BestFares BestRates",
+      "blueprintKey": "travenexa-bestfares",
+      "productKey": "travenexa",
+      "parentLandlord": "travenexa",
+      "blueprintState": "existing_blueprint",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "travenexa_main_branch_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 126,
+      "tenantKey": "marocways",
+      "displayName": "MarocWays",
+      "blueprintKey": "travenexa-marocways",
+      "productKey": "travenexa",
+      "parentLandlord": "travenexa",
+      "blueprintState": "existing_blueprint",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "travenexa_main_branch_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    },
+    {
+      "sourceRow": 127,
+      "tenantKey": "route50",
+      "displayName": "Route50",
+      "blueprintKey": "travenexa-route50",
+      "productKey": "travenexa",
+      "parentLandlord": "travenexa",
+      "blueprintState": "existing_blueprint",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "travenexa_main_branch_inventory",
+      "provisioning": "not_activated",
+      "aliases": []
+    }
+  ],
+  "aliases": [
+    {
+      "alias": "MoneyBridge",
+      "canonicalProductKey": "fastremit",
+      "kind": "brand_alias",
+      "note": "Preserve machine product_key fastremit and separate operator data plane"
+    },
+    {
+      "alias": "FastRemit",
+      "canonicalProductKey": "fastremit",
+      "kind": "legacy_brand",
+      "note": "Same product as MoneyBridge; never create parallel remittance accounts"
+    },
+    {
+      "alias": "Courier Job SaaS",
+      "canonicalProductKey": "courier-connect",
+      "kind": "descriptor",
+      "note": "Courier Broker OS and Courier Connect are the shared courier product family"
+    },
+    {
+      "alias": "Courier Broker OS",
+      "canonicalProductKey": "courier-connect",
+      "kind": "brand_alias",
+      "note": "Shares Dispatch/Geo via Omniqora"
+    },
+    {
+      "alias": "KinderStars",
+      "canonicalProductKey": "kindelo",
+      "kind": "legacy_brand",
+      "note": "UK/DE product country variants; avoid duplicate landlords"
+    },
+    {
+      "alias": "Accountancy SaaS",
+      "canonicalProductKey": "omniqora-accounts",
+      "kind": "descriptor",
+      "note": "Practices such as Finvessa are tenants"
+    },
+    {
+      "alias": "IQ Practice Cloud",
+      "canonicalProductKey": "omniqora-accounts",
+      "kind": "product_edition",
+      "note": "Accountancy vertical; confirm source authority before migrating"
+    }
+  ],
+  "brandGroups": [
+    {
+      "parentTenantKey": "mealdeck",
+      "landlordProductKey": "dishbee",
+      "label": "MealDeck concepts",
+      "brands": [
+        "Paratique",
+        "Taconelle",
+        "Tavo Chicken",
+        "Skorch Burgers",
+        "Load'd Fries & Mac",
+        "TarkaBox",
+        "Sabzora",
+        "Vyta",
+        "Moktl",
+        "Icova Coffee",
+        "Rise & Griddle",
+        "Souvano",
+        "Nusara",
+        "Pastarivo",
+        "Fornello"
+      ],
+      "note": "Food brands, not separately provisioned SaaS products or tenants"
+    },
+    {
+      "parentTenantKey": "kalethon",
+      "landlordProductKey": "merqano",
+      "label": "Kalëthon retail",
+      "brands": [
+        "Kalëthon"
+      ],
+      "note": "Distinct from Kalethon Play and Kalethon Teams source products"
+    },
+    {
+      "parentTenantKey": "cafe1luton",
+      "landlordProductKey": "dishbee",
+      "label": "Café 1 operating locations",
+      "brands": [
+        "Café 1 Luton",
+        "Futures House (location; verify)"
+      ],
+      "note": "Futures House is a possible site/location, not a separate SaaS tenant"
+    }
+  ],
+  "exclusions": [
+    "Regional variants are attached to canonical SaaS products rather than spun up as new core platforms.",
+    "Shared modules and merge candidates remain historic source records, not standalone production SaaS tenants.",
+    "Sofevella and historic Sofellea naming is marked unresolved. Do not merge customer records by spelling.",
+    "Existing product/tenant keys are retained; no payments, filings or other provider connections are activated."
+  ]
+}

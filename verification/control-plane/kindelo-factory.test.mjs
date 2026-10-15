@@ -44,3 +44,15 @@ test('separate agency registration requires independently reviewed evidence and 
 test('workspaces cannot claim UK coverage outside England',()=>{
   assert.equal(kindeloTenantLaunchSchema.safeParse({...sample,jurisdiction:'Wales'}).success,false);
 });
+
+const registry = JSON.parse(await readFile(
+ new URL('../../src/modules/control-plane/portfolio-factory-registry.json', import.meta.url),'utf8'));
+test('canonical UK Kindelo source is visible without activating any tenant',()=>{
+ const product=registry.products.find(x=>x.productKey==='kindelo');
+ assert.ok(product);
+ assert.equal(product.repositories[0],'https://github.com/asaffilate01-ship-it/kindelo-uk.git');
+ assert.ok(product.repositories.some(x=>x.endsWith('/kinderstars.git')));
+ assert.equal(product.tenantProvisioning,'not_activated');
+ assert.equal(seed.find(x=>x.sourceRow===25).liveUrl,null,'unverified domain must not be flagged as live');
+ assert.equal(seed.length,127);
+});

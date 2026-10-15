@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import seedRaw from './portfolio-seed.json';
+import factoryRegistry from './portfolio-factory-registry.json';
 import {
   listPortfolioInputSchema,
   migrationStageSchema,
@@ -90,7 +91,7 @@ export const getPortfolioControlPlane = createServerFn({ method: 'POST' })
       byStage: {} as Record<string, number>,
     });
 
-    return { assets: parsed, stats, sourceRows: seed.length };
+    return { assets: parsed, stats, sourceRows: seed.length, factoryRegistry };
   });
 
 export const updatePortfolioAsset = createServerFn({ method: 'POST' })

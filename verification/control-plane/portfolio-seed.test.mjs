@@ -8,10 +8,10 @@ const rows = JSON.parse(
   ),
 );
 
-assert.equal(rows.length, 125, 'portfolio seed must preserve the original 120 rows plus five travel assets');
+assert.equal(rows.length, 127, 'portfolio seed includes canonical source assets, ChefzHub, Finvessa and five travel assets');
 assert.deepEqual(
   rows.map((row) => row.sourceRow),
-  Array.from({ length: 125 }, (_, index) => index + 1),
+  Array.from({ length: 127 }, (_, index) => index + 1),
   'source rows must remain stable and contiguous',
 );
 assert.equal(
@@ -43,3 +43,10 @@ for (const row of travel.filter((row) => row.name !== 'TRAVENEXA')) {
 }
 
 console.log(`portfolio seed verified: ${rows.length} rows`);
+
+const partner = rows.find((row) => row.name === 'CHEFZHUB (DISHBEE HIVE CUSTOMER)');
+const practice = rows.find((row) => row.name === 'FINVESSA (ACCOUNTANCY PRACTICE TENANT)');
+assert.equal(partner?.architectureRole, 'tenant');
+assert.equal(partner?.parentLandlord, 'DISHBEE');
+assert.equal(practice?.architectureRole, 'tenant');
+assert.equal(practice?.parentLandlord, 'OMNIQORA ACCOUNTS');
