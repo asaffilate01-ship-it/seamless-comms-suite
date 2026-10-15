@@ -49,6 +49,10 @@ jobs:
       - run: bun run test:bridges
       - run: bun run test:mobile
       - run: bun run test:procurement
+      - name: Portfolio source, SaaS and tenant blueprint inventory
+        run: node --test verification/control-plane/portfolio-expansion.test.mjs
+      - name: Property matching agent and safe activation contract
+        run: node --test verification/control-plane/property-matching.test.mjs
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids

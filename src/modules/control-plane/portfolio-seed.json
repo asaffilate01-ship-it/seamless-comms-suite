@@ -116,14 +116,14 @@
   },
   {
     "sourceRow": 6,
-    "name": "COURIER CONNECT",
+    "name": "COURIER CONNECT / COURIER BROKER OS",
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/courier-connect-hub.git",
     "liveUrl": "https://shipment-spark-os.lovable.app",
-    "linksTo": "check",
+    "linksTo": "Courier Job SaaS / Courier Broker OS; shared Omniqora Dispatch + Geo; one product, not two independent runtimes.",
     "proposedRole": "Product / Vertical on Dispatch",
     "architectureRole": "vertical_product",
     "parentLandlord": "OMNIQORA DISPATCH",
-    "migrationStructure": "Keep courier workflows but extract generic dispatch/fleet core.",
+    "migrationStructure": "Canonical courier-connect product; courier job marketplace and broker operations share Omniqora Dispatch/Geo/Connect. Source authorises job offers, quotes, booking and tracking; no automatic dispatch activation.",
     "commonServices": [
       "Omniqora Identity",
       "Tenant",
@@ -284,7 +284,7 @@
     "name": "DULCIS",
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-show-373.git",
     "liveUrl": "https://pixel-perfect-show-373.lovable.app",
-    "linksTo": "TENANT OF MERQANO",
+    "linksTo": "Merqano merchant tenant; Dulcis (also written Dulicis); one tenant unless distinct legal operator is confirmed.",
     "proposedRole": "Tenant / Brand",
     "architectureRole": "tenant",
     "parentLandlord": "MERQANO",
@@ -426,10 +426,10 @@
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/jobflow-tradehub.git",
     "liveUrl": "https://jobflow-tradehub.lovable.app",
     "linksTo": "have UK and Germany Merge or become tenants of another saas?",
-    "proposedRole": "Tenant / Candidate",
-    "architectureRole": "tenant",
-    "parentLandlord": "Needs confirmation",
-    "migrationStructure": "Supplied notes indicate tenant relationship; confirm parent in repo audit.",
+    "proposedRole": "Landlord SaaS / Trades & Construction",
+    "architectureRole": "landlord",
+    "parentLandlord": "CRAFTVARO",
+    "migrationStructure": "Craftvaro is the canonical trade-jobs, subcontractor and project-management SaaS. Separate local/regional tenants use shared platform identity, CRM and billing.",
     "commonServices": [
       "Omniqora Identity",
       "Tenant",
@@ -440,9 +440,7 @@
       "Analytics"
     ],
     "auditStatus": "Repo audit pending",
-    "traits": [
-      "tenant"
-    ]
+    "traits": []
   },
   {
     "sourceRow": 20,
@@ -565,14 +563,14 @@
   },
   {
     "sourceRow": 25,
-    "name": "KINDERSTARS UK",
+    "name": "KINDELO UK (KINDERSTARS LEGACY)",
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/kinderstars-childcare-saas.git",
     "liveUrl": "https://kinderstars.co.uk",
-    "linksTo": "UK AND GERMANY?",
+    "linksTo": "Formerly KinderStars; UK childcare agency country edition. Preserve source repository identity pending controlled migration.",
     "proposedRole": "Regional Edition",
     "architectureRole": "regional_variant",
-    "parentLandlord": "KINDERSTARS",
-    "migrationStructure": "One product core; country policy/funding/compliance packs.",
+    "parentLandlord": "KINDELO",
+    "migrationStructure": "Kindelo landlord with UK country pack; Ofsted evidence and childminder-agency management stay regulator-controlled.",
     "commonServices": [
       "Omniqora Identity",
       "Tenant",
@@ -1475,13 +1473,13 @@
   },
   {
     "sourceRow": 63,
-    "name": "KINDERSTARS GERMANY",
+    "name": "KINDELO GERMANY (KINDERSTARS LEGACY)",
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/kinderstars.git",
     "liveUrl": "https://kinder-star-finder.lovable.app",
-    "linksTo": null,
+    "linksTo": "Formerly KinderStars; Germany country edition; source identity retained until parity and sign-off.",
     "proposedRole": "Regional Edition",
     "architectureRole": "regional_variant",
-    "parentLandlord": "KINDERSTARS",
+    "parentLandlord": "KINDELO",
     "migrationStructure": "One product core; German localisation/configuration.",
     "commonServices": [
       "Omniqora Identity",
@@ -1950,14 +1948,14 @@
   },
   {
     "sourceRow": 83,
-    "name": "FASTREMIT",
+    "name": "MONEYBRIDGE (FORMERLY FASTREMIT)",
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/screen-shot-magic-526.git",
     "liveUrl": "https://fastremit.co.uk",
-    "linksTo": null,
-    "proposedRole": "Candidate Landlord / Standalone Product",
-    "architectureRole": "standalone_candidate",
-    "parentLandlord": "FASTREMIT",
-    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "linksTo": "Canonical public brand MoneyBridge, machine product key fastremit. Existing operator-per-database, separate client money and approvals.",
+    "proposedRole": "Remittance SaaS / Existing Single-Operator Runtime",
+    "architectureRole": "landlord",
+    "parentLandlord": "MONEYBRIDGE",
+    "migrationStructure": "One remittance product with legacy fastremit machine key. Omniqora provides tenant/product catalogue and advisory AI only; payments, KYC/AML and funding remain in MoneyBridge's authorised runtime.",
     "commonServices": [
       "Omniqora Identity",
       "Tenant",
@@ -1967,9 +1965,9 @@
       "Events",
       "Analytics"
     ],
-    "auditStatus": "Repo audit pending",
+    "auditStatus": "Existing factory registration; production provider activation unverified",
     "traits": [
-      "merge"
+      "canonical"
     ]
   },
   {
@@ -1977,7 +1975,7 @@
     "name": "MEALDECK",
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/pixel-perfect-71.git",
     "liveUrl": "https://pixel-perfect-render-7232.lovable.app",
-    "linksTo": "TENANT?",
+    "linksTo": "Dishbee Hive / MealDeck multi-brand operator tenant; individual food concepts are brands under MealDeck, not extra SaaS landlords.",
     "proposedRole": "Tenant / Operator Layer",
     "architectureRole": "tenant",
     "parentLandlord": "DISHBEE",
@@ -2118,10 +2116,10 @@
   },
   {
     "sourceRow": 90,
-    "name": "KALETHON",
+    "name": "KALËTHON",
     "repositoryUrl": "https://github.com/asaffilate01-ship-it/fashion-preview-hub.git",
     "liveUrl": "https://kalethon.com",
-    "linksTo": "TENANT",
+    "linksTo": "Merqano premium retail merchant tenant; source key kalethon; regional retail edition distinct from Kalethon Play/Teams products.",
     "proposedRole": "Tenant / Brand",
     "architectureRole": "tenant",
     "parentLandlord": "MERQANO",
@@ -2605,14 +2603,14 @@
   },
   {
     "sourceRow": 110,
-    "name": "SOFELLEA",
+    "name": "SOFEVELLA (HISTORICAL SOFELLEA SOURCE)",
     "repositoryUrl": "sofellea-home.amersaleem.chatgpt.site",
     "liveUrl": null,
-    "linksTo": null,
-    "proposedRole": "Candidate Landlord / Standalone Product",
-    "architectureRole": "standalone_candidate",
-    "parentLandlord": "SOFELLEA",
-    "migrationStructure": "Keep as product for now; repo/domain overlap audit will decide whether to merge, tenantise or retain.",
+    "linksTo": "Requested Sofevella tenant; older source recorded SOFELLEA. Confirm identity before any real tenant data migration.",
+    "proposedRole": "Tenant / Commerce Brand",
+    "architectureRole": "tenant",
+    "parentLandlord": "MERQANO",
+    "migrationStructure": "Proposed Merqano branded merchant tenant; preserve historic site reference and prevent automatic record merging until brand verification.",
     "commonServices": [
       "Omniqora Identity",
       "Tenant",
@@ -2622,9 +2620,9 @@
       "Events",
       "Analytics"
     ],
-    "auditStatus": "Repo audit pending",
+    "auditStatus": "Brand spelling/source identity to confirm; blueprint draft",
     "traits": [
-      "merge",
+      "tenant",
       "site_only"
     ]
   },
@@ -2880,6 +2878,54 @@
   },
   {
     "sourceRow": 121,
+    "name": "CHEFZHUB (DISHBEE HIVE CUSTOMER)",
+    "repositoryUrl": null,
+    "liveUrl": null,
+    "linksTo": "Independent ChefzHub partner/customer tenant using Dishbee Hive across multiple locations; no assumed ownership or source repository.",
+    "proposedRole": "Tenant / External Hospitality Operator",
+    "architectureRole": "tenant",
+    "parentLandlord": "DISHBEE",
+    "migrationStructure": "Tenant of Dishbee Hive with its own brands, kitchens and locations; source operations remain authoritative until shadow/parity migration.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Source app/tenant credentials and commercial sign-off pending",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 122,
+    "name": "FINVESSA (ACCOUNTANCY PRACTICE TENANT)",
+    "repositoryUrl": null,
+    "liveUrl": null,
+    "linksTo": "Finvessa practice/customer brand on Omniqora Accounts / accountancy SaaS; do not duplicate the practice-management landlord.",
+    "proposedRole": "Tenant / Accountancy Practice",
+    "architectureRole": "tenant",
+    "parentLandlord": "OMNIQORA ACCOUNTS",
+    "migrationStructure": "Proposed accountancy-practice tenant; regulated accounts, tax filing and professional signoff remain in the authorised practice runtime.",
+    "commonServices": [
+      "Omniqora Identity",
+      "Tenant",
+      "Entitlements",
+      "Billing",
+      "Connect",
+      "Events",
+      "Analytics"
+    ],
+    "auditStatus": "Practice authorisation and source tenant verification required",
+    "traits": [
+      "tenant"
+    ]
+  },
+  {
+    "sourceRow": 123,
     "name": "TRAVENEXA",
     "repositoryUrl": null,
     "liveUrl": null,
@@ -2905,7 +2951,7 @@
     ]
   },
   {
-    "sourceRow": 122,
+    "sourceRow": 124,
     "name": "FLIGHTLOUNGE",
     "repositoryUrl": null,
     "liveUrl": null,
@@ -2932,7 +2978,7 @@
     ]
   },
   {
-    "sourceRow": 123,
+    "sourceRow": 125,
     "name": "BESTFARES BESTRATES",
     "repositoryUrl": null,
     "liveUrl": null,
@@ -2958,7 +3004,7 @@
     ]
   },
   {
-    "sourceRow": 124,
+    "sourceRow": 126,
     "name": "MAROCWAYS",
     "repositoryUrl": null,
     "liveUrl": null,
@@ -2984,7 +3030,7 @@
     ]
   },
   {
-    "sourceRow": 125,
+    "sourceRow": 127,
     "name": "ROUTE50",
     "repositoryUrl": null,
     "liveUrl": null,

@@ -155,7 +155,7 @@ const noFakeActivation = await db.query(`
 assert.equal(noFakeActivation.rows[0].total, 0, 'catalogue creation must not pretend suppliers are connected');
 
 const inventory = JSON.parse(await readFile(new URL('../../src/modules/control-plane/portfolio-seed.json', import.meta.url), 'utf8'));
-assert.equal(inventory.length, 125);
+assert.equal(inventory.length, 127);
 assert.equal(inventory.find(x=>x.name==='FLIGHTLOUNGE')?.parentLandlord, 'TRAVENEXA');
 assert.equal(inventory.find(x=>x.name==='MAROCWAYS')?.parentLandlord, 'TRAVENEXA');
 const route50Inventory=inventory.find(x=>x.name==='ROUTE50');
