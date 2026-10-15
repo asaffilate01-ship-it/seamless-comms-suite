@@ -16,7 +16,18 @@
       "uber_direct",
       "deliveroo_express",
       "just_eat_go"
-    ]
+    ],
+    "deliveryActivation": {
+      "authority": "dishbee-landlord-per-tenant-and-physical-location",
+      "importWithoutProviderAllowed": true,
+      "productionDispatchRequires": "independent-merchant-onboarding-live-and-explicit-enable-with-platform-partner-approval",
+      "keepSandboxSeparate": true,
+      "paidOrderBeforeBooking": true,
+      "quoteMustBeProviderPriced": true,
+      "neverAutoBookUnapprovedProvider": true,
+      "doNotReplaceMarketplaceCourier": true,
+      "noCredentialsInFactoryRegistry": true
+    }
   },
   "handovers": [
     {
@@ -29,7 +40,46 @@
         "st-albans-crown-court"
       ],
       "importPath": "cafe1_v3_full_parity",
-      "phase": "awaiting_draft_tenant_and_staging"
+      "phase": "awaiting_draft_tenant_and_staging",
+      "deliveryLocationPlans": [
+        {
+          "locationKey": "st-albans-crown-court",
+          "sourceOfTruth": "dishbee",
+          "approvalStatus": "not_commissioned",
+          "providerOptions": [
+            {
+              "provider": "uber_direct",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "deliveroo_express",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "just_eat_go",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            }
+          ]
+        }
+      ]
     },
     {
       "factoryTenantKey": "cafe1luton",
@@ -42,7 +92,83 @@
         "futures-house"
       ],
       "importPath": "cafe1_v3_full_parity",
-      "phase": "awaiting_draft_tenant_and_staging"
+      "phase": "awaiting_draft_tenant_and_staging",
+      "deliveryLocationPlans": [
+        {
+          "locationKey": "luton-crown-court",
+          "sourceOfTruth": "dishbee",
+          "approvalStatus": "not_commissioned",
+          "providerOptions": [
+            {
+              "provider": "uber_direct",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "deliveroo_express",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "just_eat_go",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            }
+          ]
+        },
+        {
+          "locationKey": "futures-house",
+          "sourceOfTruth": "dishbee",
+          "approvalStatus": "not_commissioned",
+          "providerOptions": [
+            {
+              "provider": "uber_direct",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "deliveroo_express",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "just_eat_go",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            }
+          ]
+        }
+      ]
     },
     {
       "factoryTenantKey": "mealdeck",
@@ -55,7 +181,83 @@
         "mealdeck-st-albans"
       ],
       "importPath": "native_dishbee_multibrand_no_legacy_cafe_import",
-      "phase": "awaiting_draft_tenant_and_staging"
+      "phase": "awaiting_draft_tenant_and_staging",
+      "deliveryLocationPlans": [
+        {
+          "locationKey": "mealdeck-luton",
+          "sourceOfTruth": "dishbee",
+          "approvalStatus": "not_commissioned",
+          "providerOptions": [
+            {
+              "provider": "uber_direct",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "deliveroo_express",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "just_eat_go",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            }
+          ]
+        },
+        {
+          "locationKey": "mealdeck-st-albans",
+          "sourceOfTruth": "dishbee",
+          "approvalStatus": "not_commissioned",
+          "providerOptions": [
+            {
+              "provider": "uber_direct",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "deliveroo_express",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            },
+            {
+              "provider": "just_eat_go",
+              "credentialStatus": "not_connected",
+              "merchantAuthorised": false,
+              "collectionPointApproved": false,
+              "webhookCertified": false,
+              "sandboxQuoteAccepted": false,
+              "sandboxDeliveryAccepted": false,
+              "productionEnabled": false
+            }
+          ]
+        }
+      ]
     }
   ]
 }
