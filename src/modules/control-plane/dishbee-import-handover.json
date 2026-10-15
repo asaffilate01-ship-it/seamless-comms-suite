@@ -27,6 +27,37 @@
       "neverAutoBookUnapprovedProvider": true,
       "doNotReplaceMarketplaceCourier": true,
       "noCredentialsInFactoryRegistry": true
+    },
+    "landlordSchemaReleaseGate": {
+      "authority": "dishbee-staging-verified-deployment",
+      "capabilityAuditSource": "asaffilate01-ship-it/dishbee-helper/verification/landlord/schema-capability-audit.sql",
+      "readOnlyRequired": true,
+      "migrationLedgerRequired": true,
+      "runAgainstActualDishbeeProject": true,
+      "requiredPublicTables": [
+        "tenants",
+        "tenant_product_profiles",
+        "tenant_locations",
+        "tenant_brands",
+        "import_batches",
+        "import_reconciliation",
+        "delivery_provider_configs",
+        "delivery_provider_onboarding",
+        "delivery_provider_webhook_events",
+        "delivery_booking_attempts"
+      ],
+      "requiredPublicFunctions": [
+        "landlord_blueprint_status",
+        "landlord_import_dashboard",
+        "can_publish_tenant",
+        "delivery_provider_go_live_readiness",
+        "server_begin_delivery_booking",
+        "server_bind_factory_omniqora"
+      ],
+      "noImportWithoutActualTenantUuid": true,
+      "noPaymentCutoverFromRegistry": true,
+      "noCourierActivationFromRegistry": true,
+      "authorityAfterHandover": "dishbee-landlord"
     }
   },
   "handovers": [

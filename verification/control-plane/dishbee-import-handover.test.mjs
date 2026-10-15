@@ -73,3 +73,30 @@ test("every expected physical site has three independently uncommissioned courie
   assert(!JSON.stringify(manifest).includes("sk_live_"));
   assert(!JSON.stringify(manifest).includes("sb_secret_"));
 });
+
+test("Dishbee Factory cannot activate tenants before exact landlord schema/migration verification",()=>{
+  const gate=manifest.rules.landlordSchemaReleaseGate;
+  assert.equal(gate.readOnlyRequired,true);
+  assert.equal(gate.migrationLedgerRequired,true);
+  assert.equal(gate.runAgainstActualDishbeeProject,true);
+  assert.equal(gate.noImportWithoutActualTenantUuid,true);
+  assert.equal(gate.noPaymentCutoverFromRegistry,true);
+  assert.equal(gate.noCourierActivationFromRegistry,true);
+  assert.equal(gate.authorityAfterHandover,"dishbee-landlord");
+  assert.equal(gate.capabilityAuditSource,
+    "asaffilate01-ship-it/dishbee-helper/verification/landlord/schema-capability-audit.sql");
+  assert(new Set(gate.requiredPublicTables).size===gate.requiredPublicTables.length);
+  assert(new Set(gate.requiredPublicFunctions).size===gate.requiredPublicFunctions.length);
+  for(const name of [
+    "tenants","tenant_locations","delivery_provider_onboarding",
+    "delivery_provider_webhook_events","delivery_booking_attempts",
+  ])assert(gate.requiredPublicTables.includes(name),name);
+  for(const name of [
+    "landlord_blueprint_status","landlord_import_dashboard",
+    "delivery_provider_go_live_readiness","server_begin_delivery_booking",
+    "server_bind_factory_omniqora",
+  ])assert(gate.requiredPublicFunctions.includes(name),name);
+  assert.equal(manifest.status,"registry_only_not_live");
+  assert.equal(manifest.rules.noAutomaticTenantCreation,true);
+  assert.equal(manifest.rules.noProductionCutover,true);
+});
