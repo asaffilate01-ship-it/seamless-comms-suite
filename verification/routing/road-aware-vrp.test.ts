@@ -1,7 +1,7 @@
 import {describe,test,expect} from "bun:test";
 import {collectRoadTopology,verifiedRoadGraph,type RoadMatrixEvidence} from "../../src/modules/routing/road-graph";
 import {optimiseNativeRoutes} from "../../src/modules/routing/service.server";
-const a={lat:51.8701,lng:-0.42},b={lat:51.8702,lng:-0.42},c={lat:51.875,lng:-0.4201};
+const a={lat:51.8701,lng:-0.42},b={lat:51.8600,lng:-0.42},c={lat:51.875,lng:-0.4201};
 function evidence(now:string,values:number[][],durations:number[][]):RoadMatrixEvidence{
  const nodes=[a,b,c],cells=[];
  for(let i=0;i<3;i++)for(let j=0;j<3;j++)cells.push({
@@ -12,7 +12,7 @@ function evidence(now:string,values:number[][],durations:number[][]):RoadMatrixE
 }
 const NOW="2026-10-15T08:00:00.000Z";
 const d=[[0,100,400],[100,0,500],[400,500,0]];
-const t=[[0,900,80],[900,0,100],[80,100,0]];
+const t=[[0,900,500],[900,0,100],[500,100,0]];
 const rows=evidence(NOW,d,t);
 const jobs=[{jobId:"delivery",priority:"normal" as const,demand:1,
  requiredSkills:[],requiredVehicleTypes:[],stops:[c]}];
@@ -46,7 +46,7 @@ describe("road-aware VRP",()=>{
    {...x,distanceMetres:null,durationSeconds:null,status:"unreachable" as const}:x)};
   const result=optimiseNativeRoutes({jobs,resources,roadMatrix:bad,startedAt:NOW});
   expect(result.routes[0].agentId).toBe("close-straight");
-  expect(result.routes[0].stops[0].durationFromPreviousSeconds).toBe(80);
+  expect(result.routes[0].stops[0].durationFromPreviousSeconds).toBe(500);
  });
  test("topology deduplicates repeated stops but keeps resource origins",()=>{
   expect(collectRoadTopology(resources,[{stops:[c,c]}])).toHaveLength(3);
