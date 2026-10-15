@@ -8,7 +8,7 @@ import {Button} from "@/components/ui/button";
 import {Badge} from "@/components/ui/badge";
 import {useTenant} from "@/hooks/useTenant";
 import {getTenantControlPlane} from "@/lib/control-plane.functions";
-import {applyDispatchRecommendation,applyRoutingOptimisation,createRoutingOptimisation,queueRoadMatrixForOptimisation,createRoutingMatrixJob,runRoadMatrixPreview,generateDispatchRecommendations,getRoutingWorkspace,runNativeRoutingOptimisation,saveRoutingPolicy} from "@/modules/routing/functions";
+import {applyDispatchRecommendation,applyRoutingOptimisation,createRoutingOptimisation,queueRoadMatrixForOptimisation,finalizeRoadMatrixForOptimisation,createRoutingMatrixJob,runRoadMatrixPreview,generateDispatchRecommendations,getRoutingWorkspace,runNativeRoutingOptimisation,saveRoutingPolicy} from "@/modules/routing/functions";
 import {GitBranch,MapPinned,RefreshCw,Route as RouteIcon,Truck} from "lucide-react";
 import {toast} from "sonner";
 
@@ -16,7 +16,7 @@ export const RouteDef=createFileRoute("/_authenticated/app/routing")({component:
 export {RouteDef as Route};
 
 function RoutingWorkspace(){
- const t=useTenant(),tenantId=t.tenantId??"";const tenantFn=useServerFn(getTenantControlPlane),getFn=useServerFn(getRoutingWorkspace),policyFn=useServerFn(saveRoutingPolicy),createFn=useServerFn(createRoutingOptimisation),runFn=useServerFn(runNativeRoutingOptimisation),applyFn=useServerFn(applyRoutingOptimisation),recommendFn=useServerFn(generateDispatchRecommendations),applyRecFn=useServerFn(applyDispatchRecommendation),queueMatrixFn=useServerFn(createRoutingMatrixJob),queuePlanMatrixFn=useServerFn(queueRoadMatrixForOptimisation),runMatrixFn=useServerFn(runRoadMatrixPreview);
+ const t=useTenant(),tenantId=t.tenantId??"";const tenantFn=useServerFn(getTenantControlPlane),getFn=useServerFn(getRoutingWorkspace),policyFn=useServerFn(saveRoutingPolicy),createFn=useServerFn(createRoutingOptimisation),runFn=useServerFn(runNativeRoutingOptimisation),applyFn=useServerFn(applyRoutingOptimisation),recommendFn=useServerFn(generateDispatchRecommendations),applyRecFn=useServerFn(applyDispatchRecommendation),queueMatrixFn=useServerFn(createRoutingMatrixJob),queuePlanMatrixFn=useServerFn(queueRoadMatrixForOptimisation),finalizeBatchFn=useServerFn(finalizeRoadMatrixForOptimisation),runMatrixFn=useServerFn(runRoadMatrixPreview);
  const tenant=useQuery({queryKey:["routing-tenant",tenantId],queryFn:()=>tenantFn({data:{tenantId}}),enabled:!!tenantId,retry:false});
  const products=(tenant.data?.products??[]).map((p:any)=>p.product_key);const[productKey,setProductKey]=useState("");
  useEffect(()=>{if(!productKey&&products[0])setProductKey(products[0]);},[productKey,products.join("|")]);
@@ -24,8 +24,16 @@ function RoutingWorkspace(){
  async function run(fn:()=>Promise<unknown>,msg:string){try{await fn();toast.success(msg);await q.refetch();}catch(e){toast.error(e instanceof Error?e.message:String(e));}}
  const unassigned=(q.data?.jobs??[]).filter((x:any)=>x.status==="unassigned"),latest=(q.data?.optimisations??[])[0];
  const plannedMatrix=(q.data?.matrixJobs??[]).find((matrix:any)=>matrix.id===latest?.matrix_job_id);
- const canRun=latest?.status==="queued"&&(!latest.matrix_job_id||
-  (plannedMatrix?.status==="completed"&&["road","traffic"].includes(plannedMatrix?.quality)));
+ const currentBatch=(q.data?.matrixBatches??[]).find((batch:any)=>batch.optimisation_job_id===latest?.id);
+ const tiles=[...(currentBatch?.tiles??[])].sort((a:any,b:any)=>a.row_start-b.row_start||a.col_start-b.col_start);
+ const pendingTile=tiles.find((tile:any)=>tile.job?.status==="queued");
+ const completedRoadTiles=tiles.filter((tile:any)=>tile.job?.status==="completed"&&tile.job?.quality==="road").length;
+ const blockedTile=tiles.some((tile:any)=>["fallback","failed","cancelled"].includes(tile.job?.status));
+ const readyToAssemble=currentBatch?.status==="queued"&&tiles.length===4&&completedRoadTiles===4&&!blockedTile;
+ const canRun=latest?.status==="queued"&&(!currentBatch
+  ?(!latest.matrix_job_id||(plannedMatrix?.status==="completed"&&["road","traffic"].includes(plannedMatrix?.quality)))
+  :currentBatch.status==="completed"&&!!latest.matrix_job_id&&plannedMatrix?.status==="completed"&&
+   ["road","traffic"].includes(plannedMatrix?.quality));
  const geoPoints=unassigned.flatMap((j:any)=>(j.stops??[]).slice().sort((a:any,b:any)=>a.position-b.position)).filter((s:any)=>Number.isFinite(Number(s.latitude))&&Number.isFinite(Number(s.longitude))).slice(0,8).map((s:any)=>({lat:Number(s.latitude),lng:Number(s.longitude)}));
  const matrixJobs=(q.data?.matrixJobs??[]) as any[];
  const newest=matrixJobs[0] as any|undefined;
@@ -40,15 +48,26 @@ function RoutingWorkspace(){
     <div><h2 className="font-semibold">Run fleet optimiser</h2>
      <p className="mt-1 text-xs text-muted-foreground">
       Use an operator-approved road matrix to choose drivers by verified road journey time.
-      Pilot capacity: eight unique locations; larger jobs remain in native estimated planning.
+      Pilot capacity: up to 16 unique locations using four controlled 8×8 road-matrix tiles. Larger jobs are not automatically road-routed.
      </p></div>
     <div className="flex flex-wrap gap-2">
      <Button size="sm" onClick={()=>run(()=>createFn({data:{tenantId,productKey,reason:"manual",objective:"balanced"}}),
       "New optimisation queued")}>Queue optimisation</Button>
-     {latest?.status==="queued"&&!latest.matrix_job_id&&
+     {latest?.status==="queued"&&!latest.matrix_job_id&&!currentBatch&&
       <Button size="sm" variant="outline" onClick={()=>run(()=>queuePlanMatrixFn({data:{tenantId,optimisationId:latest.id}}),
        "Matrix requested for this route")}>Prepare verified road matrix</Button>}
-     {latest?.status==="queued"&&plannedMatrix?.status==="queued"&&
+     {latest?.status==="queued"&&currentBatch?.status==="queued"&&pendingTile&&
+      <Button size="sm" variant="outline"
+       onClick={()=>run(()=>runMatrixFn({data:{
+        tenantId,productKey,matrixJobId:pendingTile.matrix_job_id}}),
+        "Next road tile calculated")}>
+       Calculate tile {completedRoadTiles+1} of 4</Button>}
+     {latest?.status==="queued"&&readyToAssemble&&
+      <Button size="sm" variant="outline" onClick={()=>run(()=>finalizeBatchFn({data:{
+       tenantId,optimisationId:latest.id}}),"Four road tiles assembled and verified")}>
+       Assemble verified 16-node matrix
+      </Button>}
+     {latest?.status==="queued"&&!currentBatch&&plannedMatrix?.status==="queued"&&
       <Button size="sm" variant="outline" onClick={()=>run(()=>runMatrixFn({data:{
        tenantId,productKey,matrixJobId:plannedMatrix.id}}),
        "Road matrix calculated")}>Calculate road distances</Button>}
@@ -67,6 +86,19 @@ function RoutingWorkspace(){
      <p className="text-xs">{latest.routes?.length??0} route(s) ·
        {" "}{latest.score?.distanceMetres??0} metres ·
        {" "}{latest.score?.constraintBreaches??0} constraint breaches</p>
+     {currentBatch&&<div className="rounded-md border p-3 text-xs space-y-1">
+      <p className="font-semibold">16-node tiled matrix: {completedRoadTiles}/4 verified tiles ·
+       {" "}{currentBatch.nodes?.length??0} unique locations</p>
+      <p>Each tile is 8×8 or smaller. Four requests consume up to 256 daily matrix elements.</p>
+      {blockedTile&&<p role="alert" className="text-destructive">
+       One or more tiles could not produce verified road times.
+       Finalisation is blocked. Check provider authorisation and prepare a new route.
+      </p>}
+      {tiles.map((tile:any)=><p key={tile.matrix_job_id}>
+       Tile {Math.floor(tile.row_start/8)+1}–{Math.floor(tile.col_start/8)+1}:
+       {" "}{tile.job?.status??"unavailable"} ({tile.job?.quality??"pending"})
+      </p>)}
+     </div>}
      {plannedMatrix&&<p className="text-xs">Source road matrix:
        {" "}{plannedMatrix.status} · {plannedMatrix.quality??"not verified"}
        {plannedMatrix.status==="fallback"?" — estimated only; cannot be used for road-aware routing":""}
@@ -89,7 +121,7 @@ function RoutingWorkspace(){
     </p>
    </div>
    <p className="text-xs text-muted-foreground">
-    Up to 8×8 stops per preview, maximum eight requests and 256 route pairs per tenant/product per UTC day.
+    Individual previews remain 8×8; a 9–16-location planned route uses four controlled tiles, within the same eight requests and 256 route-pair daily tenant/product limit.
     API provider charges and billing alerts remain separate from these request limits.
    </p>
    <div className="flex flex-wrap gap-2">
