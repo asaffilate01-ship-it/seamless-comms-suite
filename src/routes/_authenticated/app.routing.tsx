@@ -24,8 +24,14 @@ function RoutingWorkspace(){
  async function run(fn:()=>Promise<unknown>,msg:string){try{await fn();toast.success(msg);await q.refetch();}catch(e){toast.error(e instanceof Error?e.message:String(e));}}
  const unassigned=(q.data?.jobs??[]).filter((x:any)=>x.status==="unassigned"),latest=(q.data?.optimisations??[])[0];
  const plannedMatrix=(q.data?.matrixJobs??[]).find((matrix:any)=>matrix.id===latest?.matrix_job_id);
- const canRun=latest?.status==="queued"&&(!latest.matrix_job_id||
-  (plannedMatrix?.status==="completed"&&["road","traffic"].includes(plannedMatrix?.quality)));
+ const plannedBatch=(q.data?.roadBatches??[]).find((batch:any)=>batch.id===latest?.road_batch_id);
+ const tiles=(plannedBatch?.tiles??[]) as any[];
+ const tilesReady=tiles.length===4&&tiles.every(tile=>tile.matrix?.status==="completed"&&
+  ["road","traffic"].includes(tile.matrix?.quality));
+ const singleReady=!latest?.matrix_job_id||
+  (plannedMatrix?.status==="completed"&&["road","traffic"].includes(plannedMatrix?.quality));
+ const canRun=latest?.status==="queued"&&
+  (latest?.road_batch_id?tilesReady:singleReady);
  const geoPoints=unassigned.flatMap((j:any)=>(j.stops??[]).slice().sort((a:any,b:any)=>a.position-b.position)).filter((s:any)=>Number.isFinite(Number(s.latitude))&&Number.isFinite(Number(s.longitude))).slice(0,8).map((s:any)=>({lat:Number(s.latitude),lng:Number(s.longitude)}));
  const matrixJobs=(q.data?.matrixJobs??[]) as any[];
  const newest=matrixJobs[0] as any|undefined;
@@ -40,21 +46,29 @@ function RoutingWorkspace(){
     <div><h2 className="font-semibold">Run fleet optimiser</h2>
      <p className="mt-1 text-xs text-muted-foreground">
       Use an operator-approved road matrix to choose drivers by verified road journey time.
-      Pilot capacity: eight unique locations; larger jobs remain in native estimated planning.
+      Pilot capacity: up to sixteen unique locations in four capped road-matrix requests.
      </p></div>
     <div className="flex flex-wrap gap-2">
      <Button size="sm" onClick={()=>run(()=>createFn({data:{tenantId,productKey,reason:"manual",objective:"balanced"}}),
       "New optimisation queued")}>Queue optimisation</Button>
-     {latest?.status==="queued"&&!latest.matrix_job_id&&
+     {latest?.status==="queued"&&!latest.matrix_job_id&&!latest.road_batch_id&&
       <Button size="sm" variant="outline" onClick={()=>run(()=>queuePlanMatrixFn({data:{tenantId,optimisationId:latest.id}}),
        "Matrix requested for this route")}>Prepare verified road matrix</Button>}
      {latest?.status==="queued"&&plannedMatrix?.status==="queued"&&
       <Button size="sm" variant="outline" onClick={()=>run(()=>runMatrixFn({data:{
        tenantId,productKey,matrixJobId:plannedMatrix.id}}),
        "Road matrix calculated")}>Calculate road distances</Button>}
+     {latest?.status==="queued"&&tiles.map(tile=>
+      tile.matrix?.status==="queued"&&<Button key={tile.id??tile.matrix?.id}
+       size="sm" variant="outline"
+       onClick={()=>run(()=>runMatrixFn({data:{
+        tenantId,productKey,matrixJobId:tile.matrix.id}}),
+        "Batch road matrix tile computed")}>
+        Calculate tile {Number(tile.row_offset)/8+1}×{Number(tile.column_offset)/8+1}
+       </Button>)}
      {canRun&&<Button size="sm" variant="outline"
        onClick={()=>run(()=>runFn({data:{tenantId,optimisationId:latest.id}}),"Route plan built")}>
-       {latest?.matrix_job_id?"Plan using verified road times":"Plan with estimates only"}
+       {latest?.road_batch_id||latest?.matrix_job_id?"Plan using verified road times":"Plan with estimates only"}
       </Button>}
      {latest?.status==="review"&&<Button size="sm"
        onClick={()=>run(()=>applyFn({data:{tenantId,optimisationId:latest.id}}),
@@ -67,6 +81,16 @@ function RoutingWorkspace(){
      <p className="text-xs">{latest.routes?.length??0} route(s) ·
        {" "}{latest.score?.distanceMetres??0} metres ·
        {" "}{latest.score?.constraintBreaches??0} constraint breaches</p>
+     {plannedBatch&&<div className="rounded border p-2 text-xs space-y-1">
+      <p>Road matrix batch: {tiles.filter(t=>t.matrix?.status==="completed").length}
+       /{tiles.length} settled tiles · {plannedBatch.nodes?.length??0} distinct positions</p>
+      {tiles.map(tile=><p key={tile.id??tile.matrix?.id}>
+       Tile {Number(tile.row_offset)/8+1}×{Number(tile.column_offset)/8+1}:
+       {" "}{tile.matrix?.status??"missing"} · {tile.matrix?.quality??"pending"}
+      </p>)}
+      {tiles.some(t=>t.matrix?.status==="fallback")&&<p className="text-muted-foreground">
+       Estimated-only tile detected. Automatic road-aware planning is blocked.</p>}
+     </div>}
      {plannedMatrix&&<p className="text-xs">Source road matrix:
        {" "}{plannedMatrix.status} · {plannedMatrix.quality??"not verified"}
        {plannedMatrix.status==="fallback"?" — estimated only; cannot be used for road-aware routing":""}
