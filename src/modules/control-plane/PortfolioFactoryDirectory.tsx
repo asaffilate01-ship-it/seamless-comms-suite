@@ -98,6 +98,11 @@ export default function PortfolioFactoryDirectory({registry}:Props){
          <p className="mt-1 break-all text-xs text-muted-foreground">Source: {x.sourceRepo}</p>
        </div>)}
      </div>
+     <p className="mt-3 text-xs font-semibold text-amber-800">
+       Database/schema handover is unverified until Dishbee proves its deployed migration ledger,
+       physical-site identities, provider-onboarding and booking-idempotency functions.
+       The Factory cannot create tenants or enable payments/couriers from this directory.
+     </p>
      <p className="mt-3 text-xs text-muted-foreground">
        Import and pilot routes: Dishbee Landlord → Tenant launch → Import / Courier readiness.
        Providers prepared: Uber Direct, Deliveroo Express, Just Eat Go. Credentials, certification, RLS,
