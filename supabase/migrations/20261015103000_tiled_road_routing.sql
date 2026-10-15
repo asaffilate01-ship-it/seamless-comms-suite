@@ -119,7 +119,7 @@ CREATE OR REPLACE FUNCTION public.routing_finalize_optimisation_tiles(_optimisat
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE o public.routing_optimisation_jobs%rowtype;
  b public.routing_matrix_batches%rowtype;
- t record; n integer;tile_count integer;verified_tiles integer:=0;cell_count integer;
+ tile_record record; n integer;tile_count integer;verified_tiles integer:=0;cell_count integer;
  inserted_count integer;aggregate_id uuid;
  first_provider text;oldest timestamptz;
  axis_origins jsonb;axis_destinations jsonb;
@@ -154,7 +154,7 @@ BEGIN
  SELECT count(*) INTO tile_count FROM public.routing_matrix_batch_tiles
  WHERE batch_id=b.id AND tenant_id=o.tenant_id AND product_key=o.product_key;
  IF tile_count<>4 THEN RAISE EXCEPTION 'Four source tiles required'; END IF;
- FOR t IN
+ FOR tile_record IN
   SELECT tiles.*,job.status AS job_status,job.quality,job.provider_key,
     job.completed_at,job.origins,job.destinations,job.travel_mode,job.fallback_used
   FROM public.routing_matrix_batch_tiles tiles
@@ -163,31 +163,31 @@ BEGIN
     AND tiles.product_key=o.product_key AND job.tenant_id=o.tenant_id
     AND job.product_key=o.product_key ORDER BY tiles.row_start,tiles.col_start
  LOOP
-  IF t.job_status<>'completed' OR t.quality<>'road'
-   OR t.provider_key<>'maps.openrouteservice'
-   OR t.travel_mode<>'driving' OR t.fallback_used OR t.completed_at IS NULL
-   OR t.completed_at>now() OR t.completed_at<now()-interval '24 hours'
+  IF tile_record.job_status<>'completed' OR tile_record.quality<>'road'
+   OR tile_record.provider_key<>'maps.openrouteservice'
+   OR tile_record.travel_mode<>'driving' OR tile_record.fallback_used OR tile_record.completed_at IS NULL
+   OR tile_record.completed_at>now() OR tile_record.completed_at<now()-interval '24 hours'
   THEN RAISE EXCEPTION 'Four fresh approved road tiles required'; END IF;
   SELECT jsonb_agg(value ORDER BY ordinality) INTO axis_origins
   FROM jsonb_array_elements(b.nodes) WITH ORDINALITY AS item(value,ordinality)
-  WHERE ordinality BETWEEN t.row_start+1 AND LEAST(n,t.row_start+8);
+  WHERE ordinality BETWEEN tile_record.row_start+1 AND LEAST(n,tile_record.row_start+8);
   SELECT jsonb_agg(value ORDER BY ordinality) INTO axis_destinations
   FROM jsonb_array_elements(b.nodes) WITH ORDINALITY AS item(value,ordinality)
-  WHERE ordinality BETWEEN t.col_start+1 AND LEAST(n,t.col_start+8);
-  IF t.origins IS DISTINCT FROM axis_origins OR
-     t.destinations IS DISTINCT FROM axis_destinations OR
-     t.row_count<>jsonb_array_length(axis_origins) OR
-     t.col_count<>jsonb_array_length(axis_destinations)
+  WHERE ordinality BETWEEN tile_record.col_start+1 AND LEAST(n,tile_record.col_start+8);
+  IF tile_record.origins IS DISTINCT FROM axis_origins OR
+     tile_record.destinations IS DISTINCT FROM axis_destinations OR
+     tile_record.row_count<>jsonb_array_length(axis_origins) OR
+     tile_record.col_count<>jsonb_array_length(axis_destinations)
   THEN RAISE EXCEPTION 'Matrix tile coordinates or dimensions have changed'; END IF;
   SELECT count(*) INTO cell_count FROM public.routing_matrix_cells c
-  WHERE c.matrix_job_id=t.matrix_job_id AND c.tenant_id=o.tenant_id
+  WHERE c.matrix_job_id=tile_record.matrix_job_id AND c.tenant_id=o.tenant_id
    AND c.status IN('ok','unreachable');
-  IF cell_count<>t.row_count*t.col_count
+  IF cell_count<>tile_record.row_count*tile_record.col_count
   THEN RAISE EXCEPTION 'Matrix tile is incomplete or estimated'; END IF;
-  first_provider:=COALESCE(first_provider,t.provider_key);
-  IF first_provider<>t.provider_key THEN
+  first_provider:=COALESCE(first_provider,tile_record.provider_key);
+  IF first_provider<>tile_record.provider_key THEN
    RAISE EXCEPTION 'Road provider changed between tiles'; END IF;
-  oldest:=LEAST(COALESCE(oldest,t.completed_at),t.completed_at);
+  oldest:=LEAST(COALESCE(oldest,tile_record.completed_at),tile_record.completed_at);
   verified_tiles:=verified_tiles+1;
  END LOOP;
  IF verified_tiles<>4 THEN RAISE EXCEPTION 'Batch tiles do not match this tenant/product'; END IF;
