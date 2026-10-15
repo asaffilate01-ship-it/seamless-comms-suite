@@ -22,3 +22,41 @@ The Factory inventory uses historical tenant keys `cafe1stalbans` and `cafe1luto
 7. Reconciliation, wrong-tenant RLS denial, staged booking/payment smoke, final delta, operator sign-off and rollback all pass **before production**.
 
 This is not a deployment record. `phase: awaiting_draft_tenant_and_staging` intentionally remains unchanged until actual, externally evidenced onboarding has taken place. No real tenant IDs, customer records or production API keys are checked into this manifest.
+
+
+## Next-stage delivery activation inventory — five physical sites
+
+The Factory handover now carries a **zero-approval, no-credentials planning matrix**
+for Uber Direct, Deliveroo Express and Just Eat Go for the following five sites:
+St Albans Crown Court, Luton Crown Court, Futures House, MealDeck Luton and
+MealDeck St Albans. See each `deliveryLocationPlans[]` in
+`src/modules/control-plane/dishbee-import-handover.json`.
+
+Each planned provider entry defaults to unconnected, unverified and disabled.
+This is *not* a connection record; provider credential secrets, actual UUIDs,
+onboarding observations, courier jobs and payment data must stay in Dishbee.
+
+The imported tenant may become a draft with no courier account configured.
+To actually publish a **delivery** service, the Dishbee operator must identify
+the real tenant and physical location UUIDs and pass these gates for at least
+one approved courier:
+
+1. Country/provider partner agreement and merchant/location authorisation.
+2. Per-merchant approved external collection point, Vault credentials and webhook setup.
+3. Safe API host and documented fee units (especially Deliveroo Express).
+4. Successful sandbox quote, test dispatch, status/failed delivery and cancellation.
+5. Dishbee `delivery_provider_onboarding` explicitly `live` and
+   `production_enabled`, all required checks satisfied, and platform UK
+   partner approval returned by `partner_approval_ready`.
+6. Payment-confirmed order, no accidental marketplace courier replacement,
+   customer/merchant pricing reconciliation and idempotent booking.
+
+In the Dishbee landlord, use **Delivery provider onboarding → Check Uber /
+Deliveroo / JET** for each location. This check is read-only and displays
+missing approvals instead of implying that adding a provider to the SaaS
+Factory means the location can make real deliveries.
+
+Factory tenant and location mappings must only be activated after the staged
+source import has passed its independent identity/RLS checks and the exact
+Dishbee location UUIDs have been validated. This contract does not create or
+link a tenant automatically and does not approve a payment switch.
