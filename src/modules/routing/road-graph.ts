@@ -54,7 +54,7 @@ export function verifiedRoadGraph(evidence:RoadMatrixEvidence,
  const nodes=uniqueRoadNodes([...expectedPoints]);
  const origins=evidence.origins,destinations=evidence.destinations;
  if(!Array.isArray(origins)||!Array.isArray(destinations)||
-   nodes.length<1||nodes.length>8||origins.length!==nodes.length||
+   nodes.length<1||nodes.length>16||origins.length!==nodes.length||
    destinations.length!==nodes.length)
   throw new Error("Road matrix does not cover the current workforce and stops");
  const expected=new Set(nodes.map(key));
