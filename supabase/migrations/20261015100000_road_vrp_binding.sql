@@ -61,9 +61,10 @@ BEGIN
      OR receipt.quality NOT IN('road','traffic')
      OR receipt.provider_key NOT IN('maps.google','maps.openrouteservice')
      OR receipt.completed_at IS NULL OR receipt.completed_at>now()
-     OR receipt.completed_at<
-       now()-CASE WHEN receipt.quality='traffic' THEN interval '10 minutes'
-                  ELSE interval '24 hours' END
+     OR (receipt.quality='traffic' AND
+         receipt.completed_at<now()-interval '10 minutes')
+     OR (receipt.quality='road' AND
+         receipt.completed_at<now()-interval '24 hours')
    THEN RAISE EXCEPTION 'Road matrix expired, estimated or outside product scope'; END IF;
    IF o.input_snapshot->>'routeQuality' IS DISTINCT FROM receipt.quality OR
       o.input_snapshot->>'providerKey' IS DISTINCT FROM receipt.provider_key
