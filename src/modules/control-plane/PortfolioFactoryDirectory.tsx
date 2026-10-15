@@ -4,6 +4,7 @@ import {Badge} from "@/components/ui/badge";
 import {Card,CardContent} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
+import dishbeeHandover from "./dishbee-import-handover.json";
 
 type Product={
  productKey:string;displayName:string;sourceRows:number[];repositories:string[];
@@ -71,6 +72,31 @@ export default function PortfolioFactoryDirectory({registry}:Props){
     </div>)}
     {!items.length&&<p className="p-4 text-sm text-muted-foreground">No matching products, tenants or brands.</p>}
    </div>
+   <section className="rounded-xl border p-4">
+     <h3 className="font-semibold">Dishbee tenant-import handover</h3>
+     <p className="mt-1 text-xs text-muted-foreground">
+       The SaaS Factory owns product entitlements and portfolio workspace links.
+       Dishbee remains authoritative for orders, Cafe 1 source imports, kitchen routing, and courier merchant accounts.
+       These are canonical handover templates only — no database tenant IDs or source records are claimed to exist.
+     </p>
+     <div className="mt-3 grid gap-2 lg:grid-cols-3">
+       {dishbeeHandover.handovers.map(x=><div key={x.factoryTenantKey} className="rounded-lg border bg-background p-3">
+         <div className="flex items-center justify-between gap-2">
+           <b className="text-sm">{x.factoryTenantKey}</b>
+           <Badge variant="outline">Not provisioned</Badge>
+         </div>
+         <p className="mt-1 text-xs text-muted-foreground">Dishbee slug: <code>{x.dishbeeTenantSlug}</code></p>
+         <p className="mt-1 text-xs text-muted-foreground">Blueprint: <code>{x.dishbeeBlueprintKey}</code></p>
+         <p className="mt-1 text-xs text-muted-foreground">Locations: {x.expectedLocations.join(" · ")}</p>
+         <p className="mt-1 break-all text-xs text-muted-foreground">Source: {x.sourceRepo}</p>
+       </div>)}
+     </div>
+     <p className="mt-3 text-xs text-muted-foreground">
+       Import and pilot routes: Dishbee Landlord → Tenant launch → Import / Courier readiness.
+       Providers prepared: Uber Direct, Deliveroo Express, Just Eat Go. Credentials, certification, RLS,
+       settlement, payments and physical devices must be accepted on the Dishbee side before any cutover.
+     </p>
+   </section>
    <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground"><ShieldAlert className="h-4 w-4 shrink-0"/>
     <span>Source inventory and repository mappings are not runtime checks. Catalogued ≠ built, integrated, authorised or live. MoneyBridge and FastRemit share one system identity. Sofevella / historical Sofellea remains a spelling-review item. Tenant templates require separate operator-approved provisioning, source linking and compliance checks.</span>
    </div>
