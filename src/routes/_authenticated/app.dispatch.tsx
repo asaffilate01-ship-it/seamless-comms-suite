@@ -754,14 +754,20 @@ function DispatchWorkspace() {
       {trackingToken && (
         <Card className="mt-6">
           <CardContent className="p-5">
-            <h2 className="font-semibold">Signed customer tracking token</h2>
+            <h2 className="font-semibold">Customer delivery tracking</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Use with /api/public/track/&lt;token&gt;. It expires automatically and exposes only
-              allowed public fields.
+              Share this expiring signed link only with the intended recipient.
+              It reveals status, ETA and location when shared by the driver.
             </p>
-            <code className="mt-3 block break-all rounded bg-muted p-3 text-xs">
-              {trackingToken}
-            </code>
+            <a
+              href={"/track/"+encodeURIComponent(trackingToken)}
+              target="_blank"
+              rel="noopener noreferrer"
+              referrerPolicy="no-referrer"
+              className="mt-3 block break-all text-sm font-medium text-primary underline"
+            >
+              {typeof window !== "undefined" ? window.location.origin : ""}{"/track/"+trackingToken}
+            </a>
           </CardContent>
         </Card>
       )}
