@@ -1,0 +1,177 @@
+{
+  "version": "1.0.0",
+  "platform": "Omniqora",
+  "modules": [
+    {
+      "id": "identity",
+      "name": "Omniqora Identity",
+      "status": "existing-to-promote",
+      "depends_on": []
+    },
+    {
+      "id": "tenant",
+      "name": "Omniqora Tenant",
+      "status": "existing-to-promote",
+      "depends_on": [
+        "identity"
+      ]
+    },
+    {
+      "id": "connect",
+      "name": "Omniqora Connect",
+      "status": "existing",
+      "depends_on": [
+        "identity",
+        "tenant"
+      ]
+    },
+    {
+      "id": "ai",
+      "name": "Omniqora AI",
+      "status": "existing-to-consolidate",
+      "depends_on": [
+        "identity",
+        "tenant"
+      ]
+    },
+    {
+      "id": "ecosystem",
+      "name": "Omniqora Ecosystem",
+      "status": "existing-to-harden",
+      "depends_on": [
+        "identity",
+        "tenant"
+      ]
+    },
+    {
+      "id": "crm",
+      "name": "Omniqora CRM",
+      "status": "build-next",
+      "depends_on": [
+        "identity",
+        "tenant",
+        "connect"
+      ]
+    },
+    {
+      "id": "customer360",
+      "name": "Omniqora Customer 360",
+      "status": "build-next",
+      "depends_on": [
+        "crm",
+        "connect"
+      ]
+    },
+    {
+      "id": "engage",
+      "name": "Omniqora Engage",
+      "status": "planned",
+      "depends_on": [
+        "crm",
+        "customer360",
+        "connect",
+        "automate"
+      ]
+    },
+    {
+      "id": "intelligence",
+      "name": "Omniqora Intelligence",
+      "status": "planned",
+      "depends_on": [
+        "customer360",
+        "analytics"
+      ]
+    },
+    {
+      "id": "marketplace",
+      "name": "Omniqora Marketplace",
+      "status": "planned-extraction",
+      "depends_on": [
+        "identity",
+        "tenant",
+        "pay",
+        "automate"
+      ]
+    },
+    {
+      "id": "geo",
+      "name": "Omniqora Geo",
+      "status": "planned",
+      "depends_on": [
+        "identity",
+        "tenant"
+      ]
+    },
+    {
+      "id": "dispatch",
+      "name": "Omniqora Dispatch",
+      "status": "planned",
+      "depends_on": [
+        "geo",
+        "connect",
+        "automate"
+      ]
+    },
+    {
+      "id": "agent",
+      "name": "Omniqora Agent",
+      "status": "planned",
+      "depends_on": [
+        "dispatch",
+        "geo",
+        "connect",
+        "identity"
+      ]
+    },
+    {
+      "id": "pay",
+      "name": "Omniqora Pay",
+      "status": "planned",
+      "depends_on": [
+        "identity",
+        "tenant"
+      ]
+    },
+    {
+      "id": "automate",
+      "name": "Omniqora Automate",
+      "status": "planned",
+      "depends_on": [
+        "identity",
+        "tenant"
+      ]
+    },
+    {
+      "id": "analytics",
+      "name": "Omniqora Analytics",
+      "status": "planned",
+      "depends_on": [
+        "identity",
+        "tenant"
+      ]
+    }
+  ],
+  "integration_contract": {
+    "required_context": [
+      "product_id",
+      "tenant_id",
+      "actor_or_service_principal",
+      "correlation_id",
+      "schema_version"
+    ],
+    "security": [
+      "server_verified_identity",
+      "tenant_scope",
+      "least_privilege",
+      "idempotency",
+      "signed_webhooks",
+      "audit"
+    ],
+    "transport": [
+      "https_json",
+      "webhooks",
+      "async_events"
+    ],
+    "versioning": "semver-contracts"
+  }
+}
