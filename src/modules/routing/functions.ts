@@ -20,13 +20,17 @@ export const getRoutingWorkspace=createServerFn({method:"POST"}).middleware([req
   db.from("routing_matrix_jobs").select("*,cells:routing_matrix_cells(origin_index,destination_index,status,distance_metres,duration_seconds)").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(10),
   db.from("routing_assignment_recommendations").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("generated_at",{ascending:false}).limit(100),
   db.from("routing_provider_observations").select("*").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("observed_at",{ascending:false}).limit(200),
-  db.from("dispatch_jobs").select("*,stops:dispatch_job_stops(*)").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200)
+  db.from("dispatch_jobs").select("*,stops:dispatch_job_stops(*)").eq("tenant_id",data.tenantId).eq("product_key",data.productKey).order("created_at",{ascending:false}).limit(200),
+  db.from("routing_matrix_batches")
+   .select("*,tiles:routing_matrix_batch_tiles(*,job:routing_matrix_jobs(id,status,quality,provider_key,completed_at,error))")
+   .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
+   .order("created_at",{ascending:false}).limit(10)
  ]);
  for(const r of rs)if(r.error)throw new Error(r.error.message);
  const ranked=await db.rpc("routing_rank_providers",{_tenant:data.tenantId,_product:data.productKey,_operation:"matrix",_lookback_hours:168});
  if(ranked.error)throw new Error(ranked.error.message);
  return{policies:rs[0].data??[],optimisations:rs[1].data??[],matrixJobs:rs[2].data??[],
-  recommendations:rs[3].data??[],providerObservations:rs[4].data??[],jobs:rs[5].data??[],providerRanking:ranked.data??[]};
+  recommendations:rs[3].data??[],providerObservations:rs[4].data??[],jobs:rs[5].data??[],matrixBatches:rs[6].data??[],providerRanking:ranked.data??[]};
 });
 
 const policy=scope.extend({
@@ -190,12 +194,38 @@ export const queueRoadMatrixForOptimisation=createServerFn({method:"POST"})
  if(opt.matrix_job_id)return{matrixJobId:opt.matrix_job_id,reused:true};
  const {jobs,resources}=await sourceRoutingWorkload(db,data.tenantId,opt.product_key,true);
  const nodes=collectRoadTopology(resources,jobs);
- if(nodes.length>8)throw new Error("Pilot road matrix requires no more than eight unique locations");
+ if(nodes.length>16)throw new Error("Pilot tiled routing requires at most sixteen unique coordinates");
+ if(nodes.length>8){
+  const {data:batch,error:batchError}=await db.rpc("routing_queue_optimisation_tiles",{
+   _optimisation:opt.id,_nodes:nodes,_request_key:crypto.randomUUID()
+  });
+  if(batchError)throw new Error(batchError.message);
+  return{batchId:String(batch.batchId),tileCount:Number(batch.tileCount),
+   requestedElements:nodes.length*nodes.length,reused:!!batch.reused,
+   positions:nodes.length};
+ }
  const {data:matrixId,error:queued}=await db.rpc("routing_queue_optimisation_matrix",{
   _optimisation:opt.id,_nodes:nodes,_request_key:crypto.randomUUID()
  });
  if(queued)throw new Error(queued.message);
  return{matrixJobId:String(matrixId),reused:false,positions:nodes.length};
+});
+
+export const finalizeRoadMatrixForOptimisation=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:unknown)=>z.object({tenantId:uuid,optimisationId:uuid}).strict().parse(i))
+.handler(async({context,data})=>{
+ const access=await requireService(context,data.tenantId,"omniqora.routing-engine");
+ requireAdminRole(access.role);
+ const db=context.supabase as any;
+ const {data:opt,error}=await db.from("routing_optimisation_jobs")
+  .select("id,status").eq("tenant_id",data.tenantId)
+  .eq("id",data.optimisationId).maybeSingle();
+ if(error||!opt||opt.status!=="queued")throw new Error("Queued tenant optimisation required");
+ const {data:matrixId,error:rpcError}=await db.rpc("routing_finalize_optimisation_tiles",
+  {_optimisation:opt.id});
+ if(rpcError)throw new Error(rpcError.message);
+ return{matrixJobId:String(matrixId),status:"completed" as const};
 });
 
 export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
@@ -206,6 +236,14 @@ export const runNativeRoutingOptimisation=createServerFn({method:"POST"}).middle
  if(optError||!opt)throw new Error(optError?.message??"Routing optimisation not found");
  const access=await requireService(context,data.tenantId,"omniqora.routing-engine");requireAdminRole(access.role);
  if(!["queued","failed","review"].includes(opt.status))throw new Error("Routing optimisation is not runnable");
+ const {data:batch,error:batchError}=await db.from("routing_matrix_batches")
+  .select("status,assembled_matrix_job_id")
+  .eq("optimisation_job_id",opt.id).eq("tenant_id",data.tenantId)
+  .eq("product_key",opt.product_key).maybeSingle();
+ if(batchError)throw new Error(batchError.message);
+ if(batch&&(batch.status!=="completed"||
+  batch.assembled_matrix_job_id!==opt.matrix_job_id))
+  throw new Error("Tiled road matrix is incomplete or not bound to the optimisation");
  const {jobs,resources}=await sourceRoutingWorkload(db,data.tenantId,opt.product_key,!!opt.matrix_job_id);
  let roadMatrix:RoadMatrixEvidence|undefined;
  if(opt.matrix_job_id){
