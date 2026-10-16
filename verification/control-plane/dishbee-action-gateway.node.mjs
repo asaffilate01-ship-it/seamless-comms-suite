@@ -7,16 +7,17 @@ import test from 'node:test';
 const require=createRequire(import.meta.url),ts=require('typescript');
 const compile=s=>'data:text/javascript;base64,'+Buffer.from(ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ES2022,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64');
 const identity=compile(await readFile(new URL('../../src/modules/platform/service-identity.ts',import.meta.url),'utf8'));
+const policy=compile(await readFile(new URL('../../src/modules/intelligence/criclume-policy.ts',import.meta.url),'utf8'));
 const source=await readFile(new URL('../../src/modules/intelligence/service.server.ts',import.meta.url),'utf8');
-const entry=source.replace('"@/modules/platform/service-identity"',JSON.stringify(identity)).replace('"zod"',JSON.stringify(pathToFileURL(require.resolve('zod')).href)).replace('import("@/integrations/supabase/client.server")','({supabaseAdmin:globalThis.__actionDB})');
+const entry=source.replace('"@/modules/platform/service-identity"',JSON.stringify(identity)).replace('"@/modules/intelligence/criclume-policy"',JSON.stringify(policy)).replace('"zod"',JSON.stringify(pathToFileURL(require.resolve('zod')).href)).replace('import("@/integrations/supabase/client.server")','({supabaseAdmin:globalThis.__actionDB})');
 const {serveIntelligenceService}=await import(compile(entry));
 const tenant='10000000-0000-4000-8000-000000000001',id='10000000-0000-4000-8000-000000000003',claimToken='10000000-0000-4000-8000-000000000004';
 const secret='a'.repeat(64),key='oqsvc_test01',credentialId='10000000-0000-4000-8000-000000000005';
 let calls=[];
-function setup({capabilities=['intelligence.action.finish','intelligence.action.claim','intelligence.action.review'],locations,connector=false}={}){
+function setup({capabilities=['intelligence.action.finish','intelligence.action.claim','intelligence.action.review'],locations,connector=false,product='dishbee'}={}){
  calls=[];
- const record=connector?{id:credentialId,tenant_id:tenant,product_key:'dishbee',status:'connected',capabilities,credential_hash:createHash('sha256').update('oqcp_'+secret).digest('hex')}:
- {id:credentialId,key_id:key,secret_hash:createHash('sha256').update(secret).digest('hex'),status:'active',scopes:[{tenantId:tenant,productKey:'dishbee',capabilities,locationIds:locations}]};
+ const record=connector?{id:credentialId,tenant_id:tenant,product_key:product,status:'connected',capabilities,credential_hash:createHash('sha256').update('oqcp_'+secret).digest('hex')}:
+ {id:credentialId,key_id:key,secret_hash:createHash('sha256').update(secret).digest('hex'),status:'active',scopes:[{tenantId:tenant,productKey:product,capabilities,locationIds:locations}]};
  globalThis.__actionDB={from(){return {select(){return this;},eq(){return this;},update(){return this;},maybeSingle:async()=>({data:record,error:null})};},rpc:async(name,args)=>{calls.push({name,args});return {data:name==='has_tenant_entitlement'?true:[],error:null};}};
  return 'Bearer '+(connector?'oqcp_'+secret:key+'.'+secret);
 }
@@ -48,4 +49,29 @@ test('human review uses one atomic, tenant-scoped RPC',async()=>{
 test('claim ownership is bound to the authenticated credential rather than only a caller label',async()=>{
  const response=await invoke({tenantId:tenant,productKey:'dishbee',operation:'action.claim',workerKey:'worker-a'},setup());assert.equal(response.status,200);
  assert.equal(calls.find(c=>c.name==='claim_product_action_requests').args._worker,'service:'+credentialId+':worker-a');
+});
+
+test('CricLume budget gate blocks generic billable starts even with a scoped credential',async()=>{
+ const response=await invoke({tenantId:tenant,productKey:'criclume',operation:'run.start',
+  profile:'operations',goal:'Create a cricket match insights report'},
+  setup({product:'criclume',capabilities:['intelligence.run.start']}));
+ assert.equal(response.status,409);
+ assert.equal((await response.json()).code,'BUDGETED_ADMISSION_REQUIRED');
+ assert.ok(calls.every(call=>call.name==='has_tenant_entitlement'));
+});
+test('CricLume connection verify checks scoped entitlement without invoking a model',async()=>{
+ const response=await invoke({tenantId:tenant,productKey:'criclume',operation:'connection.verify'},
+  setup({product:'criclume',capabilities:['intelligence.connection.verify']}));
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.connection,'verified');
+ assert.equal(body.entitlementActive,true);
+ assert.equal(body.modelExecutionReady,false);
+ assert.ok(calls.every(call=>call.name==='has_tenant_entitlement'));
+});
+test('CricLume handshake refuses a scoped credential without verify capability',async()=>{
+ const response=await invoke({tenantId:tenant,productKey:'criclume',operation:'connection.verify'},
+  setup({product:'criclume',capabilities:['intelligence.run.read']}));
+ assert.equal(response.status,403);
+ assert.equal(calls.length,0);
 });
