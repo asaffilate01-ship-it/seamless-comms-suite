@@ -60,6 +60,7 @@ CREATE TABLE public.travenexa_live_offers (
   source_reference text,
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(id, tenant_key),
+  UNIQUE(id, tenant_key, supplier_key, product_type),
   FOREIGN KEY (tenant_key, supplier_key, product_type)
     REFERENCES public.travenexa_supplier_approvals(tenant_key, supplier_key, product_type)
     ON DELETE RESTRICT,
@@ -101,7 +102,9 @@ CREATE TABLE public.travenexa_booking_records (
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (id, tenant_key),
   UNIQUE (tenant_key, idempotency_key),
-  FOREIGN KEY(offer_id, tenant_key) REFERENCES public.travenexa_live_offers(id, tenant_key)
+  UNIQUE(id, tenant_key, supplier_key),
+  FOREIGN KEY(offer_id, tenant_key, supplier_key, product_type)
+    REFERENCES public.travenexa_live_offers(id, tenant_key, supplier_key, product_type)
     ON DELETE RESTRICT,
   CONSTRAINT travenexa_booking_total_match CHECK (gross_minor = supplier_minor + markup_minor),
   CONSTRAINT travenexa_package_is_supplier_organised CHECK (
@@ -142,14 +145,15 @@ CREATE TABLE public.travenexa_supplier_events (
   supplier_key text NOT NULL,
   external_event_ref text NOT NULL CHECK (length(external_event_ref) BETWEEN 3 AND 255),
   event_type text NOT NULL CHECK (event_type IN
-    ('submitted','confirmed','ticketed','supplier_failed','schedule_changed',
+    ('price_revalidated','submitted','confirmed','ticketed','supplier_failed','schedule_changed',
      'cancelled','refund_confirmed')),
   signature_verified boolean NOT NULL DEFAULT false,
   payload_digest text CHECK (payload_digest IS NULL OR payload_digest ~ '^[a-f0-9]{64}$'),
   supplier_reference text,
   received_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(supplier_key,external_event_ref),
-  FOREIGN KEY(booking_id, tenant_key) REFERENCES public.travenexa_booking_records(id,tenant_key)
+  FOREIGN KEY(booking_id, tenant_key, supplier_key)
+    REFERENCES public.travenexa_booking_records(id,tenant_key,supplier_key)
     ON DELETE RESTRICT
 );
 CREATE INDEX travenexa_supplier_events_booking_idx
@@ -189,12 +193,9 @@ CREATE TABLE public.travenexa_commission_ledger (
   reconciled_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(tenant_key,supplier_key,entry_type,source_reference),
-  FOREIGN KEY(booking_id,tenant_key) REFERENCES public.travenexa_booking_records(id,tenant_key)
-    ON DELETE RESTRICT,
-  CONSTRAINT travenexa_commission_not_automatically_recognised CHECK (
-    entry_type NOT IN ('commission_receivable','commission_paid','markup_revenue')
-    OR verification_status IN ('unverified','verified','settled','reversed')
-  )
+  FOREIGN KEY(booking_id,tenant_key,supplier_key)
+    REFERENCES public.travenexa_booking_records(id,tenant_key,supplier_key)
+    ON DELETE RESTRICT
 );
 CREATE INDEX travenexa_commission_tenant_idx
   ON public.travenexa_commission_ledger(tenant_key,verification_status,created_at DESC);
