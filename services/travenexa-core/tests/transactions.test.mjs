@@ -153,7 +153,9 @@ test('booking state machine requires fresh matched signed evidence and compare-a
   assert.match(calls[0].text,/FOR UPDATE/);
   assert.match(calls[0].text,/ev.signature_verified=true/);
   assert.match(calls[0].text,/l.status=\$3/);
-  assert.match(calls[0].text,/NOT EXISTS/);
+  assert.match(calls[0].text,/recorded AS \\(/);
+  assert.match(calls[0].text,/ON CONFLICT DO NOTHING/);
+  assert.match(calls[0].text,/FROM recorded r/);
   assert.equal(calls[0].params[6],'confirmed');
 });
 test('commission ledger requires independently verified supplier statement; GMV is not commission',async()=>{
