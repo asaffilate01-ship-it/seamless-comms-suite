@@ -1,0 +1,31 @@
+name: Knowledge Core Python retrieval tests
+
+on:
+  push:
+    paths:
+      - "services/rrci/**"
+      - ".github/workflows/knowledge-core-ci.yml"
+  pull_request:
+    paths:
+      - "services/rrci/**"
+      - ".github/workflows/knowledge-core-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  knowledge-core:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/rrci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Knowledge Core scope, GraphRAG and API tests
+        run: python -m unittest discover -s tests -v
+      - name: Exercise evidence-only RAG and GraphRAG demo
+        run: python -m knowledge_core demo --output var/demo-results.json
