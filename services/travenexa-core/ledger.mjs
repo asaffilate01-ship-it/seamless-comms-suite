@@ -262,7 +262,7 @@ export function createTraveNexaLedger({db}={}) {
       WHERE b.tenant_key=$1 AND b.id=$2 AND b.supplier_key=$3
         AND b.currency_code=$7 AND b.status IN
           ('supplier_confirmed','ticketed','cancelled','refund_pending','refunded')
-      ON CONFLICT(tenant_key,supplier_key,entry_type,source_reference)
+      ON CONFLICT(tenant_key,booking_id,supplier_key,entry_type,source_reference)
       DO NOTHING
       RETURNING id,tenant_key,booking_id,entry_type,verification_status
     `,[tenantKey,bookingId,supplierKey,entryType,direction,
