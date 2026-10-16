@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile,readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 const db=new PGlite();const migrations=new URL("../../supabase/migrations/",import.meta.url);
@@ -7,7 +8,7 @@ for(const name of (await readdir(migrations)).filter(x=>x.endsWith(".sql")).sort
 const admin="33333333-aaaa-4aaa-8aaa-333333333333",stranger="44444444-bbbb-4bbb-8bbb-444444444444";for(const id of[admin,stranger])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
 async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
 async function asService(fn){await db.exec("BEGIN;SET LOCAL ROLE service_role;");await db.query("SELECT set_config('request.jwt.claim.role','service_role',true)");try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
-const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
 const loc=(await asUser(admin,()=>db.query("INSERT INTO public.inventory_stock_locations(tenant_id,product_key,name,location_kind) VALUES($1,'mealdeck','Main Kitchen','kitchen') RETURNING id",[md.tenantId]))).rows[0].id;
 async function stock(name,ref,qty){const item=(await asUser(admin,()=>db.query("INSERT INTO public.inventory_items(tenant_id,product_key,external_ref,name,track_stock) VALUES($1,'mealdeck',$2,$3,true) RETURNING id",[md.tenantId,ref,name]))).rows[0].id;await asUser(admin,()=>db.query("SELECT public.inventory_record_movement($1,$2,$3,'receipt',$4,$5,NULL,NULL)",[md.tenantId,item,loc,qty,"open:"+ref]));return item;}
 const item1=await stock("Paratha","paratha",20),item2=await stock("French Taco","taco",20);
