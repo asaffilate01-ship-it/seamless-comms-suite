@@ -66,10 +66,15 @@ class StemCoachKnowledgeTests(unittest.TestCase):
     def test_other_tenant_and_other_project_cannot_read_this_collection(self):
         for project, tenant in [("stemcoach", "other-school"), ("lawquo", "stemcoach-public")]:
             outsider = Principal(project, tenant, ("stemcoach-lessons",), ("query",), "different-reader")
-            result = self.service.query(outsider, {
+            query = {
                 "collection": "stemcoach-lessons", "question": "hypotenuse triangle",
                 "as_of": "2026-10-16",
-            })
+            }
+            if project == "lawquo":
+                # Lawquo's stricter project policy additionally requires a
+                # jurisdiction even for a query with no matching sources.
+                query["jurisdiction"] = "GB"
+            result = self.service.query(outsider, query)
             self.assertEqual([], result["evidence"])
             self.assertEqual([], result["graph_paths"])
 
