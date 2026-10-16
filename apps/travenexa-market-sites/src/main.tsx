@@ -199,7 +199,7 @@ function SearchPanel({ onProductChange, activeProduct }: {
                 {selectedOffer === offer.id && <div className="offer-details">
                   <p>{offer.description || copy.sourceNotice}</p>
                   <p>Offer expires: {new Date(offer.expiresAt).toLocaleString(market.locale)}</p>
-                  {safeAffiliateUrl(offer.supplierCheckoutUrl || offer.affiliateRedirect) && <a href={safeAffiliateUrl(offer.supplierCheckoutUrl || offer.affiliateRedirect)!} target="_blank" rel="nofollow noopener noreferrer" className="referral-link">{copy.details}<ArrowRight size={15}/></a>}
+                  {safeAffiliateUrl(offer.supplierCheckoutUrl || offer.affiliateRedirect) && <a href={safeAffiliateUrl(offer.supplierCheckoutUrl || offer.affiliateRedirect)!} target="_blank" rel="nofollow noopener noreferrer" className="referral-link">{offer.supplierCheckoutUrl ? copy.supplierCheckout : copy.details}<ArrowRight size={15}/></a>}
                 </div>}
               </div>
             ))}
