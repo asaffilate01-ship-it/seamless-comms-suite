@@ -18,7 +18,7 @@ const catalog=await loadTs("../../src/modules/agent-factory/catalogue.ts");
 const planner=await loadTs("../../src/modules/agent-factory/planner.ts",{"./catalogue":catalog});
 
 test("universal agent factory covers every product, plus named SaaS blueprints",()=>{
- for(const key of ["xpertjobs","autohashi","zivvo","craftvaro","gabley","taxnuvia","lawquo","eventplanr","dishbee","finvessa","haccora","kindelo","moneybridge","unipathway","formation-genie","merqano"]){
+ for(const key of ["xpertjobs","autohashi","zivvo","craftvaro","gabley","taxnuvia","lawquo","eventplanr","dishbee","finvessa","haccora","kindelo","moneybridge","unipathway","formation-genie","merqano","criclume"]){
   const agents=catalog.agentsForProduct(key);
   assert.ok(agents.some(a=>a.key==="shared.daily-brief"),"missing core for "+key);
   assert.ok(agents.some(a=>a.productKeys.includes(key)),"missing vertical for "+key);
@@ -28,6 +28,27 @@ test("universal agent factory covers every product, plus named SaaS blueprints",
  assert.equal(keys.length,new Set(keys).size);
  assert.ok(catalog.mcpConnectorFamilies.length>=15);
  assert.ok(catalog.mcpConnectorFamilies.every(f=>f.status==="catalogue_only"));
+});
+
+test("CricLume cricket agents are exclusively read-only or human-reviewed drafts",()=>{
+ const agents=catalog.agentsForProduct("criclume").filter(a=>a.key.startsWith("criclume."));
+ assert.equal(agents.length,6);
+ assert.ok(agents.every(a=>a.requiredCapabilities.length===1));
+ assert.ok(agents.every(a=>a.requiredCapabilities[0]==="criclume.matches.aggregate.read"));
+ assert.ok(agents.every(a=>["read_only","draft"].includes(a.mode)));
+ assert.ok(agents.every(a=>a.risk==="sensitive"));
+ const denied=planner.planAgentActivation({
+  productKey:"criclume",blueprintKey:"criclume.match-analyst",
+  verifiedCapabilities:[],approvedCapabilities:[]
+ });
+ assert.equal(denied.status,"design_only");
+ const accepted=planner.planAgentActivation({
+  productKey:"criclume",blueprintKey:"criclume.match-analyst",
+  verifiedCapabilities:["criclume.matches.aggregate.read"],
+  approvedCapabilities:["criclume.matches.aggregate.read"]
+ });
+ assert.equal(accepted.status,"configuration_ready");
+ assert.equal(accepted.requiresHumanReview,true);
 });
 
 test("tenant tool permissions and live connector verification are both required",()=>{
