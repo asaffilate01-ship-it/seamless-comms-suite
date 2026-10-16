@@ -2,7 +2,16 @@
 
 This is a **server-side runtime** for TraveNexa inside the existing Omniqora/iTechLounge SaaS Factory repo. TraveNexa is the sole travel landlord. FlightLounge, MarocWays, BestFares BestRates, Route50 and the four inbound-UK local-language sites remain tenants.
 
-**Status:** Working authenticated/search gateway and contract tests. **No live supplier adapter, production database, payment, PNR or ticketing connection exists.** Catalogue names are targets, not active integrations.
+**Status:** Authenticated search gateway, Phase 2 durable ledger migration, draft-preparation service and tests. **No live supplier adapter, production database deployment, payment, PNR or ticketing connection exists.** Catalogue names are targets, not active integrations.
+
+## Phase 2 transaction foundation (schema/source, not activated)
+
+- Migration `supabase/migrations/20261016130000_travenexa_transaction_ledger.sql`: eight RLS-protected supplier-approval, offer, booking, payment/supplier evidence, transition journal and commission tables; no public `anon`/`authenticated` access.
+- `ledger.mjs` uses a private Postgres `query(sql, params)` adapter for signed offer persistence, immutable provider event IDs, atomic idempotent booking drafts, status journals, tenant-scoped reads and independently confirmed commissions.
+- `transactions-policy.mjs` models supplier-managed checkout vs Adyen Checkout vs Adyen for Platforms; all require explicit merchant, ticketing, legal, risk and provider agreements.
+- `transaction-orchestrator.mjs` can ask an approved supplier adapter to **reprice** and create an internal draft. No ticket, hotel room, booking confirmation, checkout, authorisation or supplier money transfer is created.
+- Node contract tests and actual PGlite lifecycle/tenant-security tests run in existing Verify workflow.
+- Activation runbook: [TraveNexa transaction operations](../../docs/saas-factory/TRAVENEXA-TRANSACTION-OPERATIONS.md).
 
 ## Included now
 
