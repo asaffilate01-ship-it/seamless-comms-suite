@@ -164,3 +164,87 @@ assert.equal(route50Inventory?.architectureRole,'tenant');
 assert.equal(route50Inventory?.repositoryUrl,null);
 
 console.log('TraveNexa SaaS Factory catalogue, brand blueprints and supplier setup gates verified');
+
+const transactionTables=[
+  'travenexa_supplier_approvals','travenexa_live_offers','travenexa_booking_records',
+  'travenexa_payment_events','travenexa_supplier_events','travenexa_booking_state_events',
+  'travenexa_commission_ledger','travenexa_supplier_webhook_inbox',
+];
+const pgRls=await db.query(`
+ SELECT tablename,rowsecurity FROM pg_tables
+ WHERE schemaname='public' AND tablename LIKE 'travenexa_%'
+`);
+for(const table of transactionTables){
+  const found=pgRls.rows.find(x=>x.tablename===table);
+  assert(found,`transaction table missing: ${table}`);
+  assert.equal(found.rowsecurity,true,`RLS missing on ${table}`);
+}
+const grants=await db.query(`
+ SELECT has_table_privilege('anon','public.travenexa_booking_records','SELECT') AS anon_select,
+   has_table_privilege('authenticated','public.travenexa_booking_records','INSERT') AS user_insert,
+   has_table_privilege('service_role','public.travenexa_booking_records','INSERT') AS service_insert
+`);
+assert.equal(grants.rows[0].anon_select,false);
+assert.equal(grants.rows[0].user_insert,false);
+assert.equal(grants.rows[0].service_insert,true);
+
+// A supplier can be catalogued but must NOT become active without the merchant,
+// licensing, API and servicing evidence. A failing check cannot leave partial rows.
+await assert.rejects(db.query(`
+  INSERT INTO public.travenexa_supplier_approvals
+  (tenant_key,supplier_key,product_type,status,active,payment_mode,merchant_of_record)
+  VALUES ('travenexa-flightlounge','mystifly','flights','approved',true,
+    'platform_checkout','travenexa')
+`));
+await db.query(`
+ INSERT INTO public.travenexa_supplier_approvals
+ (tenant_key,supplier_key,product_type,status,active,payment_mode,merchant_of_record,
+  contract_approved,credentials_verified,travel_compliance_approved,payment_approved,
+  ticketing_approved,servicing_approved,multi_brand_permission)
+ VALUES ('travenexa-flightlounge','mystifly','flights','approved',true,
+ 'platform_checkout','travenexa',true,true,true,true,true,true,true)
+`);
+const quote=(await db.query(`
+ INSERT INTO public.travenexa_live_offers
+ (tenant_key,supplier_key,product_type,supplier_offer_ref,booking_mode,currency_code,
+  supplier_minor,markup_minor,verified_at,expires_at)
+ VALUES ('travenexa-flightlounge','mystifly','flights','sandbox-offer-001',
+ 'platform_checkout','GBP',20000,1000,now(),now()+interval '10 minutes')
+ RETURNING id,total_minor
+`)).rows[0];
+assert.equal(Number(quote.total_minor),21000);
+const booking=(await db.query(`
+ INSERT INTO public.travenexa_booking_records
+ (tenant_key,offer_id,supplier_key,product_type,idempotency_key,booking_mode,
+ seller_of_record,currency_code,gross_minor,supplier_minor,markup_minor,
+ customer_contract_reference)
+ VALUES ('travenexa-flightlounge',$1,'mystifly','flights','idempotency-001',
+ 'platform_checkout','travenexa','GBP',21000,20000,1000,'terms-test-001')
+ RETURNING id,status
+`,[quote.id])).rows[0];
+assert.equal(booking.status,'draft');
+await assert.rejects(db.query(`
+ INSERT INTO public.travenexa_booking_records
+ (tenant_key,offer_id,supplier_key,product_type,idempotency_key,booking_mode,
+ seller_of_record,currency_code,gross_minor,supplier_minor,markup_minor)
+ VALUES ('travenexa-marocways',$1,'mystifly','flights','idempotency-002',
+ 'platform_checkout','travenexa','GBP',21000,20000,1000)
+`,[quote.id]),/foreign key|violates/i);
+await assert.rejects(db.query(`
+ INSERT INTO public.travenexa_booking_records
+ (tenant_key,offer_id,supplier_key,product_type,idempotency_key,booking_mode,
+ seller_of_record,currency_code,gross_minor,supplier_minor,markup_minor)
+ VALUES ('travenexa-flightlounge',$1,'mystifly','flights','idempotency-001',
+ 'platform_checkout','travenexa','GBP',21000,20000,1000)
+`,[quote.id]),/unique|duplicate/i);
+await assert.rejects(db.query(`
+ INSERT INTO public.travenexa_payment_events
+ (tenant_key,booking_id,processor,external_event_ref,event_type,amount_minor,
+  currency_code,signature_verified)
+ VALUES ('travenexa-marocways',$1,'adyen','psp-001','authorised',21000,'GBP',true)
+`,[booking.id]),/foreign key|violates/i);
+const count=(await db.query(`
+ SELECT count(*)::int AS n FROM public.travenexa_commission_ledger
+`)).rows[0].n;
+assert.equal(count,0,'creating a fare/booking must never automatically create commission revenue');
+console.log('TraveNexa Phase 2: eight RLS tables, default-disabled supplier and tenant-bound booking/payment contracts verified');
