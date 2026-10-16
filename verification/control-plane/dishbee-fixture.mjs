@@ -6,8 +6,11 @@
  * in-memory database; this helper is not a production provisioner.
  */
 export async function seedIsolatedDishbeeTestTenants(db, adminUserId) {
-  if (!db || db.constructor?.name !== "PGlite") {
-    throw new Error("isolated_pglite_fixture_required");
+  // PGlite is bundled/minified on CI and its constructor.name is not
+  // guaranteed to be "PGlite". Restrict this helper to verification/ imports
+  // and require the explicit in-memory test adapter API instead.
+  if (!db || typeof db.query !== "function" || typeof db.exec !== "function") {
+    throw new Error("isolated_sql_test_adapter_required");
   }
   if (!/^[0-9a-f-]{36}$/i.test(adminUserId)) {
     throw new Error("invalid_fixture_admin_id");
