@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile,readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 const db=new PGlite();const migrations=new URL("../../supabase/migrations/",import.meta.url);
@@ -6,7 +7,7 @@ await db.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_ro
 for(const name of (await readdir(migrations)).filter(x=>x.endsWith(".sql")).sort()){const sql=await readFile(new URL(name,migrations),"utf8");if(name.startsWith("20260816120554"))for(const id of ["18bafcd5-3e4c-4044-bb63-10325a0b7209","e66c0525-1787-4250-be26-79f849624521","890c71b1-cf6e-4b68-a56e-dd6050372481","97319fe5-82fd-44cd-b27d-6ae314ee368b"])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,"fixture@example.invalid"]);await db.exec(sql);}
 const admin="88888888-aaaa-4aaa-8aaa-888888888888",stranger="99999999-bbbb-4bbb-8bbb-999999999999";for(const id of[admin,stranger])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
 async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
-const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
 for(const svc of ["omniqora.crm","omniqora.documents","omniqora.automation","omniqora.ai"]){await asUser(admin,()=>db.query("SELECT public.platform_set_tenant_service($1,$2,true,'{}'::jsonb)",[md.tenantId,svc]));}
 await db.exec("SET ROLE service_role");await db.query("UPDATE public.tenant_services SET status='active' WHERE tenant_id=$1",[md.tenantId]);await db.exec("RESET ROLE");
 await asUser(admin,()=>db.query("SELECT public.vertical_enable_package($1,'mealdeck','practice.core','{}'::jsonb)",[md.tenantId]));
