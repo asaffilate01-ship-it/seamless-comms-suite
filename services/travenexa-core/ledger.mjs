@@ -186,54 +186,56 @@ export function createTraveNexaLedger({db}={}) {
     if(source==='operator')assert(operatorApproved===true,'operator_approval_required');
     // One atomic statement: compare old status, check matching signed supplier/payment
     // evidence and insert an immutable state event. Duplicate events cannot replay.
+    // Lock booking, verify external proof, then INSERT event BEFORE updating status.
+    // A reused event reference cannot change state without an audit entry.
     const result=await sql(`
       WITH locked AS MATERIALIZED (
-        SELECT id,tenant_key,status,booking_mode,supplier_key
+        SELECT id,tenant_key,status,booking_mode,supplier_key,product_type,currency_code,gross_minor
         FROM public.travenexa_booking_records
         WHERE id=$2 AND tenant_key=$1 FOR UPDATE
       ),
-      changed AS (
-        UPDATE public.travenexa_booking_records b
-        SET status=$4,updated_at=now()
+      evidence AS MATERIALIZED (
+        SELECT l.*
         FROM locked l
-        WHERE b.id=l.id AND b.tenant_key=l.tenant_key AND l.status=$3
-          AND NOT EXISTS (
-            SELECT 1 FROM public.travenexa_booking_state_events e
-            WHERE e.tenant_key=$1 AND e.booking_id=$2
-              AND e.source=$5 AND e.proof_reference=$6
-          )
+        WHERE l.status=$3
           AND (
             ($5='supplier' AND EXISTS (
               SELECT 1 FROM public.travenexa_supplier_events ev
               WHERE ev.tenant_key=$1 AND ev.booking_id=$2
                 AND ev.external_event_ref=$6 AND ev.signature_verified=true
-                AND ev.event_type=$7 AND ev.supplier_key=b.supplier_key
-              ))
+                AND ev.event_type=$7 AND ev.supplier_key=l.supplier_key
+            ))
             OR ($5='payment' AND EXISTS (
               SELECT 1 FROM public.travenexa_payment_events ev
               WHERE ev.tenant_key=$1 AND ev.booking_id=$2
                 AND ev.external_event_ref=$6 AND ev.signature_verified=true
-                AND ev.event_type=$7 AND ev.currency_code=b.currency_code
-                AND (ev.event_type<>'authorised' OR ev.amount_minor=b.gross_minor)
-              ))
+                AND ev.event_type=$7 AND ev.currency_code=l.currency_code
+                AND (ev.event_type<>'authorised' OR ev.amount_minor=l.gross_minor)
+            ))
             OR ($5='operator' AND $4='manual_review' AND $8=true)
           )
           AND ($4<>'supplier_submitted' OR
-            (l.booking_mode='supplier_checkout' OR l.status='payment_authorised'))
-          AND ($4<>'ticketed' OR b.product_type IN ('flights','rail','coach','ferries'))
+             (l.booking_mode='supplier_checkout' OR l.status='payment_authorised'))
+          AND ($4<>'ticketed' OR l.product_type IN ('flights','rail','coach','ferries'))
           AND ($4<>'refunded' OR
-            ($5='supplier' AND l.booking_mode='supplier_checkout')
-             OR ($5='payment' AND l.booking_mode<>'supplier_checkout'))
-        RETURNING b.id,b.tenant_key,l.status AS prior_status,b.status AS new_status
+             ($5='supplier' AND l.booking_mode='supplier_checkout')
+              OR ($5='payment' AND l.booking_mode<>'supplier_checkout'))
       ),
       recorded AS (
         INSERT INTO public.travenexa_booking_state_events
           (tenant_key,booking_id,from_status,to_status,source,proof_reference)
-        SELECT tenant_key,id,prior_status,new_status,$5,$6 FROM changed
+        SELECT tenant_key,id,status,$4,$5,$6 FROM evidence
         ON CONFLICT DO NOTHING
-        RETURNING booking_id,to_status
+        RETURNING booking_id
+      ),
+      changed AS (
+        UPDATE public.travenexa_booking_records b
+        SET status=$4,updated_at=now()
+        FROM recorded r
+        WHERE b.id=r.booking_id AND b.tenant_key=$1 AND b.status=$3
+        RETURNING b.id,b.status
       )
-      SELECT booking_id,to_status FROM recorded
+      SELECT id AS booking_id,status AS to_status FROM changed
     `,[tenantKey,bookingId,expectedStatus,toStatus,source,eventRef,
       toStatus==='refunded'&&source==='supplier'?'refund_confirmed':kind.kind,
       operatorApproved]);
