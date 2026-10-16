@@ -103,7 +103,7 @@ For China, performance from mainland networks must be tested, and Mainland China
 
 ## Critical go-live blockers
 
-- Actual TraveNexa backend repository and service endpoint have **not been confirmed**; the code here is the frontend shell and connector contract.
+- The first TraveNexa server-side core now exists in `services/travenexa-core/`. Its tenant-bound `/v1/inbound-uk/search` contract matches this storefront gateway, but it remains **undeployed** and returns 503 without approved supplier adapters and tenant credentials.
 - UK private-hire/airport-transfer bookings must be supplied/accepted under an appropriate licensed business arrangement; obtain operator/licence legal review before processing any booking on these sites.
 - Selling rail tickets directly requires appropriate licensed/accredited retail arrangements; affiliate partner models are a safer starting point.
 - Hotels, tours and combined travel packages require the seller/agent model, refunds, merchant-of-record, consumer protection and applicable UK package travel/ATOL review.
