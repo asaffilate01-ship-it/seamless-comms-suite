@@ -146,3 +146,10 @@ test('Hotelbeds always fails closed on bad HTTP, malformed JSON and excessive re
      headers:{'content-length':'4000000'}})});
  await assert.rejects(()=>oversized.status(),/response_too_large/);
 });
+
+test('a single-hotel CheckRate response is still internal wholesale evidence',()=>{
+  const single=normalizeHotelbedsRates({hotel:hotelReply.hotels.hotels[0]});
+  assert.equal(single.length,1);
+  assert.equal(single[0].netMinor,12050);
+  assert.equal(single[0].customerBookable,false);
+});
