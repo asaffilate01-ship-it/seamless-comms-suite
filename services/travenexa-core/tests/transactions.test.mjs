@@ -166,6 +166,6 @@ test('commission ledger requires independently verified supplier statement; GMV 
   await assert.rejects(()=>ledger.recordCommissionStatement(data),/supplier_statement_not_verified/);
   await ledger.recordCommissionStatement({...data,verifiedStatement:true});
   assert.match(calls[0].text,/verification_status/);
-  assert.match(calls[0].text,/ON CONFLICT\(tenant_key,supplier_key,entry_type,source_reference\)/);
+  assert.match(calls[0].text,/ON CONFLICT[(]tenant_key,booking_id,supplier_key,entry_type,source_reference[)]/);
   assert.equal(calls[0].params[3],'commission_receivable');
 });
