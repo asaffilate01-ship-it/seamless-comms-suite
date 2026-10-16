@@ -61,3 +61,19 @@ test('market storefronts show no fake availability and payment API remains block
   assert.match(gatewaySource,/bookingsEnabled:false/);
   assert.doesNotMatch(gatewaySource,/\b(process\.env\.[A-Z_]+\s*\|\|\s*['"]https:\/\/)/);
 });
+
+test('supplier-hosted checkout survives the tenant gateway only on an approved host',()=>{
+  const offer={id:'hbx-supplier-verified',title:'Hotel room',supplierName:'Approved supplier',
+    currency:'GBP',amount:200,expiresAt:new Date(Date.now()+300000).toISOString(),
+    verified:true,live:true,bookingMode:'supplier_checkout',
+    supplierCheckoutUrl:'https://partner.example/pay?booking=abc'};
+  const normal=gateway.normaliseOffer(offer);
+  assert.equal(normal.bookingMode,'supplier_checkout');
+  assert.equal(normal.supplierCheckoutUrl,offer.supplierCheckoutUrl);
+  assert.equal(normal.affiliateRedirect,undefined);
+  assert.equal(gateway.normaliseOffer({...offer,
+    supplierCheckoutUrl:'https://partner.example.evil.test/pay'}),null);
+  assert.equal(gateway.normaliseOffer({...offer,
+    supplierCheckoutUrl:'https://partner.example:8443/pay'}),null);
+  assert.equal(gateway.normaliseOffer({...offer,amount:'200'}),null);
+});
