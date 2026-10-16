@@ -16,6 +16,20 @@ async function loadTs(relative,deps={}){
 }
 const catalog=await loadTs("../../src/modules/agent-factory/catalogue.ts");
 const planner=await loadTs("../../src/modules/agent-factory/planner.ts",{"./catalogue":catalog});
+const cricketPolicy=await loadTs("../../src/modules/intelligence/criclume-policy.ts");
+
+test("CricLume cannot queue unbudgeted AI runs on Omniqora generic route",async()=>{
+ assert.equal(cricketPolicy.legacyIntelligenceRunAllowed("criclume"),false);
+ assert.equal(cricketPolicy.legacyIntelligenceRunAllowed("  CriClUmE "),false);
+ assert.equal(cricketPolicy.legacyIntelligenceRunAllowed("dishbee"),true);
+ assert.match(cricketPolicy.CRICLUME_BUDGET_REQUIRED,/budgeted Agent Factory admission/);
+ const route=await readFile(new URL("../../src/modules/intelligence/service.server.ts",import.meta.url),"utf8");
+ assert.match(route,/if\(!legacyIntelligenceRunAllowed\(input.productKey\)\)/);
+ assert.match(route,/BUDGETED_ADMISSION_REQUIRED/);
+ assert.match(route,/connection.verify/);
+ assert.match(route,/intelligence.connection.verify/);
+ assert.match(route,/modelExecutionReady:false/);
+});
 
 test("universal agent factory covers every product, plus named SaaS blueprints",()=>{
  for(const key of ["xpertjobs","autohashi","zivvo","craftvaro","gabley","taxnuvia","lawquo","eventplanr","dishbee","finvessa","haccora","kindelo","moneybridge","unipathway","formation-genie","merqano","criclume"]){

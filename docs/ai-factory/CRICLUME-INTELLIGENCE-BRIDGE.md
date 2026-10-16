@@ -80,3 +80,54 @@ for consequential actions.
 Do not delete or migrate CricLume's source scorer, media, event history or
 Lovable Supabase connection. Omniqora is an **intelligence service**, not a
 replacement cricket scoring database.
+
+## Phase 2 budget safeguard and live handshake (16 October 2026)
+
+**Cost-control fix:** the existing generic `run.start` endpoint writes an
+`ai_agent_runs` and `intelligence_jobs` row without calling the Agent
+Factory's atomic `queue_budgeted_ai_agent` reservation function. Until an
+approved service-credential admission API exists, the generic endpoint
+**rejects** product `criclume` with
+`BUDGETED_ADMISSION_REQUIRED` (HTTP 409), regardless of who configured
+the credentials. Other products' existing behaviour is not changed.
+
+**Cost-free readiness check:** a scoped service may POST:
+
+```json
+{"operation":"connection.verify","tenantId":"<approved Omniqora tenant UUID>","productKey":"criclume"}
+```
+
+with an active platform-service credential explicitly containing capability
+`intelligence.connection.verify` for that exact tenant and product. The
+handler verifies scope, credential status/expiry, and
+`omniqora.intelligence-runtime` entitlement. Successful response states
+`connection:"verified"` and **`modelExecutionReady:false`**. This proves
+a real no-cost access path *only*, not provider readiness, actual inference,
+a model tariff, an MCP tool or a deployed budgeted worker.
+
+CricLume's existing Lovable-linked Supabase remains the source database;
+it stores independently approved club-to-Omniqora mappings and a read-only
+history. The source now offers six deterministic coaching discussion
+previews that consume zero model tokens. Historical AI reports are labelled
+stale after scoring changes and cannot silently override a newer result.
+
+### Required next gate: budgeted service admission
+
+Implement a new, reviewed server-to-server budgeted request API that:
+
+1. Authenticates a scoped CricLume service credential and validates active
+   tenant/product entitlement, correct source match and independently
+   approved `criclume.*` agent use-case blueprint.
+2. Atomically uses **the same** approved model tariff, capability/region
+   assessment, budget reservation, idempotency and monthly limits enforced by
+   `queue_budgeted_ai_agent`. No trust in caller-provided rates/costs.
+3. Binds the reservation and job to a trusted, minimised match snapshot
+   version. Service auth must not impersonate a browser `auth.uid()` or
+   skip independent review merely to get through an existing SQL function.
+4. Enforces max steps, source-only read scopes, revocation, receipt-based
+   settlement and safe cancellation in the authorised worker.
+5. Verifies actual receipts against costs, adversarial cross-tenant tests and
+   two pilot clubs before turning on paid model generation.
+
+No default-on flag or wildcard access can bypass the above. Never
+manually enable a provider for CricLume by editing the generic route.
