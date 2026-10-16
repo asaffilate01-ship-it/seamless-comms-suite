@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { createTravelEngine } from './engine.mjs';
 import { INBOUND_MARKETS, TENANTS } from './catalog.mjs';
+import { TRAVEL_AI_TOOLS, runTravelAiTool } from './omniqora-tools.mjs';
 
 function parseTokens(value) {
   if (!value) return {};
@@ -44,7 +45,7 @@ export function createServer({engine=defaultEngine()}={}) {
       return reply(res,200,{service:'travenexa-core',supplierInventory:'not_verified_by_health',
         configuredTenants:engine.hasConfiguredTenants(),bookingsEnabled:false,paymentsEnabled:false});
     const scopedPaths=['/v1/travel/search','/v1/inbound-uk/search','/v1/travel/readiness',
-      '/v1/travel/booking-preflight'];
+      '/v1/travel/booking-preflight','/v1/omniqora/tools','/v1/omniqora/tool-call'];
     if (!scopedPaths.includes(path)) return reply(res,404,{status:'unavailable',reason:'unknown_api'});
     if (!engine.hasConfiguredTenants()) return reply(res,503,{status:'unavailable',reason:'tenant_auth_not_configured'});
     const inbound=path==='/v1/inbound-uk/search';
@@ -62,6 +63,8 @@ export function createServer({engine=defaultEngine()}={}) {
     hit.count+=1;hits.set(key,hit);
     if (hits.size>10000) for(const [k,v] of hits) if(at-v.at>=WINDOW)hits.delete(k);
     if (hit.count>MAX_REQUESTS) return reply(res,429,{status:'unavailable',reason:'rate_limited'});
+    if (path==='/v1/omniqora/tools' && req.method==='GET')
+      return reply(res,200,{status:'read_only',tenantId,tools:TRAVEL_AI_TOOLS});
     if (path==='/v1/travel/readiness' && req.method==='GET') {
       const answer=engine.readiness(tenantId);
       return reply(res,answer.httpStatus,answer);
@@ -70,6 +73,10 @@ export function createServer({engine=defaultEngine()}={}) {
     let data;
     try {data=await bodyJson(req);} catch {
       return reply(res,400,{status:'unavailable',reason:'invalid_json_request'});
+    }
+    if (path==='/v1/omniqora/tool-call') {
+      const answer=await runTravelAiTool(engine,tenantId,data);
+      return reply(res,answer.httpStatus,answer);
     }
     if (path==='/v1/travel/booking-preflight') {
       const answer=engine.bookingPreflight(tenantId,data?.offerId);
