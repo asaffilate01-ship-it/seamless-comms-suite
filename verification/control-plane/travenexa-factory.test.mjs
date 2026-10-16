@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { createTraveNexaLedger } from '../../services/travenexa-core/ledger.mjs';
+import { createPostgresSupplierApprovalReader } from '../../services/travenexa-core/supplier-approvals.mjs';
 
 const migrations = new URL('../../supabase/migrations/', import.meta.url);
 const db = new PGlite();
@@ -323,3 +324,17 @@ assert.equal((await ledger.getBooking({
  tenantKey:'travenexa-flightlounge',bookingId:draft.id,
 })).status,'ticketed');
 console.log('TraveNexa Phase 2: supplier reprice, tenant isolation, replay-proof state journal and commission ledger executed on Postgres');
+
+const approvedTravelSupplier=createPostgresSupplierApprovalReader({db});
+const persistedApproval=await approvedTravelSupplier({
+  tenantId:'travenexa-flightlounge',supplierKey:'mystifly',productType:'flights',
+});
+assert.equal(persistedApproval?.status,'approved');
+assert.equal(persistedApproval?.merchant_of_record,'travenexa');
+assert.equal(await approvedTravelSupplier({
+  tenantId:'travenexa-marocways',supplierKey:'mystifly',productType:'flights',
+}),null,'cross-tenant supplier approval must fail closed');
+assert.equal(await approvedTravelSupplier({
+  tenantId:'travenexa-flightlounge',supplierKey:'hotelbeds',productType:'hotels',
+}),null,'catalogue-only supplier must not inherit approval');
+console.log('TraveNexa Phase 3: persisted supplier approval reader verified against real migration tables');
