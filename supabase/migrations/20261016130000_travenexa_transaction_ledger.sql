@@ -192,7 +192,7 @@ CREATE TABLE public.travenexa_commission_ledger (
   effective_at timestamptz NOT NULL DEFAULT now(),
   reconciled_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(tenant_key,supplier_key,entry_type,source_reference),
+  UNIQUE(tenant_key,booking_id,supplier_key,entry_type,source_reference),
   FOREIGN KEY(booking_id,tenant_key,supplier_key)
     REFERENCES public.travenexa_booking_records(id,tenant_key,supplier_key)
     ON DELETE RESTRICT
