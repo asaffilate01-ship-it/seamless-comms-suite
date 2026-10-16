@@ -57,9 +57,9 @@ export function createPostgresSupplierApprovalReader({db}={}) {
         typeof productType!=='string' ||
         !SUPPLIER_BY_ID[supplierKey].products.includes(productType)) return null;
     const response=await query(
-      \`SELECT \${list} FROM public.travenexa_supplier_approvals
+      `SELECT ${list} FROM public.travenexa_supplier_approvals
          WHERE tenant_key=$1 AND supplier_key=$2 AND product_type=$3
-           AND active=true AND status='approved' LIMIT 1\`,
+           AND active=true AND status='approved' LIMIT 1`,
       [tenantId,supplierKey,productType],
     );
     const row=response?.rows?.[0]||null;
