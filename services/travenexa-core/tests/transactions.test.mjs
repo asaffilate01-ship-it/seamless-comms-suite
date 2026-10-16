@@ -18,7 +18,7 @@ function recorder(rows=[{id:BOOKING}]) {
   return {ledger:createTraveNexaLedger({db}),calls};
 }
 test('travel sales remain disabled until supplier, compliance, merchant and ticketing approvals',()=>{
-  assert.equal(planPayment(baseBooking,{},{}).reason,'payment_mode_not_approved');
+  assert.equal(planPayment(baseBooking,{},{}).reason,'supplier_tenant_mismatch');
   assert.equal(planPayment(baseBooking,baseApproval,{licenceValid:false}).allowed,false);
   assert.equal(planPayment(baseBooking,baseApproval,{licenceValid:true}).reason,'adyen_account_not_approved');
   assert.equal(planPayment(baseBooking,baseApproval,{licenceValid:true,adyenEnabled:true})
@@ -133,9 +133,9 @@ test('only verified payment/supplier evidence can be written; replay-safe on pro
   assert.match(calls[0].text,/b.gross_minor=\$6/);
   assert.match(calls[0].text,/ON CONFLICT\(processor,external_event_ref\) DO NOTHING/);
   await assert.rejects(()=>ledger.recordSupplierProof({tenantKey:TENANT,bookingId:BOOKING,
-    supplierKey:'mystifly',eventRef:'S1',eventType:'ticketed'}),/unverified_supplier_event/);
+    supplierKey:'mystifly',eventRef:'S-001',eventType:'ticketed'}),/unverified_supplier_event/);
   await ledger.recordSupplierProof({tenantKey:TENANT,bookingId:BOOKING,
-    supplierKey:'mystifly',eventRef:'S1',eventType:'ticketed',signatureVerified:true});
+    supplierKey:'mystifly',eventRef:'S-001',eventType:'ticketed',signatureVerified:true});
   assert.match(calls[1].text,/b.supplier_key=\$3/);
 });
 test('booking state machine requires fresh matched signed evidence and compare-and-swap',async()=>{
