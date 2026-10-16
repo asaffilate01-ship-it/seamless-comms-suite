@@ -75,7 +75,7 @@ export function calculateSellPrice({supplierMinor,currencyCode,markupMinor=0,all
       supplierMinor>100_000_000 || !Number.isSafeInteger(markupMinor) || markupMinor<0 || markupMinor>100_000)
     return null;
   // Affiliate or supplier-owned prices cannot be silently marked up by TraveNexa.
-  if ((bookingMode==='affiliate' || !allowMarkup) && markupMinor!==0) return null;
+  if ((['affiliate','supplier_checkout'].includes(bookingMode) || !allowMarkup) && markupMinor!==0) return null;
   const finalMinor=supplierMinor+markupMinor;
   return {currency:currencyCode, supplierMinor, markupMinor, finalMinor,
     amount:finalMinor/(10**digits), grossMarginMinor:markupMinor};

@@ -72,20 +72,25 @@ function sanitizeRedirect(value) {
   if(typeof value!=='string' || !redirectHosts.size)return undefined;
   try {
     const url=new URL(value);
-    return url.protocol==='https:' && !url.username && !url.password && redirectHosts.has(url.hostname.toLowerCase()) ? url.href : undefined;
+    return url.protocol==='https:' && !url.username && !url.password && !url.port && redirectHosts.has(url.hostname.toLowerCase()) ? url.href : undefined;
   }catch{return undefined;}
 }
 function normaliseOffer(item) {
   if(!item || typeof item!=='object' || item.verified!==true || item.live!==true)return null;
   const id=safeString(item.id,160), title=safeString(item.title,180),
     supplierName=safeString(item.supplierName,100), currency=safeString(item.currency,3);
-  const amount=Number(item.amount), expiresAt=safeString(item.expiresAt,50);
+  const amount=item.amount, expiresAt=safeString(item.expiresAt,50);
   if(!id||!title||!supplierName||!currency||!/^[A-Z]{3}$/.test(currency)||
       !Number.isFinite(amount)||amount<0||!expiresAt||!Number.isFinite(Date.parse(expiresAt))||
       Date.parse(expiresAt)<=Date.now())return null;
-  return {id,title,supplierName,currency,amount,expiresAt,
+  const bookingMode=item.bookingMode;
+  if(!['affiliate','supplier_checkout','platform_checkout','platform_split'].includes(bookingMode))return null;
+  if(bookingMode==='affiliate' && !sanitizeRedirect(item.affiliateRedirect))return null;
+  if(bookingMode==='supplier_checkout' && !sanitizeRedirect(item.supplierCheckoutUrl))return null;
+  return {id,title,supplierName,currency,amount,expiresAt,bookingMode,
     description:safeString(item.description,400)||undefined,
-    affiliateRedirect:item.bookingMode==='affiliate'?sanitizeRedirect(item.affiliateRedirect):undefined};
+    affiliateRedirect:bookingMode==='affiliate'?sanitizeRedirect(item.affiliateRedirect):undefined,
+    supplierCheckoutUrl:bookingMode==='supplier_checkout'?sanitizeRedirect(item.supplierCheckoutUrl):undefined};
 }
 async function readJson(req) {
   let size=0,chunks=[];
