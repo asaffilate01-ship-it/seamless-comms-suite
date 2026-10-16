@@ -23,7 +23,8 @@
     "test:automotive-intelligence": "bun verification/control-plane/automotive-auction-intelligence-v3.test.ts",
     "build:travel-sites": "vite build --config apps/travenexa-market-sites/vite.config.ts",
     "typecheck:travel-sites": "tsc --noEmit -p apps/travenexa-market-sites/tsconfig.json",
-    "test:travel-sites": "node --test apps/travenexa-market-sites/tests/*.test.mjs"
+    "test:travel-sites": "node --test apps/travenexa-market-sites/tests/*.test.mjs",
+    "test:travel-core": "node --test services/travenexa-core/tests/*.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
