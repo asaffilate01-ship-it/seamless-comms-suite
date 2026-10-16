@@ -45,8 +45,10 @@ function fixedDecimalMinor(value,currency) {
   return Number.isSafeInteger(amount)&&amount>=0 ? amount : null;
 }
 export function normalizeHotelbedsRates(data,{limit=30}={}) {
-  const list=data?.hotels?.hotels;
-  if (!Array.isArray(list))return [];
+  // Availability normally returns hotels.hotels; CheckRate may return a single hotel.
+  const list=Array.isArray(data?.hotels?.hotels) ? data.hotels.hotels :
+    data?.hotel && typeof data.hotel==='object' ? [data.hotel] : [];
+  if (!list.length)return [];
   const out=[];
   for(const hotel of list.slice(0,20)){
     const currency=hotel?.currency;
