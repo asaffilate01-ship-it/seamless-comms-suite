@@ -1,0 +1,297 @@
+{
+  "schemaVersion": "1.0",
+  "reviewedAt": "2026-10-16",
+  "scope": "source_and_release_evidence_only",
+  "statusDefinitions": {
+    "absent": "No authoritative source evidence located",
+    "mapped": "Repository authority identified",
+    "implemented": "Source implementation and focused checks are evidenced",
+    "staged": "Deployed in an isolated non-production environment with acceptance evidence",
+    "live": "Production deployment and operational acceptance evidenced",
+    "blocked": "Cannot advance until named blocker is resolved"
+  },
+  "safeguards": [
+    "Operator-provisioned tenants only",
+    "Each product remains the system of record for its domain data",
+    "Omniqora holds catalogue, entitlements, connectors, orchestration and intelligence contracts",
+    "No status may be promoted to staged or live from source or PR evidence alone",
+    "Provider secrets stay server-side and tenant-scoped",
+    "High-impact AI actions require deterministic gates and human approval"
+  ],
+  "products": [
+    {
+      "productKey": "omniqora",
+      "displayName": "Omniqora SaaS/AI Factory",
+      "repositories": [
+        "asaffilate01-ship-it/seamless-comms-suite"
+      ],
+      "source": "implemented",
+      "landlordTenant": "implemented",
+      "omniqoraContract": "implemented",
+      "aiIntelligence": "implemented",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "Factory PR #97 merged 2026-10-15",
+        "88 product identities and 17 non-activated tenant templates in registry",
+        "control-plane and agent-factory regression suites registered"
+      ],
+      "blockers": [
+        "Production migrations and tenant activation not evidenced",
+        "Live provider credentials and operational acceptance remain gated"
+      ]
+    },
+    {
+      "productKey": "autohashi",
+      "displayName": "AutoHashi",
+      "repositories": [
+        "asaffilate01-ship-it/nazli"
+      ],
+      "source": "implemented",
+      "landlordTenant": "implemented",
+      "omniqoraContract": "implemented",
+      "aiIntelligence": "implemented",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "AutoHashi PR #9 is clean and open",
+        "Omniqora v4 PR #61 contains correction learning, hammer prediction and saved watches"
+      ],
+      "blockers": [
+        "Omniqora PR #61 conflicts with current main",
+        "Japan auction/history, shipping, UK market and live WhatsApp/provider acceptance not evidenced",
+        "No production tenant activation evidence"
+      ]
+    },
+    {
+      "productKey": "zivvo-uk",
+      "displayName": "Zivvo UK",
+      "repositories": [
+        "asaffilate01-ship-it/autosouq"
+      ],
+      "source": "implemented",
+      "landlordTenant": "mapped",
+      "omniqoraContract": "mapped",
+      "aiIntelligence": "mapped",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "PR #2 contains public marketplace and server-side evidence/outbox foundations"
+      ],
+      "blockers": [
+        "PR #2 remains draft",
+        "Hosted Actions did not execute",
+        "Live Auto Trader/eBay/finance/provenance adapters and tenant provisioning not accepted"
+      ]
+    },
+    {
+      "productKey": "zivvo-de",
+      "displayName": "Zivvo Germany",
+      "repositories": [
+        "asaffilate01-ship-it/zivvo"
+      ],
+      "source": "implemented",
+      "landlordTenant": "mapped",
+      "omniqoraContract": "mapped",
+      "aiIntelligence": "mapped",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "PR #21 contains Germany-France pre-assessment and expert-review gates"
+      ],
+      "blockers": [
+        "PR #21 remains draft and unstable",
+        "No production cross-border compliance acceptance",
+        "France requirements must remain evidence- and expert-gated; no bypass claims"
+      ]
+    },
+    {
+      "productKey": "sparesgrid",
+      "displayName": "SparesGrid",
+      "repositories": [],
+      "source": "absent",
+      "landlordTenant": "absent",
+      "omniqoraContract": "mapped",
+      "aiIntelligence": "mapped",
+      "externalProviders": "absent",
+      "deployment": "absent",
+      "evidence": [
+        "Factory registry contains SparesGrid as a candidate with no repository mapping"
+      ],
+      "blockers": [
+        "Create or identify canonical repository",
+        "Build dismantler tenant model, inventory/fitment/search/order contracts and channel adapters",
+        "Do not treat commerce-compass or Merqano as SparesGrid without explicit source authority"
+      ]
+    },
+    {
+      "productKey": "motoresq",
+      "displayName": "MotResq",
+      "repositories": [
+        "asaffilate01-ship-it/all-road-aid"
+      ],
+      "source": "implemented",
+      "landlordTenant": "mapped",
+      "omniqoraContract": "mapped",
+      "aiIntelligence": "mapped",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "PR #2 records 40 passing tests, capacity locks, durable refunds and workshop routing"
+      ],
+      "blockers": [
+        "PR #2 remains draft",
+        "Full RLS, Stripe/WhatsApp acceptance, payouts, native GPS/push and production migrations are not evidenced"
+      ]
+    },
+    {
+      "productKey": "dishbee",
+      "displayName": "DishBee",
+      "repositories": [
+        "asaffilate01-ship-it/dishbee-helper"
+      ],
+      "source": "implemented",
+      "landlordTenant": "implemented",
+      "omniqoraContract": "implemented",
+      "aiIntelligence": "implemented",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "Factory catalogue and focused Dishbee tests exist",
+        "Haccora receiver work defines a scoped integration boundary"
+      ],
+      "blockers": [
+        "Staging/live acceptance is incomplete",
+        "Haccora PR #62 explicitly says verified Dishbee outbound publisher is not built/connected"
+      ]
+    },
+    {
+      "productKey": "haccora",
+      "displayName": "Haccora",
+      "repositories": [
+        "asaffilate01-ship-it/haccora-connect",
+        "asaffilate01-ship-it/haccora"
+      ],
+      "source": "implemented",
+      "landlordTenant": "implemented",
+      "omniqoraContract": "implemented",
+      "aiIntelligence": "mapped",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "Phases 55 and 59-62 implement tenant/site-scoped compliance and traceability controls"
+      ],
+      "blockers": [
+        "Stacked draft PR chain requires ordered merge and isolated staging",
+        "Qualified food-safety, privacy, real device, provider and production acceptance remain open",
+        "Dishbee outbound producer is missing"
+      ]
+    },
+    {
+      "productKey": "care-academy",
+      "displayName": "Care Academy",
+      "repositories": [],
+      "source": "blocked",
+      "landlordTenant": "mapped",
+      "omniqoraContract": "mapped",
+      "aiIntelligence": "mapped",
+      "externalProviders": "absent",
+      "deployment": "absent",
+      "evidence": [
+        "Accessible care repositories exist, but no authoritative Care Academy product mapping was found"
+      ],
+      "blockers": [
+        "Confirm canonical product key and repository; care-quest-learn is a candidate, not accepted authority",
+        "Run tenancy/RLS and Factory adapter audit after mapping"
+      ]
+    },
+    {
+      "productKey": "lessonahead",
+      "displayName": "LessonAhead / Driving Instructor",
+      "repositories": [
+        "asaffilate01-ship-it/nectar-design-lab"
+      ],
+      "source": "mapped",
+      "landlordTenant": "implemented",
+      "omniqoraContract": "implemented",
+      "aiIntelligence": "mapped",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "Factory registry maps LessonAhead to nectar-design-lab",
+        "Omniqora has a dedicated LessonAhead Factory regression suite"
+      ],
+      "blockers": [
+        "Product-repository runtime audit and production deployment evidence remain outstanding",
+        "Live payments, messaging, maps and operator tenant activation are not evidenced"
+      ]
+    },
+    {
+      "productKey": "merqano",
+      "displayName": "Merqano / Mercano commerce landlord",
+      "repositories": [
+        "asaffilate01-ship-it/bakery-web-bloom"
+      ],
+      "source": "implemented",
+      "landlordTenant": "implemented",
+      "omniqoraContract": "implemented",
+      "aiIntelligence": "mapped",
+      "externalProviders": "blocked",
+      "deployment": "blocked",
+      "evidence": [
+        "Provisioning receiver and Factory adapter were built with idempotency, hashed credentials, RLS and mismatch protection"
+      ],
+      "blockers": [
+        "Live handshake needs production migrations and configured URLs/secrets",
+        "Mercano commerce is not a substitute for SparesGrid"
+      ]
+    }
+  ],
+  "nextPhases": [
+    {
+      "priority": 1,
+      "phase": "Reconcile and land AutoHashi v4",
+      "exitCriteria": [
+        "Rebase or merge current main into Omniqora PR #61 without rewriting history",
+        "Pass automotive auction, bid and intelligence suites at latest SHA",
+        "Deploy migrations then run isolated signed bridge acceptance"
+      ]
+    },
+    {
+      "priority": 2,
+      "phase": "Create SparesGrid source authority",
+      "exitCriteria": [
+        "Canonical repository exists and is registered",
+        "Operator-provisioned dismantler tenant schema and RLS tests pass",
+        "Versioned vehicle, part, fitment, stock, quote and order contracts exist"
+      ]
+    },
+    {
+      "priority": 3,
+      "phase": "Activate one controlled automotive tenant",
+      "exitCriteria": [
+        "Operator creates tenant, users, roles, domain, branding, modules and plan limits",
+        "Cross-tenant negative tests and audit logs pass",
+        "No provider or AI high-impact action runs without entitlement and approval"
+      ]
+    },
+    {
+      "priority": 4,
+      "phase": "Close product adapters",
+      "exitCriteria": [
+        "Dishbee outbound Haccora event publisher accepted",
+        "Zivvo and MotResq signed/idempotent bridge tests pass",
+        "Provider states promoted individually from catalogued to sandbox to production verified"
+      ]
+    },
+    {
+      "priority": 5,
+      "phase": "Production evidence",
+      "exitCriteria": [
+        "Migrations, secrets, monitoring, backup/restore and incident runbooks accepted",
+        "Real payment/comms/provider smoke tests pass",
+        "Only then promote product or tenant status to live"
+      ]
+    }
+  ]
+}
