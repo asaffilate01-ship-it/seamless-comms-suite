@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
+import { createTraveNexaLedger } from '../../services/travenexa-core/ledger.mjs';
 
 const migrations = new URL('../../supabase/migrations/', import.meta.url);
 const db = new PGlite();
@@ -248,3 +249,77 @@ const count=(await db.query(`
 `)).rows[0].n;
 assert.equal(count,0,'creating a fare/booking must never automatically create commission revenue');
 console.log('TraveNexa Phase 2: eight RLS tables, default-disabled supplier and tenant-bound booking/payment contracts verified');
+
+const ledger=createTraveNexaLedger({db});
+const signedQuote=await ledger.persistVerifiedQuote({
+ tenantKey:'travenexa-flightlounge',supplierKey:'mystifly',productType:'flights',
+ supplierOfferRef:'supplier-repriced-offer-A1',bookingMode:'platform_checkout',
+ currencyCode:'GBP',supplierMinor:20000,markupMinor:1000,
+ expiresAt:new Date(Date.now()+5*60000).toISOString(),verifiedBySupplier:true,
+});
+assert(signedQuote.id,'approved live supplier reprice must persist an offer');
+const draft=await ledger.createBookingDraft({
+ tenantKey:'travenexa-flightlounge',offerId:signedQuote.id,
+ idempotencyKey:'supplier-a1-first-booking',customerContractReference:'terms-A1',
+});
+assert(draft.id,'validated quote must create a draft');
+const idempotent=await ledger.createBookingDraft({
+ tenantKey:'travenexa-flightlounge',offerId:signedQuote.id,
+ idempotencyKey:'supplier-a1-first-booking',customerContractReference:'terms-A1',
+});
+assert.equal(idempotent.id,draft.id);
+assert.equal((await ledger.getBooking({tenantKey:'travenexa-marocways',bookingId:draft.id})),null);
+assert.deepEqual((await ledger.advanceBooking({
+ tenantKey:'travenexa-flightlounge',bookingId:draft.id,
+ expectedStatus:'draft',toStatus:'price_revalidated',eventRef:'unseen-supplier-ref-1',
+ source:'supplier',
+})).status,'blocked','unverified events cannot change state');
+
+async function supplierStep(expectedStatus,toStatus,eventRef,eventType){
+  const event=await ledger.recordSupplierProof({
+    tenantKey:'travenexa-flightlounge',bookingId:draft.id,
+    supplierKey:'mystifly',eventRef,eventType,signatureVerified:true,
+  });
+  assert(event.id,`signed supplier event did not persist: ${eventType}`);
+  const step=await ledger.advanceBooking({
+    tenantKey:'travenexa-flightlounge',bookingId:draft.id,
+    expectedStatus,toStatus,eventRef,source:'supplier',
+  });
+  assert.equal(step.to_status,toStatus);
+  const repeat=await ledger.advanceBooking({
+    tenantKey:'travenexa-flightlounge',bookingId:draft.id,
+    expectedStatus,toStatus,eventRef,source:'supplier',
+  });
+  assert.equal(repeat.status,'blocked','supplier event cannot replay');
+}
+await supplierStep('draft','price_revalidated','supplier-reprice-A1','price_revalidated');
+await ledger.recordPaymentProof({
+ tenantKey:'travenexa-flightlounge',bookingId:draft.id,processor:'adyen',
+ eventRef:'adyen-authorised-A1',eventType:'authorised',signatureVerified:true,
+ amountMinor:21000,currencyCode:'GBP',
+});
+const paid=await ledger.advanceBooking({
+ tenantKey:'travenexa-flightlounge',bookingId:draft.id,
+ expectedStatus:'price_revalidated',toStatus:'payment_authorised',
+ eventRef:'adyen-authorised-A1',source:'payment',
+});
+assert.equal(paid.to_status,'payment_authorised');
+await supplierStep('payment_authorised','supplier_submitted','supplier-submitted-A1','submitted');
+await supplierStep('supplier_submitted','supplier_confirmed','supplier-confirmed-A1','confirmed');
+await supplierStep('supplier_confirmed','ticketed','supplier-ticketed-A1','ticketed');
+const receipt=await ledger.recordCommissionStatement({
+ tenantKey:'travenexa-flightlounge',bookingId:draft.id,supplierKey:'mystifly',
+ entryType:'commission_receivable',direction:'credit',amountMinor:1000,currencyCode:'GBP',
+ sourceReference:'statement-reference-A1',verifiedStatement:true,
+});
+assert(receipt.id,'verified statement should be recorded');
+const again=await ledger.recordCommissionStatement({
+ tenantKey:'travenexa-flightlounge',bookingId:draft.id,supplierKey:'mystifly',
+ entryType:'commission_receivable',direction:'credit',amountMinor:1000,currencyCode:'GBP',
+ sourceReference:'statement-reference-A1',verifiedStatement:true,
+});
+assert.equal(again.status,'ignored','same supplier statement cannot be duplicated');
+assert.equal((await ledger.getBooking({
+ tenantKey:'travenexa-flightlounge',bookingId:draft.id,
+})).status,'ticketed');
+console.log('TraveNexa Phase 2: supplier reprice, tenant isolation, replay-proof state journal and commission ledger executed on Postgres');
