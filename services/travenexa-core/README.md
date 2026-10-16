@@ -14,6 +14,7 @@ This is a **server-side runtime** for TraveNexa inside the existing Omniqora/iTe
 - Deterministic cost/markup policy with currency minor units; no unsourced exchange conversions, commissions or invented prices.
 - Expiring tenant-bound offer references; separate approval gates for any later merchant-of-record, ticketing, ATOL/agent, Adyen/Platforms, refunds and package sales.
 - Readiness API and **deliberately blocked** payment/ticketing/booking-preflight flow.
+- Read-only Omniqora tool manifest with tenant-scoped `travel.search` and `travel.compare`; no AI booking or payment permissions.
 - Node integration/security tests. No dependency or secret is required to run tests.
 
 ## Run
@@ -43,6 +44,8 @@ Store each tenant bearer token ONLY in the server secret store. On the UK inboun
 | GET /v1/travel/readiness | Bearer + X-Travenexa-Tenant | Tenant-scoped enabled products and blocked booking state |
 | POST /v1/travel/search | Bearer + X-Travenexa-Tenant | 503 until approved adapters loaded |
 | POST /v1/inbound-uk/search | Bearer + X-Travenexa-Market | Compatible with the four existing storefront shells |
+| GET /v1/omniqora/tools | Bearer + X-Travenexa-Tenant | Read-only tool manifest (no AI provider activated) |
+| POST /v1/omniqora/tool-call | Bearer + X-Travenexa-Tenant | `travel.search` or same-currency `travel.compare` only |
 | POST /v1/travel/booking-preflight | Bearer + X-Travenexa-Tenant | 503 with outstanding gates |
 | Any booking, charge, settlement or ticket-issuance endpoint | n/a | Not implemented; no user money accepted |
 
@@ -58,6 +61,6 @@ Global tenants use \`/v1/travel/search\` with \`productType\` such as \`flights\
 2. A durable Postgres travel data plane (tenant RLS, offer cache, booking lifecycle, idempotency, provider event verification and financial ledger). In-memory offer references are **not** production booking storage.
 3. Provider-specific implementations: live search, fare revalidation, booking confirmation, cancellation/refund, settlement and webhook verification, with contract/sandbox certification.
 4. Merchant-of-record and relevant UK/other jurisdiction protections, car-hire/private-hire/rail resale rules, PCI scope, fraud/3DS and Adyen account approval.
-5. Omniqora tenant-scoped AI tools, opt-in marketing and commission reconciliations; AI cannot override hard booking policy.
+5. Connect the read-only Omniqora travel tool surface to an approved tenant-scoped Omniqora integration; add consent-based marketing, monitored workflows and commission reconciliations. AI cannot override hard booking policy.
 
 Supplier-hosted checkout should take precedence where contractually available. Direct Adyen and Adyen for Platforms must be separately approved and do not automatically pay an external distributor.
