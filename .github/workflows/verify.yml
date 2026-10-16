@@ -43,6 +43,8 @@ jobs:
         run: bun run typecheck:travel-sites
       - name: Verify market isolation, no false supplier availability and redirects
         run: bun run test:travel-sites
+      - name: Verify TraveNexa tenant-isolated landlord supplier gateway
+        run: bun run test:travel-core
       - run: bun run test:security
       - name: Growth runtime, tenant isolation and product gateway
         run: bun run test:growth
