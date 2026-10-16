@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createTravelEngine } from '../engine.mjs';
 import { createServer } from '../server.mjs';
+import { TRAVEL_AI_TOOLS, runTravelAiTool } from '../omniqora-tools.mjs';
 import { TENANTS, SUPPLIERS } from '../catalog.mjs';
 import { calculateSellPrice, checkoutReadiness, validTravelDate, validateSearch,
   validatedHttpsRedirect } from '../policy.mjs';
@@ -149,4 +150,22 @@ test('production engine rejects weak/duplicated tenant bearer tokens',()=>{
   assert.throws(()=>createTravelEngine({tenantTokens:{
     'travenexa-flightlounge':'a'.repeat(24),'travenexa-route50':'a'.repeat(24),
   }}));
+});
+
+test('Omniqora tool surface stays read-only and respects tenant/currency boundaries',async()=>{
+  assert.deepEqual(TRAVEL_AI_TOOLS.map(x=>x.name),['travel.search','travel.compare']);
+  assert(TRAVEL_AI_TOOLS.every(x=>x.effect==='read_only'));
+  const engine=createTravelEngine({tenantTokens:TOKENS,adapters:[goodAdapter()]});
+  const blocked=await runTravelAiTool(engine,'travenexa.uk-inbound.us',
+    {tool:'travel.booking.submit',input:payload});
+  assert.equal(blocked.httpStatus,403);
+  const compare=await runTravelAiTool(engine,'travenexa.uk-inbound.us',
+    {tool:'travel.compare',input:payload});
+  assert.equal(compare.httpStatus,200);
+  assert.equal(compare.comparisons[0].currency,'GBP');
+  assert.equal(compare.comparisons[0].priceComparisonScope,'within_currency_only');
+  assert.match(compare.notice,/not a TraveNexa package/);
+  const denied=await runTravelAiTool(engine,'travenexa.uk-inbound.kr',
+    {tool:'travel.search',input:payload});
+  assert.equal(denied.reason,'invalid_search');
 });
