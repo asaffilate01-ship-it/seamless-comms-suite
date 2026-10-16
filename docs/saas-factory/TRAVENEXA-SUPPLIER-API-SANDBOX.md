@@ -29,6 +29,10 @@ The client returns diagnostic wholesale rates ONLY; it does not generate public 
 4. Test sandbox status, room search and CheckRate with authorised property IDs, confirmed tax and rate semantics.
 5. Negotiate retail/commission/net fare model, merchant of record, permitted brands and markets, refunds and chargebacks; certify before enabling live fares or booking.
 
+## Run read-only evaluation smoke after receiving credentials
+
+Set HBX_HOTEL_API_KEY and HBX_HOTEL_API_SECRET in a private environment, then run: npm run smoke:hbx --prefix services/travenexa-core. To inspect read-only wholesale rates, use: node services/travenexa-core/scripts/hbx-sandbox-smoke.mjs availability, with HBX_HOTEL_CODES, HBX_CHECK_IN, HBX_NIGHTS and HBX_ADULTS supplied via the secret-configured backend. The script prints counts only; it cannot book, charge, cancel or issue vouchers.
+
 ## Next suppliers
 - Flights: Mystifly/Travelfusion/PKFARE need their contractual private API docs, fare/ticketing rules, sandbox credentials and a merchant/support model. No endpoints or ticket issuance have been invented.
 - Hotels: TBO requires its approved API docs and seller/payment settlement contract.
