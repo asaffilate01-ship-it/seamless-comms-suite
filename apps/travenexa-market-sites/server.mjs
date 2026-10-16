@@ -162,7 +162,7 @@ async function staticFile(req,res,url) {
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url||'/', 'http://localhost');
   if(url.pathname==='/api/travel/status'&&req.method==='GET')
-    return json(res,200,{market:hostMarket||'multi-preview',supplierConnected:!!(allowedOrigin()&&apiToken.length>=24),bookingsEnabled:false});
+    return json(res,200,{market:hostMarket||'multi-preview',gatewayConfigured:!!(allowedOrigin()&&apiToken.length>=24),supplierConnected:false,bookingsEnabled:false});
   if(url.pathname==='/api/travel/search'&&req.method==='POST')return search(req,res);
   if(url.pathname.startsWith('/api/'))return json(res,404,{status:'unavailable',reason:'unknown_api'});
   if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405);return res.end();}
