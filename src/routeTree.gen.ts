@@ -47,6 +47,7 @@ import { Route as AuthenticatedAppDispatchRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppEmbeddedFinanceRouteImport } from './routes/_authenticated/app.embedded-finance'
 import { Route as AuthenticatedAppFeedbackRouteImport } from './routes/_authenticated/app.feedback'
 import { Route as AuthenticatedAppFinanceAiRouteImport } from './routes/_authenticated/app.finance-ai'
+import { Route as AuthenticatedAppTreasuryAnalystRouteImport } from './routes/_authenticated/app.treasury-analyst'
 import { Route as AuthenticatedAppFranchiseSalesRouteImport } from './routes/_authenticated/app.franchise-sales'
 import { Route as AuthenticatedAppGrowthRouteImport } from './routes/_authenticated/app.growth'
 import { Route as AuthenticatedAppGrowthLabRouteImport } from './routes/_authenticated/app.growth-lab'
@@ -309,6 +310,12 @@ const AuthenticatedAppFinanceAiRoute =
   AuthenticatedAppFinanceAiRouteImport.update({
     id: '/finance-ai',
     path: '/finance-ai',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppTreasuryAnalystRoute =
+  AuthenticatedAppTreasuryAnalystRouteImport.update({
+    id: '/treasury-analyst',
+    path: '/treasury-analyst',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppFranchiseSalesRoute =
@@ -664,6 +671,7 @@ export interface FileRoutesByFullPath {
   '/app/embedded-finance': typeof AuthenticatedAppEmbeddedFinanceRoute
   '/app/feedback': typeof AuthenticatedAppFeedbackRoute
   '/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
+  '/app/treasury-analyst': typeof AuthenticatedAppTreasuryAnalystRoute
   '/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
   '/app/growth': typeof AuthenticatedAppGrowthRoute
   '/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
@@ -756,6 +764,7 @@ export interface FileRoutesByTo {
   '/app/embedded-finance': typeof AuthenticatedAppEmbeddedFinanceRoute
   '/app/feedback': typeof AuthenticatedAppFeedbackRoute
   '/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
+  '/app/treasury-analyst': typeof AuthenticatedAppTreasuryAnalystRoute
   '/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
   '/app/growth': typeof AuthenticatedAppGrowthRoute
   '/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
@@ -852,6 +861,7 @@ export interface FileRoutesById {
   '/_authenticated/app/embedded-finance': typeof AuthenticatedAppEmbeddedFinanceRoute
   '/_authenticated/app/feedback': typeof AuthenticatedAppFeedbackRoute
   '/_authenticated/app/finance-ai': typeof AuthenticatedAppFinanceAiRoute
+  '/_authenticated/app/treasury-analyst': typeof AuthenticatedAppTreasuryAnalystRoute
   '/_authenticated/app/franchise-sales': typeof AuthenticatedAppFranchiseSalesRoute
   '/_authenticated/app/growth': typeof AuthenticatedAppGrowthRoute
   '/_authenticated/app/growth-lab': typeof AuthenticatedAppGrowthLabRoute
@@ -948,6 +958,7 @@ export interface FileRouteTypes {
     | '/app/embedded-finance'
     | '/app/feedback'
     | '/app/finance-ai'
+    | '/app/treasury-analyst'
     | '/app/franchise-sales'
     | '/app/growth'
     | '/app/growth-lab'
@@ -1040,6 +1051,7 @@ export interface FileRouteTypes {
     | '/app/embedded-finance'
     | '/app/feedback'
     | '/app/finance-ai'
+    | '/app/treasury-analyst'
     | '/app/franchise-sales'
     | '/app/growth'
     | '/app/growth-lab'
@@ -1135,6 +1147,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/embedded-finance'
     | '/_authenticated/app/feedback'
     | '/_authenticated/app/finance-ai'
+    | '/_authenticated/app/treasury-analyst'
     | '/_authenticated/app/franchise-sales'
     | '/_authenticated/app/growth'
     | '/_authenticated/app/growth-lab'
@@ -1505,6 +1518,13 @@ declare module '@tanstack/react-router' {
       path: '/finance-ai'
       fullPath: '/app/finance-ai'
       preLoaderRoute: typeof AuthenticatedAppFinanceAiRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/treasury-analyst': {
+      id: '/_authenticated/app/treasury-analyst'
+      path: '/treasury-analyst'
+      fullPath: '/app/treasury-analyst'
+      preLoaderRoute: typeof AuthenticatedAppTreasuryAnalystRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/franchise-sales': {
@@ -1932,6 +1952,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppEmbeddedFinanceRoute: typeof AuthenticatedAppEmbeddedFinanceRoute
   AuthenticatedAppFeedbackRoute: typeof AuthenticatedAppFeedbackRoute
   AuthenticatedAppFinanceAiRoute: typeof AuthenticatedAppFinanceAiRoute
+  AuthenticatedAppTreasuryAnalystRoute: typeof AuthenticatedAppTreasuryAnalystRoute
   AuthenticatedAppFranchiseSalesRoute: typeof AuthenticatedAppFranchiseSalesRoute
   AuthenticatedAppGrowthRoute: typeof AuthenticatedAppGrowthRoute
   AuthenticatedAppGrowthLabRoute: typeof AuthenticatedAppGrowthLabRoute
@@ -1983,6 +2004,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppEmbeddedFinanceRoute: AuthenticatedAppEmbeddedFinanceRoute,
   AuthenticatedAppFeedbackRoute: AuthenticatedAppFeedbackRoute,
   AuthenticatedAppFinanceAiRoute: AuthenticatedAppFinanceAiRoute,
+  AuthenticatedAppTreasuryAnalystRoute: AuthenticatedAppTreasuryAnalystRoute,
   AuthenticatedAppFranchiseSalesRoute: AuthenticatedAppFranchiseSalesRoute,
   AuthenticatedAppGrowthRoute: AuthenticatedAppGrowthRoute,
   AuthenticatedAppGrowthLabRoute: AuthenticatedAppGrowthLabRoute,
