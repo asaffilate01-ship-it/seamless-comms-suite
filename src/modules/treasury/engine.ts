@@ -26,6 +26,8 @@ export interface TreasuryAccountPosition {
   transactions: number;
   checkedBalances: number;
   missingBalances: number;
+  matchedLedger: number;
+  unmatchedLedger: number;
   reconciled: boolean;
 }
 export interface TreasuryForecastWeek {
@@ -49,13 +51,14 @@ export interface TreasuryReport {
   currencyPositions: { currency: string; balanceMinor: number; accounts: number }[];
   weeks: TreasuryForecastWeek[];
   issues: TreasuryIssue[];
-  counts: { accounts: number; transactions: number; forecasts: number; reconciled: number };
+  counts: { accounts: number; transactions: number; ledgerMatched: number; forecasts: number; reconciled: number };
   sources: { file: string; rows: number }[];
   methodology: string[];
 }
 export interface TreasuryInputs {
   accountsCSV: string;
   transactionsCSV: string;
+  ledgerCSV?: string;
   forecastCSV: string;
   reportDate: string;
   demo?: boolean;
@@ -169,6 +172,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
   const reportDate = isoDate(input.reportDate, "Report date");
   const accounts = parseTable(input.accountsCSV, "accounts.csv", ["account_id", "currency", "as_of", "opening_balance"]);
   const transactions = parseTable(input.transactionsCSV, "transactions.csv", ["transaction_id", "account_id", "currency", "date", "reference", "amount", "closing_balance"]);
+  const ledger = parseTable(input.ledgerCSV ?? "", "ledger.csv", ["ledger_id", "account_id", "currency", "date", "reference", "amount"], true);
   const forecasts = parseTable(input.forecastCSV, "forecast.csv", ["account_id", "date", "reference", "amount", "certainty"], true);
   if (!accounts.length) throw new Error("At least one bank account and opening balance is required.");
   if (!transactions.length) throw new Error("At least one posted transaction is required for reconciliation.");
@@ -192,10 +196,11 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
     state.set(accountId, {
       accountId, currency, openingDate, lastEvidenceDate: openingDate,
       openingMinor, balanceMinor: openingMinor, transactions: 0, checkedBalances: 0,
-      missingBalances: 0, reconciled: true
+      missingBalances: 0, matchedLedger: 0, unmatchedLedger: 0, reconciled: false
     });
   });
   const seenTx = new Map<string, string>();
+  const posted: Array<{accountId: string; date: string; amountMinor: number; reference: string; evidence: string}> = [];
   const sorted = transactions.map(row => ({
     row, date: isoDate(row.data.date, row.evidence)
   })).sort((a, b) => a.date.localeCompare(b.date) || Number(a.row.evidence.split(":").at(-1)) - Number(b.row.evidence.split(":").at(-1)));
@@ -226,6 +231,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
       toWarn("FUTURE_POSTED_TRANSACTION", "blocking", "Future-dated transaction excluded from today's cash position.", evidence, account.accountId);
       return;
     }
+    posted.push({accountId: account.accountId, date, amountMinor, reference: data.reference, evidence});
     account.balanceMinor = safeAdd(account.balanceMinor, amountMinor);
     account.transactions += 1;
     account.lastEvidenceDate = date > account.lastEvidenceDate ? date : account.lastEvidenceDate;
@@ -241,13 +247,73 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
           evidence, account.accountId);
     }
   });
+  // A real bank-to-ledger cross-check requires a SECOND source. If omitted,
+  // statement arithmetic alone must never be presented as a completed reconciliation.
+  type MatchItem = {accountId: string; evidence: string};
+  const matchKey = (accountId: string, date: string, amount: number, reference: string) =>
+    JSON.stringify([accountId, date, amount, reference.trim().toLowerCase().replace(/\s+/g, " ")]);
+  const bankMatches = new Map<string, MatchItem[]>();
+  posted.forEach(x => {
+    const key = matchKey(x.accountId, x.date, x.amountMinor, x.reference);
+    bankMatches.set(key, [...(bankMatches.get(key) ?? []), x]);
+  });
+  const ledgerMatches = new Map<string, MatchItem[]>();
+  const seenLedgerIds = new Set<string>();
+  ledger.forEach(({data, evidence}) => {
+    const account = state.get(data.account_id);
+    if (!account) throw new Error(evidence + ": unknown ledger account " + data.account_id + ".");
+    if (account.currency !== data.currency.toUpperCase()) throw new Error(evidence + ": ledger currency does not match account.");
+    if (!data.ledger_id || data.ledger_id.length > 100) throw new Error(evidence + ": ledger ID is required.");
+    if (seenLedgerIds.has(data.ledger_id)) {
+      toWarn("DUPLICATE_LEDGER_ID", "blocking", "Duplicate ledger entry ID cannot be reconciled.", evidence, account.accountId);
+      return;
+    }
+    seenLedgerIds.add(data.ledger_id);
+    const date = isoDate(data.date, evidence);
+    const amount = parseMinor(data.amount, account.currency, evidence);
+    if (date <= account.openingDate || date > reportDate) {
+      toWarn("LEDGER_OUTSIDE_STATEMENT_PERIOD", "warning",
+        "Ledger entry does not fall inside the period covered by the bank movements.", evidence, account.accountId);
+      account.unmatchedLedger++;
+      return;
+    }
+    const key = matchKey(account.accountId, date, amount, data.reference);
+    ledgerMatches.set(key, [...(ledgerMatches.get(key) ?? []), {accountId: account.accountId, evidence}]);
+  });
+  if (!ledger.length)
+    toWarn("LEDGER_NOT_PROVIDED", "warning",
+      "No independently supplied general-ledger export. Bank-to-book reconciliation is not possible.", "ledger.csv");
+  bankMatches.forEach((bank, key) => {
+    const ledgers = ledgerMatches.get(key) ?? [];
+    const account = state.get(bank[0].accountId)!;
+    if (bank.length === 1 && ledgers.length === 1) {
+      account.matchedLedger++;
+    } else if (bank.length > 1 || ledgers.length > 1) {
+      toWarn("AMBIGUOUS_LEDGER_MATCH", "blocking",
+        "Multiple possible records share the same account, date, amount and reference; no automatic match.",
+        bank[0].evidence, account.accountId);
+      account.unmatchedLedger += ledgers.length;
+    } else {
+      toWarn("UNMATCHED_BANK_TRANSACTION", "warning",
+        "No exact matching general-ledger posting for bank transaction.", bank[0].evidence, account.accountId);
+    }
+  });
+  ledgerMatches.forEach((ledgers, key) => {
+    if (bankMatches.has(key)) return;
+    ledgers.forEach(x => {
+      state.get(x.accountId)!.unmatchedLedger++;
+      toWarn("UNMATCHED_LEDGER_TRANSACTION", "warning",
+        "General-ledger entry has no exact matching bank transaction.", x.evidence, x.accountId);
+    });
+  });
   state.forEach(account => {
     if (ageDays(reportDate, account.lastEvidenceDate) > 7)
       toWarn("STALE_POSITION", "warning", "Latest statement evidence is more than seven days old.", "accounts.csv:" + account.accountId, account.accountId);
     if (!account.transactions)
       toWarn("NO_POSTED_ACTIVITY", "warning", "No valid posted transactions for this account.", "accounts.csv:" + account.accountId, account.accountId);
-    account.reconciled = !accountBlocked.has(account.accountId) &&
-      account.missingBalances === 0 && account.checkedBalances === account.transactions;
+    account.reconciled = ledger.length > 0 && !accountBlocked.has(account.accountId) &&
+      account.missingBalances === 0 && account.checkedBalances === account.transactions &&
+      account.matchedLedger === account.transactions && account.unmatchedLedger === 0;
   });
   const validForecasts: {
     accountId: string; currency: string; date: string; amountMinor: number;
@@ -322,17 +388,20 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
     counts: {
       accounts: positions.length,
       transactions: positions.reduce((n, x) => n + x.transactions, 0),
+      ledgerMatched: positions.reduce((n, x) => n + x.matchedLedger, 0),
       forecasts: validForecasts.length,
       reconciled: positions.filter(x => x.reconciled).length
     },
     sources: [
       {file: "accounts.csv", rows: accounts.length},
       {file: "transactions.csv", rows: transactions.length},
+      {file: "ledger.csv", rows: ledger.length},
       {file: "forecast.csv", rows: forecasts.length}
     ],
     methodology: [
       "Balances = dated opening bank balances + unique posted movements on or before the report date.",
-      "Every provided transaction closing balance is compared to the independently calculated running balance.",
+      "Every provided transaction closing balance is compared to the calculated running balance.",
+      "Bank-to-book reconciliation uses exact account, date, amount and normalized reference matches against a separately supplied ledger. Ambiguous matches are never guessed.",
       "Each ISO currency is reported separately. No unsourced FX rates, cross-currency totals or valuations.",
       "The 13-week baseline includes committed and expected cash flows. Downside excludes expected inflows but includes expected outflows.",
       "Missing, conflicting, stale and unreconciled sources are flagged. Results are not bank-certified.",
@@ -351,7 +420,7 @@ export function treasuryEvidenceCSV(report: TreasuryReport): string {
   const lines: Array<Array<string | number>> = [["section", "key", "currency", "date", "value_minor", "details", "evidence"]];
   lines.push(["report", report.status, "", report.reportDate, 0, report.mode, report.generatedAt]);
   report.positions.forEach(x => lines.push(["account", x.accountId, x.currency, x.lastEvidenceDate,
-    x.balanceMinor, x.reconciled ? "reconciled" : "requires review", "accounts.csv:" + x.accountId]));
+    x.balanceMinor, x.reconciled ? "ledger matched and checked" : "requires review; ledger matched " + x.matchedLedger + "/" + x.transactions, "accounts.csv:" + x.accountId]));
   report.weeks.forEach(x => lines.push(["forecast", "week " + x.week, x.currency, x.weekEnd,
     x.closingBaseMinor, "downside minor=" + x.closingDownsideMinor, x.sourceRows.join("; ")]));
   report.issues.forEach(x => lines.push(["issue", x.code, "", "", 0, x.message, x.evidence]));
@@ -376,6 +445,15 @@ export function treasuryDemoInput(reportDate: string): TreasuryInputs {
       "EU-01,EU-OPERATING,EUR," + day1 + ",Collection,16000.00,166000.00",
       "EU-02,EU-OPERATING,EUR," + day3 + ",Vendor payment,-8000.00,158000.00",
       "US-01,US-OPERATING,USD," + day2 + ",Invoice receipts,10000.00,130000.00"
+    ].join("\n"),
+    ledgerCSV: [
+      "ledger_id,account_id,currency,date,reference,amount",
+      "GL-UK01,UK-OPERATING,GBP," + day1 + ",Customer receipt,32000.00",
+      "GL-UK02,UK-OPERATING,GBP," + day2 + ",Payroll,-58000.00",
+      "GL-UK03,UK-OPERATING,GBP," + day3 + ",Supplier invoices,-24000.00",
+      "GL-EU01,EU-OPERATING,EUR," + day1 + ",Collection,16000.00",
+      "GL-EU02,EU-OPERATING,EUR," + day3 + ",Vendor payment,-8000.00",
+      "GL-US01,US-OPERATING,USD," + day2 + ",Invoice receipts,10000.00"
     ].join("\n"),
     forecastCSV: [
       "account_id,date,reference,amount,certainty",
