@@ -68,11 +68,12 @@ export function TreasuryRiskAndReviewPanel({report,inputs,tenantId,entitled,role
     try{
       // Fingerprints bind the user's exported source inputs and scenario outputs.
       // They are *client-asserted*, not proof of independent data or math verification.
+      const {generatedAt: _generatedAt, ...deterministicReport} = report;
       const reportDigest=await hashContents(JSON.stringify({
         reportDate:report.reportDate,inputs:{
           accountsCSV:inputs.accountsCSV,transactionsCSV:inputs.transactionsCSV,
           ledgerCSV:inputs.ledgerCSV??"",forecastCSV:inputs.forecastCSV
-        },sourceReport:report
+        },sourceReport:deterministicReport
       }));
       const policyDigest=await hashContents(JSON.stringify({policies,risk}));
       const result=await submitFn({data:{
