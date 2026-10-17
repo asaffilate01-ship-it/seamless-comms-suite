@@ -30,6 +30,15 @@ export interface TreasuryAccountPosition {
   unmatchedLedger: number;
   reconciled: boolean;
 }
+export interface TreasuryMatchedPair {
+  accountId: string;
+  currency: string;
+  date: string;
+  amountMinor: number;
+  reference: string;
+  bankEvidence: string;
+  ledgerEvidence: string;
+}
 export interface TreasuryForecastWeek {
   currency: string;
   week: number;
@@ -48,6 +57,7 @@ export interface TreasuryReport {
   generatedAt: string;
   mode: "synthetic_demo" | "local_import";
   positions: TreasuryAccountPosition[];
+  matchedPairs: TreasuryMatchedPair[];
   currencyPositions: { currency: string; balanceMinor: number; accounts: number }[];
   weeks: TreasuryForecastWeek[];
   issues: TreasuryIssue[];
@@ -249,7 +259,8 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
   });
   // A real bank-to-ledger cross-check requires a SECOND source. If omitted,
   // statement arithmetic alone must never be presented as a completed reconciliation.
-  type MatchItem = {accountId: string; evidence: string};
+  type MatchItem = {accountId: string; evidence: string; date: string; amountMinor: number; reference: string};
+  const matchedPairs: TreasuryMatchedPair[] = [];
   const matchKey = (accountId: string, date: string, amount: number, reference: string) =>
     JSON.stringify([accountId, date, amount, reference.trim().toLowerCase().replace(/\s+/g, " ")]);
   const bankMatches = new Map<string, MatchItem[]>();
@@ -278,7 +289,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
       return;
     }
     const key = matchKey(account.accountId, date, amount, data.reference);
-    ledgerMatches.set(key, [...(ledgerMatches.get(key) ?? []), {accountId: account.accountId, evidence}]);
+    ledgerMatches.set(key, [...(ledgerMatches.get(key) ?? []), {accountId: account.accountId, evidence, date, amountMinor: amount, reference: data.reference}]);
   });
   if (!ledger.length)
     toWarn("LEDGER_NOT_PROVIDED", "warning",
@@ -288,6 +299,9 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
     const account = state.get(bank[0].accountId)!;
     if (bank.length === 1 && ledgers.length === 1) {
       account.matchedLedger++;
+      matchedPairs.push({accountId: account.accountId, currency: account.currency,
+        date: bank[0].date, amountMinor: bank[0].amountMinor, reference: bank[0].reference,
+        bankEvidence: bank[0].evidence, ledgerEvidence: ledgers[0].evidence});
     } else if (bank.length > 1 || ledgers.length > 1) {
       toWarn("AMBIGUOUS_LEDGER_MATCH", "blocking",
         "Multiple possible records share the same account, date, amount and reference; no automatic match.",
@@ -399,7 +413,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
     status: issues.some(x => x.severity === "blocking") ? "blocked" :
       issues.some(x => x.severity === "warning") ? "review_required" : "checked",
     reportDate, generatedAt: new Date().toISOString(), mode: input.demo ? "synthetic_demo" : "local_import",
-    positions, currencyPositions, weeks, issues,
+    positions, matchedPairs, currencyPositions, weeks, issues,
     counts: {
       accounts: positions.length,
       transactions: positions.reduce((n, x) => n + x.transactions, 0),
@@ -436,6 +450,8 @@ export function treasuryEvidenceCSV(report: TreasuryReport): string {
   lines.push(["report", report.status, "", report.reportDate, 0, report.mode, report.generatedAt]);
   report.positions.forEach(x => lines.push(["account", x.accountId, x.currency, x.lastEvidenceDate,
     x.balanceMinor, x.reconciled ? "ledger matched and checked" : "requires review; ledger matched " + x.matchedLedger + "/" + x.transactions, "accounts.csv:" + x.accountId]));
+  report.matchedPairs.forEach(x => lines.push(["bank_ledger_match", x.accountId, x.currency, x.date,
+    x.amountMinor, "ledger source: " + x.ledgerEvidence + "; reference: " + x.reference, x.bankEvidence]));
   report.weeks.forEach(x => lines.push(["forecast", "week " + x.week, x.currency, x.weekEnd,
     x.closingBaseMinor, "downside minor=" + x.closingDownsideMinor, x.sourceRows.join("; ")]));
   report.issues.forEach(x => lines.push(["issue", x.code, "", "", 0, x.message, x.evidence]));
