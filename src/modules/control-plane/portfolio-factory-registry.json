@@ -605,15 +605,16 @@
         63
       ],
       "repositories": [
+        "https://github.com/asaffilate01-ship-it/kindelo-uk.git",
         "https://github.com/asaffilate01-ship-it/kinderstars-childcare-saas.git",
         "https://github.com/asaffilate01-ship-it/kinderstars.git"
       ],
       "editions": [
-        "KINDELO UK (KINDERSTARS LEGACY)",
-        "KINDELO GERMANY (KINDERSTARS LEGACY)"
+        "KINDELO UK",
+        "KINDELO GERMANY (LEGACY)"
       ],
       "lifecycle": "candidate",
-      "sourceAudit": "pending_unless_separately_verified",
+      "sourceAudit": "canonical_uk_repository_verified_source_only",
       "tenantProvisioning": "not_activated"
     },
     {
