@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile,readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 const db=new PGlite();const migrations=new URL("../../supabase/migrations/",import.meta.url);
@@ -7,7 +8,7 @@ for(const name of (await readdir(migrations)).filter(x=>x.endsWith(".sql")).sort
 const admin="aaaaaaaa-0001-4001-8001-aaaaaaaaaaaa",stranger="bbbbbbbb-0002-4002-8002-bbbbbbbbbbbb";for(const id of[admin,stranger])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
 async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
 async function asService(fn){await db.exec("BEGIN;SET LOCAL ROLE service_role;");await db.query("SELECT set_config('request.jwt.claim.role','service_role',true)");try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
-const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);
 const luton=pilot.tenants.find(x=>x.tenantSlug==="cafe1-luton"),stalbans=pilot.tenants.find(x=>x.tenantSlug==="cafe1-st-albans"),mealdeck=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(luton&&stalbans&&mealdeck);
 const ownerTenant=luton.tenantId;
 const asset=(await asUser(admin,()=>db.query(`INSERT INTO public.portfolio_assets(

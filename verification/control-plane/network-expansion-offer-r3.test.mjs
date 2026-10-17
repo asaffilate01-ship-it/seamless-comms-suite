@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { PGlite } from "@electric-sql/pglite";
@@ -30,7 +31,7 @@ async function asUser(fn) {
   try { const result = await fn(); await db.exec("COMMIT"); return result; }
   catch (error) { await db.exec("ROLLBACK"); throw error; }
 }
-const pilot = await asUser(async () => (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);
 const tenant = pilot.tenants.find(x => x.tenantSlug === "mealdeck");
 await asUser(() => db.query("SELECT public.network_seed_mealdeck_programme($1)", [tenant.tenantId]));
 const programmeId = (await db.query("SELECT id FROM public.network_programmes WHERE tenant_id=$1 AND programme_key='mealdeck-england-wales'", [tenant.tenantId])).rows[0].id;
