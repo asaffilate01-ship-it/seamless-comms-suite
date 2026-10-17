@@ -112,7 +112,7 @@ CREATE POLICY "treasury schedule draft tenant read" ON public.treasury_schedule_
 CREATE OR REPLACE FUNCTION public.request_treasury_readonly_source(
   _tenant uuid,_kind text,_family text,_provider text,_rationale text
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE member_role text; created uuid; existing_status text;
+DECLARE member_role text; created uuid; existing_status text; existed boolean:=false;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
   SELECT role INTO member_role FROM public.tenant_members
@@ -135,12 +135,13 @@ BEGIN
   ON CONFLICT(tenant_id,source_kind,provider_key) DO NOTHING
   RETURNING id INTO created;
   IF created IS NULL THEN
+    existed:=true;
     SELECT id,status INTO STRICT created,existing_status
       FROM public.treasury_source_requests
       WHERE tenant_id=_tenant AND source_kind=_kind AND provider_key=_provider;
   ELSE existing_status:='requested'; END IF;
   RETURN jsonb_build_object(
-    'requestId',created,'status',existing_status,'alreadyExists',existing_status<>'requested'
+    'requestId',created,'status',existing_status,'alreadyExists',existed
   );
 END $$;
 
@@ -148,7 +149,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.save_treasury_schedule_draft(
   _tenant uuid,_frequency text,_timezone text,_run_time text
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE member_role text; draft_id uuid; safe_time time; trimmed text;
+DECLARE member_role text; draft_id uuid; safe_time time;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
   SELECT role INTO member_role FROM public.tenant_members
