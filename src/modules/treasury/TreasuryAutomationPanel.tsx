@@ -185,7 +185,7 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
       <div className="space-y-4 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Daily analyst schedule draft</h3>
-          <Badge variant="outline">Never active</Badge>
+          <Badge variant="outline">{workspace.data?.executionEnabled === false ? "Execution disabled" : "Never active"}</Badge>
         </div>
         <p className="text-xs text-muted-foreground">
           This stores a schedule preference only. No unattended bank data processing or customer notification is activated.
