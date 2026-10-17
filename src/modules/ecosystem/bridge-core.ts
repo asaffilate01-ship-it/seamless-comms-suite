@@ -83,6 +83,14 @@ export function eventInput(b: Binding, raw: unknown): BridgeInput {
   }
   const scope = z.object({tenantId:id,scopeId:id,eventType:id,recordId:id.optional(),revision:z.number().int().nonnegative().optional()}).strict().parse(metadata);
   checkScope(b,scope.tenantId,scope.scopeId); permit(b,'event');
+  // School-age STEMCoach signals are a fixed metadata-only event vocabulary.
+  // Prevent arbitrary titles or unknown event names entering the AI worker.
+  if (b.product === 'stemcoach') {
+    const approvedEvents = ['learning.summary.ready','learning.practice.completed','learning.review.due'];
+    if (event.title !== 'STEMCoach learning signal' || !approvedEvents.includes(scope.eventType) || !scope.recordId) {
+      throw new BridgeError(422,'Unsupported STEMCoach education event');
+    }
+  }
   return {contract:'event',scope,payload:{title:event.title}};
 }
 export function haccoraInput(b: Binding, request: Request, raw: string, env: NodeJS.ProcessEnv = process.env): BridgeInput {
