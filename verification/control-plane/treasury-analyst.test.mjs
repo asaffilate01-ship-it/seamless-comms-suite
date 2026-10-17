@@ -21,6 +21,7 @@ test("demo analyses exact, reconciled cash per currency with 13 weekly projectio
   assert.equal(report.status, "checked");
   assert.equal(report.counts.accounts, 3);
   assert.equal(report.counts.transactions, 6);
+  assert.equal(report.counts.ledgerMatched, 6);
   assert.equal(report.counts.forecasts, 6);
   assert.equal(report.counts.reconciled, 3);
   assert.equal(report.weeks.length, 39);
@@ -80,6 +81,45 @@ test("conflicting duplicate IDs cause blocking exception and excluded duplicate"
   assert.equal(report.status, "blocked");
   assert.ok(report.issues.some(i => i.code === "CONFLICTING_TRANSACTION_ID"));
   assert.equal(report.counts.transactions, 6);
+});
+
+test("bank-to-book reconciliation requires a distinct ledger source", () => {
+  const data = demo();
+  data.ledgerCSV = "";
+  const report = engine.analyseTreasury(data);
+  assert.equal(report.counts.ledgerMatched, 0);
+  assert.equal(report.counts.reconciled, 0);
+  assert.equal(report.status, "review_required");
+  assert.ok(report.issues.some(i => i.code === "LEDGER_NOT_PROVIDED"));
+  assert.ok(report.issues.some(i => i.code === "UNMATCHED_BANK_TRANSACTION"));
+});
+
+test("general-ledger amount discrepancy is exposed as unmatched on both sources", () => {
+  const data = demo();
+  data.ledgerCSV = data.ledgerCSV.replace("GL-UK01,UK-OPERATING,GBP,2026-10-11,Customer receipt,32000.00",
+    "GL-UK01,UK-OPERATING,GBP,2026-10-11,Customer receipt,32000.01");
+  const report = engine.analyseTreasury(data);
+  assert.equal(report.counts.ledgerMatched, 5);
+  assert.equal(report.counts.reconciled, 2);
+  assert.ok(report.issues.some(i => i.code === "UNMATCHED_BANK_TRANSACTION"));
+  assert.ok(report.issues.some(i => i.code === "UNMATCHED_LEDGER_TRANSACTION"));
+});
+
+test("ambiguous ledger matches never choose a candidate automatically", () => {
+  const data = demo();
+  data.ledgerCSV += "\n" + data.ledgerCSV.split("\n")[1].replace("GL-UK01", "GL-UK99");
+  const report = engine.analyseTreasury(data);
+  assert.equal(report.status, "blocked");
+  assert.equal(report.counts.ledgerMatched, 5);
+  assert.ok(report.issues.some(i => i.code === "AMBIGUOUS_LEDGER_MATCH"));
+});
+
+test("duplicate general-ledger IDs trigger a blocking control exception", () => {
+  const data = demo();
+  data.ledgerCSV += "\n" + data.ledgerCSV.split("\n")[1];
+  const report = engine.analyseTreasury(data);
+  assert.equal(report.status, "blocked");
+  assert.ok(report.issues.some(i => i.code === "DUPLICATE_LEDGER_ID"));
 });
 
 test("future-dated posted transaction cannot inflate an as-of cash balance", () => {
