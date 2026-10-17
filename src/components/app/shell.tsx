@@ -53,6 +53,7 @@ const nav: NavItem[] = [
   { to: "/app/access-control", labelKey: "", label: "Access Control", icon: ShieldCheck },
   { to: "/landlord", labelKey: "", label: "Landlord Control Centre", icon: Boxes },
   { to: "/app/finance-ai", labelKey: "", label: "Finance & Tax AI", icon: BarChart3 },
+  { to: "/app/treasury-analyst", labelKey: "", label: "Finvessa Treasury Analysts", icon: BarChart3 },
   { to: "/app/connector-hub", labelKey: "", label: "Connector Hub", icon: GitBranch },
   { to: "/app/identity", labelKey: "", label: "Identity & Portal", icon: ShieldCheck },
   { to: "/app/workflows", labelKey: "app.nav.workflows", icon: GitBranch },
