@@ -311,7 +311,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
       toWarn("STALE_POSITION", "warning", "Latest statement evidence is more than seven days old.", "accounts.csv:" + account.accountId, account.accountId);
     if (!account.transactions)
       toWarn("NO_POSTED_ACTIVITY", "warning", "No valid posted transactions for this account.", "accounts.csv:" + account.accountId, account.accountId);
-    account.reconciled = ledger.length > 0 && !accountBlocked.has(account.accountId) &&
+    account.reconciled = ledger.length > 0 && account.transactions > 0 && !accountBlocked.has(account.accountId) &&
       account.missingBalances === 0 && account.checkedBalances === account.transactions &&
       account.matchedLedger === account.transactions && account.unmatchedLedger === 0;
   });
@@ -319,6 +319,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
     accountId: string; currency: string; date: string; amountMinor: number;
     certainty: ForecastCertainty; evidence: string
   }[] = [];
+  const seenForecast = new Map<string, string>();
   forecasts.forEach(({data, evidence}) => {
     const account = state.get(data.account_id);
     if (!account) throw new Error(evidence + ": unknown forecast account " + data.account_id + ".");
@@ -326,6 +327,15 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
     if (data.certainty !== "committed" && data.certainty !== "expected")
       throw new Error(evidence + ": certainty must be committed or expected.");
     const amountMinor = parseMinor(data.amount, account.currency, evidence);
+    const entryKey = JSON.stringify([account.accountId, date, data.reference.trim().toLowerCase()]);
+    const fingerprint = JSON.stringify([amountMinor, data.certainty]);
+    const previous = seenForecast.get(entryKey);
+    if (previous !== undefined) {
+      toWarn(previous === fingerprint ? "DUPLICATE_FORECAST" : "CONFLICTING_FORECAST_ENTRY", "blocking",
+        "Forecast cash-flow reference repeats for the same account and date; repeated row excluded until reviewed.", evidence, account.accountId);
+      return;
+    }
+    seenForecast.set(entryKey, fingerprint);
     if (date <= reportDate) {
       toWarn("PAST_FORECAST", "warning", "Forecast item at or before the reporting date was excluded.", evidence, account.accountId);
       return;
@@ -351,6 +361,11 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
   const weeks: TreasuryForecastWeek[] = [];
   if (validForecasts.length) {
     currencyPositions.forEach(position => {
+      if (!validForecasts.some(x => x.currency === position.currency)) {
+        toWarn("CURRENCY_FORECAST_NOT_PROVIDED", "warning",
+          "No eligible dated forecast items for this currency; no 13-week projection is asserted.", "forecast.csv:" + position.currency);
+        return;
+      }
       let base = position.balanceMinor, downside = position.balanceMinor;
       for (let week = 1; week <= 13; week++) {
         const weekEnd = addDays(reportDate, week * 7);
@@ -404,7 +419,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
       "Bank-to-book reconciliation uses exact account, date, amount and normalized reference matches against a separately supplied ledger. Ambiguous matches are never guessed.",
       "Each ISO currency is reported separately. No unsourced FX rates, cross-currency totals or valuations.",
       "The 13-week baseline includes committed and expected cash flows. Downside excludes expected inflows but includes expected outflows.",
-      "Missing, conflicting, stale and unreconciled sources are flagged. Results are not bank-certified.",
+      "Missing, conflicting, stale and unreconciled sources are flagged. Repeated cash-flow references are excluded to prevent double-counting. Results are not bank-certified.",
       "Inputs and calculated reports remain in this browser session; no model, bank or payment service is invoked."
     ]
   };
