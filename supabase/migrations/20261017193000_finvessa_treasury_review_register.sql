@@ -80,7 +80,7 @@ CREATE OR REPLACE FUNCTION public.submit_treasury_review(
  _warnings integer, _breaches integer
 ) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE role_name text; result_id uuid; existed boolean:=false;
+DECLARE role_name text; result_id uuid; existed boolean:=false; current_status text:='submitted';
 BEGIN
  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
  SELECT role INTO role_name FROM public.tenant_members
@@ -116,13 +116,13 @@ BEGIN
  RETURNING id INTO result_id;
  IF result_id IS NULL THEN
   existed:=true;
-  SELECT id INTO STRICT result_id FROM public.treasury_review_cases
+  SELECT id,status INTO STRICT result_id,current_status FROM public.treasury_review_cases
     WHERE tenant_id=_tenant AND report_digest=_report_digest AND policy_digest=_policy_digest;
  ELSE
   INSERT INTO public.treasury_review_events(tenant_id,case_id,actor_id,event_type)
   VALUES(_tenant,result_id,auth.uid(),'submitted');
  END IF;
- RETURN jsonb_build_object('caseId',result_id,'status','submitted','alreadyExists',existed);
+ RETURN jsonb_build_object('caseId',result_id,'status',current_status,'alreadyExists',existed);
 END $$;
 
 CREATE OR REPLACE FUNCTION public.review_treasury_case(
