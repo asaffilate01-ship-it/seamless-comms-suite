@@ -22,6 +22,8 @@ test("demo analyses exact, reconciled cash per currency with 13 weekly projectio
   assert.equal(report.counts.accounts, 3);
   assert.equal(report.counts.transactions, 6);
   assert.equal(report.counts.ledgerMatched, 6);
+  assert.equal(report.matchedPairs.length, 6);
+  assert.ok(report.matchedPairs.every(p => p.bankEvidence.startsWith("transactions.csv:row:") && p.ledgerEvidence.startsWith("ledger.csv:row:")));
   assert.equal(report.counts.forecasts, 6);
   assert.equal(report.counts.reconciled, 3);
   assert.equal(report.weeks.length, 39);
@@ -211,6 +213,8 @@ test("imported CSV references cannot produce spreadsheet formula injection in ev
   assert.ok(csv.includes("'=HYPERLINK"));
   assert.ok(csv.includes("'+SUM(1,1)"));
   assert.ok(csv.includes("currency"));
+  assert.ok(csv.includes("bank_ledger_match"));
+  assert.ok(csv.includes("ledger.csv:row:"));
 });
 
 test("all statements have source rows and zero access to a bank, AI provider or payment tool", () => {
