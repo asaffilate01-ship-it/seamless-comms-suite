@@ -31,6 +31,9 @@ const inputSpecs = [
   {key: "transactionsCSV", title: "Posted bank transactions", file: "transactions.csv",
     schema: "transaction_id,account_id,currency,date,reference,amount,closing_balance",
     description: "Signed movements and independently supplied running balances."},
+  {key: "ledgerCSV", title: "General-ledger cross-check", file: "ledger.csv",
+    schema: "ledger_id,account_id,currency,date,reference,amount",
+    description: "A separate book-of-record export for bank-to-ledger reconciliation."},
   {key: "forecastCSV", title: "Future cash flows", file: "forecast.csv",
     schema: "account_id,date,reference,amount,certainty",
     description: "Dated movements with certainty: committed or expected."}
@@ -139,7 +142,7 @@ function TreasuryAnalystWorkbench() {
     setError("");
   }
   function clearAll() {
-    setInputs({reportDate: today(), accountsCSV: "", transactionsCSV: "", forecastCSV: "", demo: !enabled});
+    setInputs({reportDate: today(), accountsCSV: "", transactionsCSV: "", ledgerCSV: "", forecastCSV: "", demo: false});
     setReport(null);
     setError("");
   }
@@ -184,7 +187,7 @@ function TreasuryAnalystWorkbench() {
 
       <div className="grid gap-3 md:grid-cols-4">
         <Indicator icon={Landmark} label="Bank accounts" value={report?.counts.accounts ?? "—"}/>
-        <Indicator icon={CheckCircle2} label="Reconciled" value={report ? report.counts.reconciled + "/" + report.counts.accounts : "—"}/>
+        <Indicator icon={CheckCircle2} label="Reconciled accounts" value={report ? report.counts.reconciled + "/" + report.counts.accounts : "—"}/>
         <Indicator icon={AlertTriangle} label="Blocking / warnings" value={report ? blocked + " / " + warnings : "—"}/>
         <Indicator icon={TrendingUp} label="Forecast periods" value={report ? (report.weeks.length ? "13 weeks" : "Not evidenced") : "—"}/>
       </div>
@@ -192,7 +195,7 @@ function TreasuryAnalystWorkbench() {
       <Card><CardContent className="p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h2 className="text-lg font-semibold">1. Prepare treasury sources</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Synthetic example is preloaded. Real data can only be imported within an authorised Finvessa tenant.</p></div>
+            <p className="mt-1 text-sm text-muted-foreground">Synthetic example includes bank transactions, an independent ledger and forecast obligations. Real data imports require an authorised Finvessa tenant.</p></div>
           <Badge variant={isDemo ? "secondary" : "outline"}>{isDemo ? "Synthetic demonstration" : "Locally imported data"}</Badge>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -211,9 +214,9 @@ function TreasuryAnalystWorkbench() {
         {q.isError && <p role="alert" className="text-sm text-destructive">
           Product entitlement could not be verified. Only the synthetic demonstration is permitted.
         </p>}
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid gap-4 xl:grid-cols-2">
           {inputSpecs.map(spec => <DataInput key={spec.key} spec={spec}
-            enabled={canEdit && (isDemo || enabled)} value={inputs[spec.key]}
+            enabled={enabled} value={inputs[spec.key] ?? ""}
             onText={value => changeData(spec.key, value)}
             onFile={event => importFile(spec.key, event)}/>)}
         </div>
@@ -244,14 +247,15 @@ function TreasuryAnalystWorkbench() {
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/50 text-xs text-muted-foreground">
-                <tr><th className="p-3">Account</th><th className="p-3">Currency</th><th className="p-3">Calculated cash position</th><th className="p-3">Last evidence</th><th className="p-3">Closing balance checks</th><th className="p-3">Status</th></tr>
+                <tr><th className="p-3">Account</th><th className="p-3">Currency</th><th className="p-3">Calculated cash position</th><th className="p-3">Last evidence</th><th className="p-3">Closing balance checks</th><th className="p-3">Bank ↔ GL matches</th><th className="p-3">Status</th></tr>
               </thead>
               <tbody>{report.positions.map(x => <tr key={x.accountId} className="border-t">
                 <td className="p-3 font-medium">{x.accountId}</td><td className="p-3">{x.currency}</td>
                 <td className="p-3 tabular-nums">{formatMinor(x.balanceMinor, x.currency)}</td>
                 <td className="p-3">{x.lastEvidenceDate}</td><td className="p-3">{x.checkedBalances}/{x.transactions}</td>
+                <td className="p-3">{x.matchedLedger}/{x.transactions}</td>
                 <td className="p-3"><Badge variant={x.reconciled ? "outline" : "destructive"}>
-                  {x.reconciled ? "Reconciled" : "Investigate"}</Badge></td>
+                  {x.reconciled ? "Bank ↔ GL matched" : "Investigate"}</Badge></td>
               </tr>)}</tbody>
             </table>
           </div>
