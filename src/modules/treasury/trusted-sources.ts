@@ -148,7 +148,7 @@ export function runTreasuryShadowAnalysis(input:{
   reportDate:string;now:string;
 }):TreasuryShadowResult {
   isoDate(input.reportDate,"Treasury shadow report date");
-  if(Date.parse(input.reportDate+"T23:59:59Z")>parseInstant(input.now))
+  if(input.reportDate>new Date(parseInstant(input.now)).toISOString().slice(0,10))
     throw new Error("Future report dates cannot be processed.");
   const admission=evaluateTreasurySourceReadiness({
     tenantId:input.tenantId,bindings:input.bindings,at:input.now
