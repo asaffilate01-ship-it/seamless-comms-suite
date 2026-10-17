@@ -51,6 +51,9 @@ const SAFE_PATH_SEGMENT = /^(?:[A-Za-z][A-Za-z0-9_.-]{0,48}|\{[A-Za-z][A-Za-z0-9
 const METHODS = ["GET","HEAD","OPTIONS","POST","PUT","PATCH","DELETE"];
 const PRIVATE_PATH = /(?:^|\/)(?:auth|oauth|token|session|me|users?|customers?|people|persons?|patients?|children|students?|staff|employees?|jurors?|identity|kyc|aml|password|secrets?|keys?|cards?|bank(?:ing)?|accounts?|transactions?|transfers?|payments?|payouts?|refunds?|settlements?|tax|payroll|invoices?|orders?|quotes?|deliveries|delivery|bookings?|reservations?|shipments?|drivers?|leads?|contacts?|tickets?|receipts?|legal|cases?|files?|documents?|messages?|conversations?|recipients?|profiles?)(?:\/|$)/i;
 const HIGH_RISK_PATH = /(?:^|\/)(?:bank(?:ing)?|accounts?|transactions?|transfers?|payments?|payouts?|refunds?|settlements?|tax|payroll|kyc|aml|cards?|identity|legal|cases?)(?:\/|$)/i;
+// Phase 1 may redact an unknown or sensitive resource name to "{id}".
+// Never reclassify a root-level ambiguous placeholder as a harmless resource.
+const AMBIGUOUS_ROOT = /^\/(?:v\d+\/)?\{[A-Za-z][A-Za-z0-9_]*\}(?:\/|$)/i;
 const SAFE_READ = new Set(["GET","HEAD","OPTIONS"]);
 const REQUIRED_GATES = Object.freeze([
   "Supplier contract and permitted API usage independently verified",
@@ -76,6 +79,7 @@ function checkedOperation(op: ProposedOperation): boolean {
       fields.every(v=>typeof v==="string" && SAFE_FIELD.test(v)));
 }
 function classify(op: ProposedOperation): ProposedEffect {
+  if (AMBIGUOUS_ROOT.test(op.path)) return "sensitive_read";
   if (HIGH_RISK_PATH.test(op.path)) return "regulated_action";
   if (!SAFE_READ.has(op.method)) return "write";
   if (PRIVATE_PATH.test(op.path)) return "sensitive_read";
@@ -110,7 +114,7 @@ export function proposeMcpManifest(discovery:ConnectorDiscovery, providerKey:str
     const effect=classify(op);
     if(!SAFE_READ.has(op.method)||effect!=="read"){
       quarantined.push({method:op.method,path:op.path,reason:
-        effect==="regulated_action"||effect==="sensitive_read"?"sensitive_data_or_action":"non_read_method"});
+        AMBIGUOUS_ROOT.test(op.path)?"unsupported_path":effect==="regulated_action"||effect==="sensitive_read"?"sensitive_data_or_action":"non_read_method"});
       continue;
     }
     const name=providerKey.replace(/-/g,"_")+"_"+op.id;
