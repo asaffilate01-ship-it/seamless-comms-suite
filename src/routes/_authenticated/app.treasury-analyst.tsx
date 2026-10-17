@@ -155,7 +155,7 @@ function TreasuryAnalystWorkbench() {
     try {
       const output = analyseTreasury(inputs);
       setReport(output);
-      setActiveCurrency(output.currencyPositions[0]?.currency ?? "GBP");
+      setActiveCurrency(output.weeks[0]?.currency ?? output.currencyPositions[0]?.currency ?? "GBP");
       setError("");
     } catch (e) {
       setReport(null);
@@ -165,6 +165,7 @@ function TreasuryAnalystWorkbench() {
     }
   }
   const filteredWeeks = (report?.weeks ?? []).filter(x => x.currency === activeCurrency);
+  const forecastCurrencies = [...new Set((report?.weeks ?? []).map(x => x.currency))];
   const blocked = report?.issues.filter(x => x.severity === "blocking").length ?? 0;
   const warnings = report?.issues.filter(x => x.severity === "warning").length ?? 0;
   const basename = "finvessa-treasury-" + (report?.reportDate ?? today());
@@ -268,9 +269,9 @@ function TreasuryAnalystWorkbench() {
             </p></div>
           {report.weeks.length ? <>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Forecast currency">
-              {report.currencyPositions.map(x => <Button key={x.currency} size="sm"
-                variant={x.currency === activeCurrency ? "default" : "outline"}
-                onClick={() => setActiveCurrency(x.currency)}>{x.currency}</Button>)}
+              {forecastCurrencies.map(currency => <Button key={currency} size="sm"
+                variant={currency === activeCurrency ? "default" : "outline"}
+                onClick={() => setActiveCurrency(currency)}>{currency}</Button>)}
             </div>
             <div className="overflow-x-auto rounded-lg border">
               <table className="w-full text-left text-sm">
