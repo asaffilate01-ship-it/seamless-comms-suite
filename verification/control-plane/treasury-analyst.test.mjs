@@ -122,6 +122,35 @@ test("duplicate general-ledger IDs trigger a blocking control exception", () => 
   assert.ok(report.issues.some(i => i.code === "DUPLICATE_LEDGER_ID"));
 });
 
+test("duplicate expected cash flows cannot double-count treasury projections", () => {
+  const data = demo();
+  const duplicate = data.forecastCSV.split("\n")[2];
+  data.forecastCSV += "\n" + duplicate;
+  const report = engine.analyseTreasury(data);
+  assert.equal(report.status, "blocked");
+  assert.equal(report.counts.forecasts, 6);
+  assert.equal(report.weeks.find(x => x.currency === "GBP" && x.week === 2).closingBaseMinor, 22_500_000);
+  assert.ok(report.issues.some(i => i.code === "DUPLICATE_FORECAST"));
+});
+
+test("conflicting cash-flow forecasts are excluded and clearly flagged", () => {
+  const data = demo();
+  data.forecastCSV += "\n" + data.forecastCSV.split("\n")[2].replace("90000.00", "100000.00");
+  const report = engine.analyseTreasury(data);
+  assert.equal(report.status, "blocked");
+  assert.equal(report.counts.forecasts, 6);
+  assert.ok(report.issues.some(i => i.code === "CONFLICTING_FORECAST_ENTRY"));
+});
+
+test("missing currency cash-flow sources do not fabricate a thirteen-week outlook", () => {
+  const data = demo();
+  data.forecastCSV = data.forecastCSV.split("\n").filter(x => !x.startsWith("US-OPERATING")).join("\n");
+  const report = engine.analyseTreasury(data);
+  assert.equal(report.weeks.length, 26);
+  assert.ok(report.issues.some(i => i.code === "CURRENCY_FORECAST_NOT_PROVIDED"));
+  assert.ok(report.weeks.every(x => x.currency !== "USD"));
+});
+
 test("future-dated posted transaction cannot inflate an as-of cash balance", () => {
   const data = demo();
   data.transactionsCSV += "\nUK-FUT,UK-OPERATING,GBP,2026-10-18,Future payment,5000.00,205000.00";
