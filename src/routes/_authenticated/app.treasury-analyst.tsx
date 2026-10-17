@@ -260,6 +260,19 @@ function TreasuryAnalystWorkbench() {
               </tr>)}</tbody>
             </table>
           </div>
+          <details className="rounded-lg border p-3">
+            <summary className="cursor-pointer text-sm font-semibold">Inspect {report.matchedPairs.length} exact bank-to-ledger matches and source rows</summary>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/50"><tr><th className="p-2">Account</th><th className="p-2">Date</th><th className="p-2">Amount</th><th className="p-2">Bank source</th><th className="p-2">Ledger source</th></tr></thead>
+                <tbody>{report.matchedPairs.map(x => <tr key={x.bankEvidence + x.ledgerEvidence} className="border-t">
+                  <td className="p-2">{x.accountId}</td><td className="p-2">{x.date}</td>
+                  <td className="p-2 tabular-nums">{formatMinor(x.amountMinor, x.currency)}</td>
+                  <td className="p-2 font-mono">{x.bankEvidence}</td><td className="p-2 font-mono">{x.ledgerEvidence}</td>
+                </tr>)}</tbody>
+              </table>
+            </div>
+          </details>
         </CardContent></Card>
         <Card><CardContent className="p-5 space-y-4">
           <div><h2 className="text-lg font-semibold">3. Thirteen-week cash outlook</h2>
