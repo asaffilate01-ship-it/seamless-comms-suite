@@ -338,7 +338,7 @@ function TreasuryAnalystWorkbench() {
             {report.methodology.map(x => <p key={x} className="text-xs text-muted-foreground">{x}</p>)}
           </div>
         </CardContent></Card>
-        <TreasuryRiskAndReviewPanel report={report} inputs={inputs} tenantId={tenantId} entitled={enabled} role={t.role}/>
+        <TreasuryRiskAndReviewPanel report={report} inputs={inputs} tenantId={t.tenantId ?? ""} entitled={enabled} role={t.role}/>
       </>}
       <div className="flex items-center gap-2 rounded-lg border p-3 text-xs text-muted-foreground">
         <LockKeyhole className="h-4 w-4 shrink-0"/>This pilot performs browser-local, deterministic financial analysis.
