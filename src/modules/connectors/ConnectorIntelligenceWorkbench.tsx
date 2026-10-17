@@ -5,6 +5,7 @@ import {Textarea} from "@/components/ui/textarea";
 import {Badge} from "@/components/ui/badge";
 import {toast} from "sonner";
 import {generateReviewOnlyConnector,inspectConnectorSource,type ConnectorDiscovery,type ImportKind} from "./connector-intelligence";
+import {ConnectorQualificationPanel} from "./ConnectorQualificationPanel";
 
 const demonstration = JSON.stringify({
   openapi:"3.0.3",info:{title:"Example quote sandbox"},servers:[{url:"https://api.example.test"}],
@@ -70,5 +71,6 @@ export function ConnectorIntelligenceWorkbench(){
       <Textarea aria-label="Generated review-only TypeScript" className="min-h-48 font-mono text-xs" readOnly value={draft}/>
       <p className="text-xs text-muted-foreground">All generated methods deliberately throw REVIEW_ONLY. No credentials, live API calls, supplier approvals, migrations or tenant integrations are created.</p>
     </div>}
+    {report&&<ConnectorQualificationPanel discovery={report}/>}
   </CardContent></Card>;
 }
