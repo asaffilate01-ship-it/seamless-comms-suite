@@ -27,6 +27,8 @@ jobs:
         run: bun test verification/control-plane/provisioning-preflight.test.ts
       - name: Provider onboarding directory and manual-health isolation
         run: bun test verification/control-plane/connector-onboarding.test.ts
+      - name: Connector Intelligence redaction and inert code generation
+        run: node --test verification/control-plane/connector-intelligence.test.mjs
       - name: Twilio masked voice, signature and tenant isolation gates
         run: bun test verification/control-plane/masked-voice.test.ts
       - name: Twilio inbound ordering identity and SMS/WhatsApp safety
