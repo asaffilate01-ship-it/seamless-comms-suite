@@ -32,6 +32,7 @@ export interface AiEmployeeTask {
   requested_capabilities: string[];
   proposed_trigger: ProposedTaskTrigger;
   employee_revision: number;
+  revision: number;
   status: "draft" | "pending_review" | "approved_brief" | "returned" | "cancelled";
   created_by: string;
   last_edited_by: string;
@@ -93,7 +94,7 @@ export const getAiEmployeeTaskWorkspace = createServerFn({ method: "POST" })
       db.from("ai_employees").select("id").eq("tenant_id", data.tenantId)
         .eq("product_key", data.productKey).eq("id", data.employeeId).single(),
       db.from("ai_employee_tasks").select(
-        "id,employee_id,title,objective,output_spec,acceptance_criteria,requested_capabilities,proposed_trigger,employee_revision,status,created_by,last_edited_by,reviewed_by,review_note,created_at,updated_at"
+        "id,employee_id,title,objective,output_spec,acceptance_criteria,requested_capabilities,proposed_trigger,employee_revision,revision,status,created_by,last_edited_by,reviewed_by,review_note,created_at,updated_at"
       ).eq("tenant_id", data.tenantId).eq("product_key", data.productKey)
         .eq("employee_id", data.employeeId).order("updated_at", { ascending: false }).limit(100),
       db.from("ai_employee_access_proposals").select(
@@ -137,6 +138,27 @@ export const createAiEmployeeTask = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return taskId as string;
+  });
+
+// Revision-aware amendment after a brief is returned (or voluntarily reopened).
+const reviseTaskSchema = createTaskSchema.omit({ requestKey: true }).extend({
+  taskId: uuid,
+  expectedRevision: z.number().int().min(1),
+});
+export const reviseAiEmployeeTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.input<typeof reviseTaskSchema>) => reviseTaskSchema.parse(input))
+  .handler(async ({ context, data }): Promise<AiEmployeeTask> => {
+    await requireWorkforceAdmin(context, data.tenantId);
+    const { data: saved, error } = await (context.supabase as any).rpc("revise_ai_employee_task", {
+      _tenant: data.tenantId, _product: data.productKey, _employee: data.employeeId,
+      _task: data.taskId, _expected_revision: data.expectedRevision,
+      _title: data.title, _objective: data.objective, _output_spec: data.outputSpec,
+      _criteria: data.acceptanceCriteria, _capabilities: data.requestedCapabilities,
+      _trigger: data.proposedTrigger,
+    });
+    if (error) throw new Error(error.message);
+    return saved as AiEmployeeTask;
   });
 
 const transitionSchema = taskIdScope.extend({
