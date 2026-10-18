@@ -95,8 +95,10 @@ function checkedText(v:unknown,max=160):string{
     throw new Error("Malformed or oversized provider response field.");
   return v.trim().replace(CONTROL," ");
 }
-function validatePilot(p:TreasuryApprovedReadPilot,now:string){
+function validatePilot(p:TreasuryApprovedReadPilot,authenticatedTenantId:string,now:string){
   const t=validDateTime(now);
+  if(p?.tenantId!==authenticatedTenantId)
+    throw new Error("Cross-tenant pilot credentials and permissions are prohibited.");
   if(!p || !GUID.test(p.tenantId) || p.productKey!=="finvessa" ||
      p.environment!=="sandbox_test_only" || p.approvalState!=="independently_verified" ||
      !OPAQUE.test(p.approvalReference) || !GUID.test(p.externalConnectionId))
@@ -268,12 +270,13 @@ function normalizeXero(body:unknown,p:TreasuryApprovedReadPilot,r:TreasuryPilotR
  * tenant, connection, provider or URL parameters.
  */
 export async function performTreasuryReadOnlyPilot(input:{
+  authenticatedTenantId:string;
   pilot:TreasuryApprovedReadPilot;
   secret:TreasurySecretReference;
   now:string;
   transport:Fetcher;
 }):Promise<TreasuryPilotReadResult> {
-  validatePilot(input.pilot,input.now);
+  validatePilot(input.pilot,input.authenticatedTenantId,input.now);
   const token=validatedToken(input.secret);
   const p=input.pilot;
   const url=p.provider==="truelayer_data_v3"?TRUE_LAYER_URL:XERO_URL;
