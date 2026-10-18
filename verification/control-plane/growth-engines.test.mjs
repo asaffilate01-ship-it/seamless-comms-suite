@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile,readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 const db=new PGlite();const migrations=new URL("../../supabase/migrations/",import.meta.url);
@@ -6,7 +7,7 @@ await db.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_ro
 for(const name of (await readdir(migrations)).filter(x=>x.endsWith(".sql")).sort()){const sql=await readFile(new URL(name,migrations),"utf8");if(name.startsWith("20260816120554"))for(const id of ["18bafcd5-3e4c-4044-bb63-10325a0b7209","e66c0525-1787-4250-be26-79f849624521","890c71b1-cf6e-4b68-a56e-dd6050372481","97319fe5-82fd-44cd-b27d-6ae314ee368b"])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,"fixture@example.invalid"]);await db.exec(sql);}
 const admin="55555555-aaaa-4aaa-8aaa-555555555555";await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[admin,admin+"@example.invalid"]);await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
 async function asUser(fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[admin]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
-const pilot=await asUser(async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
 const person=(await asUser(()=>db.query("INSERT INTO public.crm_people(tenant_id,display_name,external_ref,lifecycle_stage) VALUES($1,'Growth Customer','customer-1','customer') RETURNING id",[md.tenantId]))).rows[0].id;
 await asUser(()=>db.query("INSERT INTO public.marketplace_orders(tenant_id,product_key,buyer_ref,status,currency,total_minor,idempotency_key,created_at) VALUES($1,'mealdeck',$2,'completed','GBP',2500,'g-order-1',now()-interval '10 days'),($1,'mealdeck',$2,'completed','GBP',3500,'g-order-2',now()-interval '2 days')",[md.tenantId,"customer-1"]));
 const count=await asUser(async()=> (await db.query("SELECT public.growth_recompute_customer_metrics($1) AS n",[md.tenantId])).rows[0].n);assert(count>=1);

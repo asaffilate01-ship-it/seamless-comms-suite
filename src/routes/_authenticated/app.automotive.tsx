@@ -12,6 +12,7 @@ import {getTenantControlPlane} from "@/lib/control-plane.functions";
 import {createAutomotiveAppraisal,createBidModel,getAutomotiveWorkspace,queueAutomotiveIntelligence,recordAutomotiveValuation,saveAutomotiveVehicle,upsertAuctionLot} from "@/modules/automotive/functions";
 import {AlertTriangle,BrainCircuit,Gauge,Gavel,RefreshCw,ShieldCheck,Truck} from "lucide-react";
 import {toast} from "sonner";
+import { VehicleHistorySourcesPanel } from "@/modules/automotive/VehicleHistorySourcesPanel";
 
 export const Route=createFileRoute("/_authenticated/app/automotive")({component:Automotive,head:()=>({meta:[{title:"Automotive Intelligence — Omniqora"},{name:"robots",content:"noindex"}]})});
 
@@ -29,6 +30,7 @@ function Automotive(){
  const vehicles=q.data?.vehicles??[],selected=vehicles[0];
  return <AppShell title="Automotive Intelligence" subtitle="Shared vehicle identity, evidence, appraisals, AI findings, valuations, JDM auction economics, parts fitment and compliance for Zivvo, Autohashi and SparesGrid."
  actions={<Button variant="outline" size="sm" onClick={()=>q.refetch()}><RefreshCw className="mr-2 h-4 w-4"/>Refresh</Button>}>
+  <VehicleHistorySourcesPanel />
   <Card><CardContent className="p-5"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={productKey} onChange={e=>setProductKey(e.target.value)}>{automotiveProducts.map((p:string)=><option key={p}>{p}</option>)}</select></CardContent></Card>
   <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6"><Metric icon={Truck} label="Vehicles" value={vehicles.length}/><Metric icon={BrainCircuit} label="AI findings" value={q.data?.findings?.length??0}/><Metric icon={Gauge} label="Valuations" value={q.data?.valuations?.length??0}/><Metric icon={Gavel} label="Bid instructions" value={q.data?.bidInstructions?.length??0}/><Metric icon={BrainCircuit} label="Auction decisions" value={q.data?.auctionDecisions?.length??0}/><Metric icon={ShieldCheck} label="Compliance checks" value={q.data?.compliance?.length??0}/></div>
   <div className="mt-6 grid gap-6 xl:grid-cols-2">
