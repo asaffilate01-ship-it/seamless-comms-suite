@@ -294,7 +294,7 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
                 {["draft","returned","approved_brief"].includes(task.status) && <Button size="sm"
                   variant="outline" disabled={busy || employee.status==="retired"}
                   onClick={()=>editTask(task)}>Edit brief</Button>}
-                {["draft","returned"].includes(task.status) &&
+                {task.status==="draft" &&
                   <Button size="sm" disabled={busy || !active}
                     onClick={()=>changeTask(task,"submit")}>Submit brief</Button>}
                 {task.status==="pending_review" && <>

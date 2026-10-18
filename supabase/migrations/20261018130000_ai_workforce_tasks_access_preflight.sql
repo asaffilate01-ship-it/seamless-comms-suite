@@ -267,7 +267,7 @@ BEGIN
  IF length(COALESCE(_note,''))>1000 THEN RAISE EXCEPTION 'Note exceeds limit'; END IF;
  CASE _action
   WHEN 'submit' THEN
-   IF t.status NOT IN('draft','returned') OR e.status<>'approved_configuration' THEN
+   IF t.status<>'draft' OR e.status<>'approved_configuration' THEN
     RAISE EXCEPTION 'Approved employee configuration and draft brief required';
    END IF;
    next_status:='pending_review';ev:='submitted';

@@ -6,7 +6,7 @@
 
 - A tenant/product/employee-scoped Task Desk embedded in step 10 of the AI Workforce wizard.
 - Admin-created task briefs with an objective, output spec, acceptance criteria, proposed tool capabilities and disabled timing. Jobs are never enqueued by these APIs.
-- Independent task review, immutable event history. Approved briefs do not execute anything.
+- Independent task review, immutable event history, revision-aware edits, and return-for-correction workflow. Approved briefs do not execute anything. A returned brief must be edited before it can be resubmitted, and edits revoke earlier task sign-off.
 - Employee-level connector access proposals, limited to capabilities already proposed in the saved employee profile. A different admin may shortlist metadata. This never connects OAuth, MCP, source data, secrets, or provider tools.
 - Deterministic read-only preflight reports checking configuration/version, use-case review, budget, entitlement and access review. Execution remains unconditionally blocked by employee_execution_not_deployed and capability_grants_not_verified. Results always contain canExecute=false, modelCalls=0, toolCalls=0 and queuedJobs=0.
 - Canonical AI run employee association is temporarily blocked in the database, including existing tenant-writable run APIs, until a separately certified employee worker is available.

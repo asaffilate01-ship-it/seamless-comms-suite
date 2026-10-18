@@ -57,6 +57,14 @@ test("independent reviews are versioned and never grant live execution", () => {
 
 test("idempotent work orders require exact payload match", () => {
   assert.match(sql, /_request_key uuid/);
+  assert.match(sql, /ON CONFLICT\(tenant_id,product_key,request_key\) DO NOTHING/);
+  assert.match(sql, /CREATE FUNCTION public\.revise_ai_employee_task/);
+  assert.match(sql, /Task has been edited elsewhere: refresh before saving/);
+  assert.match(sql, /status='draft',employee_revision=0,revision=t\.revision\+1/);
+  assert.match(sql, /t\.status<>'draft' OR e\.status<>'approved_configuration'/);
+  assert.match(api, /reviseAiEmployeeTask/);
+  assert.match(ui, /Save corrected brief/);
+  assert.match(ui, /Revising a previously approved brief resets its approval/);
   assert.match(sql, /request_key=_request_key/);
   assert.match(sql, /existing\.employee_id<>_employee/);
   assert.match(sql, /existing\.requested_capabilities<>caps OR existing\.proposed_trigger<>trig/);
