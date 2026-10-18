@@ -136,6 +136,15 @@ export function AIWorkforcePanel() {
   const blueprint = agentForProduct(productKey, draft.blueprintKey);
   const writable = !!workspace.data?.enabled && !!workspace.data?.productActive;
   const canEdit = !selected || selected.status !== "retired";
+  const tasksReady = splitLines(draft.tasksText);
+  const readyToSave = draft.displayName.trim().length >= 3 &&
+    draft.roleTitle.trim().length >= 3 &&
+    draft.goal.trim().length >= 10 && draft.goal.trim().length <= 1500 &&
+    tasksReady.length > 0 && tasksReady.length <= 20 &&
+    tasksReady.every(task => task.length >= 4 && task.length <= 350) &&
+    draft.businessContext.length <= 6000 && draft.instructions.length <= 6000 &&
+    splitLines(draft.sopRefsText).every(ref => ref.length >= 3 && ref.length <= 300) &&
+    (draft.triggerType !== "event" || /^[a-z0-9][a-z0-9._-]{2,119}$/.test(draft.triggerValue));
   const configuredCount = employees.filter(e => e.status === "approved_configuration").length;
   const pendingCount = employees.filter(e => e.status === "pending_review").length;
 
@@ -178,6 +187,7 @@ export function AIWorkforcePanel() {
   }
   async function persist(): Promise<string> {
     if (!writable || !productKey) throw new Error("Activate the AI Workforce add-on for this tenant/product first.");
+    if (!readyToSave) throw new Error("Complete the name, role, goal and at least one valid task before saving.");
     if (selected?.status === "retired") throw new Error("A retired employee is read-only.");
     let id = employeeId;
     if (!id) {
@@ -358,6 +368,7 @@ export function AIWorkforcePanel() {
                       placeholder="e.g. Morgan — Sales Assistant" onChange={e => change({ displayName: e.target.value })}/></Field>
                     <p className="text-sm text-muted-foreground">
                       This is a named, versioned employee configuration, not a separate OpenAI Dot account.
+                      Fill in the role, goal and tasks before saving your first version.
                     </p>
                   </div>}
 
@@ -472,7 +483,7 @@ export function AIWorkforcePanel() {
                         Saves a revision, checks completeness and governance status, and records a preview.
                         It does not contact an AI model, read a business app, run a schedule or create an AI job.
                       </p>
-                      <Button className="mt-4" disabled={!writable || busy || !canEdit}
+                      <Button className="mt-4" disabled={!writable || busy || !canEdit || !readyToSave}
                         onClick={runPreview}><Play className="mr-2 h-4 w-4"/> Save and preview</Button>
                     </div>
                     {latestPreview && <PreviewChecks preview={latestPreview.result} revision={latestPreview.revision}/>}
@@ -481,7 +492,7 @@ export function AIWorkforcePanel() {
                   {step === 8 && <div className="space-y-4">
                     <ReviewSummary draft={draft} />
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" disabled={!writable || busy || !canEdit} onClick={saveDraft}>
+                      <Button variant="outline" disabled={!writable || busy || !canEdit || !readyToSave} onClick={saveDraft}>
                         <Save className="mr-2 h-4 w-4"/> Save version
                       </Button>
                       <Button disabled={!writable || busy || dirty || !selected || selected.status !== "draft"}
@@ -542,7 +553,7 @@ export function AIWorkforcePanel() {
                   <div className="flex flex-wrap gap-2">
                     <Button variant="ghost" onClick={() => setWizardOpen(false)}>Close</Button>
                     {step !== 7 && step !== 8 && step !== 9 && <Button variant="outline"
-                      disabled={!writable || busy || !canEdit} onClick={saveDraft}>
+                      disabled={!writable || busy || !canEdit || !readyToSave} onClick={saveDraft}>
                       <Save className="mr-2 h-4 w-4" /> Save
                     </Button>}
                     {step < 9 && <Button onClick={() => setStep(n => Math.min(9, n + 1))}>
