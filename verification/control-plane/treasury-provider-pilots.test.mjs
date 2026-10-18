@@ -82,7 +82,7 @@ function transportFor(payload,opts={}){
 }
 async function invoke(provider,fixture){
   const t=transportFor(fixture);
-  const result=await pilots.performTreasuryReadOnlyPilot({
+  const result=await pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
     pilot:approval(provider),secret:{bearerToken:TOKEN},now:NOW,transport:t.network
   });
   return {result,call:t.calls[0]};
@@ -137,11 +137,11 @@ test("Unverified consent, expired proof and incorrect external connection always
   const t=transportFor(truelayerFixture);
   const bad=approval();
   bad.approvalState="requested";
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({pilot:bad,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/verified/);
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:bad,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/verified/);
   const stale=approval();stale.consentValidUntil="2026-10-17T09:00:00Z";
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({pilot:stale,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/expired/);
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:stale,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/expired/);
   const malformed=approval();malformed.externalConnectionId="https://evil.test/";
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({pilot:malformed,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/verified/);
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:malformed,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/verified/);
   assert.equal(t.calls.length,0);
 });
 
@@ -149,22 +149,22 @@ test("Only exact provider-read scopes permitted; write-capable permissions are f
   const t=transportFor(xeroFixture);
   const p=approval("xero_accounting");
   p.approvedReadScopes=["accounting.transactions"];
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({pilot:p,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/read-only scopes/);
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:p,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/read-only scopes/);
   const b=approval();b.approvedReadScopes=["accounts","payments"];
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({pilot:b,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/read-only scopes/);
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:b,secret:{bearerToken:TOKEN},now:NOW,transport:t.network}),/read-only scopes/);
   assert.equal(t.calls.length,0);
 });
 
 test("Cross-tenant and unapproved account identities are excluded or denied",async()=>{
   const t=transportFor(truelayerFixture);
   const p=approval();p.tenantId="0c037829-1217-4bc7-9924-1270b142f579";
-  const result=await pilots.performTreasuryReadOnlyPilot({pilot:p,secret:{bearerToken:TOKEN},now:NOW,transport:t.network});
-  assert.equal(result.tenantId,p.tenantId);
-  // A protected runtime must resolve pilot authority for the *authenticated*
-  // tenant; the pure adapter cannot independently know the caller identity.
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({
+    authenticatedTenantId:TENANT,pilot:p,secret:{bearerToken:TOKEN},now:NOW,transport:t.network
+  }),/Cross-tenant/);
+  assert.equal(t.calls.length,0);
   const notAllowed=approval();notAllowed.accountAllowlist=["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"];
   const t2=transportFor(truelayerFixture);
-  const out=await pilots.performTreasuryReadOnlyPilot({pilot:notAllowed,secret:{bearerToken:TOKEN},now:NOW,transport:t2.network});
+  const out=await pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:notAllowed,secret:{bearerToken:TOKEN},now:NOW,transport:t2.network});
   assert.equal(out.recordsAccepted,1);
   assert.equal(out.accounts[0].id,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 });
@@ -172,7 +172,7 @@ test("Cross-tenant and unapproved account identities are excluded or denied",asy
 test("Provider refusal and rate limit do not leak credentials or response bodies",async()=>{
   for(const status of [401,403,429,500]){
     const {network,calls}=transportFor(truelayerFixture,{fail:status});
-    await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({
+    await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
       pilot:approval(),secret:{bearerToken:TOKEN},now:NOW,transport:network
     }),/Provider/);
     assert.equal(calls.length,1);
@@ -181,19 +181,19 @@ test("Provider refusal and rate limit do not leak credentials or response bodies
 
 test("Xero pagination omission/continuation prevents financial use",async()=>{
   const t=transportFor({...xeroFixture,pagination:{page:1,pageCount:2}});
-  const r=await pilots.performTreasuryReadOnlyPilot({pilot:approval("xero_accounting"),secret:{bearerToken:TOKEN},now:NOW,transport:t.network});
+  const r=await pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:approval("xero_accounting"),secret:{bearerToken:TOKEN},now:NOW,transport:t.network});
   assert.equal(r.recordsAccepted,0);
   assert.equal(r.cashCandidates.length,0);
   assert.ok(r.findings.some(x=>x.code==="INCOMPLETE_PAGINATION"));
   const a=transportFor({BankTransactions:xeroFixture.BankTransactions});
-  const b=await pilots.performTreasuryReadOnlyPilot({pilot:approval("xero_accounting"),secret:{bearerToken:TOKEN},now:NOW,transport:a.network});
+  const b=await pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:approval("xero_accounting"),secret:{bearerToken:TOKEN},now:NOW,transport:a.network});
   assert.equal(b.recordsAccepted,0);
   assert.equal(b.complete,false);
 });
 
 test("TrueLayer paginated discovery flags incomplete listing instead of pretending completeness",async()=>{
   const t=transportFor({...truelayerFixture,pagination:{next_cursor:"cursor123"}});
-  const r=await pilots.performTreasuryReadOnlyPilot({pilot:approval(),secret:{bearerToken:TOKEN},now:NOW,transport:t.network});
+  const r=await pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,pilot:approval(),secret:{bearerToken:TOKEN},now:NOW,transport:t.network});
   assert.equal(r.complete,false);
   assert.ok(r.findings.some(x=>x.code==="INCOMPLETE_PAGINATION"));
 });
@@ -203,19 +203,19 @@ test("Xero malformed amounts, unsupported transaction types and duplicates are r
     {...xeroFixture.BankTransactions[0],Total:1.001}
   ]};
   const t=transportFor(bad);
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
     pilot:approval("xero_accounting"),secret:{bearerToken:TOKEN},now:NOW,transport:t.network
   }),/safe positive two-decimal/);
   const dup={...xeroFixture,BankTransactions:[
     xeroFixture.BankTransactions[0],xeroFixture.BankTransactions[0]
   ]};
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
     pilot:approval("xero_accounting"),secret:{bearerToken:TOKEN},now:NOW,transport:transportFor(dup).network
   }),/Duplicate Xero bank transaction/);
   const excluded={...xeroFixture,BankTransactions:[
     {...xeroFixture.BankTransactions[0],Type:"TRANSFER"}
   ]};
-  const r=await pilots.performTreasuryReadOnlyPilot({
+  const r=await pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
     pilot:approval("xero_accounting"),secret:{bearerToken:TOKEN},now:NOW,transport:transportFor(excluded).network
   });
   assert.equal(r.recordsAccepted,0);
@@ -224,19 +224,19 @@ test("Xero malformed amounts, unsupported transaction types and duplicates are r
 
 test("Non-JSON, oversized and redirected responses cannot enter analysis",async()=>{
   const wrong=transportFor(truelayerFixture,{contentType:"text/html"});
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
     pilot:approval(),secret:{bearerToken:TOKEN},now:NOW,transport:wrong.network
   }),/expected JSON/);
   const oversize=transportFor(truelayerFixture,{responseLength:"1000001"});
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
     pilot:approval(),secret:{bearerToken:TOKEN},now:NOW,transport:oversize.network
   }),/byte limit/);
   const huge=transportFor(truelayerFixture,{raw:JSON.stringify({items:[{big:"x".repeat(1_000_001)}]})});
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
     pilot:approval(),secret:{bearerToken:TOKEN},now:NOW,transport:huge.network
   }),/byte limit/);
   const redirected=transportFor(truelayerFixture,{redirected:true});
-  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({
+  await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
     pilot:approval(),secret:{bearerToken:TOKEN},now:NOW,transport:redirected.network
   }),/redirect/);
 });
