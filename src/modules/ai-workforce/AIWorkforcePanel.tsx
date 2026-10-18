@@ -21,6 +21,7 @@ import {
   saveAiEmployeeProfile, transitionAiEmployee,
   type AiEmployee, type WorkforceProfile, type WorkforceStatus,
 } from "./functions";
+import { AIWorkforceTaskPanel } from "./AIWorkforceTaskPanel";
 
 const steps = [
   "Create", "Role", "Tasks", "Business context", "Connected apps",
@@ -589,6 +590,12 @@ export function AIWorkforcePanel() {
                   </div>
                 </CardContent></Card>
               </div>}
+              {selected && step === 9 && <AIWorkforceTaskPanel
+                key={selected.id}
+                tenantId={tenantId}
+                productKey={productKey}
+                employee={selected}
+              />}
             </>}
           </div>
         </div>
