@@ -174,7 +174,7 @@ test("Provider refusal and rate limit do not leak credentials or response bodies
     const {network,calls}=transportFor(truelayerFixture,{fail:status});
     await assert.rejects(()=>pilots.performTreasuryReadOnlyPilot({authenticatedTenantId:TENANT,
       pilot:approval(),secret:{bearerToken:TOKEN},now:NOW,transport:network
-    }),/Provider/);
+    }),/provider/i);
     assert.equal(calls.length,1);
   }
 });
