@@ -9,7 +9,7 @@ import {Textarea} from "@/components/ui/textarea";
 import {CheckCircle2,Clock3,FileText,KeyRound,Link2Off,LockKeyhole,RefreshCcw,ShieldCheck} from "lucide-react";
 import {toast} from "sonner";
 import {
-  getTreasuryAutomationWorkspace,requestTreasurySourceSetup,
+  getTreasuryAutomationWorkspace,requestTreasurySourceSetup,runTreasuryProviderContractPreview,
   saveTreasuryDraftSchedule,runTreasuryServerSyntheticPreview,runTreasurySignedSyntheticPreview
 } from "./automation.functions";
 import {
@@ -17,6 +17,7 @@ import {
   type TreasurySourceBinding,type TreasurySourceKind,type TreasuryConnectorFamily
 } from "./trusted-sources";
 import {treasuryPackMarkdown,type TreasuryPack} from "./analyst-pack";
+import type {TreasuryPilotProvider,TreasuryPilotReadResult} from "./provider-pilots";
 import type {TreasuryVerifiedReceipt} from "./signed-ingestion";
 
 const sourceNames:Record<TreasurySourceKind,string>={
@@ -48,6 +49,7 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
   const [runTime,setRunTime]=useState("08:00");
   const [previewDate,setPreviewDate]=useState(new Date().toISOString().slice(0,10));
   const [preview,setPreview]=useState<TreasuryPack|null>(null);
+  const [pilotPreview,setPilotPreview]=useState<TreasuryPilotReadResult|null>(null);
   const [signedPreview,setSignedPreview]=useState<{
     report:TreasuryPack;receipts:TreasuryVerifiedReceipt[];
     sourceStatus:string;riskStatus:string
@@ -60,6 +62,7 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
   const scheduleFn=useServerFn(saveTreasuryDraftSchedule);
   const previewFn=useServerFn(runTreasuryServerSyntheticPreview);
   const signedPreviewFn=useServerFn(runTreasurySignedSyntheticPreview);
+  const pilotPreviewFn=useServerFn(runTreasuryProviderContractPreview);
   const workspace=useQuery({
     queryKey:["treasury-automation-phase5",tenantId],
     queryFn:()=>getFn({data:{tenantId}}),
@@ -131,6 +134,20 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
       });
       toast.success("Five synthetic source signatures verified; treasury analysis completed");
     }catch(e){setError(e instanceof Error?e.message:"Source verification sandbox failed.");}
+    finally{setWorking(null);}
+  }
+  async function previewProvider(provider:TreasuryPilotProvider){
+    if(!enabled||!tenantId)return;
+    setWorking("preview");setError("");setPilotPreview(null);
+    try{
+      const output=await pilotPreviewFn({data:{tenantId,provider}});
+      if(output.mode!=="synthetic_fixture_no_external_network"||
+        output.externalConnectionsUsed!==0||output.observed.status!=="sandbox_preview_only"||
+        output.observed.canUseAsBankStatement||output.observed.canUseAsFullGeneralLedger)
+        throw new Error("Provider contract preview returned unsupported permissions.");
+      setPilotPreview(output.observed);
+      toast.success("Synthetic provider response safely parsed");
+    }catch(e){setError(e instanceof Error?e.message:"Provider pilot preview failed.");}
     finally{setWorking(null);}
   }
   return <Card><CardContent className="space-y-5 p-5">
@@ -301,6 +318,48 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
           </div>}
         </div>
       </div>
+    </div>
+    <div className="space-y-3 rounded-lg border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="font-semibold">Phase 7 — TrueLayer and Xero provider-read contracts</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Exercise the actual GET-only response mappers with synthetic API responses.
+            These previews use an in-process mock HTTP transport, not supplier connections.
+          </p>
+        </div>
+        <Badge variant="outline">Fixture only · no external HTTP</Badge>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" disabled={!enabled||working!==null}
+          onClick={()=>previewProvider("truelayer_data_v3")}>
+          Preview TrueLayer Data v3 account discovery
+        </Button>
+        <Button size="sm" variant="outline" disabled={!enabled||working!==null}
+          onClick={()=>previewProvider("xero_accounting")}>
+          Preview Xero cash-activity read
+        </Button>
+      </div>
+      {pilotPreview&&<div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-primary"/>
+          <strong className="text-sm">{pilotPreview.provider.replaceAll("_"," ")} — synthetic response parsed</strong>
+          <Badge variant="secondary">Uncertified</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {pilotPreview.recordsObserved} observed · {pilotPreview.recordsAccepted} permitted candidate(s) ·
+          {pilotPreview.findings.length} control findings
+        </p>
+        <p className="text-xs text-muted-foreground">
+          This result cannot be used as a bank statement, certified ledger or complete treasury source.
+          Bank and ERP account authorisation and full source coverage still need approval.
+        </p>
+        <div className="space-y-1">
+          {pilotPreview.findings.map((f,i)=><p key={f.code+i} className="break-all font-mono text-xs">
+            {f.code}: {f.reference}
+          </p>)}
+        </div>
+      </div>}
     </div>
     {error&&<p role="alert" className="rounded-md border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}
     {enabled&&<div className="flex justify-end">

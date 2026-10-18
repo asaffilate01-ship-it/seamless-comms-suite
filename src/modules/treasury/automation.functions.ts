@@ -12,6 +12,7 @@ import {assessLiquidityRisk,syntheticLiquidityPolicy} from "./liquidity-risk";
 import {makeTreasuryAnalystPack} from "./analyst-pack";
 import {runSignedTreasurySandbox,signSyntheticTreasurySnapshot,
   type SignedTreasurySnapshot,type TreasuryPinnedKey} from "./signed-ingestion";
+import {performTreasuryReadOnlyPilot,TREASURY_PILOT_PROVIDER_NOTES,type TreasuryPilotProvider} from "./provider-pilots";
 import {REQUIRED_TREASURY_SOURCES,REQUIRED_READ_SCOPES,
   type TreasurySourceBinding,type TreasurySourceKind} from "./trusted-sources";
 
@@ -210,5 +211,85 @@ export const runTreasurySignedSyntheticPreview=createServerFn({method:"POST"})
       reportDate:date,workingPaper:checked.run.report,
       receipts:checked.receipts,signatureCount:checked.receipts.length,
       sourceStatus:checked.run.sourceStatus,riskStatus:checked.run.riskStatus
+    };
+  });
+
+
+/**
+ * Phase 7 fixed-provider CONTRACT DEMO. No credentials, OAuth flow, live
+ * supplier network or arbitrary URL from the user. Synthetic provider objects
+ * and a deliberately fake in-process HTTP transport exercise the production
+ * parser and request-safety invariants.
+ *
+ * The verified-approval object in this isolated example is an EPHEMERAL
+ * FIXTURE, not a real connection proof for any bank or Xero organisation.
+ */
+const previewProviderInput=scope.extend({
+  provider:z.enum(["truelayer_data_v3","xero_accounting"])
+}).strict();
+
+export const runTreasuryProviderContractPreview=createServerFn({method:"POST"})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i:unknown)=>previewProviderInput.parse(i))
+  .handler(async({context,data})=>{
+    const access=await requireActiveFinvessa(context,data.tenantId);
+    requireWriteRole(access.role);
+    const provider:TreasuryPilotProvider=data.provider;
+    const truelayerAccountId="56c7b029e0f8ec5a2334fb0ffc2fface";
+    const xeroAccountId="6f7594f2-f059-4d56-9e67-47ac9733bfe9";
+    const fixture=provider==="truelayer_data_v3"
+      ?{
+        items:[
+          {id:truelayerAccountId,account_type:"current",customer_segment:"business",currency:"GBP"},
+          {id:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",account_type:"savings",customer_segment:"retail",currency:"GBP"}
+        ],pagination:{}
+       }
+      :{
+        pagination:{page:1,pageSize:100,pageCount:1,itemCount:2},
+        BankTransactions:[
+          {BankTransactionID:"db54aab0-ad40-4ced-bcff-0940ba20db2c",
+            BankAccount:{AccountID:xeroAccountId},Status:"AUTHORISED",Type:"RECEIVE",
+            IsReconciled:true,DateString:"2026-10-16T00:00:00",
+            CurrencyCode:"GBP",Total:125.40,Reference:"Synthetic sample collection"},
+          {BankTransactionID:"29a69c45-64ca-4805-a1cc-34990de837b3",
+            BankAccount:{AccountID:xeroAccountId},Status:"DRAFT",Type:"SPEND",
+            IsReconciled:false,DateString:"2026-10-16T00:00:00",
+            CurrencyCode:"GBP",Total:22.00,Reference:"Unapproved synthetic example"}
+        ]
+       };
+    const now=new Date();
+    const expiry=new Date(now.getTime()+60_000).toISOString();
+    const expectedOrigin=provider==="truelayer_data_v3"
+      ?"https://api.truelayer-sandbox.com/v3/connected-accounts"
+      :"https://api.xero.com/api.xro/2.0/BankTransactions?page=1&pageSize=100";
+    // transport returns an in-memory fixture, NOT an HTTP request
+    const mockTransport=async(url:RequestInfo|URL,options?:RequestInit):Promise<Response>=>{
+      if(String(url)!==expectedOrigin || options?.method!=="GET" || options?.redirect!=="error")
+        throw new Error("The sandbox provider request contract was not respected.");
+      return new Response(JSON.stringify(fixture),{
+        status:200,headers:{"content-type":"application/json"}
+      });
+    };
+    const observed=await performTreasuryReadOnlyPilot({
+      authenticatedTenantId:data.tenantId,
+      pilot:{
+        tenantId:data.tenantId,productKey:"finvessa",provider,
+        environment:"sandbox_test_only",approvalState:"independently_verified",
+        approvalReference:"fixture-only-demo-approval-01",
+        approvedReadScopes:provider==="truelayer_data_v3"?["accounts"]:["accounting.transactions.read"],
+        consentValidUntil:expiry,connectorProofValidUntil:expiry,
+        accountAllowlist:provider==="truelayer_data_v3"?[truelayerAccountId]:[xeroAccountId],
+        externalConnectionId:provider==="truelayer_data_v3"
+          ?"e6e7d29d-7318-4f77-8c95-3d7422358572"
+          :"5a9ce10e-1496-4c34-bd02-2b01f858e884"
+      },
+      secret:{bearerToken:"synthetic_in_process_access_1234567890"},
+      now:now.toISOString(),transport:mockTransport
+    });
+    return {
+      mode:"synthetic_fixture_no_external_network" as const,
+      externalConnectionsUsed:0 as const,
+      observed,
+      providerSpec:TREASURY_PILOT_PROVIDER_NOTES.find(x=>x.key===provider)!
     };
   });
