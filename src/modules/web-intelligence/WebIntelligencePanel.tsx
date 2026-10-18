@@ -93,8 +93,9 @@ export function WebIntelligencePanel({
                 </Badge>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Grant <code>omniqora.web-intelligence</code> through Tenant Factory after
-                source-policy review. This page cannot grant its own entitlement.
+                Request <code>omniqora.web-intelligence</code> in Tenant Factory.
+                The provisioning workflow must independently activate the entitlement;
+                a requested service alone does not permit crawling.
               </p>
             </div>
 
