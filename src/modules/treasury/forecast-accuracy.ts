@@ -20,7 +20,8 @@ export interface TreasuryForecastAccuracyFinding {
   code:
     "UNVERIFIED_SNAPSHOT_PROVENANCE"|"MISSING_ACTUAL"|"UNMATCHED_ACTUAL"|
     "UNASSESSED_CURRENCY"|"ZERO_ACTUAL_DENOMINATOR"|"WAPE_ABOVE_TOLERANCE"|
-    "FORECAST_CASH_OVERESTIMATED"|"FORECAST_CASH_UNDERESTIMATED";
+    "FORECAST_CASH_OVERESTIMATED"|"FORECAST_CASH_UNDERESTIMATED"|
+    "IRREGULAR_FORECAST_WEEK_INTERVAL";
   severity:"warning"|"info";
   currency:string;
   evidence:string;
@@ -93,6 +94,8 @@ function id(v:string,evidence:string,label:string):string{
 }
 export function analyseTreasuryForecastAccuracy(input:TreasuryForecastAccuracyInputs):TreasuryForecastAccuracyReport{
   const evaluationDate=isoDate(input.evaluationDate,"Backtest evaluation date");
+  if(evaluationDate>new Date().toISOString().slice(0,10))
+    throw new Error("Future evaluation dates cannot be used to claim historical forecast performance.");
   if(!Number.isInteger(input.maximumWapeBasisPoints)||
      input.maximumWapeBasisPoints<0||input.maximumWapeBasisPoints>10000)
     throw new Error("Choose an explicit WAPE tolerance of 0–10000 basis points.");
@@ -165,6 +168,16 @@ export function analyseTreasuryForecastAccuracy(input:TreasuryForecastAccuracyIn
   for(const currency of [...currencies].sort()){
     const group=[...forecastsByKey.values()].filter(x=>x.currency===currency).sort((a,b)=>a.weekEnd.localeCompare(b.weekEnd));
     const compared:TreasuryBacktestObservation[]=[];
+    let irregularForecastWeeks=false;
+    for(let i=1;i<group.length;i++){
+      const delta=(Date.parse(group[i].weekEnd+"T12:00:00Z") -
+        Date.parse(group[i-1].weekEnd+"T12:00:00Z"))/86400_000;
+      if(delta!==7){
+        irregularForecastWeeks=true;
+        findings.push(evidenceIssue("IRREGULAR_FORECAST_WEEK_INTERVAL","warning",currency,
+          group[i].evidence,"Frozen cash forecasts must represent consecutive seven-day weeks; missing or irregular forecast weeks prevent a threshold pass."));
+      }
+    }
     let missing=0;
     for(const projected of group){
       const actual=actualByKey.get(currency+"\u0000"+projected.weekEnd);
@@ -198,7 +211,7 @@ export function analyseTreasuryForecastAccuracy(input:TreasuryForecastAccuracyIn
     const mae=n? safeNum((sumAbs+n-1n)/n,"MAE"):null;
     const bias=n?safeNum(sumSigned/n,"Signed mean error"):null;
     const wape=integerPercent(sumAbs,sumActualAbs,10000n);
-    const enough=compared.length>=input.minimumComparableWeeks && missing===0;
+    const enough=compared.length>=input.minimumComparableWeeks && missing===0 && !irregularForecastWeeks;
     const passed=enough && wape!==null ? wape<=input.maximumWapeBasisPoints:null;
     if(!n||!enough){
       findings.push(evidenceIssue("UNASSESSED_CURRENCY","warning",currency,
@@ -233,8 +246,8 @@ export function analyseTreasuryForecastAccuracy(input:TreasuryForecastAccuracyIn
         actual.evidence,"An actual bank cash record has no frozen forecast comparison and is excluded."));
   }
   const status:TreasuryForecastAccuracyReport["status"]=
-    results.some(x=>x.tolerancePassed===null)?"insufficient_evidence":
-    results.some(x=>x.tolerancePassed===false)?"review_required":"within_operator_tolerance";
+    results.some(x=>x.tolerancePassed===false)?"review_required":
+    results.some(x=>x.tolerancePassed===null)?"insufficient_evidence":"within_operator_tolerance";
   return{
     mode:input.synthetic?"illustrative_synthetic":"operator_asserted_unverified",
     status,independentHistoricSnapshotVerified:false,evaluationDate,
@@ -249,7 +262,7 @@ export function analyseTreasuryForecastAccuracy(input:TreasuryForecastAccuracyIn
       "MAE is mean absolute cash error, rounded conservatively up by one minor unit where necessary.",
       "WAPE basis points = ceil(sum absolute forecast errors / sum absolute actual closing cash × 10000); null when denominator is zero.",
       "Scenario-band coverage is the share of actual cash values falling between baseline and downside scenarios; it is NOT a statistical confidence interval.",
-      "Missing weeks are excluded from numerical error metrics but prevent passing any quality threshold; unmatched actuals are reported separately.",
+      "Missing or irregular forecast weeks, and missing actuals, prevent a quality-threshold pass; unmatched actuals are separately disclosed.",
       "Operator tolerance and minimum-week threshold are not regulatory limits or proof of superior performance.",
       "This is an analyst review working paper, not a certified quantitative model, bank balance confirmation, payment, trade or regulatory report."
     ]
