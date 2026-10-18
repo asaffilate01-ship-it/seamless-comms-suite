@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/app/shell";
 import type { AiEmployee, WorkforceProfile } from "./functions";
 import {
-  createAiEmployeeTask, getAiEmployeeTaskWorkspace, preflightAiEmployeeTask,
+  createAiEmployeeTask, reviseAiEmployeeTask, getAiEmployeeTaskWorkspace, preflightAiEmployeeTask,
   requestAiEmployeeAccess, reviewAiEmployeeAccess, transitionAiEmployeeTask,
   type AiEmployeeTask, type AiEmployeeAccessProposal, type AiEmployeeTaskPreflight,
   type ProposedTaskTrigger,
@@ -36,6 +36,7 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
   const [requestedCaps, setRequestedCaps] = useState<string[]>([]);
   const [trigger, setTrigger] = useState<ProposedTaskTrigger>(newTrigger());
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
+  const [editingTask, setEditingTask] = useState<AiEmployeeTask | null>(null);
   const [busy, setBusy] = useState(false);
   const [accessBusy, setAccessBusy] = useState(false);
   const [provider, setProvider] = useState("");
@@ -46,6 +47,7 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
 
   const listFn = useServerFn(getAiEmployeeTaskWorkspace);
   const createFn = useServerFn(createAiEmployeeTask);
+  const reviseFn = useServerFn(reviseAiEmployeeTask);
   const transitionFn = useServerFn(transitionAiEmployeeTask);
   const preflightFn = useServerFn(preflightAiEmployeeTask);
   const requestAccessFn = useServerFn(requestAiEmployeeAccess);
@@ -69,19 +71,49 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
       trigger.type === "weekly" && /^(MON|TUE|WED|THU|FRI|SAT|SUN) ([01][0-9]|2[0-3]):[0-5][0-9]$/.test(trigger.value) ||
       trigger.type === "event" && /^[a-z0-9][a-z0-9._-]{2,119}$/.test(trigger.value));
 
+  function resetTaskForm() {
+    setEditingTask(null);
+    setTitle(""); setObjective(""); setRequestedCaps([]);
+    setOutputSpec("Evidence-backed summary with source references");
+    setAcceptanceCriteria("Cite sources, identify missing evidence, and prepare a reviewable draft.");
+    setTrigger(newTrigger());
+    setRequestKey(crypto.randomUUID());
+  }
+
+  function editTask(task: AiEmployeeTask) {
+    if (!["draft","returned","approved_brief"].includes(task.status)) return;
+    setEditingTask(task);
+    setTitle(task.title);
+    setObjective(task.objective);
+    setOutputSpec(task.output_spec);
+    setAcceptanceCriteria(task.acceptance_criteria);
+    setRequestedCaps([...task.requested_capabilities]);
+    setTrigger({...task.proposed_trigger,enabled:false});
+    setPreflight(null);
+  }
+
   async function addTask() {
     if (!formValid || busy) return;
     setBusy(true);
     try {
-      await createFn({ data: {
-        tenantId, productKey, employeeId: employee.id, requestKey,
+      const details = {
+        tenantId, productKey, employeeId: employee.id,
         title: title.trim(), objective: objective.trim(),
         outputSpec: outputSpec.trim(), acceptanceCriteria: acceptanceCriteria.trim(),
         requestedCapabilities: requestedCaps, proposedTrigger: trigger,
-      } });
-      setTitle(""); setObjective(""); setRequestedCaps([]);
-      setTrigger(newTrigger()); setRequestKey(crypto.randomUUID()); setPreflight(null);
-      toast.success("Task brief saved, with no external AI or app execution.");
+      };
+      if (editingTask) {
+        await reviseFn({ data: {
+          ...details, taskId: editingTask.id, expectedRevision: editingTask.revision,
+        } });
+      } else {
+        await createFn({ data: { ...details, requestKey } });
+      }
+      const revised = !!editingTask;
+      resetTaskForm(); setPreflight(null);
+      toast.success(revised
+        ? "Corrected draft saved. Independent approval must be obtained again."
+        : "Task brief saved, with no external AI or app execution.");
       await query.refetch();
     } catch (e) { toast.error(safeMessage(e)); }
     finally { setBusy(false); }
@@ -184,7 +216,10 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <div className="space-y-3">
-          <h4 className="font-semibold">New work assignment</h4>
+          <h4 className="font-semibold">{editingTask ? `Edit brief · v${editingTask.revision}` : "New work assignment"}</h4>
+          {editingTask && <p className="rounded-md bg-muted/50 p-2 text-xs">
+            Revising a previously approved brief resets its approval. Save, then submit again for independent review.
+          </p>}
           <Entry label="Task title"><Input value={title} onChange={e=>setTitle(e.target.value)}
             maxLength={180} placeholder="e.g. Investigate weekly order cancellations"/></Entry>
           <Entry label="What should the employee investigate or prepare?">
@@ -222,8 +257,13 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
               </label>)}
             </div>
           </div>}
-          <Button disabled={!formValid || busy || query.isError || employee.status==="retired"}
-            onClick={addTask}><Plus className="mr-2 h-4 w-4"/> Save task brief</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={!formValid || busy || query.isError || employee.status==="retired"}
+              onClick={addTask}><Plus className="mr-2 h-4 w-4"/>
+              {editingTask ? "Save corrected brief" : "Save task brief"}
+            </Button>
+            {editingTask && <Button variant="outline" onClick={resetTaskForm}>Cancel editing</Button>}
+          </div>
           <p className="text-xs text-muted-foreground">
             All instructions are stored for review. They cannot authorize a tool, schedule, message, payment or model call.
           </p>
@@ -241,6 +281,7 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <Badge variant="outline">Employee v{task.employee_revision || "pending"}</Badge>
+                <Badge variant="outline">Brief v{task.revision}</Badge>
                 <Badge variant="outline">{task.proposed_trigger.type} · inactive</Badge>
                 <Badge variant="outline">{task.requested_capabilities.length} requested tools</Badge>
               </div>
@@ -250,6 +291,9 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
                   placeholder="Review evidence or explanation for returning the brief."/>
               </Entry>}
               <div className="mt-3 flex flex-wrap gap-2">
+                {["draft","returned","approved_brief"].includes(task.status) && <Button size="sm"
+                  variant="outline" disabled={busy || employee.status==="retired"}
+                  onClick={()=>editTask(task)}>Edit brief</Button>}
                 {["draft","returned"].includes(task.status) &&
                   <Button size="sm" disabled={busy || !active}
                     onClick={()=>changeTask(task,"submit")}>Submit brief</Button>}
