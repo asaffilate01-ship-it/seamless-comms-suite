@@ -65,6 +65,8 @@ jobs:
         run: node --test verification/control-plane/ai-workforce-phase3.test.mjs
       - name: AI Workforce task review and locked execution safety
         run: node --test verification/control-plane/ai-workforce-phase4a.test.mjs
+      - name: AI Workforce synthetic sandbox and no-model worker
+        run: node --test verification/control-plane/ai-workforce-phase4b.test.mjs
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
