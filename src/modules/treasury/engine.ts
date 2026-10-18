@@ -39,6 +39,15 @@ export interface TreasuryMatchedPair {
   bankEvidence: string;
   ledgerEvidence: string;
 }
+export interface TreasuryForecastFlow {
+  accountId: string;
+  currency: string;
+  date: string;
+  reference: string;
+  amountMinor: number;
+  certainty: ForecastCertainty;
+  evidence: string;
+}
 export interface TreasuryForecastWeek {
   currency: string;
   week: number;
@@ -58,6 +67,7 @@ export interface TreasuryReport {
   mode: "synthetic_demo" | "local_import";
   positions: TreasuryAccountPosition[];
   matchedPairs: TreasuryMatchedPair[];
+  forecastFlows: TreasuryForecastFlow[];
   currencyPositions: { currency: string; balanceMinor: number; accounts: number }[];
   weeks: TreasuryForecastWeek[];
   issues: TreasuryIssue[];
@@ -111,7 +121,7 @@ function csvRows(csv: string, source: string): string[][] {
   if (field || fields.length || closedQuote) pushRow();
   return rows;
 }
-function parseTable(csv: string, source: string, required: string[], optional = false): Row[] {
+export function parseTable(csv: string, source: string, required: string[], optional = false): Row[] {
   if (optional && !csv.trim()) return [];
   const raw = csvRows(csv.replace(/^\uFEFF/, ""), source);
   if (!raw.length) throw new Error(source + ": a header row is required.");
@@ -126,14 +136,14 @@ function parseTable(csv: string, source: string, required: string[], optional = 
     return { data, evidence: source + ":row:" + (index + 2) };
   });
 }
-function isoDate(value: string, evidence: string): string {
+export function isoDate(value: string, evidence: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(evidence + ": invalid date. Use YYYY-MM-DD.");
   const date = new Date(value + "T12:00:00Z");
   if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value)
     throw new Error(evidence + ": impossible calendar date.");
   return value;
 }
-function addDays(iso: string, days: number): string {
+export function addDays(iso: string, days: number): string {
   const d = new Date(iso + "T12:00:00Z");
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
@@ -141,7 +151,7 @@ function addDays(iso: string, days: number): string {
 function ageDays(later: string, earlier: string): number {
   return Math.round((Date.parse(later + "T12:00:00Z") - Date.parse(earlier + "T12:00:00Z")) / 86_400_000);
 }
-function safeAdd(a: number, b: number): number {
+export function safeAdd(a: number, b: number): number {
   const n = a + b;
   if (!Number.isSafeInteger(n)) throw new Error("Financial amount exceeds safe integer precision. Processing stopped.");
   return n;
@@ -329,10 +339,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
       account.missingBalances === 0 && account.checkedBalances === account.transactions &&
       account.matchedLedger === account.transactions && account.unmatchedLedger === 0;
   });
-  const validForecasts: {
-    accountId: string; currency: string; date: string; amountMinor: number;
-    certainty: ForecastCertainty; evidence: string
-  }[] = [];
+  const validForecasts: TreasuryForecastFlow[] = [];
   const seenForecast = new Map<string, string>();
   forecasts.forEach(({data, evidence}) => {
     const account = state.get(data.account_id);
@@ -359,7 +366,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
       return;
     }
     validForecasts.push({accountId: account.accountId, currency: account.currency, date, amountMinor,
-      certainty: data.certainty, evidence});
+      certainty: data.certainty, reference: data.reference, evidence});
   });
   if (!validForecasts.length)
     toWarn("NO_VERIFIED_FORECAST_INPUT", "warning",
@@ -413,7 +420,7 @@ export function analyseTreasury(input: TreasuryInputs): TreasuryReport {
     status: issues.some(x => x.severity === "blocking") ? "blocked" :
       issues.some(x => x.severity === "warning") ? "review_required" : "checked",
     reportDate, generatedAt: new Date().toISOString(), mode: input.demo ? "synthetic_demo" : "local_import",
-    positions, matchedPairs, currencyPositions, weeks, issues,
+    positions, matchedPairs, forecastFlows: validForecasts, currencyPositions, weeks, issues,
     counts: {
       accounts: positions.length,
       transactions: positions.reduce((n, x) => n + x.transactions, 0),
