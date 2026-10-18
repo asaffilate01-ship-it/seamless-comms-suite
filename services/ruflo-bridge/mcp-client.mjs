@@ -56,6 +56,7 @@ export class RufloMcpClient{
   });
   this.#child.stdout.on("data",part=>this.#ingest(part));
   this.#child.stderr.on("data",()=>{}); // Drain, never log potential upstream secrets.
+  this.#child.stdin.on("error",()=>{this.#fail("Ruflo MCP stdin closed");this.stop();});
   this.#child.on("error",()=>this.#fail("Ruflo process start failed"));
   this.#child.on("exit",()=>this.#fail("Ruflo process stopped"));
   try{

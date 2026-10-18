@@ -43,6 +43,40 @@ CREATE TABLE public.ai_ruflo_tenant_bindings (
  ))
 );
 
+-- An attestation alone cannot enable a tenant: require an independently
+-- shortlisted request, current active product/entitlement, same country and
+-- independently verified upstream digest before a sandbox can be marked ready.
+CREATE OR REPLACE FUNCTION public.guard_ruflo_tenant_binding()
+RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $
+BEGIN
+ IF NEW.status='sandbox_verified' THEN
+  IF NOT EXISTS(
+   SELECT 1 FROM public.ai_ruflo_pilot_requests p
+   JOIN public.tenants t ON t.id=p.tenant_id
+   JOIN public.tenant_products tp ON tp.tenant_id=p.tenant_id AND tp.product_key=p.product_key
+   WHERE p.tenant_id=NEW.tenant_id AND p.product_key=NEW.product_key
+    AND p.status='shortlisted' AND p.reviewed_at IS NOT NULL
+    AND p.reviewed_by IS NOT NULL AND p.requested_by<>p.reviewed_by
+    AND p.data_region=NEW.data_region AND t.country_code=NEW.data_region
+    AND tp.status='active'
+  ) THEN RAISE EXCEPTION 'Independent Ruflo pilot, region and active product review required'; END IF;
+  IF NOT public.has_tenant_entitlement(NEW.tenant_id,'omniqora.intelligence-runtime')
+  THEN RAISE EXCEPTION 'AI runtime entitlement required before Ruflo sandbox verification'; END IF;
+  IF NOT public.is_platform_admin(NEW.verified_by) OR NEW.verified_at>now()
+    OR NEW.verified_at<now()-interval '30 days'
+  THEN RAISE EXCEPTION 'Current platform-verified Ruflo evidence required'; END IF;
+  IF EXISTS(
+   SELECT 1 FROM public.ai_ruflo_pilot_requests p
+   WHERE p.tenant_id=NEW.tenant_id AND p.product_key=NEW.product_key
+    AND p.requested_by=NEW.verified_by
+  ) THEN RAISE EXCEPTION 'Ruflo pilot requester cannot attest sandbox'; END IF;
+ END IF;
+ RETURN NEW;
+END $;
+CREATE TRIGGER ai_ruflo_binding_scope_guard BEFORE INSERT OR UPDATE
+ ON public.ai_ruflo_tenant_bindings FOR EACH ROW
+ EXECUTE FUNCTION public.guard_ruflo_tenant_binding();
+
 -- Metadata receipts only. No prompts, tool outputs, secrets, or sensitive payloads.
 CREATE TABLE public.ai_ruflo_probe_receipts (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -136,6 +170,10 @@ BEGIN
  UPDATE public.ai_ruflo_pilot_requests
  SET status=_decision,review_note=trim(_note),reviewed_by=auth.uid(),reviewed_at=now()
  WHERE id=_request RETURNING * INTO rec;
+ IF _decision IN('revoked','rejected') THEN
+  UPDATE public.ai_ruflo_tenant_bindings SET status='suspended',updated_at=now()
+  WHERE tenant_id=rec.tenant_id AND product_key=rec.product_key AND status='sandbox_verified';
+ END IF;
  -- Important: this does NOT provision ai_ruflo_tenant_bindings, install
  -- an MCP server, assign a credential or enable agent execution.
  RETURN rec;

@@ -15,6 +15,9 @@ test("Ruflo tenant isolation is read-only from browser and not seeded live",()=>
  assert.match(sql,/status IN\('disabled','sandbox_verified','suspended'\)/);
  assert.match(sql,/allowed_probe_tools <@ ARRAY\['swarm_health','swarm_status','agent_list'\]/);
  assert.match(sql,/guard_ruflo_probe_receipt_scope/);
+ assert.match(sql,/guard_ruflo_tenant_binding/);
+ assert.match(sql,/p\.status='shortlisted'/);
+ assert.match(sql,/status='suspended',updated_at=now\(\)/);
  assert.match(sql,/Ruflo run belongs to another tenant\/product/);
  assert.match(sql,/Ruflo job belongs to another tenant\/product/);
  assert.doesNotMatch(sql,/INSERT INTO public\.ai_ruflo_tenant_bindings/);
