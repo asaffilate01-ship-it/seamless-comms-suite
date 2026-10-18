@@ -2025,6 +2025,78 @@ export type Database = {
           },
         ]
       }
+      growth_setup_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          id: string
+          include_creative: boolean
+          note: string
+          product_key: string
+          receipt: Json | null
+          request_key: string
+          requested_by: string
+          revision: number
+          service_keys: string[]
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          include_creative: boolean
+          note?: string
+          product_key: string
+          receipt?: Json | null
+          request_key: string
+          requested_by: string
+          revision?: number
+          service_keys: string[]
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          include_creative?: boolean
+          note?: string
+          product_key?: string
+          receipt?: Json | null
+          request_key?: string
+          requested_by?: string
+          revision?: number
+          service_keys?: string[]
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growth_setup_requests_product_key_fkey"
+            columns: ["product_key"]
+            isOneToOne: false
+            referencedRelation: "product_catalogue"
+            referencedColumns: ["product_key"]
+          },
+          {
+            foreignKeyName: "growth_setup_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       growth_studio_brands: {
         Row: {
           audience: string
@@ -2354,6 +2426,53 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "marketing_campaigns"
             referencedColumns: ["id", "tenant_id", "product_key"]
+          },
+        ]
+      }
+      growth_syndriva_sources: {
+        Row: {
+          brand_id: string
+          evidence_id: string
+          evidence_revision: number
+          imported_at: string
+          imported_by: string
+          listing_id: string
+          product_key: string
+          source_fingerprint: string
+          source_snapshot: Json
+          tenant_id: string
+        }
+        Insert: {
+          brand_id: string
+          evidence_id: string
+          evidence_revision: number
+          imported_at?: string
+          imported_by: string
+          listing_id: string
+          product_key?: string
+          source_fingerprint: string
+          source_snapshot: Json
+          tenant_id: string
+        }
+        Update: {
+          brand_id?: string
+          evidence_id?: string
+          evidence_revision?: number
+          imported_at?: string
+          imported_by?: string
+          listing_id?: string
+          product_key?: string
+          source_fingerprint?: string
+          source_snapshot?: Json
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growth_syndriva_sources_evidence_id_brand_id_tenant_id_pro_fkey"
+            columns: ["evidence_id", "brand_id", "tenant_id", "product_key"]
+            isOneToOne: false
+            referencedRelation: "growth_studio_evidence"
+            referencedColumns: ["id", "brand_id", "tenant_id", "product_key"]
           },
         ]
       }
@@ -4639,6 +4758,65 @@ export type Database = {
         Args: { _tenant: string }
         Returns: number
       }
+      growth_setup_actor_role: { Args: { _tenant: string }; Returns: string }
+      growth_setup_blockers: {
+        Args: { _product: string; _services: string[]; _tenant: string }
+        Returns: Json
+      }
+      growth_setup_decide: {
+        Args: {
+          _decision: string
+          _expected_revision: number
+          _note?: string
+          _product: string
+          _request: string
+          _tenant: string
+        }
+        Returns: Json
+      }
+      growth_setup_list_workspaces: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: Json
+      }
+      growth_setup_request: {
+        Args: {
+          _include_creative: boolean
+          _note?: string
+          _product: string
+          _request_key: string
+          _tenant: string
+        }
+        Returns: Json
+      }
+      growth_setup_request_doc: {
+        Args: {
+          r: Database["public"]["Tables"]["growth_setup_requests"]["Row"]
+        }
+        Returns: Json
+      }
+      growth_setup_save_writer: {
+        Args: {
+          _environment: string
+          _max_tokens: number
+          _model: string
+          _product: string
+          _provider: string
+          _tenant: string
+        }
+        Returns: string
+      }
+      growth_setup_service_keys: {
+        Args: { _include_creative: boolean; _product: string }
+        Returns: string[]
+      }
+      growth_setup_workspace: {
+        Args: { _include_creative?: boolean; _product: string; _tenant: string }
+        Returns: Json
+      }
+      growth_studio_access: {
+        Args: { _product: string; _tenant: string }
+        Returns: Json
+      }
       growth_studio_assert_access: {
         Args: { _mode: string; _product: string; _tenant: string }
         Returns: undefined
@@ -4802,6 +4980,33 @@ export type Database = {
       }
       growth_studio_workspace: {
         Args: { _product: string; _tenant: string }
+        Returns: Json
+      }
+      growth_syndriva_campaign_current: {
+        Args: { _campaign: string; _tenant: string }
+        Returns: boolean
+      }
+      growth_syndriva_fingerprint: {
+        Args: { _snapshot: Json }
+        Returns: string
+      }
+      growth_syndriva_import_source: {
+        Args: { _brand: string; _listing: string; _tenant: string }
+        Returns: Json
+      }
+      growth_syndriva_list_sources: {
+        Args: { _brand: string; _offset?: number; _tenant: string }
+        Returns: Json
+      }
+      growth_syndriva_schema_ready: { Args: never; Returns: boolean }
+      growth_syndriva_source_current: {
+        Args: {
+          s: Database["public"]["Tables"]["growth_syndriva_sources"]["Row"]
+        }
+        Returns: boolean
+      }
+      growth_syndriva_source_snapshot: {
+        Args: { _listing: string; _tenant: string }
         Returns: Json
       }
       has_tenant_entitlement: {
