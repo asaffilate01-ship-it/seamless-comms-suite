@@ -31,6 +31,10 @@ jobs:
         run: node --test verification/control-plane/connector-intelligence.test.mjs
       - name: Connector Intelligence Phase 2 MCP proposals and quarantine gates
         run: node --test verification/control-plane/connector-qualification.test.mjs
+      - name: Web Intelligence tenant, source-review and worker security contracts
+        run: node --test verification/control-plane/web-intelligence.test.mjs
+      - name: Scrapling worker SSRF and plain-text parsing offline tests
+        run: python3 -m unittest discover -s services/web-intelligence/tests -v
       - name: Twilio masked voice, signature and tenant isolation gates
         run: bun test verification/control-plane/masked-voice.test.ts
       - name: Twilio inbound ordering identity and SMS/WhatsApp safety
