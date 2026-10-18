@@ -102,7 +102,7 @@ export function TreasuryAccuracyPanel({enabled}:{enabled:boolean}){
         header="snapshot_id,forecast_frozen_on,currency,week_end,baseline_closing,downside_closing"
         content={inputs.forecastHistoryCsv} enabled={enabled}
         onChange={v=>edit("forecastHistoryCsv",v)} onUpload={e=>upload("forecastHistoryCsv",e)}/>
-      <SourceEditor filename="actual-cash.csv" label="2. Independently sourced actual balances"
+      <SourceEditor filename="actual-cash.csv" label="2. Operator-supplied actual cash balances"
         header="actual_id,currency,week_end,closing_balance,evidence_as_of"
         content={inputs.actualHistoryCsv} enabled={enabled}
         onChange={v=>edit("actualHistoryCsv",v)} onUpload={e=>upload("actualHistoryCsv",e)}/>
