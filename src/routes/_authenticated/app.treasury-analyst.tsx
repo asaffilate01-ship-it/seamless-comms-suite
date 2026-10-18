@@ -16,6 +16,7 @@ import {
 } from "@/modules/treasury/engine";
 import {TreasuryRiskAndReviewPanel} from "@/modules/treasury/TreasuryRiskAndReviewPanel";
 import {TreasurySourceImportPanel} from "@/modules/treasury/TreasurySourceImportPanel";
+import {TreasuryAutomationPanel} from "@/modules/treasury/TreasuryAutomationPanel";
 import {AlertTriangle, CheckCircle2, ClipboardCheck, Download, FileSpreadsheet, Landmark, LockKeyhole,
   RotateCcw, ShieldCheck, TrendingUp, Upload, Wallet} from "lucide-react";
 
@@ -101,7 +102,7 @@ function TreasuryAnalystWorkbench() {
     retry: false
   });
   const enabled = (q.data?.products ?? []).some(p => p.product_key === "finvessa" &&
-    ["active", "enabled", "live"].includes(p.status));
+    p.status === "active");
   const [inputs, setInputs] = useState<TreasuryInputs>(() => treasuryDemoInput(today()));
   const [report, setReport] = useState<TreasuryReport | null>(() => analyseTreasury(treasuryDemoInput(today())));
   const [error, setError] = useState("");
@@ -197,6 +198,7 @@ function TreasuryAnalystWorkbench() {
 
       <TreasurySourceImportPanel reportDate={inputs.reportDate} enabled={enabled}
         onApplySource={(kind,canonicalCSV)=>changeData(kind==="bank_transactions"?"transactionsCSV":"ledgerCSV",canonicalCSV)}/>
+      <TreasuryAutomationPanel tenantId={t.tenantId ?? ""} enabled={enabled} role={t.role}/>
       <Card><CardContent className="p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h2 className="text-lg font-semibold">1. Prepare treasury sources</h2>
