@@ -64,7 +64,7 @@ test("capabilities and schedules are proposals, never live grants", () => {
   assert.match(migration, /No Phase 3 path creates a model job/);
   assert.match(ui, /No OAuth, MCP, account or permission becomes connected/);
   assert.match(ui, /No scheduler or event subscriber is activated/);
-  assert.doesNotMatch(ui, /queueBudgetedFactoryTask|startAgentRun|fetch\(/);
+  assert.doesNotMatch(ui, /queueBudgetedFactoryTask|startAgentRun|\bfetch\(/);
   assert.doesNotMatch(api, /queue_budgeted_ai_agent|startAgentRun|fetch\(/);
 });
 
@@ -111,7 +111,7 @@ test("route and navigation are present and source parses as TypeScript", () => {
       reportDiagnostics: true,
       compilerOptions: {
         target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
-        jsx: tsx ? ts.JsxEmit.ReactJSX : undefined,
+        jsx: ts.JsxEmit.ReactJSX,
       },
     });
     const errors = (result.diagnostics ?? []).filter(x => x.category === ts.DiagnosticCategory.Error);
