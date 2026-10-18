@@ -34,8 +34,14 @@ ALTER TABLE public.web_intel_jobs
 CREATE INDEX web_intel_jobs_monitor ON public.web_intel_jobs(monitor_id,created_at DESC)
  WHERE monitor_id IS NOT NULL;
 
+-- Preserve retention age for documents that already exist when migrating
+-- from Phase 1; do not extend their lifespan from the migration date.
+ALTER TABLE public.web_intel_documents ADD COLUMN retention_until timestamptz;
+UPDATE public.web_intel_documents
+ SET retention_until=captured_at + interval '30 days';
 ALTER TABLE public.web_intel_documents
- ADD COLUMN retention_until timestamptz NOT NULL DEFAULT (now() + interval '30 days');
+ ALTER COLUMN retention_until SET DEFAULT (now() + interval '30 days'),
+ ALTER COLUMN retention_until SET NOT NULL;
 CREATE INDEX web_intel_documents_expiry ON public.web_intel_documents(retention_until);
 
 CREATE TABLE public.web_intel_changes (
