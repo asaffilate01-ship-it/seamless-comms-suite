@@ -6,9 +6,9 @@ const sql = await readFile(new URL("./dishbee-hosted-catalogue-audit.sql",import
 const root = new URL("../../",import.meta.url);
 
 test("deployed catalogue audit is a read-only report without activation",()=>{
-  const stripped = sql.replace(/--[^\\n]*/g,"").replace(/'(?:[^']|'')*'/g,"''");
-  assert.match(stripped,/\\bSELECT\\b/i);
-  assert.doesNotMatch(stripped,/\\b(INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE|CALL|DO|EXECUTE|GRANT|REVOKE|COPY)\\b/i);
+  const stripped = sql.replace(/--[^\n]*/g,"").replace(/'(?:[^']|'')*'/g,"''");
+  assert.match(stripped,/\bSELECT\b/i);
+  assert.doesNotMatch(stripped,/\b(INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE|CALL|DO|EXECUTE|GRANT|REVOKE|COPY)\b/i);
   assert.match(sql,/false AS production_accepted/);
   assert.match(sql,/catalogue_deployed/);
   assert.match(sql,/assigned_tenant_products/);
@@ -25,8 +25,8 @@ test("audit enumerates the full family without inventing separate Hive/Buzz land
   for(const blueprint of ["restaurant-uk","mealdeck-uk","dishbee-one-uk","dishbee-hive-uk","dishbee-plus-uk","dishbee-stay-connect-uk","dishbee-stay-uk","dishbee-court-uk","dishbee-court-connect-uk"]){
     assert.ok(sql.includes("'"+blueprint+"'"),"blueprint missing: "+blueprint);
   }
-  assert.doesNotMatch(sql,/\\('dishbee-hive','landlord'/);
-  assert.doesNotMatch(sql,/\\('dishbee-buzz','landlord'/);
+  assert.doesNotMatch(sql,/\('dishbee-hive','landlord'/);
+  assert.doesNotMatch(sql,/\('dishbee-buzz','landlord'/);
 });
 
 test("required family product definitions are committed as migrations, not inferred from catalog snapshots",async()=>{
@@ -38,6 +38,6 @@ test("required family product definitions are committed as migrations, not infer
   ];
   for(const path of paths){
     const content=await readFile(new URL(path,root),"utf8");
-    assert.match(content,/INSERT INTO public\\.(?:product_catalogue|service_catalogue)/i,"migration source missing: "+path);
+    assert.match(content,/INSERT INTO public\.(?:product_catalogue|service_catalogue)/i,"migration source missing: "+path);
   }
 });
