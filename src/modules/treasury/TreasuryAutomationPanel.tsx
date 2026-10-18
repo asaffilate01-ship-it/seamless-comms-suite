@@ -361,7 +361,7 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
         </div>
       </div>}
     </div>
-    {error&&<p role="alert" className="rounded-md border border-destructive/30 p-3 text-sm text-destructive">{error}</p>
+    {error&&<p role="alert" className="rounded-md border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}
     {enabled&&<div className="flex justify-end">
       <Button size="sm" variant="outline" onClick={()=>workspace.refetch()} disabled={working!==null}>
         <RefreshCcw className="mr-2 h-4 w-4"/>Refresh source status
