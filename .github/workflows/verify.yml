@@ -61,6 +61,8 @@ jobs:
         run: node --test verification/control-plane/property-matching.test.mjs
       - name: MCP setup and atomic AI budgets safety contracts
         run: node --test verification/control-plane/agent-factory-phase2.test.mjs
+      - name: Governed AI Workforce configuration and tenant isolation
+        run: node --test verification/control-plane/ai-workforce-phase3.test.mjs
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
