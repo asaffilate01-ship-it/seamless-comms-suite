@@ -176,7 +176,8 @@ def api_call(endpoint: str, secret: str, payload: dict) -> dict:
     )
     # This is a trusted platform endpoint configured by the operator, not a
     # tenant URL. Only the platform returns approved URLs in claimed jobs.
-    with request.urlopen(req, timeout=20) as response:
+    opener = request.build_opener(request.ProxyHandler({}), NoRedirect)
+    with opener.open(req, timeout=20) as response:
         return json.load(response)
 
 
