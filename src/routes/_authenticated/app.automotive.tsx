@@ -1,77 +1,51 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { AppShell } from "@/components/app/shell";
-import { automotiveSources } from "@/modules/automotive/source-catalogue";
-import { HISTORY_REQUIRED_AREAS, type VehicleHistoryRegion } from "@/modules/automotive/vehicle-history-intelligence";
+import {createFileRoute} from "@tanstack/react-router";
+import {useQuery} from "@tanstack/react-query";
+import {useServerFn} from "@tanstack/react-start";
+import {useEffect,useMemo,useState} from "react";
+import {AppShell,StatusBadge} from "@/components/app/shell";
+import {Card,CardContent} from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Badge} from "@/components/ui/badge";
+import {useTenant} from "@/hooks/useTenant";
+import {getTenantControlPlane} from "@/lib/control-plane.functions";
+import {createAutomotiveAppraisal,createBidModel,getAutomotiveWorkspace,queueAutomotiveIntelligence,recordAutomotiveValuation,saveAutomotiveVehicle,upsertAuctionLot} from "@/modules/automotive/functions";
+import {AlertTriangle,BrainCircuit,Gauge,Gavel,RefreshCw,ShieldCheck,Truck} from "lucide-react";
+import {toast} from "sonner";
+import { VehicleHistorySourcesPanel } from "@/modules/automotive/VehicleHistorySourcesPanel";
 
-export const Route = createFileRoute("/_authenticated/app/automotive")({
-  component: AutomotiveIntelligence,
-  head: () => ({
-    meta: [{ title: "Automotive Intelligence - Omniqora" }, { name: "robots", content: "noindex" }],
-  }),
-});
+export const Route=createFileRoute("/_authenticated/app/automotive")({component:Automotive,head:()=>({meta:[{title:"Automotive Intelligence — Omniqora"},{name:"robots",content:"noindex"}]})});
 
-function AutomotiveIntelligence() {
-  const [region, setRegion] = useState<VehicleHistoryRegion>("GB");
-  const location = region === "GB" ? "UK" : region === "JP" ? "Japan" : "Global";
-  const sources = automotiveSources.filter((source) =>
-    source.region === location || source.region === "Global",
-  );
-  return (
-    <AppShell title="Automotive Intelligence" subtitle="Zivvo, AutoHashi and SparesGrid - shared data-source register and evidence standards">
-      <div className="space-y-6">
-        <section className="rounded-xl border border-border bg-card p-5">
-          <h2 className="text-lg font-semibold">Vehicle Passport and data provenance</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This is a provider inventory and data-contract workspace, not a live vehicle-history report.
-            Integration candidates do not imply API activation, licensed access or a verified clean vehicle.
-            Provider onboarding, tenant entitlements, vehicle identity and retained evidence must pass
-            independent release checks before customer reports are enabled.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Vehicle data market">
-            {(["GB", "DE", "JP"] as VehicleHistoryRegion[]).map((value) => (
-              <button key={value} type="button" onClick={() => setRegion(value)}
-                aria-pressed={region === value}
-                className={"rounded-lg border px-4 py-2 text-sm " + (region === value
-                  ? "border-foreground bg-muted font-semibold" : "border-border")}>
-                {value === "GB" ? "United Kingdom" : value === "DE" ? "Germany" : "Japan"}
-              </button>
-            ))}
-          </div>
-          <h3 className="mt-4 font-medium">Minimum fields requiring verified evidence</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {HISTORY_REQUIRED_AREAS[region].map((value) => (
-              <span key={value} className="rounded-md bg-muted px-3 py-1.5 text-xs">
-                {value.replaceAll("_", " ")}
-              </span>
-            ))}
-          </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Unknown is the default. No data is equivalent to no check, not a clear history.
-            Any adverse finance, stolen, mileage, damage or safety marker requires manual review.
-            No precise geolocation is collected for vehicle appraisal evidence.
-          </p>
-        </section>
-        <section className="rounded-xl border border-border bg-card p-5">
-          <h2 className="text-lg font-semibold">Provider integration candidates</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Source classes and capabilities are design inputs only. All provider connections remain
-            disabled until contractual approval, staging tests, and tenant-scoped credentials are verified.
-          </p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {sources.map((source) => (
-              <article key={source.id} className="rounded-lg border border-border p-4">
-                <h3 className="font-semibold">{source.name}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{source.region} · {source.status.replaceAll("-", " ")}</p>
-                <p className="mt-2 text-sm">{source.notes}</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Data: {source.capabilities.slice(0, 6).map((v) => v.replaceAll("_", " ")).join(", ")}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
-    </AppShell>
-  );
+function Automotive(){
+ const t=useTenant(),tenantId=t.tenantId??"";const tenantFn=useServerFn(getTenantControlPlane),getFn=useServerFn(getAutomotiveWorkspace),
+ vehicleFn=useServerFn(saveAutomotiveVehicle),appraisalFn=useServerFn(createAutomotiveAppraisal),aiFn=useServerFn(queueAutomotiveIntelligence),
+ valuationFn=useServerFn(recordAutomotiveValuation),lotFn=useServerFn(upsertAuctionLot),bidFn=useServerFn(createBidModel);
+ const tenant=useQuery({queryKey:["auto-tenant",tenantId],queryFn:()=>tenantFn({data:{tenantId}}),enabled:!!tenantId,retry:false});
+ const automotiveProducts=useMemo(()=>{const allowed=new Set(["zivvo","autohashi","sparesgrid"]);const rows=(tenant.data?.products??[]).map((p:any)=>p.product_key).filter((p:string)=>allowed.has(p));return rows.length?rows:(tenant.data?.products??[]).map((p:any)=>p.product_key)},[tenant.data]);
+ const[productKey,setProductKey]=useState("");useEffect(()=>{if(!productKey&&automotiveProducts[0])setProductKey(automotiveProducts[0])},[productKey,automotiveProducts.join("|")]);
+ const q=useQuery({queryKey:["automotive",tenantId,productKey],queryFn:()=>getFn({data:{tenantId,productKey}}),enabled:!!tenantId&&!!productKey,retry:false});
+ const[make,setMake]=useState(""),[model,setModel]=useState(""),[vin,setVin]=useState(""),[vrm,setVrm]=useState(""),[origin,setOrigin]=useState<"uk"|"japan"|"other">("uk");
+ const[lotRef,setLotRef]=useState(""),[targetRetail,setTargetRetail]=useState("");
+ async function run(fn:()=>Promise<any>,msg:string){try{const r=await fn();toast.success(msg);await q.refetch();return r}catch(e){toast.error(e instanceof Error?e.message:String(e))}}
+ const vehicles=q.data?.vehicles??[],selected=vehicles[0];
+ return <AppShell title="Automotive Intelligence" subtitle="Shared vehicle identity, evidence, appraisals, AI findings, valuations, JDM auction economics, parts fitment and compliance for Zivvo, Autohashi and SparesGrid."
+ actions={<Button variant="outline" size="sm" onClick={()=>q.refetch()}><RefreshCw className="mr-2 h-4 w-4"/>Refresh</Button>}>
+  <VehicleHistorySourcesPanel />
+  <Card><CardContent className="p-5"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={productKey} onChange={e=>setProductKey(e.target.value)}>{automotiveProducts.map((p:string)=><option key={p}>{p}</option>)}</select></CardContent></Card>
+  <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6"><Metric icon={Truck} label="Vehicles" value={vehicles.length}/><Metric icon={BrainCircuit} label="AI findings" value={q.data?.findings?.length??0}/><Metric icon={Gauge} label="Valuations" value={q.data?.valuations?.length??0}/><Metric icon={Gavel} label="Bid instructions" value={q.data?.bidInstructions?.length??0}/><Metric icon={BrainCircuit} label="Auction decisions" value={q.data?.auctionDecisions?.length??0}/><Metric icon={ShieldCheck} label="Compliance checks" value={q.data?.compliance?.length??0}/></div>
+  <div className="mt-6 grid gap-6 xl:grid-cols-2">
+   <Card><CardContent className="p-5"><h2 className="font-semibold">Vehicle identity / passport source</h2><div className="mt-3 grid gap-2 sm:grid-cols-2"><Input placeholder="Make" value={make} onChange={e=>setMake(e.target.value)}/><Input placeholder="Model" value={model} onChange={e=>setModel(e.target.value)}/><Input placeholder="VIN / chassis" value={vin} onChange={e=>setVin(e.target.value)}/><Input placeholder="VRM (UK)" value={vrm} onChange={e=>setVrm(e.target.value)}/><select className="h-10 rounded-md border bg-background px-3 text-sm" value={origin} onChange={e=>setOrigin(e.target.value as any)}>{["uk","japan","other"].map(x=><option key={x}>{x}</option>)}</select></div><Button className="mt-3" disabled={!make||!model||(!vin&&!vrm)} onClick={()=>run(()=>vehicleFn({data:{tenantId,productKey,vehicleId:null,origin,vrm:vrm||null,vin:vin||null,chassisNumber:null,modelCode:null,make,model,derivative:null,firstRegistrationDate:null,specification:{},provenance:{source:"operator"}}}),"Vehicle saved")}>Add vehicle</Button>
+    <div className="mt-4 space-y-2">{vehicles.slice(0,8).map((v:any)=><div key={v.id} className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm"><div><b>{v.make} {v.model}</b><p className="text-xs text-muted-foreground">{v.vin||v.vrm||v.chassis_number} · {v.origin}</p></div><StatusBadge status={v.status}/></div>)}</div></CardContent></Card>
+   <Card><CardContent className="p-5"><h2 className="font-semibold">Evidence & AI appraisal</h2><p className="mt-1 text-xs text-muted-foreground">Fresh-capture workflow explicitly keeps geolocation off. AI findings are proposed and reviewable, not auto-approved.</p><Button className="mt-4" disabled={!selected} onClick={()=>run(()=>appraisalFn({data:{tenantId,productKey,vehicleId:selected.id,requestedItems:["front","rear","left","right","interior","odometer","documents"],expiresAt:null,allowLibraryUpload:false}}),"Fresh appraisal requested")}>Request appraisal</Button><Button className="ml-2 mt-4" variant="outline" disabled={!selected} onClick={()=>run(()=>aiFn({data:{tenantId,productKey,vehicleId:selected.id,appraisalId:null,goal:"Assess condition, provenance gaps and valuation factors from reviewed evidence.",evidenceIds:[]}}),"Automotive AI queued")}>Queue AI assessment</Button><div className="mt-4 flex flex-wrap gap-2">{(q.data?.appraisals??[]).slice(0,10).map((a:any)=><Badge key={a.id} variant="outline">{a.status}</Badge>)}</div></CardContent></Card>
+   <Card><CardContent className="p-5"><h2 className="font-semibold">Valuation</h2><Input className="mt-3" type="number" placeholder="Retail value minor units (e.g. 1250000)" value={targetRetail} onChange={e=>setTargetRetail(e.target.value)}/><Button className="mt-3" disabled={!selected||!targetRetail} onClick={()=>run(()=>valuationFn({data:{tenantId,productKey,vehicleId:selected.id,valuationType:"retail",currency:"GBP",amountMinor:Number(targetRetail),lowMinor:null,highMinor:null,source:"operator_review",comparableRefs:[],assumptions:{},confidence:null}}),"Valuation recorded")}>Record reviewed valuation</Button><div className="mt-4 space-y-2">{(q.data?.valuations??[]).slice(0,8).map((v:any)=><div key={v.id} className="flex items-center justify-between rounded-lg border p-3 text-sm"><span>{v.valuation_type}</span><b>{v.currency} {(Number(v.amount_minor)/100).toLocaleString()}</b></div>)}</div></CardContent></Card>
+   <Card><CardContent className="p-5"><h2 className="font-semibold">JDM auction / max bid</h2><Input className="mt-3" placeholder="External lot ID" value={lotRef} onChange={e=>setLotRef(e.target.value)}/><Button className="mt-3" disabled={!lotRef} onClick={async()=>{const lot=await run(()=>lotFn({data:{tenantId,productKey,vehicleId:selected?.id??null,providerKey:null,externalLotId:lotRef,auctionHouse:null,auctionAt:null,grade:null,odometerKm:null,startingPriceMinor:null,currentPriceMinor:null,currency:"GBP",auctionSheet:{},images:[]}}),"Auction lot saved");if(lot&&targetRetail)await run(()=>bidFn({data:{tenantId,productKey,auctionLotId:lot.id,destinationCountry:"GB",currency:"GBP",auctionFeesMinor:0,inlandTransportMinor:0,freightMinor:0,insuranceMinor:0,dutyMinor:0,taxMinor:0,registrationMinor:0,otherMinor:0,targetMarginMinor:0,targetRetailMinor:Number(targetRetail),fxRate:null,fxSource:null,fxAsOf:null,assumptions:{incompleteCosts:true}}}),"Draft max-bid model created")}}>Create lot / draft bid model</Button><p className="mt-2 text-xs text-muted-foreground">A zero-cost placeholder produces a draft only; shipping, duty, FX, tax, registration and margin must be completed before approval.</p></CardContent></Card>
+   <Card><CardContent className="p-5"><h2 className="font-semibold">Auction execution v2 audit</h2><p className="mt-1 text-xs text-muted-foreground">Mixed JPY/GBP cost reviews, customer authority, admin approval and signed Japan-agent results. Live submission is separately gated.</p>
+    <div className="mt-4 space-y-2">{(q.data?.bidInstructions??[]).slice(0,10).map((b:any)=><div key={b.id} className="rounded-lg border p-3 text-sm"><div className="flex items-center justify-between gap-3"><div><b>{b.external_reference||b.id.slice(0,8)}</b><p className="text-xs text-muted-foreground">Max ¥{Number(b.max_bid_minor||0).toLocaleString()} · {b.customer_authorised_at?"customer ✓":"customer pending"} · {b.authorised_at?"admin ✓":"admin pending"}</p></div><StatusBadge status={b.status}/></div>{b.limit_violation&&<p className="mt-2 flex items-center gap-1 text-xs font-semibold text-destructive"><AlertTriangle className="h-3 w-3"/>Provider maximum-bid safety violation</p>}{b.last_error&&<p className="mt-1 text-xs text-destructive">{b.last_error}</p>}</div>)}{!(q.data?.bidInstructions??[]).length&&<p className="text-sm text-muted-foreground">No v2 bid instructions yet.</p>}</div>
+   </CardContent></Card>
+   <Card><CardContent className="p-5"><h2 className="font-semibold">Auction intelligence v3</h2><p className="mt-1 text-xs text-muted-foreground">Structured sheet evidence, relisting/mileage checks, UK asking vs completed-sale comparables and deterministic BUY / REVIEW / DO NOT BID decisions. AI never self-approves.</p>
+    <div className="mt-4 space-y-2">{(q.data?.auctionDecisions??[]).filter((d:any)=>d.status!=="superseded").slice(0,10).map((d:any)=><div key={d.id} className="rounded-lg border p-3 text-sm"><div className="flex items-center justify-between gap-3"><div><b>{String(d.recommendation).replaceAll("_"," ").toUpperCase()}</b><p className="text-xs text-muted-foreground">Score {d.score}/100 · {Math.round(Number(d.confidence||0)*100)}% confidence · {d.status}</p></div><Badge variant={d.recommendation==="do_not_bid"?"destructive":d.recommendation==="buy"?"default":"secondary"}>{d.recommendation}</Badge></div>{(d.blockers?.length??0)>0&&<p className="mt-2 flex items-center gap-1 text-xs font-semibold text-destructive"><AlertTriangle className="h-3 w-3"/>{d.blockers.join(", ")}</p>}<p className="mt-1 text-xs text-muted-foreground">{(d.reasons??[]).slice(0,2).join(" ")}</p></div>)}{!(q.data?.auctionDecisions??[]).length&&<p className="text-sm text-muted-foreground">No auction-intelligence decisions yet.</p>}</div>
+   </CardContent></Card>
+  </div>
+ </AppShell>
 }
+function Metric({icon:Icon,label,value}:{icon:typeof Truck;label:string;value:number}){return <Card><CardContent className="p-5"><div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground"><span>{label}</span><Icon className="h-4 w-4"/></div><div className="mt-2 font-display text-2xl font-semibold">{value}</div></CardContent></Card>}
