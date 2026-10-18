@@ -53,14 +53,16 @@ export const getRufloPilotStatus=createServerFn({method:"POST"}).middleware([req
 
 export const requestRufloPilot=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((i:unknown)=>scope.extend({
- region:z.string().regex(/^[A-Z]{2}$/),
  reason:z.string().trim().min(16).max(500),
 }).parse(i))
 .handler(async({context,data})=>{
  const access=await requireService(context,data.tenantId,"omniqora.intelligence-runtime");
  requireAdminRole(access.role);
- const result=await(context.supabase as any).rpc("request_ruflo_pilot",{
-  _tenant:data.tenantId,_product:data.productKey,_region:data.region,_reason:data.reason,
+ const db=context.supabase as any;
+ const tenant=await db.from("tenants").select("country_code").eq("id",data.tenantId).maybeSingle();
+ if(tenant.error||!tenant.data?.country_code)throw new Error("Tenant country is not verified");
+ const result=await db.rpc("request_ruflo_pilot",{
+  _tenant:data.tenantId,_product:data.productKey,_region:tenant.data.country_code,_reason:data.reason,
  });
  if(result.error)throw new Error(result.error.message);
  return{requestId:result.data.id as string,status:result.data.status as string};
