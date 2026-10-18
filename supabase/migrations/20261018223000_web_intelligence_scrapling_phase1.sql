@@ -225,7 +225,7 @@ BEGIN
        (j.status='running' AND j.lease_expires_at<now() AND j.attempts<3))
  AND public.has_tenant_entitlement(j.tenant_id,'omniqora.web-intelligence')
  ORDER BY j.created_at
- FOR UPDATE OF j SKIP LOCKED LIMIT 1;
+ LIMIT 1 FOR UPDATE OF j SKIP LOCKED;
  IF NOT FOUND THEN RETURN NULL; END IF;
  SELECT * INTO STRICT src FROM public.web_intel_sources WHERE id=rec.source_id;
  lease := gen_random_uuid();
