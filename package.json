@@ -16,7 +16,6 @@
     "test:procurement": "node verification/procurement/readiness.test.mjs && node verification/procurement/database.test.mjs",
     "test:services": "python3 verification/run-services.py",
     "test:bridges": "node --test verification/product-bridges.test.mjs",
-    "test:treasury": "node --test verification/control-plane/treasury-analyst.test.mjs verification/control-plane/treasury-risk.test.mjs verification/control-plane/treasury-governance.test.mjs",
     "test:mobile": "node --test supabase/functions/_shared/veyumo/protocol.test.mjs scripts/veyumo-database.test.mjs scripts/veyumo-gigs.test.mjs",
     "test:control-plane": "node verification/control-plane/portfolio-seed.test.mjs && node verification/control-plane/nafsi-factory.test.mjs && node verification/control-plane/travenexa-factory.test.mjs && node verification/control-plane/dishbee-factory.test.mjs && node --test verification/control-plane/dishbee-import-handover.test.mjs && node verification/control-plane/platform-kernel.test.mjs && node verification/control-plane/crm-customer360.test.mjs && node verification/control-plane/order-intake.test.mjs && node verification/control-plane/dispatch-tracking.test.mjs && node verification/control-plane/commerce-marketplace.test.mjs && node verification/control-plane/suite-core.test.mjs && node verification/control-plane/growth-engines.test.mjs && node verification/control-plane/platform-utilities.test.mjs && node verification/control-plane/vertical-packages.test.mjs && node verification/control-plane/migration-factory.test.mjs && node verification/control-plane/fleetora-factory.test.mjs && node verification/control-plane/fleet-routing.test.mjs && node verification/control-plane/domain-authority.test.mjs && node verification/control-plane/forty-day-reconciliation.test.mjs && node verification/control-plane/shared-engagement-v4.test.mjs && node verification/control-plane/education-factory.test.mjs && node verification/control-plane/long-range-engines.test.mjs && node verification/control-plane/network-expansion.test.mjs && node verification/control-plane/network-expansion-pricing.test.mjs && node verification/control-plane/network-expansion-offer-r3.test.mjs && node --test verification/control-plane/network-expansion-public.node.mjs && node verification/control-plane/haccora-factory.test.mjs && node verification/control-plane/haccora-provisioning-adapter.test.mjs && node verification/control-plane/haccora-bridge.test.mjs && node verification/control-plane/creative-studio.test.mjs && node verification/control-plane/lessonahead-factory.test.mjs && node verification/control-plane/haccora-dishbee-rollout.test.mjs && node verification/control-plane/haccora-readiness.test.mjs && node --test verification/control-plane/haccora-live-smoke.test.mjs && node verification/control-plane/business360-factory.test.mjs && node verification/control-plane/dishbee-action-execution.test.mjs && node --test verification/control-plane/dishbee-action-gateway.node.mjs && node --test verification/control-plane/agent-factory.test.mjs",
     "test:automotive-auctions": "node verification/control-plane/automotive-auctions.test.mjs",
@@ -25,7 +24,9 @@
     "build:travel-sites": "vite build --config apps/travenexa-market-sites/vite.config.ts",
     "typecheck:travel-sites": "tsc --noEmit -p apps/travenexa-market-sites/tsconfig.json",
     "test:travel-sites": "node --test apps/travenexa-market-sites/tests/*.test.mjs",
-    "test:travel-core": "node --check services/travenexa-core/scripts/hbx-sandbox-smoke.mjs && node --test services/travenexa-core/tests/*.test.mjs"
+    "test:travel-core": "node --check services/travenexa-core/scripts/hbx-sandbox-smoke.mjs && node --test services/travenexa-core/tests/*.test.mjs",
+    "test:automotive-history": "bun verification/control-plane/automotive-vehicle-history.test.ts",
+    "test:treasury": "node --test verification/control-plane/treasury-analyst.test.mjs verification/control-plane/treasury-risk.test.mjs verification/control-plane/treasury-governance.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -86,7 +87,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "2.25.3",
+    "@lovable.dev/vite-tanstack-config": "2.26.5",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
