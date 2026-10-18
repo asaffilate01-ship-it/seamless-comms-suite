@@ -8,6 +8,7 @@ import {Textarea} from "@/components/ui/textarea";
 import {AlertCircle, ClipboardCheck, Download, FileCheck2, LockKeyhole, ShieldCheck} from "lucide-react";
 import {toast} from "sonner";
 import {assessLiquidityRisk, syntheticLiquidityPolicy} from "./liquidity-risk";
+import {makeTreasuryAnalystPack, treasuryPackMarkdown} from "./analyst-pack";
 import {formatMinor, type TreasuryInputs, type TreasuryReport} from "./engine";
 import {getTreasuryReviewCases, reviewTreasuryCase, submitTreasuryReview} from "./review.functions";
 
@@ -18,6 +19,11 @@ async function hashContents(content:string):Promise<string>{
 }
 function exportJson(name:string,obj:unknown){
   const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}));
+  const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+function exportMarkdown(name:string,text:string){
+  const url=URL.createObjectURL(new Blob([text],{type:"text/markdown;charset=utf-8"}));
   const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
@@ -39,6 +45,10 @@ export function TreasuryRiskAndReviewPanel({report,inputs,tenantId,entitled,role
     try{return {result:assessLiquidityRisk(report,policies),error:""};}
     catch(e){return {result:null,error:e instanceof Error?e.message:"Policy validation failed."};}
   },[report,policies]);
+  const analystPack=useMemo(()=>{
+    if(!report||riskError)return null;
+    return makeTreasuryAnalystPack(report,risk);
+  },[report,risk,riskError]);
   const getFn=useServerFn(getTreasuryReviewCases);
   const submitFn=useServerFn(submitTreasuryReview);
   const reviewFn=useServerFn(reviewTreasuryCase);
@@ -180,7 +190,42 @@ export function TreasuryRiskAndReviewPanel({report,inputs,tenantId,entitled,role
 
     <Card><CardContent className="space-y-4 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="text-lg font-semibold">6. Independent treasury review register</h2>
+        <div><h2 className="text-lg font-semibold">6. Automatically prepared treasury analyst working paper</h2>
+          <p className="mt-1 text-sm text-muted-foreground">One-click cash, funding risk and controls report assembled from verified calculation outputs and source-linked findings.</p></div>
+        <Badge variant="outline">Deterministic · no AI inference</Badge>
+      </div>
+      {analystPack?<>
+        <div className="rounded-lg border p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={analystPack.decision==="hold_source_data"?"destructive":"outline"}>{analystPack.decision.replaceAll("_"," ")}</Badge>
+            <span className="text-xs text-muted-foreground">{analystPack.totalFindings} exception(s) · {analystPack.currencyPositions.length} currency positions · {analystPack.nextActions.length} analyst follow-ups</span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">{analystPack.disclosure}</p>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-semibold">Prioritised next actions</p>
+          {analystPack.nextActions.slice(0,8).map(x=><div key={x.id} className="rounded-md border p-3">
+            <div className="flex flex-wrap gap-2"><Badge variant="outline">{x.priority}</Badge><Badge variant="secondary">{x.ownerRole.replaceAll("_"," ")}</Badge></div>
+            <p className="mt-1 text-sm">{x.instruction}</p>
+            <p className="mt-1 break-all text-xs text-muted-foreground">{x.evidence.slice(0,3).join("; ")}</p>
+          </div>)}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={()=>exportMarkdown("finvessa-daily-analyst-"+analystPack.reportDate+".md",treasuryPackMarkdown(analystPack))}>
+            <Download className="mr-2 h-4 w-4"/>Download analyst working paper
+          </Button>
+          <Button variant="outline" onClick={()=>exportJson("finvessa-daily-analyst-"+analystPack.reportDate+".json",analystPack)}>
+            <Download className="mr-2 h-4 w-4"/>Download evidence JSON
+          </Button>
+        </div>
+      </>:<p className="text-sm text-muted-foreground">
+        A current treasury analysis and valid scenario assumptions are required for this report. The generator never invents absent market or banking information.
+      </p>}
+    </CardContent></Card>
+
+    <Card><CardContent className="space-y-4 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><h2 className="text-lg font-semibold">7. Independent treasury review register</h2>
           <p className="mt-1 text-sm text-muted-foreground">Create a tenant-scoped review request with cryptographic fingerprints and summary counts only.</p></div>
         <Badge variant="outline">No bank records uploaded</Badge>
       </div>

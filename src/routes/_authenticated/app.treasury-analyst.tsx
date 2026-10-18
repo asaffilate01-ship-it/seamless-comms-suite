@@ -15,6 +15,7 @@ import {
   type TreasuryInputs, type TreasuryReport, type TreasuryIssue
 } from "@/modules/treasury/engine";
 import {TreasuryRiskAndReviewPanel} from "@/modules/treasury/TreasuryRiskAndReviewPanel";
+import {TreasurySourceImportPanel} from "@/modules/treasury/TreasurySourceImportPanel";
 import {AlertTriangle, CheckCircle2, ClipboardCheck, Download, FileSpreadsheet, Landmark, LockKeyhole,
   RotateCcw, ShieldCheck, TrendingUp, Upload, Wallet} from "lucide-react";
 
@@ -194,6 +195,8 @@ function TreasuryAnalystWorkbench() {
         <Indicator icon={TrendingUp} label="Forecast periods" value={report ? (report.weeks.length ? "13 weeks" : "Not evidenced") : "—"}/>
       </div>
 
+      <TreasurySourceImportPanel reportDate={inputs.reportDate} enabled={enabled}
+        onApplySource={(kind,canonicalCSV)=>changeData(kind==="bank_transactions"?"transactionsCSV":"ledgerCSV",canonicalCSV)}/>
       <Card><CardContent className="p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h2 className="text-lg font-semibold">1. Prepare treasury sources</h2>
