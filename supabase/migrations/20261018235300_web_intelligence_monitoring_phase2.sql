@@ -71,13 +71,15 @@ GRANT SELECT ON public.web_intel_monitors,public.web_intel_changes TO authentica
 CREATE POLICY "web intel scoped monitor read" ON public.web_intel_monitors
  FOR SELECT TO authenticated
  USING(public.is_platform_admin((select auth.uid()))
-       OR public.is_tenant_member(tenant_id,(select auth.uid())));
+       OR (public.is_tenant_member(tenant_id,(select auth.uid()))
+           AND public.has_tenant_entitlement(tenant_id,'omniqora.web-intelligence')));
 CREATE POLICY "web intel scoped change feed" ON public.web_intel_changes
  FOR SELECT TO authenticated
  USING(
   detected_at > now()-interval '120 days'
   AND (public.is_platform_admin((select auth.uid()))
-    OR public.is_tenant_member(tenant_id,(select auth.uid())))
+    OR (public.is_tenant_member(tenant_id,(select auth.uid()))
+        AND public.has_tenant_entitlement(tenant_id,'omniqora.web-intelligence')))
  );
 
 -- Once a document expires, it must no longer be exposed via RLS even if
@@ -88,7 +90,8 @@ CREATE POLICY "web intel tenant documents read" ON public.web_intel_documents
  USING(
   retention_until > now()
   AND (public.is_platform_admin((select auth.uid()))
-    OR public.is_tenant_member(tenant_id,(select auth.uid())))
+    OR (public.is_tenant_member(tenant_id,(select auth.uid()))
+        AND public.has_tenant_entitlement(tenant_id,'omniqora.web-intelligence')))
  );
 
 -- All monitor mutations happen through this one validated RPC.
