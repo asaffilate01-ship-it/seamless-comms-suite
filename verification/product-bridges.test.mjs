@@ -206,3 +206,25 @@ test('workspace Factory gate blocks suspended access before RPC and revoked enti
  await assert.rejects(request());assert.equal(harness.workspaceCalls,1);
  state.tenant_services.status='active';harness.after=null;assert.equal(JSON.parse((await request()).payload).private,'result');
 }));
+
+test('STEMCoach education events are metadata-only and bound to an authorised collection', () => {
+ const b={...base,id:'stemcoach-bridge',product:'stemcoach',externalTenant:'stemcoach-institution',allowedScopes:['stemcoach-institution'],contracts:['event'],profile:'product'};
+ const metadata={tenantId:'stemcoach-institution',scopeId:'stemcoach-institution',eventType:'learning.summary.ready',recordId:'7f15abed-48aa-4c03-a60b-bef345b8725e',revision:1};
+ const accepted=eventInput(b,{title:'STEMCoach learning signal',input:JSON.stringify(metadata)});
+ assert.equal(accepted.contract,'event');
+ assert.deepEqual(accepted.payload,{title:'STEMCoach learning signal'});
+ assert.equal(accepted.scope.recordId,metadata.recordId);
+ for(const extra of [
+  {eventType:'learner.raw_answers'},
+  {eventType:'learner.email'},
+  {studentId:'student-1'},
+  {grades:[100]},
+  {tenantId:'some-other-centre'},
+  {scopeId:'other-course'},
+  {recordId:undefined},
+ ]) {
+  const data={...metadata,...extra};
+  assert.throws(()=>eventInput(b,{title:'STEMCoach learning signal',input:JSON.stringify(data)}));
+ }
+ assert.throws(()=>eventInput(b,{title:'Student Jane Doe scored 82%',input:JSON.stringify(metadata)}));
+});

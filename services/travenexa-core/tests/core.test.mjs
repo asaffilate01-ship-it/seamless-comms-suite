@@ -13,6 +13,15 @@ const TOKENS={
   'travenexa-flightlounge':'cccccccccccccccccccccccccccccccc',
   'travenexa-route50':'dddddddddddddddddddddddddddddddd',
 };
+
+const approvedReader=async ({tenantId,supplierKey,productType})=>({
+  tenant_key:tenantId,supplier_key:supplierKey,product_type:productType,
+  status:'approved',active:true,contract_approved:true,credentials_verified:true,
+  travel_compliance_approved:true,payment_approved:true,
+  servicing_approved:true,multi_brand_permission:true,
+  ticketing_approved:false,payment_mode:'supplier_checkout',
+  merchant_of_record:'supplier',valid_until:null,
+});
 const future=new Date(Date.now()+3*86400000).toISOString().slice(0,10);
 const payload={
   sourceMarket:'US',destinationCountry:'GB',productType:'airport',
@@ -78,16 +87,16 @@ test('currency minor units, markups, supplier-owned prices and checkout gates',(
   assert(checkoutReadiness({paymentMode:'platform_split'}).blockers.includes('adyen_platform_onboarding_required'));
 });
 test('fail closed unless legal, contract, credential and tenant gates all pass',async()=>{
-  const engine=createTravelEngine({tenantTokens:TOKENS,adapters:[goodAdapter({legalApproved:false})]});
+  const engine=createTravelEngine({tenantTokens:TOKENS,approvalReader:approvedReader,adapters:[goodAdapter({legalApproved:false})]});
   assert.equal((await engine.search('travenexa.uk-inbound.us',payload)).reason,'supplier_not_connected');
   assert.equal((await createTravelEngine({tenantTokens:TOKENS}).search('travenexa.uk-inbound.us',payload))
     .reason,'supplier_not_connected');
-  assert.equal((await createTravelEngine({tenantTokens:TOKENS,adapters:[
+  assert.equal((await createTravelEngine({tenantTokens:TOKENS,approvalReader:approvedReader,adapters:[
     goodAdapter({tenantIds:['travenexa.uk-inbound.kr']})]}).search('travenexa.uk-inbound.us',payload))
     .reason,'supplier_not_connected');
 });
 test('verified supplier test adapter produces a valid offer with no invented FX or payment',async()=>{
-  const engine=createTravelEngine({tenantTokens:TOKENS,adapters:[goodAdapter()]});
+  const engine=createTravelEngine({tenantTokens:TOKENS,approvalReader:approvedReader,adapters:[goodAdapter()]});
   const result=await engine.search('travenexa.uk-inbound.us',payload);
   assert.equal(result.httpStatus,200);
   assert.equal(result.status,'live');
@@ -101,7 +110,7 @@ test('verified supplier test adapter produces a valid offer with no invented FX 
   assert.equal(offer.priceProvenance,'contracted_live_supplier');
   assert.equal(engine.bookingPreflight('travenexa.uk-inbound.kr',offer.id).httpStatus,404);
   assert.equal(engine.bookingPreflight('travenexa.uk-inbound.us',offer.id).reason,'booking_not_enabled');
-  assert.equal(engine.readiness('travenexa.uk-inbound.us').bookingsEnabled,false);
+  assert.equal((await engine.readiness('travenexa.uk-inbound.us')).bookingsEnabled,false);
 });
 test('unverified, expired and unsafe affiliate offers never reach the customer',async()=>{
   const adapter=goodAdapter({search:async()=>[
@@ -109,13 +118,13 @@ test('unverified, expired and unsafe affiliate offers never reach the customer',
     {...supplierOffer(),expiresAt:new Date(Date.now()-60000).toISOString()},
     {...supplierOffer(),affiliateRedirect:'https://evil.test/pay'},
   ]});
-  const result=await createTravelEngine({tenantTokens:TOKENS,adapters:[adapter]})
+  const result=await createTravelEngine({tenantTokens:TOKENS,approvalReader:approvedReader,adapters:[adapter]})
     .search('travenexa.uk-inbound.us',payload);
   assert.equal(result.status,'live');
   assert.deepEqual(result.offers,[]);
 });
 test('HTTP API authenticates tenant tokens and agrees with the existing UK-inbound contract',async()=>{
-  const engine=createTravelEngine({tenantTokens:TOKENS,adapters:[goodAdapter()]});
+  const engine=createTravelEngine({tenantTokens:TOKENS,approvalReader:approvedReader,adapters:[goodAdapter()]});
   const server=createServer({engine});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const base='http://127.0.0.1:'+server.address().port;
@@ -155,7 +164,7 @@ test('production engine rejects weak/duplicated tenant bearer tokens',()=>{
 test('Omniqora tool surface stays read-only and respects tenant/currency boundaries',async()=>{
   assert.deepEqual(TRAVEL_AI_TOOLS.map(x=>x.name),['travel.search','travel.compare']);
   assert(TRAVEL_AI_TOOLS.every(x=>x.effect==='read_only'));
-  const engine=createTravelEngine({tenantTokens:TOKENS,adapters:[goodAdapter()]});
+  const engine=createTravelEngine({tenantTokens:TOKENS,approvalReader:approvedReader,adapters:[goodAdapter()]});
   const blocked=await runTravelAiTool(engine,'travenexa.uk-inbound.us',
     {tool:'travel.booking.submit',input:payload});
   assert.equal(blocked.httpStatus,403);
@@ -168,4 +177,33 @@ test('Omniqora tool surface stays read-only and respects tenant/currency boundar
   const denied=await runTravelAiTool(engine,'travenexa.uk-inbound.kr',
     {tool:'travel.search',input:payload});
   assert.equal(denied.reason,'invalid_search');
+});
+
+test('a configured adapter without a persisted approval cannot show prices or claim connected',async()=>{
+  const engine=createTravelEngine({tenantTokens:TOKENS,adapters:[goodAdapter()]});
+  assert.equal((await engine.search('travenexa.uk-inbound.us',payload)).reason,'supplier_not_connected');
+  assert.deepEqual((await engine.readiness('travenexa.uk-inbound.us')).eligibleSuppliers,[]);
+});
+test('approved supplier-hosted checkout provides only its allowlisted URL, not an Adyen charge',async()=>{
+  const offer={...supplierOffer(),bookingMode:'supplier_checkout',
+    supplierCheckoutUrl:'https://partner.example/checkout/supplier-payment',affiliateRedirect:undefined};
+  const adapter=goodAdapter({affiliateApproved:false,checkoutApproved:true,
+    servicingApproved:true,search:async()=>[offer]});
+  const engine=createTravelEngine({tenantTokens:TOKENS,approvalReader:approvedReader,adapters:[adapter]});
+  const response=await engine.search('travenexa.uk-inbound.us',payload);
+  assert.equal(response.offers.length,1);
+  assert.equal(response.offers[0].supplierCheckoutUrl,offer.supplierCheckoutUrl);
+  assert.equal(response.offers[0].supplierResponsible,true);
+  assert.equal(response.offers[0].affiliateRedirect,undefined);
+  assert.equal(response.offers[0].amount,150);
+  assert.equal((await engine.readiness('travenexa.uk-inbound.us')).bookingsEnabled,false);
+});
+test('supplier-managed checkout rejects hidden platform markups and unsafe destinations',async()=>{
+  const offer={...supplierOffer(),bookingMode:'supplier_checkout',
+    supplierCheckoutUrl:'https://phishing.test/capture',affiliateRedirect:undefined};
+  const adapter=goodAdapter({checkoutApproved:true,servicingApproved:true,search:async()=>[offer]});
+  const engine=createTravelEngine({tenantTokens:TOKENS,approvalReader:approvedReader,adapters:[adapter]});
+  assert.deepEqual((await engine.search('travenexa.uk-inbound.us',payload)).offers,[]);
+  assert.equal(calculateSellPrice({supplierMinor:20000,currencyCode:'GBP',markupMinor:1000,
+    allowMarkup:true,bookingMode:'supplier_checkout'}),null);
 });

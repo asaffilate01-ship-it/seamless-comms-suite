@@ -34,9 +34,12 @@ test('no invented provider connection and no affiliate redirect to unapproved ho
   const offer={id:'offer-1',verified:true,live:true,title:'LHR to Oxford',supplierName:'Example licensed operator',
     amount:50,currency:'GBP',expiresAt:new Date(Date.now()+600000).toISOString(),
     bookingMode:'affiliate',affiliateRedirect:'https://phishing.example/book'};
-  const item=gateway.normaliseOffer(offer);
+  assert.equal(gateway.normaliseOffer(offer),null,
+    'an affiliate offer with an unapproved redirect cannot be displayed');
+  const item=gateway.normaliseOffer({...offer,
+    affiliateRedirect:'https://partner.example/booking'});
   assert(item);
-  assert.equal(item.affiliateRedirect,undefined);
+  assert.equal(item.affiliateRedirect,'https://partner.example/booking');
   assert.equal(gateway.normaliseOffer({...offer,verified:false}),null);
   assert.equal(gateway.normaliseOffer({...offer,live:false}),null);
   assert.equal(gateway.normaliseOffer({...offer,expiresAt:new Date(Date.now()-1000).toISOString()}),null);
@@ -60,4 +63,20 @@ test('market storefronts show no fake availability and payment API remains block
   assert.match(gatewaySource,/supplier_gateway_not_configured/);
   assert.match(gatewaySource,/bookingsEnabled:false/);
   assert.doesNotMatch(gatewaySource,/\b(process\.env\.[A-Z_]+\s*\|\|\s*['"]https:\/\/)/);
+});
+
+test('supplier-hosted checkout survives the tenant gateway only on an approved host',()=>{
+  const offer={id:'hbx-supplier-verified',title:'Hotel room',supplierName:'Approved supplier',
+    currency:'GBP',amount:200,expiresAt:new Date(Date.now()+300000).toISOString(),
+    verified:true,live:true,bookingMode:'supplier_checkout',
+    supplierCheckoutUrl:'https://partner.example/pay?booking=abc'};
+  const normal=gateway.normaliseOffer(offer);
+  assert.equal(normal.bookingMode,'supplier_checkout');
+  assert.equal(normal.supplierCheckoutUrl,offer.supplierCheckoutUrl);
+  assert.equal(normal.affiliateRedirect,undefined);
+  assert.equal(gateway.normaliseOffer({...offer,
+    supplierCheckoutUrl:'https://partner.example.evil.test/pay'}),null);
+  assert.equal(gateway.normaliseOffer({...offer,
+    supplierCheckoutUrl:'https://partner.example:8443/pay'}),null);
+  assert.equal(gateway.normaliseOffer({...offer,amount:'200'}),null);
 });

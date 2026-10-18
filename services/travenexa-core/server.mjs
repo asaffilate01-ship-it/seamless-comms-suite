@@ -66,7 +66,7 @@ export function createServer({engine=defaultEngine()}={}) {
     if (path==='/v1/omniqora/tools' && req.method==='GET')
       return reply(res,200,{status:'read_only',tenantId,tools:TRAVEL_AI_TOOLS});
     if (path==='/v1/travel/readiness' && req.method==='GET') {
-      const answer=engine.readiness(tenantId);
+      const answer=await engine.readiness(tenantId);
       return reply(res,answer.httpStatus,answer);
     }
     if (req.method!=='POST') return reply(res,405,{status:'unavailable',reason:'method_not_allowed'});

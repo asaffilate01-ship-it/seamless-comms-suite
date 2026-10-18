@@ -54,6 +54,7 @@ import { Route as AuthenticatedAppIdentityRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
 import { Route as AuthenticatedAppIntegrationsRouteImport } from './routes/_authenticated/app.integrations'
 import { Route as AuthenticatedAppIntelligenceRouteImport } from './routes/_authenticated/app.intelligence'
+import { Route as AuthenticatedAppMcpReviewRouteImport } from './routes/_authenticated/app.mcp-review'
 import { Route as AuthenticatedAppMigrationFactoryRouteImport } from './routes/_authenticated/app.migration-factory'
 import { Route as AuthenticatedAppOrderIntakeRouteImport } from './routes/_authenticated/app.order-intake'
 import { Route as AuthenticatedAppPartnersRouteImport } from './routes/_authenticated/app.partners'
@@ -86,12 +87,19 @@ import { Route as ApiPublicFeedbackRouteImport } from './routes/api.public.feedb
 import { Route as ApiPublicNetworkExpansionRouteImport } from './routes/api.public.network-expansion'
 import { Route as AuthenticatedAppCasesIndexRouteImport } from './routes/_authenticated/app.cases.index'
 import { Route as AuthenticatedAppCasesCaseIdRouteImport } from './routes/_authenticated/app.cases.$caseId'
+import { Route as ApiControlPlaneNafsiConnectRouteImport } from './routes/api.control-plane.nafsi.connect'
+import { Route as ApiControlPlaneNafsiConnectEventsRouteImport } from './routes/api.control-plane.nafsi.connect-events'
+import { Route as ApiControlPlaneNafsiEventsRouteImport } from './routes/api.control-plane.nafsi.events'
+import { Route as ApiControlPlaneNafsiIntelligenceRouteImport } from './routes/api.control-plane.nafsi.intelligence'
+import { Route as ApiControlPlaneNafsiIntelligenceShadowRouteImport } from './routes/api.control-plane.nafsi.intelligence-shadow'
+import { Route as ApiControlPlaneNafsiParityRouteImport } from './routes/api.control-plane.nafsi.parity'
 import { Route as ApiControlPlaneWorkersProvisioningRouteImport } from './routes/api.control-plane.workers.provisioning'
 import { Route as ApiIntegrationsConnectEventsRouteImport } from './routes/api.integrations.connect.events'
 import { Route as ApiIntegrationsHaccoraConnectionIdRouteImport } from './routes/api.integrations.haccora.$connectionId'
 import { Route as ApiIntegrationsRunsRunIdRouteImport } from './routes/api.integrations.runs.$runId'
 import { Route as ApiPlatformWebhooksDrainRouteImport } from './routes/api.platform.webhooks.drain'
 import { Route as ApiPublicTrackTokenRouteImport } from './routes/api.public.track.$token'
+import { Route as ApiPublicTwilioMaskedVoiceRouteImport } from './routes/api.public.twilio.masked-voice'
 import { Route as ApiPublicTwilioOrderIntakeRouteImport } from './routes/api.public.twilio.order-intake'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiVerticalsLessonaheadRuntimeRouteImport } from './routes/api.verticals.lessonahead.runtime'
@@ -345,6 +353,12 @@ const AuthenticatedAppIntelligenceRoute =
     path: '/intelligence',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppMcpReviewRoute =
+  AuthenticatedAppMcpReviewRouteImport.update({
+    id: '/mcp-review',
+    path: '/mcp-review',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppMigrationFactoryRoute =
   AuthenticatedAppMigrationFactoryRouteImport.update({
     id: '/migration-factory',
@@ -525,6 +539,42 @@ const AuthenticatedAppCasesCaseIdRoute =
     path: '/$caseId',
     getParentRoute: () => AuthenticatedAppCasesRoute,
   } as any)
+const ApiControlPlaneNafsiConnectRoute =
+  ApiControlPlaneNafsiConnectRouteImport.update({
+    id: '/api/control-plane/nafsi/connect',
+    path: '/api/control-plane/nafsi/connect',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiConnectEventsRoute =
+  ApiControlPlaneNafsiConnectEventsRouteImport.update({
+    id: '/api/control-plane/nafsi/connect-events',
+    path: '/api/control-plane/nafsi/connect-events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiEventsRoute =
+  ApiControlPlaneNafsiEventsRouteImport.update({
+    id: '/api/control-plane/nafsi/events',
+    path: '/api/control-plane/nafsi/events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiIntelligenceRoute =
+  ApiControlPlaneNafsiIntelligenceRouteImport.update({
+    id: '/api/control-plane/nafsi/intelligence',
+    path: '/api/control-plane/nafsi/intelligence',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiIntelligenceShadowRoute =
+  ApiControlPlaneNafsiIntelligenceShadowRouteImport.update({
+    id: '/api/control-plane/nafsi/intelligence-shadow',
+    path: '/api/control-plane/nafsi/intelligence-shadow',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiParityRoute =
+  ApiControlPlaneNafsiParityRouteImport.update({
+    id: '/api/control-plane/nafsi/parity',
+    path: '/api/control-plane/nafsi/parity',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiControlPlaneWorkersProvisioningRoute =
   ApiControlPlaneWorkersProvisioningRouteImport.update({
     id: '/api/control-plane/workers/provisioning',
@@ -560,6 +610,12 @@ const ApiPublicTrackTokenRoute = ApiPublicTrackTokenRouteImport.update({
   path: '/api/public/track/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTwilioMaskedVoiceRoute =
+  ApiPublicTwilioMaskedVoiceRouteImport.update({
+    id: '/api/public/twilio/masked-voice',
+    path: '/api/public/twilio/masked-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTwilioOrderIntakeRoute =
   ApiPublicTwilioOrderIntakeRouteImport.update({
     id: '/api/public/twilio/order-intake',
@@ -629,6 +685,7 @@ export interface FileRoutesByFullPath {
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -661,12 +718,19 @@ export interface FileRoutesByFullPath {
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
+  '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
+  '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -715,6 +779,7 @@ export interface FileRoutesByTo {
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -747,12 +812,19 @@ export interface FileRoutesByTo {
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
+  '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
+  '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -805,6 +877,7 @@ export interface FileRoutesById {
   '/_authenticated/app/inbox': typeof AuthenticatedAppInboxRoute
   '/_authenticated/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/_authenticated/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/_authenticated/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/_authenticated/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/_authenticated/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/_authenticated/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -837,12 +910,19 @@ export interface FileRoutesById {
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
+  '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
+  '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -895,6 +975,7 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/integrations'
     | '/app/intelligence'
+    | '/app/mcp-review'
     | '/app/migration-factory'
     | '/app/order-intake'
     | '/app/partners'
@@ -927,12 +1008,19 @@ export interface FileRouteTypes {
     | '/api/public/network-expansion'
     | '/app/'
     | '/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
+    | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
+    | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -981,6 +1069,7 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/integrations'
     | '/app/intelligence'
+    | '/app/mcp-review'
     | '/app/migration-factory'
     | '/app/order-intake'
     | '/app/partners'
@@ -1013,12 +1102,19 @@ export interface FileRouteTypes {
     | '/api/public/network-expansion'
     | '/app'
     | '/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
+    | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
+    | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -1070,6 +1166,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/inbox'
     | '/_authenticated/app/integrations'
     | '/_authenticated/app/intelligence'
+    | '/_authenticated/app/mcp-review'
     | '/_authenticated/app/migration-factory'
     | '/_authenticated/app/order-intake'
     | '/_authenticated/app/partners'
@@ -1102,12 +1199,19 @@ export interface FileRouteTypes {
     | '/api/public/network-expansion'
     | '/_authenticated/app/'
     | '/_authenticated/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
+    | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
+    | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -1144,12 +1248,19 @@ export interface RootRouteChildren {
   ApiPlatformRuntimeRoute: typeof ApiPlatformRuntimeRoute
   ApiPublicFeedbackRoute: typeof ApiPublicFeedbackRoute
   ApiPublicNetworkExpansionRoute: typeof ApiPublicNetworkExpansionRoute
+  ApiControlPlaneNafsiConnectRoute: typeof ApiControlPlaneNafsiConnectRoute
+  ApiControlPlaneNafsiConnectEventsRoute: typeof ApiControlPlaneNafsiConnectEventsRoute
+  ApiControlPlaneNafsiEventsRoute: typeof ApiControlPlaneNafsiEventsRoute
+  ApiControlPlaneNafsiIntelligenceRoute: typeof ApiControlPlaneNafsiIntelligenceRoute
+  ApiControlPlaneNafsiIntelligenceShadowRoute: typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  ApiControlPlaneNafsiParityRoute: typeof ApiControlPlaneNafsiParityRoute
   ApiControlPlaneWorkersProvisioningRoute: typeof ApiControlPlaneWorkersProvisioningRoute
   ApiIntegrationsConnectEventsRoute: typeof ApiIntegrationsConnectEventsRoute
   ApiIntegrationsHaccoraConnectionIdRoute: typeof ApiIntegrationsHaccoraConnectionIdRoute
   ApiIntegrationsRunsRunIdRoute: typeof ApiIntegrationsRunsRunIdRouteWithChildren
   ApiPlatformWebhooksDrainRoute: typeof ApiPlatformWebhooksDrainRoute
   ApiPublicTrackTokenRoute: typeof ApiPublicTrackTokenRoute
+  ApiPublicTwilioMaskedVoiceRoute: typeof ApiPublicTwilioMaskedVoiceRoute
   ApiPublicTwilioOrderIntakeRoute: typeof ApiPublicTwilioOrderIntakeRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiVerticalsLessonaheadRuntimeRoute: typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -1472,6 +1583,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIntelligenceRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/mcp-review': {
+      id: '/_authenticated/app/mcp-review'
+      path: '/mcp-review'
+      fullPath: '/app/mcp-review'
+      preLoaderRoute: typeof AuthenticatedAppMcpReviewRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/migration-factory': {
       id: '/_authenticated/app/migration-factory'
       path: '/migration-factory'
@@ -1696,6 +1814,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCasesCaseIdRouteImport
       parentRoute: typeof AuthenticatedAppCasesRoute
     }
+    '/api/control-plane/nafsi/connect': {
+      id: '/api/control-plane/nafsi/connect'
+      path: '/api/control-plane/nafsi/connect'
+      fullPath: '/api/control-plane/nafsi/connect'
+      preLoaderRoute: typeof ApiControlPlaneNafsiConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/connect-events': {
+      id: '/api/control-plane/nafsi/connect-events'
+      path: '/api/control-plane/nafsi/connect-events'
+      fullPath: '/api/control-plane/nafsi/connect-events'
+      preLoaderRoute: typeof ApiControlPlaneNafsiConnectEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/events': {
+      id: '/api/control-plane/nafsi/events'
+      path: '/api/control-plane/nafsi/events'
+      fullPath: '/api/control-plane/nafsi/events'
+      preLoaderRoute: typeof ApiControlPlaneNafsiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/intelligence': {
+      id: '/api/control-plane/nafsi/intelligence'
+      path: '/api/control-plane/nafsi/intelligence'
+      fullPath: '/api/control-plane/nafsi/intelligence'
+      preLoaderRoute: typeof ApiControlPlaneNafsiIntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/intelligence-shadow': {
+      id: '/api/control-plane/nafsi/intelligence-shadow'
+      path: '/api/control-plane/nafsi/intelligence-shadow'
+      fullPath: '/api/control-plane/nafsi/intelligence-shadow'
+      preLoaderRoute: typeof ApiControlPlaneNafsiIntelligenceShadowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/parity': {
+      id: '/api/control-plane/nafsi/parity'
+      path: '/api/control-plane/nafsi/parity'
+      fullPath: '/api/control-plane/nafsi/parity'
+      preLoaderRoute: typeof ApiControlPlaneNafsiParityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/control-plane/workers/provisioning': {
       id: '/api/control-plane/workers/provisioning'
       path: '/api/control-plane/workers/provisioning'
@@ -1736,6 +1896,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/track/$token'
       fullPath: '/api/public/track/$token'
       preLoaderRoute: typeof ApiPublicTrackTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/twilio/masked-voice': {
+      id: '/api/public/twilio/masked-voice'
+      path: '/api/public/twilio/masked-voice'
+      fullPath: '/api/public/twilio/masked-voice'
+      preLoaderRoute: typeof ApiPublicTwilioMaskedVoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/twilio/order-intake': {
@@ -1813,6 +1980,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppInboxRoute: typeof AuthenticatedAppInboxRoute
   AuthenticatedAppIntegrationsRoute: typeof AuthenticatedAppIntegrationsRoute
   AuthenticatedAppIntelligenceRoute: typeof AuthenticatedAppIntelligenceRoute
+  AuthenticatedAppMcpReviewRoute: typeof AuthenticatedAppMcpReviewRoute
   AuthenticatedAppMigrationFactoryRoute: typeof AuthenticatedAppMigrationFactoryRoute
   AuthenticatedAppOrderIntakeRoute: typeof AuthenticatedAppOrderIntakeRoute
   AuthenticatedAppPartnersRoute: typeof AuthenticatedAppPartnersRoute
@@ -1864,6 +2032,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppInboxRoute: AuthenticatedAppInboxRoute,
   AuthenticatedAppIntegrationsRoute: AuthenticatedAppIntegrationsRoute,
   AuthenticatedAppIntelligenceRoute: AuthenticatedAppIntelligenceRoute,
+  AuthenticatedAppMcpReviewRoute: AuthenticatedAppMcpReviewRoute,
   AuthenticatedAppMigrationFactoryRoute: AuthenticatedAppMigrationFactoryRoute,
   AuthenticatedAppOrderIntakeRoute: AuthenticatedAppOrderIntakeRoute,
   AuthenticatedAppPartnersRoute: AuthenticatedAppPartnersRoute,
@@ -1944,6 +2113,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlatformRuntimeRoute: ApiPlatformRuntimeRoute,
   ApiPublicFeedbackRoute: ApiPublicFeedbackRoute,
   ApiPublicNetworkExpansionRoute: ApiPublicNetworkExpansionRoute,
+  ApiControlPlaneNafsiConnectRoute: ApiControlPlaneNafsiConnectRoute,
+  ApiControlPlaneNafsiConnectEventsRoute:
+    ApiControlPlaneNafsiConnectEventsRoute,
+  ApiControlPlaneNafsiEventsRoute: ApiControlPlaneNafsiEventsRoute,
+  ApiControlPlaneNafsiIntelligenceRoute: ApiControlPlaneNafsiIntelligenceRoute,
+  ApiControlPlaneNafsiIntelligenceShadowRoute:
+    ApiControlPlaneNafsiIntelligenceShadowRoute,
+  ApiControlPlaneNafsiParityRoute: ApiControlPlaneNafsiParityRoute,
   ApiControlPlaneWorkersProvisioningRoute:
     ApiControlPlaneWorkersProvisioningRoute,
   ApiIntegrationsConnectEventsRoute: ApiIntegrationsConnectEventsRoute,
@@ -1952,6 +2129,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiIntegrationsRunsRunIdRoute: ApiIntegrationsRunsRunIdRouteWithChildren,
   ApiPlatformWebhooksDrainRoute: ApiPlatformWebhooksDrainRoute,
   ApiPublicTrackTokenRoute: ApiPublicTrackTokenRoute,
+  ApiPublicTwilioMaskedVoiceRoute: ApiPublicTwilioMaskedVoiceRoute,
   ApiPublicTwilioOrderIntakeRoute: ApiPublicTwilioOrderIntakeRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiVerticalsLessonaheadRuntimeRoute: ApiVerticalsLessonaheadRuntimeRoute,
