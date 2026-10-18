@@ -17,6 +17,7 @@ import {
 import {TreasuryRiskAndReviewPanel} from "@/modules/treasury/TreasuryRiskAndReviewPanel";
 import {TreasurySourceImportPanel} from "@/modules/treasury/TreasurySourceImportPanel";
 import {TreasuryAutomationPanel} from "@/modules/treasury/TreasuryAutomationPanel";
+import {TreasuryAccuracyPanel} from "@/modules/treasury/TreasuryAccuracyPanel";
 import {AlertTriangle, CheckCircle2, ClipboardCheck, Download, FileSpreadsheet, Landmark, LockKeyhole,
   RotateCcw, ShieldCheck, TrendingUp, Upload, Wallet} from "lucide-react";
 
@@ -199,6 +200,7 @@ function TreasuryAnalystWorkbench() {
       <TreasurySourceImportPanel reportDate={inputs.reportDate} enabled={enabled}
         onApplySource={(kind,canonicalCSV)=>changeData(kind==="bank_transactions"?"transactionsCSV":"ledgerCSV",canonicalCSV)}/>
       <TreasuryAutomationPanel tenantId={t.tenantId ?? ""} enabled={enabled} role={t.role}/>
+      <TreasuryAccuracyPanel enabled={enabled}/>
       <Card><CardContent className="p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h2 className="text-lg font-semibold">1. Prepare treasury sources</h2>
