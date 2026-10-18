@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile,readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { createHash } from "node:crypto";
@@ -19,7 +20,7 @@ const admin="11111111-aaaa-4aaa-8aaa-111111111111",stranger="22222222-bbbb-4bbb-
 for(const id of [admin,stranger])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);
 await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
 async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
-const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);
 const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
 
 const agent=(await asUser(admin,()=>db.query("INSERT INTO public.dispatch_agents(tenant_id,product_key,name,agent_role,status,skills) VALUES($1,'mealdeck','Driver One','food_delivery','available',ARRAY['delivery']) RETURNING id",[md.tenantId]))).rows[0].id;

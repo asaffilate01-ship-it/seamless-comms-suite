@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile,readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 const db=new PGlite();const migrations=new URL("../../supabase/migrations/",import.meta.url);
@@ -7,7 +8,7 @@ for(const name of (await readdir(migrations)).filter(x=>x.endsWith(".sql")).sort
 const admin="66666666-aaaa-4aaa-8aaa-666666666666",stranger="77777777-bbbb-4bbb-8bbb-777777777777";for(const id of[admin,stranger])await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)",[id,id+"@example.invalid"]);await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin]);
 async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
 async function asService(fn){await db.exec("BEGIN;SET LOCAL ROLE service_role;");await db.query("SELECT set_config('request.jwt.claim.role','service_role',true)");try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
-const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);const md=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(md?.tenantId);
 const person=(await asUser(admin,()=>db.query("INSERT INTO public.crm_people(tenant_id,display_name,lifecycle_stage) VALUES($1,'Utility Customer','customer') RETURNING id",[md.tenantId]))).rows[0].id;
 const workflow=(await asUser(admin,()=>db.query("INSERT INTO public.automation_workflows(tenant_id,product_key,name,trigger_event,status,definition,created_by) VALUES($1,'mealdeck','Order follow-up','marketplace.order.completed','active','{\"nodes\":[],\"edges\":[]}'::jsonb,$2) RETURNING id",[md.tenantId,admin]))).rows[0].id;
 const event=(await asService(()=>db.query("INSERT INTO public.platform_events(tenant_id,product_key,event_type,idempotency_key,payload) VALUES($1,'mealdeck','marketplace.order.completed','utility-event-0001','{\"orderId\":\"o1\"}'::jsonb) RETURNING id",[md.tenantId]))).rows[0].id;

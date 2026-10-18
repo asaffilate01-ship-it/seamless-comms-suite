@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import {readFile,readdir} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
@@ -19,7 +20,7 @@ try{
   await db.exec('BEGIN; SET LOCAL ROLE authenticated;');await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[admin]);
   try{const result=await db.query(sql,args);await db.exec('COMMIT');return result.rows;}catch(e){await db.exec('ROLLBACK');throw e;}
  }
- const pilot=(await run('SELECT public.platform_bootstrap_dishbee_pilot() AS x'))[0].x;
+ const pilot=await seedIsolatedDishbeeTestTenants(db,admin);
  const tenant=pilot.tenants.find(t=>t.tenantSlug==='mealdeck').tenantId;
  await db.query("INSERT INTO public.tenant_services(tenant_id,service_key,status) VALUES($1,'omniqora.sales-engagement','active') ON CONFLICT(tenant_id,service_key) DO UPDATE SET status='active'",[tenant]);
  async function sequence(kind){
