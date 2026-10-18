@@ -61,6 +61,8 @@ jobs:
         run: node --test verification/control-plane/property-matching.test.mjs
       - name: MCP setup and atomic AI budgets safety contracts
         run: node --test verification/control-plane/agent-factory-phase2.test.mjs
+      - name: Ruflo isolated MCP sandbox and tenant RLS gates
+        run: node --test services/ruflo-bridge/ruflo-bridge.test.mjs verification/control-plane/ruflo-pilot-contract.test.mjs
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
