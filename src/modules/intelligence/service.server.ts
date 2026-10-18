@@ -1,10 +1,12 @@
 import {z} from "zod";
 import {createHash,timingSafeEqual} from "node:crypto";
 import {authoriseServiceScope,parseServiceAuthorization,verifyServiceSecret,type ServiceCredentialRecord} from "@/modules/platform/service-identity";
+import {CRICLUME_BUDGET_REQUIRED,legacyIntelligenceRunAllowed} from "@/modules/intelligence/criclume-policy";
 
 const uuid=z.string().uuid();
 const scope=z.object({tenantId:uuid,productKey:z.string().min(2).max(80)});
 const requestSchema=z.discriminatedUnion("operation",[
+ scope.extend({operation:z.literal("connection.verify")}),
  scope.extend({operation:z.literal("run.start"),profile:z.enum(["discovery","finance","technical","compliance","product","transaction","accounting","tax","operations"]),
   goal:z.string().min(4).max(5000),maxSteps:z.number().int().min(1).max(32).default(8),providerKey:z.string().max(120).nullish(),model:z.string().max(200).nullish(),
   inputVersion:z.string().max(200).nullish(),context:z.record(z.string(),z.unknown()).default({}),sourceRefs:z.array(z.string().max(500)).max(200).default([])}),
@@ -33,7 +35,7 @@ async function auth(request:Request,input:z.infer<typeof requestSchema>){
  const {supabaseAdmin}=await import("@/integrations/supabase/client.server");const db=supabaseAdmin as any;
 
  if(bearer.startsWith("oqcp_")){
-  if(!["run.start","run.get","action.review","action.claim","action.finish"].includes(input.operation)){
+  if(!["connection.verify","run.start","run.get","action.review","action.claim","action.finish"].includes(input.operation)){
     throw new Error("Connector credential cannot perform this operation");
   }
   const digest=createHash("sha256").update(bearer).digest("hex");
@@ -47,6 +49,7 @@ async function auth(request:Request,input:z.infer<typeof requestSchema>){
   if(row.credential_expires_at&&Date.parse(row.credential_expires_at)<=Date.now())throw new Error("Connector credential expired");
   if(row.tenant_id!==input.tenantId||row.product_key!==input.productKey)throw new Error("Connector tenant scope refused");
   const capability=
+    input.operation==="connection.verify"?"intelligence.connection.verify":
     input.operation==="run.start"?"intelligence.run.start":
     input.operation==="run.get"?"intelligence.run.read":
     input.operation==="action.review"?"intelligence.action.review":
@@ -69,7 +72,8 @@ export async function serveIntelligenceService(httpRequest:Request){
   const raw=await httpRequest.text();if(raw.length>524288)return reply({error:"Payload too large"},413);
   let json:unknown;try{json=JSON.parse(raw);}catch{return reply({error:"Invalid JSON"},400);}
   const input=requestSchema.parse(json);const {db,credential,keyId,connectorId}=await auth(httpRequest,input);
-  const capability=input.operation==="run.start"?"intelligence.run.start":
+  const capability=input.operation==="connection.verify"?"intelligence.connection.verify":
+    input.operation==="run.start"?"intelligence.run.start":
    input.operation==="run.get"?"intelligence.run.read":
    input.operation==="job.claim"?"intelligence.jobs":
    input.operation==="job.finish"?"intelligence.results":
@@ -94,7 +98,18 @@ export async function serveIntelligenceService(httpRequest:Request){
    if(haccora.error||!haccora.data)throw new Error("Haccora AI Copilot entitlement required");
   }
 
+  if(input.operation==="connection.verify") {
+    // Only proves scoped credentials and tenant entitlement. A worker and
+    // approved cost budget are separate requirements for model execution.
+    return reply({ok:true,productKey:input.productKey,connection:"verified",
+      entitlementActive:true,modelExecutionReady:false,
+      paidRunMode:legacyIntelligenceRunAllowed(input.productKey)?"legacy":"budgeted_only"});
+  }
+
   if(input.operation==="run.start"){
+    if(!legacyIntelligenceRunAllowed(input.productKey)){
+      return reply({error:CRICLUME_BUDGET_REQUIRED,code:"BUDGETED_ADMISSION_REQUIRED"},409);
+    }
    const {data:run,error:runError}=await db.from("ai_agent_runs").insert({tenant_id:input.tenantId,product_key:input.productKey,
     profile:input.profile,goal:input.goal,status:"queued",max_steps:input.maxSteps,provider_key:input.providerKey??null,model:input.model??null,
     input_version:input.inputVersion??null,initiated_by:null}).select("*").single();

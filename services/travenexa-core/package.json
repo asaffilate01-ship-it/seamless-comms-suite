@@ -1,0 +1,11 @@
+{
+  "name": "@itechlounge/travenexa-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "smoke:hbx": "node scripts/hbx-sandbox-smoke.mjs status"
+  }
+}
