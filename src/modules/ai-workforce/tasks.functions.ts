@@ -59,7 +59,6 @@ export interface AiEmployeeTaskEvent {
   task_id: string;
   event_type: string;
   created_at: string;
-  detail: Record<string, unknown>;
 }
 export interface AiEmployeeTaskPreflight {
   mode: "read_only_preflight";
@@ -101,7 +100,7 @@ export const getAiEmployeeTaskWorkspace = createServerFn({ method: "POST" })
         "id,employee_id,capability_key,provider_key,rationale,status,requested_by,reviewed_by,review_note,created_at,reviewed_at"
       ).eq("tenant_id", data.tenantId).eq("product_key", data.productKey)
         .eq("employee_id", data.employeeId).order("created_at", { ascending: false }).limit(80),
-      db.from("ai_employee_task_events").select("id,employee_id,task_id,event_type,created_at,detail")
+      db.from("ai_employee_task_events").select("id,employee_id,task_id,event_type,created_at")
         .eq("tenant_id", data.tenantId).eq("product_key", data.productKey)
         .eq("employee_id", data.employeeId).order("created_at", { ascending: false }).limit(120),
     ]);
