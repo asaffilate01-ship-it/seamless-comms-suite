@@ -56,7 +56,9 @@ test("fingerprints only compare within the same tenant, product and reviewed sou
 });
 
 test("expired source text is hidden before bounded physical deletion", () => {
-  assert.match(sql, /retention_until timestamptz NOT NULL DEFAULT/);
+  assert.match(sql, /ADD COLUMN retention_until timestamptz/);
+  assert.match(sql, /SET retention_until=captured_at \+ interval '30 days'/);
+  assert.match(sql, /ALTER COLUMN retention_until SET NOT NULL/);
   assert.match(sql, /CREATE FUNCTION public\.set_web_intel_retention/);
   assert.match(sql, /NEW\.retention_until/);
   assert.match(sql, /retention_until > now\(\)/);
