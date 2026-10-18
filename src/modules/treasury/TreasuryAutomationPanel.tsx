@@ -10,13 +10,14 @@ import {CheckCircle2,Clock3,FileText,KeyRound,Link2Off,LockKeyhole,RefreshCcw,Sh
 import {toast} from "sonner";
 import {
   getTreasuryAutomationWorkspace,requestTreasurySourceSetup,
-  saveTreasuryDraftSchedule,runTreasuryServerSyntheticPreview
+  saveTreasuryDraftSchedule,runTreasuryServerSyntheticPreview,runTreasurySignedSyntheticPreview
 } from "./automation.functions";
 import {
   evaluateTreasurySourceReadiness,REQUIRED_TREASURY_SOURCES,REQUIRED_READ_SCOPES,
   type TreasurySourceBinding,type TreasurySourceKind,type TreasuryConnectorFamily
 } from "./trusted-sources";
 import {treasuryPackMarkdown,type TreasuryPack} from "./analyst-pack";
+import type {TreasuryVerifiedReceipt} from "./signed-ingestion";
 
 const sourceNames:Record<TreasurySourceKind,string>={
   bank_opening:"Bank account opening balances",
@@ -47,6 +48,10 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
   const [runTime,setRunTime]=useState("08:00");
   const [previewDate,setPreviewDate]=useState(new Date().toISOString().slice(0,10));
   const [preview,setPreview]=useState<TreasuryPack|null>(null);
+  const [signedPreview,setSignedPreview]=useState<{
+    report:TreasuryPack;receipts:TreasuryVerifiedReceipt[];
+    sourceStatus:string;riskStatus:string
+  }|null>(null);
   const [working,setWorking]=useState<"source"|"schedule"|"preview"|null>(null);
   const [error,setError]=useState("");
   const canAdmin=role==="owner"||role==="admin"||role==="platform_admin";
@@ -54,6 +59,7 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
   const requestFn=useServerFn(requestTreasurySourceSetup);
   const scheduleFn=useServerFn(saveTreasuryDraftSchedule);
   const previewFn=useServerFn(runTreasuryServerSyntheticPreview);
+  const signedPreviewFn=useServerFn(runTreasurySignedSyntheticPreview);
   const workspace=useQuery({
     queryKey:["treasury-automation-phase5",tenantId],
     queryFn:()=>getFn({data:{tenantId}}),
@@ -107,6 +113,24 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
       setPreview(result.workingPaper);
       toast.success("Synthetic treasury brief calculated server-side");
     }catch(e){setError(e instanceof Error?e.message:"Preview could not be calculated.");}
+    finally{setWorking(null);}
+  }
+  async function runSignedPreview(){
+    if(!enabled||!tenantId)return;
+    setWorking("preview");setError("");setSignedPreview(null);
+    try{
+      const result=await signedPreviewFn({data:{tenantId,reportDate:previewDate}});
+      if(result.mode!=="signed_synthetic_sandbox"||result.executionEnabled!==false ||
+          result.externalConnectionsUsed!==0||result.signatureCount!==5 ||
+          result.receipts.some(x=>x.signatureValid!==true)){
+        throw new Error("Unexpected or incomplete sandbox verification result.");
+      }
+      setSignedPreview({
+        report:result.workingPaper,receipts:result.receipts,
+        sourceStatus:result.sourceStatus,riskStatus:result.riskStatus
+      });
+      toast.success("Five synthetic source signatures verified; treasury analysis completed");
+    }catch(e){setError(e instanceof Error?e.message:"Source verification sandbox failed.");}
     finally{setWorking(null);}
   }
   return <Card><CardContent className="space-y-5 p-5">
@@ -229,6 +253,42 @@ export function TreasuryAutomationPanel({tenantId,enabled,role}:{
           <Button disabled={!enabled||working!==null} onClick={runPreview}>
             <RefreshCcw className="mr-2 h-4 w-4"/>Run synthetic report on server
           </Button>
+          <div className="border-t pt-4 space-y-3">
+            <h4 className="font-semibold">Signed managed-source verification sandbox</h4>
+            <p className="text-xs text-muted-foreground">
+              The server creates five synthetic bank/ERP/policy snapshots with ephemeral non-exportable HMAC keys.
+              It recalculates every source SHA-256 fingerprint, verifies its signature, freshness and tenant binding,
+              then produces a read-only treasury analyst pack. This does not authenticate a real bank or save sources.
+            </p>
+            <Button variant="outline" onClick={runSignedPreview} disabled={!enabled||working!==null}>
+              <ShieldCheck className="mr-2 h-4 w-4"/>Verify five signed sources and analyse
+            </Button>
+            {signedPreview&&<div className="space-y-3 rounded-lg border p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden="true"/>
+                <strong className="text-sm">{signedPreview.receipts.length} synthetic source signatures verified</strong>
+                <Badge variant="outline">Shadow only</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Cash: {signedPreview.sourceStatus} · Risk: {signedPreview.riskStatus} ·
+                {signedPreview.report.currencyPositions.length} distinct currency positions
+              </p>
+              <div className="space-y-2">
+                {signedPreview.receipts.map(item=><div key={item.eventId} className="rounded-md bg-muted p-2 text-xs">
+                  <span className="font-semibold">{sourceNames[item.sourceKind]}</span>
+                  <p className="break-all font-mono text-muted-foreground">
+                    SHA-256 {item.digestSha256.slice(0,20)}… · {item.bytes} bytes · signed fixture verified
+                  </p>
+                </div>)}
+              </div>
+              <Button size="sm" variant="outline" onClick={()=>downloadMarkdown(
+                "finvessa-signed-sandbox-"+signedPreview.report.reportDate+".md",
+                treasuryPackMarkdown(signedPreview.report)
+              )}>
+                <FileText className="mr-2 h-4 w-4"/>Download verified-fixture working paper
+              </Button>
+            </div>}
+          </div>
           {preview&&<div className="rounded-md border p-3 space-y-2">
             <p className="flex items-center gap-2 text-sm font-medium"><CheckCircle2 className="h-4 w-4"/>Synthetic server analysis completed</p>
             <p className="text-xs text-muted-foreground">
