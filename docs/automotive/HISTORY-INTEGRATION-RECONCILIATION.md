@@ -7,7 +7,7 @@ Omniqora vertical core schema. That migration would redefine existing automotive
 automotive_appraisals, automotive_evidence and automotive_passport_snapshots primary keys.
 
 No customers, tenant bindings, provider secrets, chargeable APIs, reports or external actions
-are activated. App /app/automotive now shows an honest design catalogue rather than a broken route.
+are activated. The existing /app/automotive operational workspace is preserved and now includes a read-only evidence source catalogue. No existing vehicle, appraisal, valuation or auction screens are removed.
 
 The evidence evaluator never treats missing, stale, unlicensed, future-dated or unverified
 data as proof of a clear vehicle. A verified adverse result always requires review,
