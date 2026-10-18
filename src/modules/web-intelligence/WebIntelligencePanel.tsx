@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { WebIntelMonitoringPanel } from "./WebIntelMonitoringPanel";
 import {
   getWebIntelWorkspace,
   proposeWebIntelSource,
@@ -92,8 +93,9 @@ export function WebIntelligencePanel({
                 </Badge>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Grant <code>omniqora.web-intelligence</code> through Tenant Factory after
-                source-policy review. This page cannot grant its own entitlement.
+                Request <code>omniqora.web-intelligence</code> in Tenant Factory.
+                The provisioning workflow must independently activate the entitlement;
+                a requested service alone does not permit crawling.
               </p>
             </div>
 
@@ -169,6 +171,17 @@ export function WebIntelligencePanel({
                 ))}
               </section>
             </div>
+            <WebIntelMonitoringPanel
+              tenantId={tenantId}
+              productKey={productKey}
+              tenantRole={tenantRole}
+              entitled={q.data.entitled}
+              isPlatformAdmin={q.data.isPlatformAdmin}
+              sources={q.data.sources}
+              monitors={q.data.monitors}
+              changes={q.data.changes}
+              onChanged={() => q.refetch()}
+            />
             {q.data.isPlatformAdmin && (
               <div className="space-y-4 border-t pt-5">
                 <h3 className="font-semibold">Landlord · public source governance</h3>

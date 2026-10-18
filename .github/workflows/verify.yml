@@ -33,6 +33,8 @@ jobs:
         run: node --test verification/control-plane/connector-qualification.test.mjs
       - name: Web Intelligence tenant, source-review and worker security contracts
         run: node --test verification/control-plane/web-intelligence.test.mjs
+      - name: Web Intelligence Phase 2 monitoring, RLS and retention contracts
+        run: node --test verification/control-plane/web-intelligence-phase2.test.mjs
       - name: Scrapling worker SSRF and plain-text parsing offline tests
         run: python3 -m unittest discover -s services/web-intelligence/tests -v
       - name: Scrapling pinned runtime import compatibility
