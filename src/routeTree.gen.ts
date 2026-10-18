@@ -55,6 +55,7 @@ import { Route as AuthenticatedAppIdentityRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
 import { Route as AuthenticatedAppIntegrationsRouteImport } from './routes/_authenticated/app.integrations'
 import { Route as AuthenticatedAppIntelligenceRouteImport } from './routes/_authenticated/app.intelligence'
+import { Route as AuthenticatedAppMcpReviewRouteImport } from './routes/_authenticated/app.mcp-review'
 import { Route as AuthenticatedAppMigrationFactoryRouteImport } from './routes/_authenticated/app.migration-factory'
 import { Route as AuthenticatedAppOrderIntakeRouteImport } from './routes/_authenticated/app.order-intake'
 import { Route as AuthenticatedAppPartnersRouteImport } from './routes/_authenticated/app.partners'
@@ -99,6 +100,7 @@ import { Route as ApiIntegrationsHaccoraConnectionIdRouteImport } from './routes
 import { Route as ApiIntegrationsRunsRunIdRouteImport } from './routes/api.integrations.runs.$runId'
 import { Route as ApiPlatformWebhooksDrainRouteImport } from './routes/api.platform.webhooks.drain'
 import { Route as ApiPublicTrackTokenRouteImport } from './routes/api.public.track.$token'
+import { Route as ApiPublicTwilioMaskedVoiceRouteImport } from './routes/api.public.twilio.masked-voice'
 import { Route as ApiPublicTwilioOrderIntakeRouteImport } from './routes/api.public.twilio.order-intake'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiVerticalsLessonaheadRuntimeRouteImport } from './routes/api.verticals.lessonahead.runtime'
@@ -358,6 +360,12 @@ const AuthenticatedAppIntelligenceRoute =
     path: '/intelligence',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppMcpReviewRoute =
+  AuthenticatedAppMcpReviewRouteImport.update({
+    id: '/mcp-review',
+    path: '/mcp-review',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppMigrationFactoryRoute =
   AuthenticatedAppMigrationFactoryRouteImport.update({
     id: '/migration-factory',
@@ -609,6 +617,12 @@ const ApiPublicTrackTokenRoute = ApiPublicTrackTokenRouteImport.update({
   path: '/api/public/track/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTwilioMaskedVoiceRoute =
+  ApiPublicTwilioMaskedVoiceRouteImport.update({
+    id: '/api/public/twilio/masked-voice',
+    path: '/api/public/twilio/masked-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTwilioOrderIntakeRoute =
   ApiPublicTwilioOrderIntakeRouteImport.update({
     id: '/api/public/twilio/order-intake',
@@ -679,6 +693,7 @@ export interface FileRoutesByFullPath {
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -723,6 +738,7 @@ export interface FileRoutesByFullPath {
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -772,6 +788,7 @@ export interface FileRoutesByTo {
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -816,6 +833,7 @@ export interface FileRoutesByTo {
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -869,6 +887,7 @@ export interface FileRoutesById {
   '/_authenticated/app/inbox': typeof AuthenticatedAppInboxRoute
   '/_authenticated/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/_authenticated/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/_authenticated/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/_authenticated/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/_authenticated/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/_authenticated/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -913,6 +932,7 @@ export interface FileRoutesById {
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -966,6 +986,7 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/integrations'
     | '/app/intelligence'
+    | '/app/mcp-review'
     | '/app/migration-factory'
     | '/app/order-intake'
     | '/app/partners'
@@ -1010,6 +1031,7 @@ export interface FileRouteTypes {
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -1059,6 +1081,7 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/integrations'
     | '/app/intelligence'
+    | '/app/mcp-review'
     | '/app/migration-factory'
     | '/app/order-intake'
     | '/app/partners'
@@ -1103,6 +1126,7 @@ export interface FileRouteTypes {
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -1155,6 +1179,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/inbox'
     | '/_authenticated/app/integrations'
     | '/_authenticated/app/intelligence'
+    | '/_authenticated/app/mcp-review'
     | '/_authenticated/app/migration-factory'
     | '/_authenticated/app/order-intake'
     | '/_authenticated/app/partners'
@@ -1199,6 +1224,7 @@ export interface FileRouteTypes {
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -1247,6 +1273,7 @@ export interface RootRouteChildren {
   ApiIntegrationsRunsRunIdRoute: typeof ApiIntegrationsRunsRunIdRouteWithChildren
   ApiPlatformWebhooksDrainRoute: typeof ApiPlatformWebhooksDrainRoute
   ApiPublicTrackTokenRoute: typeof ApiPublicTrackTokenRoute
+  ApiPublicTwilioMaskedVoiceRoute: typeof ApiPublicTwilioMaskedVoiceRoute
   ApiPublicTwilioOrderIntakeRoute: typeof ApiPublicTwilioOrderIntakeRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiVerticalsLessonaheadRuntimeRoute: typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -1576,6 +1603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIntelligenceRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/mcp-review': {
+      id: '/_authenticated/app/mcp-review'
+      path: '/mcp-review'
+      fullPath: '/app/mcp-review'
+      preLoaderRoute: typeof AuthenticatedAppMcpReviewRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/migration-factory': {
       id: '/_authenticated/app/migration-factory'
       path: '/migration-factory'
@@ -1884,6 +1918,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTrackTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/twilio/masked-voice': {
+      id: '/api/public/twilio/masked-voice'
+      path: '/api/public/twilio/masked-voice'
+      fullPath: '/api/public/twilio/masked-voice'
+      preLoaderRoute: typeof ApiPublicTwilioMaskedVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/twilio/order-intake': {
       id: '/api/public/twilio/order-intake'
       path: '/api/public/twilio/order-intake'
@@ -1960,6 +2001,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppInboxRoute: typeof AuthenticatedAppInboxRoute
   AuthenticatedAppIntegrationsRoute: typeof AuthenticatedAppIntegrationsRoute
   AuthenticatedAppIntelligenceRoute: typeof AuthenticatedAppIntelligenceRoute
+  AuthenticatedAppMcpReviewRoute: typeof AuthenticatedAppMcpReviewRoute
   AuthenticatedAppMigrationFactoryRoute: typeof AuthenticatedAppMigrationFactoryRoute
   AuthenticatedAppOrderIntakeRoute: typeof AuthenticatedAppOrderIntakeRoute
   AuthenticatedAppPartnersRoute: typeof AuthenticatedAppPartnersRoute
@@ -2012,6 +2054,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppInboxRoute: AuthenticatedAppInboxRoute,
   AuthenticatedAppIntegrationsRoute: AuthenticatedAppIntegrationsRoute,
   AuthenticatedAppIntelligenceRoute: AuthenticatedAppIntelligenceRoute,
+  AuthenticatedAppMcpReviewRoute: AuthenticatedAppMcpReviewRoute,
   AuthenticatedAppMigrationFactoryRoute: AuthenticatedAppMigrationFactoryRoute,
   AuthenticatedAppOrderIntakeRoute: AuthenticatedAppOrderIntakeRoute,
   AuthenticatedAppPartnersRoute: AuthenticatedAppPartnersRoute,
@@ -2108,6 +2151,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiIntegrationsRunsRunIdRoute: ApiIntegrationsRunsRunIdRouteWithChildren,
   ApiPlatformWebhooksDrainRoute: ApiPlatformWebhooksDrainRoute,
   ApiPublicTrackTokenRoute: ApiPublicTrackTokenRoute,
+  ApiPublicTwilioMaskedVoiceRoute: ApiPublicTwilioMaskedVoiceRoute,
   ApiPublicTwilioOrderIntakeRoute: ApiPublicTwilioOrderIntakeRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiVerticalsLessonaheadRuntimeRoute: ApiVerticalsLessonaheadRuntimeRoute,
