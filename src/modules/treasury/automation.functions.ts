@@ -10,6 +10,10 @@ import {requireTenantMembership,requireWriteRole,requireAdminRole} from "@/modul
 import {analyseTreasury,isoDate,treasuryDemoInput} from "./engine";
 import {assessLiquidityRisk,syntheticLiquidityPolicy} from "./liquidity-risk";
 import {makeTreasuryAnalystPack} from "./analyst-pack";
+import {runSignedTreasurySandbox,signSyntheticTreasurySnapshot,
+  type SignedTreasurySnapshot,type TreasuryPinnedKey} from "./signed-ingestion";
+import {REQUIRED_TREASURY_SOURCES,REQUIRED_READ_SCOPES,
+  type TreasurySourceBinding,type TreasurySourceKind} from "./trusted-sources";
 
 const tenantId=z.string().uuid();
 const scope=z.object({tenantId}).strict();
@@ -135,5 +139,76 @@ export const runTreasuryServerSyntheticPreview=createServerFn({method:"POST"})
       externalConnectionsUsed:0 as const,
       previewDate:date,
       workingPaper
+    };
+  });
+
+
+/**
+ * Manual end-to-end sandbox flow. Signed fixtures and NON-EXPORTABLE keys are
+ * generated on the authenticated server, never supplied from the browser.
+ * The key pairs are ephemeral and not registered as approved bank providers.
+ * Nothing is stored and no external network/provider is contacted.
+ */
+export const runTreasurySignedSyntheticPreview=createServerFn({method:"POST"})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i:unknown)=>syntheticSchema.parse(i))
+  .handler(async({context,data})=>{
+    const access=await requireActiveFinvessa(context,data.tenantId);
+    requireWriteRole(access.role);
+    const date=isoDate(data.reportDate,"Signed synthetic preview date");
+    const now=new Date();
+    const nowString=now.toISOString();
+    const today=nowString.slice(0,10);
+    if(date>today || date<"2020-01-01")
+      throw new Error("Use a date between 2020 and today.");
+    if(!globalThis.crypto?.subtle)
+      throw new Error("Secure server cryptographic engine unavailable.");
+    const sample=treasuryDemoInput(date);
+    const sources:Record<TreasurySourceKind,string>={
+      bank_opening:sample.accountsCSV,
+      bank_transactions:sample.transactionsCSV,
+      cash_general_ledger:sample.ledgerCSV??"",
+      cash_forecast:sample.forecastCSV,
+      liquidity_policy:syntheticLiquidityPolicy()
+    };
+    const expires=new Date(now.getTime()+7*86400_000).toISOString();
+    const keys:TreasuryPinnedKey[]=[];
+    const bindings:TreasurySourceBinding[]=[];
+    const envelopes:SignedTreasurySnapshot[]=[];
+    for(const kind of REQUIRED_TREASURY_SOURCES){
+      const providerKey="synthetic-"+kind.replaceAll("_","-");
+      const keyId="sandbox-key-"+kind.replaceAll("_","-");
+      const key=await crypto.subtle.generateKey(
+        {name:"HMAC",hash:"SHA-256",length:256},false,["sign","verify"]
+      );
+      keys.push({
+        tenantId:data.tenantId,sourceKind:kind,providerKey,keyId,
+        cryptoKey:key,status:"sandbox_verified",validUntil:expires
+      });
+      bindings.push({
+        tenantId:data.tenantId,productKey:"finvessa",sourceKind:kind,
+        providerFamily:"managed_file",providerKey,
+        connectionStatus:"sandbox_verified",readOnly:true,
+        scopes:[REQUIRED_READ_SCOPES[kind]],
+        proofReference:"synthetic-shadow-proof-"+kind.replaceAll("_","-"),
+        verifiedAt:nowString,validUntil:expires,lastSuccessfulReadAt:nowString
+      });
+      envelopes.push(await signSyntheticTreasurySnapshot({
+        version:1,tenantId:data.tenantId,sourceKind:kind,
+        providerKey,keyId,eventId:"synthetic-event-"+kind.replaceAll("_","-"),
+        receivedAt:nowString,canonicalCsv:sources[kind]
+      },key));
+    }
+    const checked=await runSignedTreasurySandbox({
+      tenantId:data.tenantId,reportDate:date,now:nowString,
+      bindings,keys,envelopes
+    });
+    return {
+      mode:"signed_synthetic_sandbox" as const,
+      executionEnabled:false as const,
+      externalConnectionsUsed:0 as const,
+      reportDate:date,workingPaper:checked.run.report,
+      receipts:checked.receipts,signatureCount:checked.receipts.length,
+      sourceStatus:checked.run.sourceStatus,riskStatus:checked.run.riskStatus
     };
   });

@@ -26,7 +26,7 @@
     "test:travel-sites": "node --test apps/travenexa-market-sites/tests/*.test.mjs",
     "test:travel-core": "node --check services/travenexa-core/scripts/hbx-sandbox-smoke.mjs && node --test services/travenexa-core/tests/*.test.mjs",
     "test:automotive-history": "bun verification/control-plane/automotive-vehicle-history.test.ts",
-    "test:treasury": "node --test verification/control-plane/treasury-analyst.test.mjs verification/control-plane/treasury-risk.test.mjs verification/control-plane/treasury-governance.test.mjs verification/control-plane/treasury-intake-reporting.test.mjs verification/control-plane/treasury-trusted-sources.test.mjs"
+    "test:treasury": "node --test verification/control-plane/treasury-analyst.test.mjs verification/control-plane/treasury-risk.test.mjs verification/control-plane/treasury-governance.test.mjs verification/control-plane/treasury-intake-reporting.test.mjs verification/control-plane/treasury-trusted-sources.test.mjs verification/control-plane/treasury-signed-ingestion.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
