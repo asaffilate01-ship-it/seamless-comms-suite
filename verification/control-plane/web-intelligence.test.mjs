@@ -21,8 +21,9 @@ test("phase 1 is optional and no tenant gets activation by migration", () => {
 
 test("tenant-scoped reads are RLS protected with no direct client write grants", () => {
   for (const table of ["web_intel_sources", "web_intel_jobs", "web_intel_documents", "web_intel_events"]) {
-    assert.match(sql, new RegExp("ALTER TABLE public\\." + table + " ENABLE ROW LEVEL SECURITY"));
+    assert.match(sql, new RegExp("\\b" + table + "\\b"));
   }
+  assert.match(sql, /EXECUTE format\(\x27ALTER TABLE public\.%I ENABLE ROW LEVEL SECURITY\x27,tab\)/);
   assert.match(sql, /CREATE POLICY "web intel tenant documents read"/);
   assert.match(sql, /public\.is_tenant_member\(tenant_id,\(select auth\.uid\(\)\)\)/);
   assert.match(sql, /GRANT SELECT ON public\.%I TO authenticated/);
