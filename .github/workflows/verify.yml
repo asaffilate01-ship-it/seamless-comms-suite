@@ -63,6 +63,8 @@ jobs:
         run: node --test verification/control-plane/agent-factory-phase2.test.mjs
       - name: Governed AI Workforce configuration and tenant isolation
         run: node --test verification/control-plane/ai-workforce-phase3.test.mjs
+      - name: AI Workforce task review and locked execution safety
+        run: node --test verification/control-plane/ai-workforce-phase4a.test.mjs
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
