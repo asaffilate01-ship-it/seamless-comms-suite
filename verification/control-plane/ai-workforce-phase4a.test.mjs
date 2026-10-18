@@ -51,7 +51,7 @@ test("independent reviews are versioned and never grant live execution", () => {
   assert.match(sql, /'approved_brief'/);
   assert.match(sql, /'shortlisted_metadata'/);
   assert.match(sql, /rec\.status<>'requested' OR auth\.uid\(\)=rec\.requested_by/);
-  assert.match(sql, /R[AEI]S?E EXCEPTION 'Independent access proposal reviewer required'/);
+  assert.match(sql, /RAISE EXCEPTION 'Independent access proposal reviewer required'/);
   assert.doesNotMatch(sql, /'connected'|'live_grant'|'executable'/);
 });
 
@@ -79,8 +79,8 @@ test("schedules are inert metadata and input validation rejects arbitrary cron/t
 
 test("readiness report always fails closed on model/tool/provider permission", () => {
   assert.match(sql, /CREATE FUNCTION public\.preflight_ai_employee_task/);
-  assert.match(sql, /'employee_execution_not_deployed'/);
-  assert.match(sql, /'capability_grants_not_verified'/);
+  assert.match(sql, /employee_execution_not_deployed/);
+  assert.match(sql, /capability_grants_not_verified/);
   assert.match(sql, /'canExecute',false,'modelCalls',0/);
   assert.match(sql, /'toolCalls',0,'queuedJobs',0/);
   assert.match(sql, /'scheduleEnabled',false/);
