@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 
@@ -50,7 +51,7 @@ async function asAdmin(fn) {
   }
 }
 
-await asAdmin(() => db.query("SELECT public.platform_bootstrap_dishbee_pilot()"));
+await seedIsolatedDishbeeTestTenants(db,admin);
 
 const first = await asAdmin(async () =>
   (await db.query("SELECT public.platform_enable_haccora_dishbee_pilot(true) AS result")).rows[0].result
