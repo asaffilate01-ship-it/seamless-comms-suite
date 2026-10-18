@@ -47,7 +47,7 @@ CREATE TABLE public.ai_ruflo_tenant_bindings (
 -- shortlisted request, current active product/entitlement, same country and
 -- independently verified upstream digest before a sandbox can be marked ready.
 CREATE OR REPLACE FUNCTION public.guard_ruflo_tenant_binding()
-RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $
+RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
 BEGIN
  IF NEW.status='sandbox_verified' THEN
   IF NOT EXISTS(
@@ -72,7 +72,7 @@ BEGIN
   ) THEN RAISE EXCEPTION 'Ruflo pilot requester cannot attest sandbox'; END IF;
  END IF;
  RETURN NEW;
-END $;
+END $$;
 CREATE TRIGGER ai_ruflo_binding_scope_guard BEFORE INSERT OR UPDATE
  ON public.ai_ruflo_tenant_bindings FOR EACH ROW
  EXECUTE FUNCTION public.guard_ruflo_tenant_binding();
