@@ -19,6 +19,7 @@ CREATE TABLE public.ai_employee_tasks (
  status text NOT NULL DEFAULT 'draft'
     CHECK (status IN ('draft','pending_review','approved_brief','returned','cancelled')),
  employee_revision integer NOT NULL DEFAULT 0 CHECK(employee_revision>=0),
+ revision integer NOT NULL DEFAULT 1 CHECK(revision>=1),
  created_by uuid NOT NULL REFERENCES auth.users(id),
  last_edited_by uuid NOT NULL REFERENCES auth.users(id),
  reviewed_by uuid REFERENCES auth.users(id),
@@ -188,12 +189,67 @@ BEGIN
    acceptance_criteria,requested_capabilities,proposed_trigger,created_by,last_edited_by)
  VALUES (_tenant,_product,_employee,_request_key,name,goal,output_text,
    criteria_text,caps,trig,auth.uid(),auth.uid())
+ ON CONFLICT(tenant_id,product_key,request_key) DO NOTHING
  RETURNING id INTO result;
+ IF result IS NULL THEN
+   SELECT * INTO STRICT existing FROM public.ai_employee_tasks
+   WHERE tenant_id=_tenant AND product_key=_product AND request_key=_request_key;
+   IF existing.employee_id<>_employee OR existing.title<>name OR
+      existing.objective<>goal OR existing.output_spec<>output_text OR
+      existing.acceptance_criteria<>criteria_text OR
+      existing.requested_capabilities<>caps OR existing.proposed_trigger<>trig THEN
+     RAISE EXCEPTION 'Task idempotency payload changed';
+   END IF;
+   RETURN existing.id;
+ END IF;
  INSERT INTO public.ai_employee_task_events
   (tenant_id,product_key,employee_id,task_id,event_type,actor_id)
  VALUES (_tenant,_product,_employee,result,'created',auth.uid());
  RETURN result;
 END $create$;
+
+-- Revision-aware edits. A returned brief can be corrected and resubmitted.
+-- Editing an approved brief revokes the old approval and resets to draft.
+CREATE FUNCTION public.revise_ai_employee_task(
+ _tenant uuid,_product text,_employee uuid,_task uuid,_expected_revision integer,
+ _title text,_objective text,_output_spec text,_criteria text,
+ _capabilities text[],_trigger jsonb)
+RETURNS public.ai_employee_tasks LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $revise$
+DECLARE
+ e public.ai_employees; t public.ai_employee_tasks; result public.ai_employee_tasks;
+ caps text[]; trig jsonb;
+BEGIN
+ PERFORM public.ai_workforce_require_admin(_tenant,_product);
+ SELECT * INTO STRICT e FROM public.ai_employees
+  WHERE id=_employee AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ SELECT * INTO STRICT t FROM public.ai_employee_tasks
+  WHERE id=_task AND employee_id=_employee AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF e.status='retired' OR t.status NOT IN('draft','returned','approved_brief') THEN
+   RAISE EXCEPTION 'This employee task cannot be revised';
+ END IF;
+ IF t.revision<>_expected_revision THEN
+   RAISE EXCEPTION 'Task has been edited elsewhere: refresh before saving';
+ END IF;
+ IF length(btrim(COALESCE(_title,''))) NOT BETWEEN 4 AND 180 OR
+    length(btrim(COALESCE(_objective,''))) NOT BETWEEN 10 AND 3000 OR
+    length(btrim(COALESCE(_output_spec,''))) NOT BETWEEN 4 AND 1000 OR
+    length(btrim(COALESCE(_criteria,''))) NOT BETWEEN 8 AND 1800 THEN
+   RAISE EXCEPTION 'Invalid revised task brief';
+ END IF;
+ caps:=public.ai_workforce_check_task_capabilities(_employee,_tenant,_product,_capabilities);
+ trig:=public.ai_workforce_check_trigger(_trigger);
+ UPDATE public.ai_employee_tasks
+ SET title=btrim(_title),objective=btrim(_objective),output_spec=btrim(_output_spec),
+     acceptance_criteria=btrim(_criteria),requested_capabilities=caps,
+     proposed_trigger=trig,status='draft',employee_revision=0,revision=t.revision+1,
+     last_edited_by=auth.uid(),reviewed_by=NULL,reviewed_at=NULL,review_note=NULL,updated_at=now()
+ WHERE id=t.id RETURNING * INTO result;
+ INSERT INTO public.ai_employee_task_events
+ (tenant_id,product_key,employee_id,task_id,event_type,actor_id,detail)
+ VALUES(_tenant,_product,_employee,_task,'updated',auth.uid(),
+        jsonb_build_object('revision',result.revision,'reviewReset',true));
+ RETURN result;
+END $revise$;
 
 -- Task review is administrative approval of a written brief, NOT approval
 -- to execute a model or third-party action.
@@ -399,11 +455,13 @@ GRANT EXECUTE ON FUNCTION public.block_unverified_ai_employee_run_link() TO serv
 DO $grants$
 BEGIN
  REVOKE ALL ON FUNCTION public.create_ai_employee_task(uuid,text,uuid,uuid,text,text,text,text,text[],jsonb) FROM PUBLIC,anon;
+ REVOKE ALL ON FUNCTION public.revise_ai_employee_task(uuid,text,uuid,uuid,integer,text,text,text,text,text[],jsonb) FROM PUBLIC,anon;
  REVOKE ALL ON FUNCTION public.transition_ai_employee_task(uuid,text,uuid,uuid,text,text) FROM PUBLIC,anon;
  REVOKE ALL ON FUNCTION public.request_ai_employee_access_review(uuid,text,uuid,text,text,text) FROM PUBLIC,anon;
  REVOKE ALL ON FUNCTION public.review_ai_employee_access_proposal(uuid,text,uuid,text,text) FROM PUBLIC,anon;
  REVOKE ALL ON FUNCTION public.preflight_ai_employee_task(uuid,text,uuid,uuid) FROM PUBLIC,anon;
  GRANT EXECUTE ON FUNCTION public.create_ai_employee_task(uuid,text,uuid,uuid,text,text,text,text,text[],jsonb) TO authenticated;
+ GRANT EXECUTE ON FUNCTION public.revise_ai_employee_task(uuid,text,uuid,uuid,integer,text,text,text,text,text[],jsonb) TO authenticated;
  GRANT EXECUTE ON FUNCTION public.transition_ai_employee_task(uuid,text,uuid,uuid,text,text) TO authenticated;
  GRANT EXECUTE ON FUNCTION public.request_ai_employee_access_review(uuid,text,uuid,text,text,text) TO authenticated;
  GRANT EXECUTE ON FUNCTION public.review_ai_employee_access_proposal(uuid,text,uuid,text,text) TO authenticated;
