@@ -71,11 +71,12 @@ function timestamp(iso: string): number {
 function toHex(bytes: Uint8Array): string {
   return [...bytes].map(x=>x.toString(16).padStart(2,"0")).join("");
 }
-function fromHex(value: string): Uint8Array {
+function fromHex(value: string): ArrayBuffer {
   if (!hex64.test(value)) throw new Error("Malformed 256-bit signature or digest.");
-  const bytes = new Uint8Array(32);
+  const buffer = new ArrayBuffer(32);
+  const bytes = new Uint8Array(buffer);
   for (let i=0;i<32;i++) bytes[i] = parseInt(value.slice(i*2,i*2+2),16);
-  return bytes;
+  return buffer;
 }
 function subtleEngine(): SubtleCrypto {
   if (!globalThis.crypto?.subtle) throw new Error("Secure WebCrypto engine required.");
