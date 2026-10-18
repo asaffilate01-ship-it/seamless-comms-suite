@@ -147,6 +147,35 @@ test("Money input precision and operator thresholds must be safe and explicit",(
   assert.throws(()=>run(huge),/safe numeric range/);
 });
 
+test("Skipped historic forecast weeks block tolerance assessment instead of overstating coverage",()=>{
+  const d=demo();
+  d.forecastHistoryCsv=d.forecastHistoryCsv.split("\n")
+    .filter(x=>!x.includes(",GBP,2026-07-22,")).join("\n");
+  const report=run(d),gbp=report.currencies.find(x=>x.currency==="GBP");
+  assert.equal(gbp.forecastWeeks,7);
+  assert.equal(gbp.matchedWeeks,7);
+  assert.equal(gbp.tolerancePassed,null);
+  assert.equal(report.status,"insufficient_evidence");
+  assert.ok(report.findings.some(f=>f.code==="IRREGULAR_FORECAST_WEEK_INTERVAL"));
+});
+
+test("Explicit tolerance breach outranks other currencies with missing evidence",()=>{
+  const d=demo();
+  d.maximumWapeBasisPoints=100;
+  d.actualHistoryCsv=d.actualHistoryCsv.split("\n")
+    .filter(x=>!x.startsWith("actual-EUR-3,")).join("\n");
+  const r=run(d);
+  assert.equal(r.currencies.find(x=>x.currency==="GBP").tolerancePassed,false);
+  assert.equal(r.currencies.find(x=>x.currency==="EUR").tolerancePassed,null);
+  assert.equal(r.status,"review_required");
+});
+
+test("An evaluation date later than today can never be called an historical backtest",()=>{
+  const d=demo();
+  d.evaluationDate="2040-01-01";
+  assert.throws(()=>run(d),/Future evaluation dates/);
+});
+
 test("Source row evidence and limitations appear in human-readable working paper",()=>{
   const report=run();
   const md=accuracy.forecastAccuracyMarkdown(report);
