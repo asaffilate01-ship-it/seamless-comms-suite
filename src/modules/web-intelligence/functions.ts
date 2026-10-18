@@ -39,6 +39,28 @@ export type WebIntelDocument = {
   trust_level: string;
   preview: string;
 };
+export type WebIntelMonitor = {
+  id: string;
+  tenant_id: string;
+  product_key: string;
+  source_id: string;
+  enabled: boolean;
+  interval_hours: 24 | 72 | 168;
+  retention_days: 7 | 30 | 90;
+  next_due_at: string | null;
+  last_enqueued_at: string | null;
+  last_observed_at: string | null;
+  updated_at: string;
+};
+export type WebIntelChange = {
+  id: string;
+  job_id: string;
+  source_id: string;
+  change_kind: "initial" | "changed" | "unchanged";
+  previous_sha256: string | null;
+  current_sha256: string;
+  detected_at: string;
+};
 export type WebIntelWorkspace = {
   entitled: boolean;
   isPlatformAdmin: boolean;
@@ -46,6 +68,8 @@ export type WebIntelWorkspace = {
   reviews: WebIntelSource[];
   jobs: WebIntelJob[];
   documents: WebIntelDocument[];
+  monitors: WebIntelMonitor[];
+  changes: WebIntelChange[];
 };
 
 export const getWebIntelWorkspace = createServerFn({ method: "POST" })
@@ -64,7 +88,7 @@ export const getWebIntelWorkspace = createServerFn({ method: "POST" })
     if (platform.error || entitlement.error) throw new Error("Web Intelligence access check unavailable");
     const isPlatformAdmin = platform.data === true;
 
-    const [sources, jobs, documents, reviews] = await Promise.all([
+    const [sources, jobs, documents, reviews, monitors, changes] = await Promise.all([
       db.from("web_intel_sources")
         .select("id,name,url,hostname,category,purpose,status,created_at")
         .eq("status", "approved").order("name").limit(100),
@@ -82,8 +106,16 @@ export const getWebIntelWorkspace = createServerFn({ method: "POST" })
             .in("status", ["pending", "approved"])
             .order("created_at", { ascending: false }).limit(60)
         : Promise.resolve({ data: [], error: null }),
+      db.from("web_intel_monitors")
+        .select("id,tenant_id,product_key,source_id,enabled,interval_hours,retention_days,next_due_at,last_enqueued_at,last_observed_at,updated_at")
+        .eq("tenant_id", data.tenantId).eq("product_key", data.productKey)
+        .order("updated_at", { ascending: false }).limit(30),
+      db.from("web_intel_changes")
+        .select("id,job_id,source_id,change_kind,previous_sha256,current_sha256,detected_at")
+        .eq("tenant_id", data.tenantId).eq("product_key", data.productKey)
+        .order("detected_at", { ascending: false }).limit(30),
     ]);
-    for (const result of [sources, jobs, documents, reviews]) {
+    for (const result of [sources, jobs, documents, reviews, monitors, changes]) {
       if (result.error) throw new Error("Web Intelligence data is unavailable");
     }
     return {
@@ -92,6 +124,8 @@ export const getWebIntelWorkspace = createServerFn({ method: "POST" })
       sources: (sources.data ?? []) as WebIntelSource[],
       reviews: (reviews.data ?? []) as WebIntelSource[],
       jobs: (jobs.data ?? []) as WebIntelJob[],
+      monitors: (monitors.data ?? []) as WebIntelMonitor[],
+      changes: (changes.data ?? []) as WebIntelChange[],
       documents: ((documents.data ?? []) as Array<Record<string, unknown>>).map((doc) => ({
         id: String(doc.id),
         job_id: String(doc.job_id),
@@ -168,4 +202,31 @@ export const reviewWebIntelSource = createServerFn({ method: "POST" })
     });
     if (result.error) throw new Error(result.error.message);
     return result.data as WebIntelSource;
+  });
+
+/** The server does not trust client tenant ID, role, entitlements or source approvals.
+ * Those checks are repeated inside the narrow PostgreSQL RPC before mutation.
+ * Newly configured monitors default to paused unless explicitly enabled.
+ */
+export const configureWebIntelMonitor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => scope.extend({
+    sourceId: uuid,
+    intervalHours: z.union([z.literal(24), z.literal(72), z.literal(168)]),
+    retentionDays: z.union([z.literal(7), z.literal(30), z.literal(90)]),
+    enabled: z.boolean(),
+  }).parse(input))
+  .handler(async ({ context, data }) => {
+    const access = await requireService(context, data.tenantId, "omniqora.web-intelligence");
+    requireAdminRole(access.role);
+    const result = await (context.supabase as any).rpc("configure_web_intel_monitor", {
+      _tenant: data.tenantId,
+      _product: data.productKey,
+      _source: data.sourceId,
+      _interval_hours: data.intervalHours,
+      _retention_days: data.retentionDays,
+      _enabled: data.enabled,
+    });
+    if (result.error) throw new Error(result.error.message);
+    return result.data as WebIntelMonitor;
   });
