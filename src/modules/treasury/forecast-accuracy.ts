@@ -302,6 +302,20 @@ export function forecastAccuracyMarkdown(report:TreasuryForecastAccuracyReport):
     // Only controlled generated codes and static explanatory strings are used.
     s.push("- "+f.currency+" "+f.code+": "+f.explanation+" ("+f.evidence+")");
   }
+  s.push("","## Source-paired observations");
+  s.push("| Currency | Week | Baseline | Actual | Signed error | Frozen forecast source | Actual cash source |");
+  s.push("|---|---|---:|---:|---:|---|---|");
+  for(const o of report.observations.slice(0,100)){
+    s.push("| "+o.currency+" | "+o.weekEnd+
+      " | "+formatMinor(o.baselineMinor,o.currency)+
+      " | "+formatMinor(o.actualMinor,o.currency)+
+      " | "+formatMinor(o.signedErrorMinor,o.currency)+
+      " | "+o.forecastEvidence+" | "+o.actualEvidence+" |");
+  }
+  if(report.observations.length>100) s.push(
+    "Additional source pairs omitted from this concise working paper: "+
+      (report.observations.length-100)+". Consult the source-linked JSON report."
+  );
   s.push("","## Methodology",...report.methodology.map(x=>"- "+x));
   return s.join("\n")+"\n";
 }
