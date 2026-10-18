@@ -113,9 +113,9 @@ BEGIN
   EXECUTE format($p$CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (
     public.is_platform_admin(auth.uid()) OR EXISTS(
       SELECT 1 FROM public.tenant_members m
-      WHERE m.tenant_id=tenant_id AND m.user_id=auth.uid()
+      WHERE m.tenant_id=%I.tenant_id AND m.user_id=auth.uid()
         AND m.role IN ('owner','admin'))
-  )$p$,'ai workforce admin read '||tab,tab);
+  )$p$,'ai workforce admin read '||tab,tab,tab);
  END LOOP;
 END $security$;
 
@@ -183,16 +183,16 @@ BEGIN
     length(_profile::text)>30000 THEN
   RAISE EXCEPTION 'Invalid AI employee profile';
  END IF;
- IF jsonb_typeof(_profile->'goal')<>'string'
+ IF jsonb_typeof(_profile->'goal') IS DISTINCT FROM 'string'
     OR length(btrim(_profile->>'goal')) NOT BETWEEN 10 AND 1500
-    OR jsonb_typeof(_profile->'businessContext')<>'string'
+    OR jsonb_typeof(_profile->'businessContext') IS DISTINCT FROM 'string'
     OR length(_profile->>'businessContext')>6000
-    OR jsonb_typeof(_profile->'instructions')<>'string'
+    OR jsonb_typeof(_profile->'instructions') IS DISTINCT FROM 'string'
     OR length(_profile->>'instructions')>6000 THEN
   RAISE EXCEPTION 'Invalid employee goal, context or instructions';
  END IF;
  FOREACH k IN ARRAY ARRAY['tasks','sopRefs','capabilities'] LOOP
-  IF jsonb_typeof(_profile->k)<>'array' THEN
+  IF jsonb_typeof(_profile->k) IS DISTINCT FROM 'array' THEN
    RAISE EXCEPTION 'Invalid AI employee profile list: %',k;
   END IF;
  END LOOP;
@@ -216,20 +216,20 @@ BEGIN
    RAISE EXCEPTION 'Invalid requested capability';
   END IF;
  END LOOP;
- IF jsonb_typeof(_profile->'trigger')<>'object' THEN
+ IF jsonb_typeof(_profile->'trigger') IS DISTINCT FROM 'object' THEN
   RAISE EXCEPTION 'Invalid proposed trigger';
  END IF;
  trigger_type:=_profile->'trigger'->>'type';
  trigger_value:=COALESCE(_profile->'trigger'->>'value','');
- IF trigger_type NOT IN ('manual','daily','weekly','event') OR length(trigger_value)>120 THEN
+ IF trigger_type IS NULL OR trigger_type NOT IN ('manual','daily','weekly','event') OR length(trigger_value)>120 THEN
   RAISE EXCEPTION 'Unsupported proposed trigger';
  END IF;
  IF trigger_type='event' AND trigger_value !~ '^[a-z0-9][a-z0-9._-]{2,119}$' THEN
   RAISE EXCEPTION 'Invalid event trigger key';
  END IF;
  -- Reject attempts to smuggle arbitrary new keys or an enabled action in JSON.
- IF EXISTS(SELECT 1 FROM jsonb_object_keys(_profile) key
-   WHERE key NOT IN('goal','tasks','businessContext','instructions',
+ IF EXISTS(SELECT 1 FROM jsonb_object_keys(_profile) AS keys(field_name)
+   WHERE field_name NOT IN('goal','tasks','businessContext','instructions',
                     'sopRefs','capabilities','trigger')) THEN
   RAISE EXCEPTION 'Unsupported AI employee profile field';
  END IF;
