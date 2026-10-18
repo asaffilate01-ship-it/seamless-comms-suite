@@ -37,6 +37,7 @@ test("monitors and changes cannot be directly mutated by browser roles", () => {
   assert.match(sql, /REVOKE ALL ON public\.web_intel_monitors,public\.web_intel_changes FROM PUBLIC,anon,authenticated/);
   assert.match(sql, /GRANT SELECT ON public\.web_intel_monitors,public\.web_intel_changes TO authenticated/);
   assert.match(sql, /is_tenant_member\(tenant_id,\(select auth\.uid\(\)\)\)/);
+  assert.match(sql, /has_tenant_entitlement\(tenant_id,\x27omniqora\.web-intelligence\x27\)/);
   assert.match(sql, /REVOKE ALL ON FUNCTION public\.schedule_due_web_intel_monitors\(\)\s+FROM PUBLIC,anon,authenticated/);
   assert.match(sql, /REVOKE ALL ON FUNCTION public\.prune_web_intel_evidence\(\)\s+FROM PUBLIC,anon,authenticated/);
   assert.match(functions, /requireService\(context, data\.tenantId, "omniqora\.web-intelligence"\)/);
