@@ -107,8 +107,17 @@ BEGIN
    WHERE p.tenant_id=_tenant AND p.product_key=_product AND p.status='active')
    OR NOT public.has_tenant_entitlement(_tenant,'omniqora.web-intelligence') THEN
    RAISE EXCEPTION 'Active product and Web Intelligence entitlement required'; END IF;
+ -- Revocation stops future scheduling. Existing monitors can still be paused
+ -- by their tenant administrator, even after a source is revoked.
  IF NOT EXISTS(SELECT 1 FROM public.web_intel_sources s
-    WHERE s.id=_source AND s.status='approved') THEN
+    WHERE s.id=_source AND (
+      s.status='approved'
+      OR (NOT _enabled AND EXISTS(
+        SELECT 1 FROM public.web_intel_monitors old_m
+        WHERE old_m.tenant_id=_tenant AND old_m.product_key=_product
+          AND old_m.source_id=_source
+      ))
+    )) THEN
    RAISE EXCEPTION 'Independently approved source required'; END IF;
  PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(_tenant::text,0));
  SELECT * INTO rec FROM public.web_intel_monitors m
@@ -150,6 +159,16 @@ BEGIN
      AND tp.product_key=m.product_key AND tp.status='active'
    WHERE m.enabled AND m.next_due_at <= now()
      AND public.has_tenant_entitlement(m.tenant_id,'omniqora.web-intelligence')
+     -- Filter backlogged and recently fetched sources BEFORE LIMIT 10 so
+     -- tenants at quota cannot indefinitely starve unrelated due monitors.
+     AND (SELECT count(*) FROM public.web_intel_jobs pending
+          WHERE pending.tenant_id=m.tenant_id
+            AND pending.status IN('queued','running'))<2
+     AND NOT EXISTS(SELECT 1 FROM public.web_intel_jobs recent
+          WHERE recent.tenant_id=m.tenant_id
+            AND recent.source_id=m.source_id
+            AND (recent.status IN('queued','running')
+                 OR recent.created_at>now()-interval '60 minutes'))
    ORDER BY m.next_due_at,m.id
    LIMIT 10 FOR UPDATE OF m SKIP LOCKED
  LOOP
