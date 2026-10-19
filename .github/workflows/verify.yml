@@ -63,6 +63,8 @@ jobs:
         run: node --test verification/control-plane/agent-factory-phase2.test.mjs
       - name: Ruflo isolated MCP sandbox and tenant RLS gates
         run: node --test services/ruflo-bridge/ruflo-bridge.test.mjs verification/control-plane/ruflo-pilot-contract.test.mjs
+      - name: Ruflo scoped probe worker, lease and audit tests
+        run: node --test services/ruflo-bridge/worker-core.test.mjs verification/control-plane/ruflo-probe-worker-contract.test.mjs
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
