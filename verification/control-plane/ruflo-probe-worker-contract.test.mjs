@@ -14,7 +14,8 @@ test("Ruflo probe queue is content-free, bounded, scoped and browser-read-only",
  assert.match(sql,/REVOKE ALL ON public\.ai_ruflo_probe_tasks FROM PUBLIC,anon,authenticated/);
  assert.match(sql,/GRANT SELECT ON public\.ai_ruflo_probe_tasks TO authenticated/);
  assert.match(sql,/public\.is_tenant_member\(tenant_id,auth\.uid\(\)\)/);
- assert.doesNotMatch(sql,/INSERT INTO public\.ai_ruflo_probe_tasks.*VALUES.*[A-Za-z0-9]/s);
+ assert.match(sql,/VALUES\(_tenant,_product,_probe,region_code,_idempotency,auth\.uid\(\)\)/);
+ assert.doesNotMatch(sql,/INSERT INTO public\.ai_ruflo_probe_tasks[\s\S]*?VALUES\s*\('\w/);
  assert.doesNotMatch(sql,/customer_prompt|user_message|model_output|tool_arguments/i);
 });
 test("operator queue is owner/admin-only with independently verified sandbox and strict quotas",()=>{
