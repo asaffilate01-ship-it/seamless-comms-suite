@@ -7,7 +7,7 @@ import {Textarea} from "@/components/ui/textarea";
 import {Badge} from "@/components/ui/badge";
 import {Bot,RefreshCw,ShieldCheck} from "lucide-react";
 import {toast} from "sonner";
-import {getRufloPilotStatus,requestRufloPilot} from "./ruflo.functions";
+import {getRufloPilotStatus,requestRufloPilot,queueRufloHealthProbe} from "./ruflo.functions";
 
 /**
  * Ruflo is an optional orchestration backend, never a second tenant authority.
@@ -16,6 +16,7 @@ import {getRufloPilotStatus,requestRufloPilot} from "./ruflo.functions";
 export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKey:string}){
  const getStatus=useServerFn(getRufloPilotStatus);
  const request=useServerFn(requestRufloPilot);
+ const queueProbe=useServerFn(queueRufloHealthProbe);
  const status=useQuery({
   queryKey:["ruflo-orchestrator-pilot",tenantId,productKey],
   queryFn:()=>getStatus({data:{tenantId,productKey}}),
@@ -23,6 +24,8 @@ export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKe
  });
  const [reason,setReason]=useState("Request a tenant-scoped, read-only Ruflo MCP sandbox evaluation with independent platform security review.");
  const [saving,setSaving]=useState(false);
+ const [probeBusy,setProbeBusy]=useState(false);
+ const [probeName,setProbeName]=useState<"swarm_health"|"swarm_status"|"agent_list">("swarm_health");
  const pilot=status.data?.pilot;
  const binding=status.data?.binding;
  async function submit(){
@@ -35,6 +38,18 @@ export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKe
   }catch(e){toast.error(e instanceof Error?e.message:String(e));}
   finally{setSaving(false);}
  }
+ async function enqueueProbe(){
+  setProbeBusy(true);
+  try{
+   await queueProbe({data:{tenantId,productKey,probeName,idempotencyKey:crypto.randomUUID()}});
+   toast.success("Read-only Ruflo health probe queued; execution requires an independently authorised sandbox worker.");
+   await status.refetch();
+  }catch(e){toast.error(e instanceof Error?e.message:String(e));}
+  finally{setProbeBusy(false);}
+ }
+ const runnable=pilot?.status==="shortlisted"&&binding?.status==="sandbox_verified"&&
+  binding.allowed_probe_tools.includes(probeName) &&
+  !status.data?.probes?.some(p=>p.status==="queued"||p.status==="processing");
  return <Card><CardContent className="space-y-4 p-5">
   <div className="flex flex-wrap items-center justify-between gap-2">
    <h2 className="flex items-center gap-2 font-semibold"><Bot className="h-4 w-4"/> Ruflo multi-agent orchestration pilot</h2>
@@ -70,6 +85,27 @@ export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKe
    Pilot request: {pilot.status} · Region: {pilot.data_region} · Submitted: {pilot.created_at}.
    Shortlisting does not activate credentials, memory sharing or execution.
   </p>}
+  {pilot&&<div className="space-y-2 rounded-md border p-3">
+   <p className="text-sm font-medium">Staging health probe queue</p>
+   <p className="text-xs text-muted-foreground">No customer prompts or data. Allowed tools only: swarm_health, swarm_status and agent_list. Each tenant/product is limited to one open probe and five daily requests. Only a separately deployed, verified, read-only worker may perform a probe.</p>
+   <div className="flex flex-wrap gap-2">
+    <select aria-label="Read-only Ruflo tool" className="rounded-md border bg-background px-2 py-1 text-sm"
+     value={probeName} onChange={e=>setProbeName(e.target.value as typeof probeName)}>
+     <option value="swarm_health">Swarm health</option>
+     <option value="swarm_status">Swarm status</option>
+     <option value="agent_list">Agent list</option>
+    </select>
+    <Button size="sm" variant="outline" onClick={enqueueProbe} disabled={!runnable||probeBusy||status.isFetching}>
+     {probeBusy?"Queueing…":"Queue read-only staging probe"}
+    </Button>
+   </div>
+   {!runnable&&<p className="text-xs text-muted-foreground">Independent pilot shortlisting, verified sandbox binding and an available probe slot are required.</p>}
+   {(status.data?.probes?.length??0)>0&&<div className="space-y-1">
+    {status.data?.probes?.slice(0,8).map(p=><p className="text-xs text-muted-foreground" key={p.id}>
+     {p.probe_key} · {p.status} · {p.created_at} · attempts {p.attempts}
+    </p>)}
+   </div>}
+  </div>}
   {(status.data?.receipts?.length??0)>0&&<div className="space-y-1 text-xs text-muted-foreground">
    <b>Recent isolated probe receipts</b>
    {status.data?.receipts.map(r=><p key={r.id}>{r.recorded_at} · {r.probe_key} · {r.result_status}</p>)}

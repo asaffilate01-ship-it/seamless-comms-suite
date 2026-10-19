@@ -23,12 +23,19 @@ export interface RufloProbeReceipt{
  recorded_at:string;
 }
 
+export interface RufloProbeTask{
+ id:string;probe_key:"swarm_health"|"swarm_status"|"agent_list";
+ status:"queued"|"processing"|"passed"|"failed"|"timed_out"|"denied"|"cancelled";
+ created_at:string;started_at:string|null;completed_at:string|null;
+ attempts:number;error_code:string|null;
+}
+
 export const getRufloPilotStatus=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
 .inputValidator((input:z.input<typeof scope>)=>scope.parse(input))
 .handler(async({context,data})=>{
  await requireTenantMembership(context,data.tenantId);
  const db=context.supabase as any;
- const [request,binding,receipts]=await Promise.all([
+ const [request,binding,receipts,probes]=await Promise.all([
   db.from("ai_ruflo_pilot_requests")
     .select("id,tenant_id,product_key,data_region,reason,status,requested_by,created_at")
     .eq("tenant_id",data.tenantId).eq("product_key",data.productKey).maybeSingle(),
@@ -39,13 +46,18 @@ export const getRufloPilotStatus=createServerFn({method:"POST"}).middleware([req
     .select("id,probe_key,result_status,recorded_at")
     .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
     .order("recorded_at",{ascending:false}).limit(10),
+  db.from("ai_ruflo_probe_tasks")
+   .select("id,probe_key,status,created_at,started_at,completed_at,attempts,error_code")
+   .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
+   .order("created_at",{ascending:false}).limit(15),
  ]);
- if(request.error||binding.error||receipts.error)
+ if(request.error||binding.error||receipts.error||probes.error)
   throw new Error("Ruflo pilot schema or tenant permissions unavailable");
  return{
   pilot:(request.data??null) as RufloPilotRequest|null,
   binding:(binding.data??null) as RufloTenantBinding|null,
   receipts:(receipts.data??[]) as RufloProbeReceipt[],
+  probes:(probes.data??[]) as RufloProbeTask[],
   customerAgentExecutionReady:false as const,
   notice:"Sandbox probes only. Shortlisting is not a connection, credential grant, or customer agent execution.",
  };
@@ -95,4 +107,22 @@ export const reviewRufloPilot=createServerFn({method:"POST"}).middleware([requir
  });
  if(result.error)throw new Error(result.error.message);
  return{requestId:result.data.id as string,status:result.data.status as string};
+});
+
+
+/** Request a no-prompt, no-cost MCP health probe; the browser cannot claim it. */
+export const queueRufloHealthProbe=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+.inputValidator((i:unknown)=>scope.extend({
+ probeName:z.enum(["swarm_health","swarm_status","agent_list"]),
+ idempotencyKey:uuid,
+}).parse(i))
+.handler(async({context,data})=>{
+ const access=await requireService(context,data.tenantId,"omniqora.intelligence-runtime");
+ requireAdminRole(access.role);
+ const result=await(context.supabase as any).rpc("request_ruflo_probe",{
+  _tenant:data.tenantId,_product:data.productKey,
+  _probe:data.probeName,_idempotency:data.idempotencyKey,
+ });
+ if(result.error)throw new Error(result.error.message);
+ return {taskId:result.data.id as string,status:result.data.status as string};
 });
