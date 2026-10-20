@@ -127,7 +127,14 @@ export class RufloMcpClient{
    if(!Array.isArray(result?.tools)||result.tools.length>MAX_TOOLS)
     throw new Error("Invalid Ruflo MCP tool manifest");
    for(const tool of result.tools){
-    if(typeof tool?.name==="string"&&tool.name.length<160)found.add(tool.name);
+    if(typeof tool?.name!=="string"||tool.name.length>=160)continue;
+    // Never call an allowlisted name if the installed upstream's input schema
+    // requires parameters; a no-args health call must remain valid.
+    if(RUFLO_PROBE_TOOLS.includes(tool.name)){
+     const schema=tool.inputSchema;
+     if(schema?.type!=="object"||(Array.isArray(schema.required)&&schema.required.length>0))continue;
+    }
+    found.add(tool.name);
    }
    if(found.size>MAX_TOOLS)throw new Error("Ruflo MCP tool catalogue exceeded limit");
    cursor=typeof result.nextCursor==="string"?result.nextCursor:null;
@@ -140,7 +147,9 @@ export class RufloMcpClient{
  async probe(tool){
   if(!RUFLO_PROBE_TOOLS.includes(tool))throw new Error("Only approved, read-only Ruflo probes are permitted");
   if(!this.tools.includes(tool))throw new Error("The reviewed Ruflo tool is unavailable");
-  await this.#rpc("tools/call",{name:tool,arguments:{}});
+  const result=await this.#rpc("tools/call",{name:tool,arguments:{}});
+  if(!result||typeof result!=="object"||result.isError===true)
+   throw new Error("Ruflo MCP read-only probe failed");
   // No untrusted tool output or potentially sensitive data leaves this process.
   return {tool,received:true,kind:"read_only_health_probe"};
  }
