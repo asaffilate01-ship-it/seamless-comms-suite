@@ -6,6 +6,7 @@ import {spawn} from "node:child_process";
 import {createHash,timingSafeEqual} from "node:crypto";
 import {readFile,stat} from "node:fs/promises";
 import {isAbsolute} from "node:path";
+import {attestReadOnlyManifest} from "./manifest-attestation.mjs";
 
 export const RUFLO_PROBE_TOOLS=Object.freeze(["swarm_health","swarm_status","agent_list"]);
 const MAX_STDOUT_CHARS=262144;
@@ -40,6 +41,7 @@ export class RufloMcpClient{
   this.timeoutMs=timeoutMs;
   this.spawnProcess=spawnProcess;
   this.tools=[];
+  this.probeManifestSha256=null;
  }
  async connect(){
   if(this.#child||this.#stopped)throw new Error("Ruflo client is not reusable");
@@ -67,7 +69,7 @@ export class RufloMcpClient{
     throw new Error("Ruflo MCP handshake not confirmed");
    this.#notify("notifications/initialized");
    await this.listTools();
-   return {protocolVersion:result.protocolVersion,probeTools:this.tools.filter(name=>RUFLO_PROBE_TOOLS.includes(name))};
+   return {protocolVersion:result.protocolVersion,probeTools:this.tools.filter(name=>RUFLO_PROBE_TOOLS.includes(name)),probeManifestSha256:this.probeManifestSha256};
   }catch(error){this.stop();throw error;}
  }
  #ingest(part){
@@ -121,6 +123,7 @@ export class RufloMcpClient{
  async listTools(){
   if(!this.#child||this.#stopped)throw new Error("Ruflo is not connected");
   const found=new Set();
+  const schemaCandidates=[];
   let cursor;
   for(let page=0;page<4;page++){
    const result=await this.#rpc("tools/list",cursor?{cursor}:{});
@@ -132,7 +135,9 @@ export class RufloMcpClient{
     // requires parameters; a no-args health call must remain valid.
     if(RUFLO_PROBE_TOOLS.includes(tool.name)){
      const schema=tool.inputSchema;
-     if(schema?.type!=="object"||(Array.isArray(schema.required)&&schema.required.length>0))continue;
+     if(schema?.type!=="object"||(schema.required!==undefined&&
+        (!Array.isArray(schema.required)||schema.required.length>0)))continue;
+     schemaCandidates.push({name:tool.name,inputSchema:schema});
     }
     found.add(tool.name);
    }
@@ -141,8 +146,10 @@ export class RufloMcpClient{
    if(!cursor)break;
    if(page===3)throw new Error("Ruflo MCP pagination exceeded limit");
   }
+  const evidence=attestReadOnlyManifest(schemaCandidates);
+  this.probeManifestSha256=evidence.sha256;
   this.tools=[...found];
-  return this.tools.filter(name=>RUFLO_PROBE_TOOLS.includes(name));
+  return evidence.toolNames;
  }
  async probe(tool){
   if(!RUFLO_PROBE_TOOLS.includes(tool))throw new Error("Only approved, read-only Ruflo probes are permitted");

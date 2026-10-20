@@ -1,15 +1,18 @@
 import {randomUUID} from "node:crypto";
 import {RUFLO_PROBE_TOOLS} from "./mcp-client.mjs";
+import {assertManifestPin} from "./manifest-attestation.mjs";
 const id=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const product=/^[a-z0-9][a-z0-9.-]{1,80}$/;
 const digest=/^[a-f0-9]{64}$/;
 export function validateRufloWorkerConfig(config){
  if(!config||!id.test(config.tenantId)||!product.test(config.productKey)||
-    !/^[A-Z]{2}$/.test(config.region)||!digest.test(config.expectedDigest))
+    !/^[A-Z]{2}$/.test(config.region)||!digest.test(config.expectedDigest)||
+    !digest.test(config.expectedManifestDigest))
   throw new Error("Explicit tenant, product, data region and pinned Ruflo SHA-256 required");
  return Object.freeze({
   tenantId:config.tenantId,productKey:config.productKey,region:config.region,
   expectedDigest:config.expectedDigest,
+  expectedManifestDigest:config.expectedManifestDigest,
  });
 }
 function claimIsValid(task,config){
@@ -22,6 +25,7 @@ function claimIsValid(task,config){
 function preflightIsValid(preflight,task,config){
  return preflight?.allowed===true&&preflight.toolName===task.toolName&&
   preflight.expectedDigest===config.expectedDigest&&
+  preflight.expectedManifestDigest===config.expectedManifestDigest&&
   preflight.dataRegion===config.region&&
   Number.isFinite(Date.parse(preflight.leaseExpiresAt))&&
   Date.parse(preflight.leaseExpiresAt)>Date.now();
@@ -49,6 +53,7 @@ export async function processOneRufloProbe({gateway,clientFactory,config,receipt
   if(!preflightIsValid(before,task,cfg))throw new Error("Policy verification denied");
   client=await clientFactory();
   const connected=await client.connect();
+  assertManifestPin(connected?.probeManifestSha256,cfg.expectedManifestDigest);
   if(!Array.isArray(connected?.probeTools)||!connected.probeTools.includes(task.toolName))
    throw new Error("Approved Ruflo tool is unavailable");
   // Rechecking prevents a revoke during process startup from reaching tools/call.

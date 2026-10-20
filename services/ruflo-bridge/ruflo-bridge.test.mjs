@@ -17,6 +17,7 @@ test("pinned MCP stdio sandbox handshakes and refuses mutating tools",async()=>{
   const info=await client.connect();
   assert.equal(info.protocolVersion,"2025-03-26");
   assert.deepEqual(info.probeTools,["swarm_health","agent_list","swarm_status"]);
+  assert.match(info.probeManifestSha256,/^[a-f0-9]{64}$/);
   await assert.rejects(client.probe("swarm_status"),/read-only probe failed/);
   assert.equal((await client.probe("swarm_health")).received,true);
   await assert.rejects(client.probe("task_create"),/read-only/);

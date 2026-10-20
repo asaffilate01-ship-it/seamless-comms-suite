@@ -15,7 +15,8 @@ try{
  console.log(JSON.stringify({
   integration:"ruflo",mode:"read_only_sandbox_probe",
   handshake:true,protocolVersion:connected.protocolVersion,
-  readOnlyToolNames:connected.probeTools,probeReceived:probe?.received??false,
+  readOnlyToolNames:connected.probeTools,probeManifestSha256:connected.probeManifestSha256,
+  probeReceived:probe?.received??false,
   tenantExecutionEnabled:false,
  }));
 }catch{
