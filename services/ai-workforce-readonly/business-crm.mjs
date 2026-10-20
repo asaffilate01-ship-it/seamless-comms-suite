@@ -127,7 +127,9 @@ export async function performReadOnlyCrmModelCall({
  if(typeof data.id!=="string"||!/^resp_[A-Za-z0-9_-]{8,110}$/.test(data.id))
   throw new Error("Missing valid provider usage receipt identifier");
  const input=data.usage?.input_tokens,output=data.usage?.output_tokens;
- if(!Number.isInteger(input)||!Number.isInteger(output)||
+ const cached=data.usage?.input_tokens_details?.cached_tokens??0;
+ if(!Number.isInteger(cached)||cached<0||!Number.isInteger(input)||cached>input||
+    !Number.isInteger(output)||
   input<1||input>claim.maxInputTokens||
   output<1||output>claim.maxOutputTokens){
   throw new Error("Model usage exceeded admission limits");
@@ -135,7 +137,7 @@ export async function performReadOnlyCrmModelCall({
  return Object.freeze({
   summary,sourceKey:SOURCE,sourceHash:claim.sourceHash,
   dataOrigin:"first_party_crm_aggregate",modelId:claim.modelKey,
-  providerReceiptId:data.id,inputTokens:input,outputTokens:output,
+  providerReceiptId:data.id,inputTokens:input,cachedInputTokens:cached,outputTokens:output,
   modelCalls:1,toolCalls:0,customerActions:0,
   reviewRequired:true,
  });

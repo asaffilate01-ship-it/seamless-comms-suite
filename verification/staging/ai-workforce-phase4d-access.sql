@@ -185,7 +185,7 @@ BEGIN
   'dataOrigin','first_party_crm_aggregate',
   'modelId','gpt-4.1-mini',
   'modelCalls',1,'toolCalls',0,'customerActions',0,
-  'reviewRequired',true,'inputTokens',180,'outputTokens',80,
+  'reviewRequired',true,'inputTokens',180,'cachedInputTokens',0,'outputTokens',80,
   'providerReceiptId','resp_localfixture_1234567890',
   'summary','The CRM aggregate contains twenty synthetic leads. Five converted, ten qualified; small groups suppressed.');
  payload:=public.finish_ai_workforce_readonly_job(

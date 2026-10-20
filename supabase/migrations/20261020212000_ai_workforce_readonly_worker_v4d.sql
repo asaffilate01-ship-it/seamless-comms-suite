@@ -94,7 +94,7 @@ DECLARE
  r public.ai_agent_runs;b public.ai_budgeted_run_reservations;
  e public.ai_employees;t public.ai_employee_tasks;
  s public.ai_workforce_readonly_sources;p public.ai_workforce_readonly_pilots;
- rate public.ai_reviewed_model_rates;input_count bigint;output_count bigint;
+ rate public.ai_reviewed_model_rates;input_count bigint;cached_count bigint;output_count bigint;
  actual_minor bigint;receipt_ref text;summary_text text;settled jsonb;
 BEGIN
  IF auth.role() IS DISTINCT FROM 'service_role' OR _worker_ref IS NULL OR
@@ -148,8 +148,423 @@ BEGIN
   length(btrim(COALESCE(summary_text,''))) NOT BETWEEN 20 AND 3500 OR
   receipt_ref IS NULL OR receipt_ref !~ '^resp_[A-Za-z0-9_-]{8,110}$' OR
   _receipt->>'inputTokens' IS NULL OR _receipt->>'outputTokens' IS NULL OR
-  _receipt->>'inputTokens' !~ '^[0-9]{1,7}$' OR
-  _receipt->>'outputTokens' !~ '^[0-9]{1,7}$' THEN
+  _receipt->>'cachedInputTokens' IS NULL OR
+  _receipt->>'inputTokens' !~ '^[0-9]{1,7}
+  RAISE EXCEPTION 'Incomplete model output or provider receipt';
+ END IF;
+ input_count:=(_receipt->>'inputTokens')::bigint;
+ cached_count:=(_receipt->>'cachedInputTokens')::bigint;
+ output_count:=(_receipt->>'outputTokens')::bigint;
+ IF input_count NOT BETWEEN 1 AND a.max_input_tokens
+  OR cached_count NOT BETWEEN 0 AND input_count
+  OR output_count NOT BETWEEN 1 AND a.max_output_tokens THEN
+  RAISE EXCEPTION 'Provider input/output exceeded approved limits';
+ END IF;
+ SELECT * INTO STRICT rate FROM public.ai_reviewed_model_rates
+  WHERE provider_key=a.provider_key AND model_key=a.model_key
+   AND rate_version=b.rate_version AND currency=b.currency
+   AND status='approved' AND evaluation_passed;
+ actual_minor:=ceil((input_count-cached_count)::numeric*rate.input_minor_per_million/1000000)::bigint
+  +ceil(cached_count::numeric*COALESCE(rate.cached_input_minor_per_million,rate.input_minor_per_million)/1000000)::bigint
+  +ceil(output_count::numeric*rate.output_minor_per_million/1000000)::bigint;
+ IF actual_minor>b.reserved_minor OR actual_minor>p.max_run_cost_minor THEN
+  RAISE EXCEPTION 'Reported token usage exceeds approved reservation';
+ END IF;
+ settled:=public.settle_budgeted_ai_agent(r.id,actual_minor,receipt_ref);
+ IF settled->>'status'<>'settled' THEN
+  RAISE EXCEPTION 'Canonical provider usage reconciliation failed';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status='waiting_review',response_ref=receipt_ref WHERE id=a.id;
+ UPDATE public.ai_agent_runs SET status='waiting_review',
+  result=jsonb_build_object('summary',btrim(summary_text),
+    'dataOrigin','first_party_crm_aggregate','sourceKey',s.source_key,
+    'sourceHash',a.snapshot_hash,'humanReviewed',false,
+    'providerReceiptId',receipt_ref,'inputTokens',input_count,
+    'cachedInputTokens',cached_count,
+    'outputTokens',output_count,'meteredCostMinor',actual_minor),
+  token_usage=jsonb_build_object('inputTokens',input_count,
+    'cachedInputTokens',cached_count,'outputTokens',output_count),
+  updated_at=now()
+ WHERE id=r.id;
+ UPDATE public.intelligence_jobs SET status='waiting_review',
+  result=jsonb_build_object('summary',btrim(summary_text),'sourceKey',s.source_key,
+    'sourceHash',a.snapshot_hash,'reviewRequired',true,
+    'providerReceiptId',receipt_ref,'meteredCostMinor',actual_minor),
+  provider_key=a.provider_key,model=a.model_key,locked_at=NULL,updated_at=now()
+ WHERE id=j.id;
+ RETURN jsonb_build_object('admissionId',a.id,'runId',r.id,
+  'status','waiting_review','reviewRequired',true,
+  'meteredCostMinor',actual_minor,'currency',b.currency,'modelCalls',1,
+  'toolCalls',0,'customerActions',0);
+END $finish$;
+
+-- If the provider was contacted but no trustworthy receipt can be obtained,
+-- HOLD the reservation for explicit reconciliation. Never record £0 fiction.
+CREATE FUNCTION public.flag_ai_workforce_readonly_reconciliation(
+ _tenant uuid,_product text,_admission uuid,_worker_ref text,_reason text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $flag$
+DECLARE a public.ai_workforce_readonly_admissions;j public.intelligence_jobs;
+BEGIN
+ IF auth.role() IS DISTINCT FROM 'service_role' OR
+   length(btrim(COALESCE(_reason,''))) NOT BETWEEN 12 AND 200 THEN
+  RAISE EXCEPTION 'Trusted reconciliation flag required';
+ END IF;
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ SELECT * INTO STRICT j FROM public.intelligence_jobs
+  WHERE id=a.job_id AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'processing' OR j.status<>'processing' OR
+   a.worker_ref IS DISTINCT FROM _worker_ref OR j.worker_key_id IS DISTINCT FROM _worker_ref THEN
+  RAISE EXCEPTION 'Unverified worker reconciliation request';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status='reconciliation_required',finished_at=now() WHERE id=a.id;
+ UPDATE public.intelligence_jobs SET status='waiting_review',locked_at=NULL,
+  last_error='Model usage reconciliation required',updated_at=now() WHERE id=j.id;
+ UPDATE public.ai_agent_runs SET status='waiting_review',updated_at=now()
+ WHERE id=a.run_id;
+ RETURN jsonb_build_object('admissionId',a.id,
+  'status','reconciliation_required','reservationHeld',true);
+END $flag$;
+
+CREATE FUNCTION public.review_ai_workforce_readonly_result(
+ _tenant uuid,_product text,_admission uuid,_decision text,_note text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $review$
+DECLARE a public.ai_workforce_readonly_admissions;j public.intelligence_jobs;
+BEGIN
+ PERFORM public.ai_workforce_require_admin(_tenant,_product);
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ SELECT * INTO STRICT j FROM public.intelligence_jobs
+  WHERE id=a.job_id AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'waiting_review' OR j.status<>'waiting_review'
+   OR a.requested_by=auth.uid() OR _decision NOT IN('accepted','rejected') OR
+   length(btrim(COALESCE(_note,''))) NOT BETWEEN 12 AND 1000 THEN
+  RAISE EXCEPTION 'Independent human result review required';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'rejected' END,
+   review_by=auth.uid(),review_note=btrim(_note),reviewed_at=now(),finished_at=now()
+ WHERE id=a.id;
+ UPDATE public.ai_agent_runs
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'failed' END,
+   result=result||jsonb_build_object('humanReviewed',true,'reviewDecision',_decision),
+   completed_at=now(),updated_at=now()
+ WHERE id=a.run_id;
+ UPDATE public.intelligence_jobs
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'failed' END,
+   completed_at=now(),updated_at=now() WHERE id=j.id;
+ RETURN jsonb_build_object('admissionId',a.id,'decision',_decision,
+  'humanReviewed',true,'customerActions',0);
+END $review$;
+
+CREATE FUNCTION public.cancel_ai_workforce_readonly_queued(
+ _tenant uuid,_product text,_admission uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $cancel$
+DECLARE a public.ai_workforce_readonly_admissions; original jsonb;
+BEGIN
+ PERFORM public.ai_workforce_require_admin(_tenant,_product);
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'queued' THEN RAISE EXCEPTION 'Only unclaimed CRM analysis can be cancelled'; END IF;
+ original:=public.cancel_budgeted_ai_agent(_tenant,a.run_id);
+ IF original->>'alreadyCancelled'='true' OR original->>'runId' IS DISTINCT FROM a.run_id::text THEN
+  RAISE EXCEPTION 'Canonical budget cancellation not confirmed';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+ SET status='cancelled',finished_at=now() WHERE id=a.id;
+ RETURN jsonb_build_object('admissionId',a.id,'status','cancelled',
+  'canonicalBudgetReleased',true);
+END $cancel$;
+
+REVOKE ALL ON FUNCTION public.claim_ai_workforce_readonly_jobs(uuid,text,text,integer) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.finish_ai_workforce_readonly_job(uuid,text,uuid,text,jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.flag_ai_workforce_readonly_reconciliation(uuid,text,uuid,text,text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.review_ai_workforce_readonly_result(uuid,text,uuid,text,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.cancel_ai_workforce_readonly_queued(uuid,text,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.claim_ai_workforce_readonly_jobs(uuid,text,text,integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.finish_ai_workforce_readonly_job(uuid,text,uuid,text,jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.flag_ai_workforce_readonly_reconciliation(uuid,text,uuid,text,text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.review_ai_workforce_readonly_result(uuid,text,uuid,text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.cancel_ai_workforce_readonly_queued(uuid,text,uuid) TO authenticated;
+
+COMMIT;
+ OR
+  _receipt->>'cachedInputTokens' !~ '^[0-9]{1,7}
+  RAISE EXCEPTION 'Incomplete model output or provider receipt';
+ END IF;
+ input_count:=(_receipt->>'inputTokens')::bigint;
+ output_count:=(_receipt->>'outputTokens')::bigint;
+ IF input_count NOT BETWEEN 1 AND a.max_input_tokens
+  OR output_count NOT BETWEEN 1 AND a.max_output_tokens THEN
+  RAISE EXCEPTION 'Provider input/output exceeded approved limits';
+ END IF;
+ SELECT * INTO STRICT rate FROM public.ai_reviewed_model_rates
+  WHERE provider_key=a.provider_key AND model_key=a.model_key
+   AND rate_version=b.rate_version AND currency=b.currency
+   AND status='approved' AND evaluation_passed;
+ actual_minor:=ceil(input_count::numeric*rate.input_minor_per_million/1000000)::bigint
+  +ceil(output_count::numeric*rate.output_minor_per_million/1000000)::bigint;
+ IF actual_minor>b.reserved_minor OR actual_minor>p.max_run_cost_minor THEN
+  RAISE EXCEPTION 'Reported token usage exceeds approved reservation';
+ END IF;
+ settled:=public.settle_budgeted_ai_agent(r.id,actual_minor,receipt_ref);
+ IF settled->>'status'<>'settled' THEN
+  RAISE EXCEPTION 'Canonical provider usage reconciliation failed';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status='waiting_review',response_ref=receipt_ref WHERE id=a.id;
+ UPDATE public.ai_agent_runs SET status='waiting_review',
+  result=jsonb_build_object('summary',btrim(summary_text),
+    'dataOrigin','first_party_crm_aggregate','sourceKey',s.source_key,
+    'sourceHash',a.snapshot_hash,'humanReviewed',false,
+    'providerReceiptId',receipt_ref,'inputTokens',input_count,
+    'outputTokens',output_count,'meteredCostMinor',actual_minor),
+  token_usage=jsonb_build_object('inputTokens',input_count,'outputTokens',output_count),
+  updated_at=now()
+ WHERE id=r.id;
+ UPDATE public.intelligence_jobs SET status='waiting_review',
+  result=jsonb_build_object('summary',btrim(summary_text),'sourceKey',s.source_key,
+    'sourceHash',a.snapshot_hash,'reviewRequired',true,
+    'providerReceiptId',receipt_ref,'meteredCostMinor',actual_minor),
+  provider_key=a.provider_key,model=a.model_key,locked_at=NULL,updated_at=now()
+ WHERE id=j.id;
+ RETURN jsonb_build_object('admissionId',a.id,'runId',r.id,
+  'status','waiting_review','reviewRequired',true,
+  'meteredCostMinor',actual_minor,'currency',b.currency,'modelCalls',1,
+  'toolCalls',0,'customerActions',0);
+END $finish$;
+
+-- If the provider was contacted but no trustworthy receipt can be obtained,
+-- HOLD the reservation for explicit reconciliation. Never record £0 fiction.
+CREATE FUNCTION public.flag_ai_workforce_readonly_reconciliation(
+ _tenant uuid,_product text,_admission uuid,_worker_ref text,_reason text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $flag$
+DECLARE a public.ai_workforce_readonly_admissions;j public.intelligence_jobs;
+BEGIN
+ IF auth.role() IS DISTINCT FROM 'service_role' OR
+   length(btrim(COALESCE(_reason,''))) NOT BETWEEN 12 AND 200 THEN
+  RAISE EXCEPTION 'Trusted reconciliation flag required';
+ END IF;
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ SELECT * INTO STRICT j FROM public.intelligence_jobs
+  WHERE id=a.job_id AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'processing' OR j.status<>'processing' OR
+   a.worker_ref IS DISTINCT FROM _worker_ref OR j.worker_key_id IS DISTINCT FROM _worker_ref THEN
+  RAISE EXCEPTION 'Unverified worker reconciliation request';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status='reconciliation_required',finished_at=now() WHERE id=a.id;
+ UPDATE public.intelligence_jobs SET status='waiting_review',locked_at=NULL,
+  last_error='Model usage reconciliation required',updated_at=now() WHERE id=j.id;
+ UPDATE public.ai_agent_runs SET status='waiting_review',updated_at=now()
+ WHERE id=a.run_id;
+ RETURN jsonb_build_object('admissionId',a.id,
+  'status','reconciliation_required','reservationHeld',true);
+END $flag$;
+
+CREATE FUNCTION public.review_ai_workforce_readonly_result(
+ _tenant uuid,_product text,_admission uuid,_decision text,_note text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $review$
+DECLARE a public.ai_workforce_readonly_admissions;j public.intelligence_jobs;
+BEGIN
+ PERFORM public.ai_workforce_require_admin(_tenant,_product);
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ SELECT * INTO STRICT j FROM public.intelligence_jobs
+  WHERE id=a.job_id AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'waiting_review' OR j.status<>'waiting_review'
+   OR a.requested_by=auth.uid() OR _decision NOT IN('accepted','rejected') OR
+   length(btrim(COALESCE(_note,''))) NOT BETWEEN 12 AND 1000 THEN
+  RAISE EXCEPTION 'Independent human result review required';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'rejected' END,
+   review_by=auth.uid(),review_note=btrim(_note),reviewed_at=now(),finished_at=now()
+ WHERE id=a.id;
+ UPDATE public.ai_agent_runs
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'failed' END,
+   result=result||jsonb_build_object('humanReviewed',true,'reviewDecision',_decision),
+   completed_at=now(),updated_at=now()
+ WHERE id=a.run_id;
+ UPDATE public.intelligence_jobs
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'failed' END,
+   completed_at=now(),updated_at=now() WHERE id=j.id;
+ RETURN jsonb_build_object('admissionId',a.id,'decision',_decision,
+  'humanReviewed',true,'customerActions',0);
+END $review$;
+
+CREATE FUNCTION public.cancel_ai_workforce_readonly_queued(
+ _tenant uuid,_product text,_admission uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $cancel$
+DECLARE a public.ai_workforce_readonly_admissions; original jsonb;
+BEGIN
+ PERFORM public.ai_workforce_require_admin(_tenant,_product);
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'queued' THEN RAISE EXCEPTION 'Only unclaimed CRM analysis can be cancelled'; END IF;
+ original:=public.cancel_budgeted_ai_agent(_tenant,a.run_id);
+ IF original->>'alreadyCancelled'='true' OR original->>'runId' IS DISTINCT FROM a.run_id::text THEN
+  RAISE EXCEPTION 'Canonical budget cancellation not confirmed';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+ SET status='cancelled',finished_at=now() WHERE id=a.id;
+ RETURN jsonb_build_object('admissionId',a.id,'status','cancelled',
+  'canonicalBudgetReleased',true);
+END $cancel$;
+
+REVOKE ALL ON FUNCTION public.claim_ai_workforce_readonly_jobs(uuid,text,text,integer) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.finish_ai_workforce_readonly_job(uuid,text,uuid,text,jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.flag_ai_workforce_readonly_reconciliation(uuid,text,uuid,text,text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.review_ai_workforce_readonly_result(uuid,text,uuid,text,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.cancel_ai_workforce_readonly_queued(uuid,text,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.claim_ai_workforce_readonly_jobs(uuid,text,text,integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.finish_ai_workforce_readonly_job(uuid,text,uuid,text,jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.flag_ai_workforce_readonly_reconciliation(uuid,text,uuid,text,text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.review_ai_workforce_readonly_result(uuid,text,uuid,text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.cancel_ai_workforce_readonly_queued(uuid,text,uuid) TO authenticated;
+
+COMMIT;
+ OR
+  _receipt->>'outputTokens' !~ '^[0-9]{1,7}
+  RAISE EXCEPTION 'Incomplete model output or provider receipt';
+ END IF;
+ input_count:=(_receipt->>'inputTokens')::bigint;
+ output_count:=(_receipt->>'outputTokens')::bigint;
+ IF input_count NOT BETWEEN 1 AND a.max_input_tokens
+  OR output_count NOT BETWEEN 1 AND a.max_output_tokens THEN
+  RAISE EXCEPTION 'Provider input/output exceeded approved limits';
+ END IF;
+ SELECT * INTO STRICT rate FROM public.ai_reviewed_model_rates
+  WHERE provider_key=a.provider_key AND model_key=a.model_key
+   AND rate_version=b.rate_version AND currency=b.currency
+   AND status='approved' AND evaluation_passed;
+ actual_minor:=ceil(input_count::numeric*rate.input_minor_per_million/1000000)::bigint
+  +ceil(output_count::numeric*rate.output_minor_per_million/1000000)::bigint;
+ IF actual_minor>b.reserved_minor OR actual_minor>p.max_run_cost_minor THEN
+  RAISE EXCEPTION 'Reported token usage exceeds approved reservation';
+ END IF;
+ settled:=public.settle_budgeted_ai_agent(r.id,actual_minor,receipt_ref);
+ IF settled->>'status'<>'settled' THEN
+  RAISE EXCEPTION 'Canonical provider usage reconciliation failed';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status='waiting_review',response_ref=receipt_ref WHERE id=a.id;
+ UPDATE public.ai_agent_runs SET status='waiting_review',
+  result=jsonb_build_object('summary',btrim(summary_text),
+    'dataOrigin','first_party_crm_aggregate','sourceKey',s.source_key,
+    'sourceHash',a.snapshot_hash,'humanReviewed',false,
+    'providerReceiptId',receipt_ref,'inputTokens',input_count,
+    'outputTokens',output_count,'meteredCostMinor',actual_minor),
+  token_usage=jsonb_build_object('inputTokens',input_count,'outputTokens',output_count),
+  updated_at=now()
+ WHERE id=r.id;
+ UPDATE public.intelligence_jobs SET status='waiting_review',
+  result=jsonb_build_object('summary',btrim(summary_text),'sourceKey',s.source_key,
+    'sourceHash',a.snapshot_hash,'reviewRequired',true,
+    'providerReceiptId',receipt_ref,'meteredCostMinor',actual_minor),
+  provider_key=a.provider_key,model=a.model_key,locked_at=NULL,updated_at=now()
+ WHERE id=j.id;
+ RETURN jsonb_build_object('admissionId',a.id,'runId',r.id,
+  'status','waiting_review','reviewRequired',true,
+  'meteredCostMinor',actual_minor,'currency',b.currency,'modelCalls',1,
+  'toolCalls',0,'customerActions',0);
+END $finish$;
+
+-- If the provider was contacted but no trustworthy receipt can be obtained,
+-- HOLD the reservation for explicit reconciliation. Never record £0 fiction.
+CREATE FUNCTION public.flag_ai_workforce_readonly_reconciliation(
+ _tenant uuid,_product text,_admission uuid,_worker_ref text,_reason text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $flag$
+DECLARE a public.ai_workforce_readonly_admissions;j public.intelligence_jobs;
+BEGIN
+ IF auth.role() IS DISTINCT FROM 'service_role' OR
+   length(btrim(COALESCE(_reason,''))) NOT BETWEEN 12 AND 200 THEN
+  RAISE EXCEPTION 'Trusted reconciliation flag required';
+ END IF;
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ SELECT * INTO STRICT j FROM public.intelligence_jobs
+  WHERE id=a.job_id AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'processing' OR j.status<>'processing' OR
+   a.worker_ref IS DISTINCT FROM _worker_ref OR j.worker_key_id IS DISTINCT FROM _worker_ref THEN
+  RAISE EXCEPTION 'Unverified worker reconciliation request';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status='reconciliation_required',finished_at=now() WHERE id=a.id;
+ UPDATE public.intelligence_jobs SET status='waiting_review',locked_at=NULL,
+  last_error='Model usage reconciliation required',updated_at=now() WHERE id=j.id;
+ UPDATE public.ai_agent_runs SET status='waiting_review',updated_at=now()
+ WHERE id=a.run_id;
+ RETURN jsonb_build_object('admissionId',a.id,
+  'status','reconciliation_required','reservationHeld',true);
+END $flag$;
+
+CREATE FUNCTION public.review_ai_workforce_readonly_result(
+ _tenant uuid,_product text,_admission uuid,_decision text,_note text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $review$
+DECLARE a public.ai_workforce_readonly_admissions;j public.intelligence_jobs;
+BEGIN
+ PERFORM public.ai_workforce_require_admin(_tenant,_product);
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ SELECT * INTO STRICT j FROM public.intelligence_jobs
+  WHERE id=a.job_id AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'waiting_review' OR j.status<>'waiting_review'
+   OR a.requested_by=auth.uid() OR _decision NOT IN('accepted','rejected') OR
+   length(btrim(COALESCE(_note,''))) NOT BETWEEN 12 AND 1000 THEN
+  RAISE EXCEPTION 'Independent human result review required';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'rejected' END,
+   review_by=auth.uid(),review_note=btrim(_note),reviewed_at=now(),finished_at=now()
+ WHERE id=a.id;
+ UPDATE public.ai_agent_runs
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'failed' END,
+   result=result||jsonb_build_object('humanReviewed',true,'reviewDecision',_decision),
+   completed_at=now(),updated_at=now()
+ WHERE id=a.run_id;
+ UPDATE public.intelligence_jobs
+  SET status=CASE WHEN _decision='accepted' THEN 'completed' ELSE 'failed' END,
+   completed_at=now(),updated_at=now() WHERE id=j.id;
+ RETURN jsonb_build_object('admissionId',a.id,'decision',_decision,
+  'humanReviewed',true,'customerActions',0);
+END $review$;
+
+CREATE FUNCTION public.cancel_ai_workforce_readonly_queued(
+ _tenant uuid,_product text,_admission uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $cancel$
+DECLARE a public.ai_workforce_readonly_admissions; original jsonb;
+BEGIN
+ PERFORM public.ai_workforce_require_admin(_tenant,_product);
+ SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
+  WHERE id=_admission AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
+ IF a.status<>'queued' THEN RAISE EXCEPTION 'Only unclaimed CRM analysis can be cancelled'; END IF;
+ original:=public.cancel_budgeted_ai_agent(_tenant,a.run_id);
+ IF original->>'alreadyCancelled'='true' OR original->>'runId' IS DISTINCT FROM a.run_id::text THEN
+  RAISE EXCEPTION 'Canonical budget cancellation not confirmed';
+ END IF;
+ UPDATE public.ai_workforce_readonly_admissions
+ SET status='cancelled',finished_at=now() WHERE id=a.id;
+ RETURN jsonb_build_object('admissionId',a.id,'status','cancelled',
+  'canonicalBudgetReleased',true);
+END $cancel$;
+
+REVOKE ALL ON FUNCTION public.claim_ai_workforce_readonly_jobs(uuid,text,text,integer) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.finish_ai_workforce_readonly_job(uuid,text,uuid,text,jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.flag_ai_workforce_readonly_reconciliation(uuid,text,uuid,text,text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.review_ai_workforce_readonly_result(uuid,text,uuid,text,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.cancel_ai_workforce_readonly_queued(uuid,text,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.claim_ai_workforce_readonly_jobs(uuid,text,text,integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.finish_ai_workforce_readonly_job(uuid,text,uuid,text,jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.flag_ai_workforce_readonly_reconciliation(uuid,text,uuid,text,text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.review_ai_workforce_readonly_result(uuid,text,uuid,text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.cancel_ai_workforce_readonly_queued(uuid,text,uuid) TO authenticated;
+
+COMMIT;
+ THEN
   RAISE EXCEPTION 'Incomplete model output or provider receipt';
  END IF;
  input_count:=(_receipt->>'inputTokens')::bigint;

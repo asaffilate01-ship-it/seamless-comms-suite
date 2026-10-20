@@ -103,6 +103,7 @@ test("one fixed-origin OpenAI read-only request returns usage-backed, human-revi
  assert.equal(receipt.reviewRequired,true);
  assert.equal(receipt.sourceHash,"a".repeat(32));
  assert.equal(receipt.inputTokens,180);
+ assert.equal(receipt.cachedInputTokens,0);
  assert.equal(receipt.outputTokens,80);
  assert.equal(receipt.providerReceiptId,"resp_123456789abcdef");
 });
