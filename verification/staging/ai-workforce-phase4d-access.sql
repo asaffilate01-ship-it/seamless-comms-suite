@@ -123,8 +123,8 @@ BEGIN
  SELECT * INTO STRICT a FROM public.ai_workforce_readonly_admissions
  WHERE tenant_id='aaaaaaaa-3333-4333-8333-333333333333';
  IF a.source_snapshot->>'totalLeads'<>'20' OR
-    a.source_snapshot->>'qualifiedLeads'<>'10' OR
-    a.source_snapshot->>'convertedLeads'<>'6' OR
+    a.source_snapshot->>'qualifiedLeads' IS NOT NULL OR
+    a.source_snapshot->>'convertedLeads' IS NOT NULL OR
     a.source_snapshot->>'workingLeads' IS NOT NULL THEN
   RAISE EXCEPTION 'Real CRM aggregation or small-group suppression is wrong';
  END IF;

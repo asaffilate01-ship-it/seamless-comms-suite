@@ -12,7 +12,7 @@ DECLARE
  e public.ai_employees;t public.ai_employee_tasks;uc public.ai_use_cases;
  a public.ai_workforce_readonly_admissions;
  queued jsonb;current_day integer; source_total integer;qualified_count integer;
- converted_count integer;working_count integer;details jsonb;h text;request_fingerprint text;
+ converted_count integer;working_count integer;has_small_group boolean;details jsonb;h text;request_fingerprint text;
  run_uuid uuid;job_uuid uuid;reservation_uuid uuid;new_id uuid;
 BEGIN
  PERFORM public.ai_workforce_require_admin(_tenant,_product);
@@ -91,14 +91,22 @@ BEGIN
  IF source_total<10 THEN
   RAISE EXCEPTION 'Insufficient CRM records for privacy-safe aggregate';
  END IF;
+ -- A hidden group could otherwise be inferred by subtracting visible
+ -- status counts from the total. Coarsen the ENTIRE category breakdown if
+ -- ANY nonempty status has fewer than five records, including unlisted statuses.
+ SELECT EXISTS(SELECT 1 FROM (
+   SELECT status,count(*) AS n FROM public.crm_leads
+   WHERE tenant_id=_tenant AND (source_product_key IS NULL OR source_product_key='omniqora')
+   GROUP BY status
+ ) small_groups WHERE small_groups.n BETWEEN 1 AND 4) INTO has_small_group;
  details:=jsonb_build_object(
   'sourceKey',s.source_key,
   'origin','first_party_crm_aggregate',
   'dataClass','aggregate_internal',
   'totalLeads',source_total,
-  'qualifiedLeads',CASE WHEN qualified_count>=5 THEN to_jsonb(qualified_count) ELSE 'null'::jsonb END,
-  'convertedLeads',CASE WHEN converted_count>=5 THEN to_jsonb(converted_count) ELSE 'null'::jsonb END,
-  'workingLeads',CASE WHEN working_count>=5 THEN to_jsonb(working_count) ELSE 'null'::jsonb END,
+  'qualifiedLeads',CASE WHEN NOT has_small_group AND qualified_count>=5 THEN to_jsonb(qualified_count) ELSE 'null'::jsonb END,
+  'convertedLeads',CASE WHEN NOT has_small_group AND converted_count>=5 THEN to_jsonb(converted_count) ELSE 'null'::jsonb END,
+  'workingLeads',CASE WHEN NOT has_small_group AND working_count>=5 THEN to_jsonb(working_count) ELSE 'null'::jsonb END,
   'smallGroupsSuppressed',true,
   'asOfUtc',to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"'));
  h:=md5(details::text);

@@ -8,7 +8,7 @@ Phase 4D is the first actual business-data read-only employee workflow. It targe
 
 A tenant administrator requests permission to read source key **omniqora.crm.leads-summary.v1**. A different administrator approves it for at most 24 hours. The request and approval are tenant/product scoped and versioned; revocation invalidates new admissions and worker claims. Employee setup, task brief and Agent Factory use-case approvals are separately required.
 
-A trusted database RPC reads only **COUNTs of CRM leads** from first-party Omniqora records belonging to the authenticated tenant. It never exports customer names, email, phone numbers, CRM IDs, notes, text or individual rows. There must be at least 10 leads; status groups smaller than 5 are returned as null. The snapshot includes a source digest and freshness timestamp.
+A trusted database RPC reads only **COUNTs of CRM leads** from first-party Omniqora records belonging to the authenticated tenant. It never exports customer names, email, phone numbers, CRM IDs, notes, text or individual rows. There must be at least 10 leads. If any nonempty status group contains fewer than five records, all category-specific counts are withheld to prevent recovering the small group by subtraction; the overall total alone remains. The snapshot includes a source digest and freshness timestamp.
 
 Unlike the synthetic Phase 4B worker, the new worker is capable of sending this approved and minimised **real aggregate** to a paid model. However no model credentials, product entitlements, pilot flags or customer data are activated by a Git merge. The operator must make a separate time-limited staging activation decision.
 
