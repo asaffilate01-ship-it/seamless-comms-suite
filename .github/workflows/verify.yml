@@ -69,6 +69,8 @@ jobs:
         run: node --test verification/control-plane/ai-workforce-phase4b.test.mjs
       - name: AI Workforce read-only model pilot request, usage and no-tool guards
         run: node --test verification/control-plane/ai-workforce-phase4c.test.mjs
+      - name: AI Workforce first-party CRM consent, budget, read-only worker and metered review
+        run: node --test verification/control-plane/ai-workforce-phase4d.test.mjs
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
