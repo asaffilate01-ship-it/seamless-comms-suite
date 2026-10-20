@@ -156,7 +156,7 @@ test("SQL source consent, budgets, isolation and metering are fail-closed",async
  const [consent,admit,worker]=await Promise.all(files.map(read));
  assert.match(consent,/DEFAULT false/);
  assert.match(consent,/FORCE ROW LEVEL SECURITY/);
- assert.match(consent,/reviewer_id.*requester_id|requester_id=s\.requester_id/);
+ assert.match(consent,/s\.requester_id=auth\.uid\(\)/);
  assert.match(consent,/Independent CRM data-access reviewer required/);
  assert.match(consent,/auth\.role\(\) IS DISTINCT FROM 'service_role'/);
  assert.match(consent,/interval '24 hours'/);

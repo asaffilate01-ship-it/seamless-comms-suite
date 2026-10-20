@@ -36,11 +36,13 @@ export async function runReadOnlyCrmPass({db,scope,fetcher=fetch}){
  });
  if(!Array.isArray(claims)||claims.length>1)throw new Error("Invalid worker claim count");
  const events=[];
+ let modelRequestsAttempted=0;
  for(const claim of claims){
   const expected={tenantId:scope.tenantId,productKey:FIXED_PRODUCT,modelId:scope.modelId};
   let receipt=null;
   try{
    validateCrmReadOnlyClaim(claim,expected);
+   modelRequestsAttempted+=1;
    receipt=await performReadOnlyCrmModelCall({
     claim,expected,providerToken:scope.providerToken,fetcher,
    });
@@ -67,7 +69,7 @@ export async function runReadOnlyCrmPass({db,scope,fetcher=fetch}){
   }
  }
  return {
-  firstPartyCrm:true,modelCalls:events.length,toolCalls:0,customerActions:0,
+  firstPartyCrm:true,modelCallsAttempted:modelRequestsAttempted,toolCalls:0,customerActions:0,
   claimed:claims.length,waitingReview:events.filter(x=>x.status==="waiting_review").length,
   reconciliationRequired:events.filter(x=>x.status==="reconciliation_required").length,
   events,

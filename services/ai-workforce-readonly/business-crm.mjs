@@ -111,8 +111,9 @@ export async function performReadOnlyCrmModelCall({
   body:JSON.stringify(request),redirect:"error",signal:AbortSignal.timeout(timeoutMs),
  });
  if(!response||response.ok!==true)throw new Error("Model provider rejected read-only CRM analysis");
+ const body=await boundedResponse(response);
  let data;
- try{data=JSON.parse(await boundedResponse(response));}
+ try{data=JSON.parse(body);}
  catch{throw new Error("Model provider returned incomplete/invalid JSON");}
  if(!data||data.status!=="completed"||!Array.isArray(data.output)||
     data.output.length===0||
