@@ -73,7 +73,7 @@ export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKe
    <div className="rounded-md border p-3"><b>Customer execution</b><p className="mt-1 text-muted-foreground">Disabled · worker admission unverified</p></div>
   </div>
   {binding?.status==="sandbox_verified"&&
-   <p className="text-xs text-muted-foreground">Upstream: {binding.upstream_version}. Reviewed: {binding.verified_at}. Probe tools: {binding.allowed_probe_tools.join(", ")||"none"}.
+   <p className="text-xs text-muted-foreground">Upstream: {binding.upstream_version}. Reviewed: {binding.verified_at}. MCP manifest: {binding.probe_manifest_sha256?.slice(0,12)??"not pinned"}. Probe tools: {binding.allowed_probe_tools.join(", ")||"none"}.
     Region: {binding.data_region}. Read-only health checks only.</p>}
   {!pilot&&!status.error&&<div className="space-y-2">
    <label htmlFor="ruflo-pilot-reason" className="text-sm font-medium">Request an independent sandbox assessment</label>

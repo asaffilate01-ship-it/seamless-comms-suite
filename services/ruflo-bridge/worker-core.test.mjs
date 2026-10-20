@@ -5,7 +5,7 @@ import {resolveGatewayUrl,createScopedGateway} from "./worker.mjs";
 
 const data={
  tenantId:"0eea3213-310e-4e29-9d91-aa312b1e0001",productKey:"dishbee",
- region:"GB",expectedDigest:"a".repeat(64),
+ region:"GB",expectedDigest:"a".repeat(64),expectedManifestDigest:"b".repeat(64),
 };
 const task={
  taskId:"e1fd6013-310e-4e29-9d91-aa312b1e0002",
@@ -21,7 +21,7 @@ function harness({claim=task,preflight=null,fail=null}={}){
   if(op==="probe.claim")return claim;
   if(op==="probe.preflight")return preflight??{
    allowed:true,toolName:task.toolName,expectedDigest:data.expectedDigest,
-   dataRegion:data.region,leaseExpiresAt:task.leaseExpiresAt,
+   dataRegion:data.region,expectedManifestDigest:data.expectedManifestDigest,leaseExpiresAt:task.leaseExpiresAt,
   };
   if(op==="probe.finish"){
    assert.equal(params.receiptRef,receiptFactory());
@@ -30,7 +30,7 @@ function harness({claim=task,preflight=null,fail=null}={}){
   throw Error("Unexpected gateway operation");
  };
  const clientFactory=async()=>({
-  connect:async()=>{events.push("client.connect");return{probeTools:["swarm_health"]};},
+  connect:async()=>{events.push("client.connect");return{probeTools:["swarm_health"],probeManifestSha256:data.expectedManifestDigest};},
   probe:async(name)=>{events.push("client.probe");if(fail)throw fail;return{received:true,tool:name};},
   stop:()=>{events.push("client.stop");stopped=true;},
  });
@@ -60,13 +60,13 @@ test("in-flight revocation after MCP handshake skips tools/call and shuts down",
   if(op==="probe.preflight"){
    checks++;return checks===2?{allowed:false}:{
     allowed:true,toolName:task.toolName,expectedDigest:data.expectedDigest,
-    dataRegion:"GB",leaseExpiresAt:task.leaseExpiresAt,
+    dataRegion:"GB",expectedManifestDigest:data.expectedManifestDigest,leaseExpiresAt:task.leaseExpiresAt,
    };
   }
   return h.gateway(op,p);
  };
  const clientFactory=async()=>({
-  connect:async()=>({probeTools:["swarm_health"]}),
+  connect:async()=>({probeTools:["swarm_health"],probeManifestSha256:data.expectedManifestDigest}),
   probe:async()=>{probed=true;return{tool:"swarm_health",received:true};},
   stop:()=>{stopped=true;},
  });
@@ -106,4 +106,26 @@ test("tenant config and remote API require exact scopes and HTTPS",async()=>{
  assert.equal(await gateway("probe.claim",{}),null);
  assert.equal(requests[0].init.redirect,"error");
  assert.equal(JSON.parse(requests[0].init.body).tenantId,data.tenantId);
+});
+
+test("Ruflo MCP tool-schema drift prevents tool execution and records a failed receipt",async()=>{
+ const events=[];
+ const gateway=async(op,params)=>{
+  events.push(op);
+  if(op==="probe.claim")return task;
+  if(op==="probe.preflight")return{
+   allowed:true,toolName:task.toolName,expectedDigest:data.expectedDigest,
+   expectedManifestDigest:data.expectedManifestDigest,dataRegion:"GB",leaseExpiresAt:task.leaseExpiresAt,
+  };
+  if(op==="probe.finish")return{status:params.result};
+ };
+ const clientFactory=async()=>({
+  connect:async()=>({probeTools:["swarm_health"],probeManifestSha256:"c".repeat(64)}),
+  probe:async()=>{events.push("UNEXPECTED_TOOL_CALL");return{received:true,tool:"swarm_health"};},
+  stop:()=>events.push("stopped"),
+ });
+ const result=await processOneRufloProbe({gateway,clientFactory,config:data,receiptFactory});
+ assert.equal(result.status,"failed");
+ assert.equal(events.includes("UNEXPECTED_TOOL_CALL"),false);
+ assert.equal(events.includes("stopped"),true);
 });

@@ -15,7 +15,7 @@ export interface RufloPilotRequest{
 export interface RufloTenantBinding{
  status:"disabled"|"sandbox_verified"|"suspended";
  upstream_version:string|null;data_region:string|null;
- allowed_probe_tools:string[];verified_at:string|null;
+ allowed_probe_tools:string[];probe_manifest_sha256:string|null;verified_at:string|null;
  evidence_reference:string|null;
 }
 export interface RufloProbeReceipt{
@@ -40,7 +40,7 @@ export const getRufloPilotStatus=createServerFn({method:"POST"}).middleware([req
     .select("id,tenant_id,product_key,data_region,reason,status,requested_by,created_at")
     .eq("tenant_id",data.tenantId).eq("product_key",data.productKey).maybeSingle(),
   db.from("ai_ruflo_tenant_bindings")
-    .select("status,upstream_version,data_region,allowed_probe_tools,verified_at,evidence_reference")
+    .select("status,upstream_version,data_region,allowed_probe_tools,probe_manifest_sha256,verified_at,evidence_reference")
     .eq("tenant_id",data.tenantId).eq("product_key",data.productKey).maybeSingle(),
   db.from("ai_ruflo_probe_receipts")
     .select("id,probe_key,result_status,recorded_at")

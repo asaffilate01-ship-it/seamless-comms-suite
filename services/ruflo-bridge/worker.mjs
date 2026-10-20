@@ -45,6 +45,7 @@ export async function main(env=process.env){
  const config=validateRufloWorkerConfig({
   tenantId:env.RUFLO_TENANT_ID,productKey:env.RUFLO_PRODUCT_KEY,
   region:env.RUFLO_REGION,expectedDigest:env.RUFLO_BINARY_SHA256,
+  expectedManifestDigest:env.RUFLO_MANIFEST_SHA256,
  });
  const gateway=createScopedGateway({
   url:env.OMNIQORA_RUFLO_GATEWAY_URL,credential:env.RUFLO_WORKER_CREDENTIAL,
