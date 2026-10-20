@@ -15,7 +15,7 @@ INSERT INTO public.crm_leads(tenant_id,title,status,source_product_key)
 SELECT 'aaaaaaaa-3333-4333-8333-333333333333',
  'PRIVATE TEST NAME AND CONTACT '||i,
  CASE WHEN i<=10 THEN 'qualified'
-      WHEN i<=15 THEN 'converted'
+      WHEN i<=16 THEN 'converted'
       ELSE 'working' END,
  'omniqora'
 FROM generate_series(1,20) i;
@@ -124,7 +124,7 @@ BEGIN
  WHERE tenant_id='aaaaaaaa-3333-4333-8333-333333333333';
  IF a.source_snapshot->>'totalLeads'<>'20' OR
     a.source_snapshot->>'qualifiedLeads'<>'10' OR
-    a.source_snapshot->>'convertedLeads'<>'5' OR
+    a.source_snapshot->>'convertedLeads'<>'6' OR
     a.source_snapshot->>'workingLeads' IS NOT NULL THEN
   RAISE EXCEPTION 'Real CRM aggregation or small-group suppression is wrong';
  END IF;
