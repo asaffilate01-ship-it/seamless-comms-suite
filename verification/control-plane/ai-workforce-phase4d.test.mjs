@@ -166,6 +166,8 @@ test("SQL source consent, budgets, isolation and metering are fail-closed",async
  assert.match(admit,/FROM public\.crm_leads/);
  assert.match(admit,/source_total<10/);
  assert.match(admit,/qualified_count>=5/);
+ assert.match(admit,/Latest model tariff lacks verified tenant-country clearance/);
+ assert.match(admit,/_provider IS DISTINCT FROM 'openai'/);
  assert.match(admit,/cardinality\(t\.requested_capabilities\)<>0/);
  assert.match(admit,/allowedTools|noTools/);
  assert.match(admit,/j\.job_type NOT IN \('ai-workforce\.fixture','ai-workforce\.readonly'\)/);

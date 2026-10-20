@@ -13,11 +13,12 @@ DECLARE
  a public.ai_workforce_readonly_admissions;
  queued jsonb;current_day integer; source_total integer;qualified_count integer;
  converted_count integer;working_count integer;has_small_group boolean;details jsonb;h text;request_fingerprint text;
+ tenant_country text; approved_regions text[];
  run_uuid uuid;job_uuid uuid;reservation_uuid uuid;new_id uuid;
 BEGIN
  PERFORM public.ai_workforce_require_admin(_tenant,_product);
  IF _product<>'omniqora' OR _idempotency IS NULL OR
-    _provider IS NULL OR _provider !~ '^[a-z0-9][a-z0-9._-]{2,99}$' OR
+    _provider IS DISTINCT FROM 'openai' OR
     _model IS NULL OR _model !~ '^[a-zA-Z0-9][a-zA-Z0-9._-]{2,99}$' OR
     _currency NOT IN('GBP','EUR','USD') OR
     _input_tokens IS NULL OR _input_tokens NOT BETWEEN 256 AND 1200 OR
@@ -60,6 +61,19 @@ BEGIN
   OR uc.provider_route->>'factoryBlueprint' IS DISTINCT FROM e.blueprint_key
   OR NOT uc.allowed_tools <@ ARRAY['crm.read','analytics.read']::text[] THEN
   RAISE EXCEPTION 'Independently approved read-only Agent Factory use case required';
+ END IF;
+ -- The generic Agent Factory allows an empty country list. This real-data
+ -- pilot requires an explicit approval for the tenant's actual country on
+ -- the latest evaluated model tariff; absence does not mean unrestricted.
+ SELECT country_code INTO STRICT tenant_country FROM public.tenants WHERE id=_tenant;
+ SELECT supported_regions INTO approved_regions FROM public.ai_reviewed_model_rates
+ WHERE provider_key=_provider AND model_key=_model AND currency=_currency
+  AND status='approved' AND evaluation_passed
+  AND verified_at BETWEEN now()-interval '30 days' AND now()
+ ORDER BY verified_at DESC,rate_version DESC LIMIT 1;
+ IF approved_regions IS NULL OR cardinality(approved_regions)=0 OR
+   NOT COALESCE(tenant_country=ANY(approved_regions),false) THEN
+  RAISE EXCEPTION 'Latest model tariff lacks verified tenant-country clearance';
  END IF;
 
  request_fingerprint:=md5(concat_ws(':',_tenant::text,_product,e.id::text,t.id::text,

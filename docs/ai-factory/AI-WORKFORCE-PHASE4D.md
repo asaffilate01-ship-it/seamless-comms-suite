@@ -14,7 +14,7 @@ Unlike the synthetic Phase 4B worker, the new worker is capable of sending this 
 
 ## Budget and canonical engine
 
-The admission transaction checks the tenant/product and workforce entitlement, source consent, independent human approvals, current employee/task revisions, no tool capabilities, independent approved Agent Factory use case, model/provider binding, verified tariffs, country clearance, 24-hour provider health, model input/output token bounds and tenant monthly budget.
+The admission transaction supports only a verified OpenAI model with an explicit tenant-country approval on the latest reviewed model tariff; an empty country list is rejected. It checks the tenant/product and workforce entitlement, source consent, independent human approvals, current employee/task revisions, no tool capabilities, independent approved Agent Factory use case, model/provider binding, verified tariffs, country clearance, 24-hour provider health, model input/output token bounds and tenant monthly budget.
 
 It calls the EXISTING queue_budgeted_ai_agent function in the same PostgreSQL transaction, reserves the budget and creates one canonical ai_agent_runs, ai_budgeted_run_reservations and intelligence_jobs record. It then marks that job as ai-workforce.readonly, stores the minimal frozen CRM snapshot and associates the task/employee by tenant-safe foreign keys. The generic intelligence claimer is explicitly denied both ai-workforce.fixture and ai-workforce.readonly job types.
 
