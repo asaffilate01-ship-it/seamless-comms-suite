@@ -14,6 +14,7 @@ import {approveAiUseCase,getIntelligenceWorkspace,reviewActionProposal,startAgen
 import {Bot,BrainCircuit,RefreshCw,ShieldCheck,Workflow} from "lucide-react";
 import {toast} from "sonner";
 import {AgentFactoryPanel} from "@/modules/agent-factory/AgentFactoryPanel";
+import {RufloPilotPanel} from "@/modules/agent-factory/RufloPilotPanel";
 
 
 export const Route=createFileRoute("/_authenticated/app/intelligence")({component:Intelligence,head:()=>({meta:[{title:"AI Control — Omniqora"},{name:"robots",content:"noindex"}]})});
@@ -31,6 +32,7 @@ function Intelligence(){
  actions={<Button size="sm" variant="outline" onClick={()=>q.refetch()}><RefreshCw className="mr-2 h-4 w-4"/>Refresh</Button>}>
   <Card><CardContent className="grid gap-3 p-5 md:grid-cols-2"><select className="h-10 rounded-md border bg-background px-3 text-sm" value={productKey} onChange={e=>setProductKey(e.target.value)}>{products.map((p:string)=><option key={p}>{p}</option>)}</select><div className="flex flex-wrap gap-2">{(q.data?.providers??[]).map((p:any)=><Badge key={p.id} variant="outline">{p.provider_key} · {p.status}</Badge>)}</div></CardContent></Card>
   <div className="mt-6"><AgentFactoryPanel tenantId={tenantId} productKey={productKey} useCases={q.data?.useCases??[]} providers={q.data?.providers??[]} onChanged={async()=>{await q.refetch();}}/></div>
+  <div className="mt-6"><RufloPilotPanel tenantId={tenantId} productKey={productKey}/></div>
   <div className="mt-6 grid gap-4 md:grid-cols-4"><Metric icon={ShieldCheck} label="Use cases" value={q.data?.useCases?.length??0}/><Metric icon={Bot} label="Agent runs" value={q.data?.runs?.length??0}/><Metric icon={Workflow} label="Jobs" value={q.data?.jobs?.length??0}/><Metric icon={BrainCircuit} label="Pending proposals" value={(q.data?.proposals??[]).filter((x:any)=>x.status==="pending").length}/></div>
   <div className="mt-6 grid gap-6 xl:grid-cols-2">
    <Card><CardContent className="p-5"><h2 className="font-semibold">Register / assess AI use case</h2>
