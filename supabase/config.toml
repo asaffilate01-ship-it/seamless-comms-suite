@@ -9,3 +9,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.veyumo-worker]
 verify_jwt = false
+
+# Twilio and payment providers cannot send a Supabase user JWT.
+# order-intake performs provider/internal authentication inside the function.
+[functions.order-intake]
+verify_jwt = false
