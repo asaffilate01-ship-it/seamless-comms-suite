@@ -563,14 +563,14 @@
   },
   {
     "sourceRow": 25,
-    "name": "KINDELO UK (KINDERSTARS LEGACY)",
-    "repositoryUrl": "https://github.com/asaffilate01-ship-it/kinderstars-childcare-saas.git",
-    "liveUrl": "https://kinderstars.co.uk",
-    "linksTo": "Formerly KinderStars; UK childcare agency country edition. Preserve source repository identity pending controlled migration.",
-    "proposedRole": "Regional Edition",
-    "architectureRole": "regional_variant",
+    "name": "KINDELO UK",
+    "repositoryUrl": "https://github.com/asaffilate01-ship-it/kindelo-uk.git",
+    "liveUrl": null,
+    "linksTo": "Canonical UK Kindelo codebase; intended kindelo.co.uk domain requires independent publication verification. German edition remains a separate regional source. Regulated CMA registration and provider eligibility are not inherited by software tenants.",
+    "proposedRole": "UK Childcare SaaS Landlord and First Operating Agency",
+    "architectureRole": "landlord",
     "parentLandlord": "KINDELO",
-    "migrationStructure": "Kindelo landlord with UK country pack; Ofsted evidence and childminder-agency management stay regulator-controlled.",
+    "migrationStructure": "Canonical UK source: Kindelo product with initial operator workspace and optional independent white-label agency/software tenants. Omniqora owns catalogue and tenant entitlements; regulated agency data remains isolated in Kindelo.",
     "commonServices": [
       "Omniqora Identity",
       "Tenant",
@@ -580,9 +580,12 @@
       "Events",
       "Analytics"
     ],
-    "auditStatus": "Repo audit pending",
+    "auditStatus": "UK canonical source repository accessible; production launch, Ofsted status and operational isolation unverified",
     "traits": [
-      "regional"
+      "regional",
+      "canonical",
+      "white-label-planned",
+      "regulatory-approval-gated"
     ]
   },
   {
