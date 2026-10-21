@@ -20,6 +20,7 @@ import {
   type ProposedTaskTrigger,
 } from "./tasks.functions";
 import {AIWorkforceSandboxPanel} from "./AIWorkforceSandboxPanel";
+import {AIWorkforceReadonlyPanel} from "./AIWorkforceReadonlyPanel";
 
 type Props = { tenantId: string; productKey: string; employee: AiEmployee };
 const capsOf = (employee: AiEmployee): string[] => {
@@ -406,6 +407,13 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
     </CardContent></Card>
 
     <AIWorkforceSandboxPanel
+      tenantId={tenantId}
+      productKey={productKey}
+      employee={employee}
+      tasks={tasks}
+    />
+
+    <AIWorkforceReadonlyPanel
       tenantId={tenantId}
       productKey={productKey}
       employee={employee}
