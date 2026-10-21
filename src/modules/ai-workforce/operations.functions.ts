@@ -28,7 +28,7 @@ export interface WorkforceOperationsWorkspace {
  events:WorkforceOperatorEvent[];
  totals:{activePermits:number;claimSlotsRemaining:number;
    uncertainCharges:number;staleWorkers:number;waitingReview:number;
-   reservedMinorOutstanding:number};
+   heldReservesByCurrency:Array<{currency:string;amountMinor:number}>};
 }
 
 export const getAiWorkforceOperationsWorkspace=createServerFn({method:"POST"})
@@ -110,13 +110,18 @@ export const getAiWorkforceOperationsWorkspace=createServerFn({method:"POST"})
      }];
    });
    const uncertain=issues.filter(x=>x.reason==="uncertain_provider_charge");
+   const byCurrency=new Map<string,number>();
+   for(const x of uncertain){
+    const c=x.currency??"UNKNOWN";
+    byCurrency.set(c,(byCurrency.get(c)??0)+(x.reservedMinor??0));
+   }
    const totals={
      activePermits:permitted.filter(isPermitActive).length,
      claimSlotsRemaining:permitted.filter(isPermitActive).reduce((n,w)=>n+Math.max(0,w.maxClaims-w.usedClaims),0),
      uncertainCharges:uncertain.length,
      staleWorkers:issues.filter(x=>x.reason==="stale_worker").length,
      waitingReview:issues.filter(x=>x.reason==="awaiting_human_review").length,
-     reservedMinorOutstanding:uncertain.reduce((n,x)=>n+(x.reservedMinor??0),0),
+     heldReservesByCurrency:[...byCurrency.entries()].map(([currency,amountMinor])=>({currency,amountMinor})),
    };
    return {
     pilotActive:pilot.data?.enabled===true&&Date.parse(pilot.data.expires_at)>now,
