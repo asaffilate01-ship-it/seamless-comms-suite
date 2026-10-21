@@ -22,6 +22,7 @@ import {
   type AiEmployee, type WorkforceProfile, type WorkforceStatus,
 } from "./functions";
 import { AIWorkforceTaskPanel } from "./AIWorkforceTaskPanel";
+import { AIWorkforceTeamsPanel } from "./AIWorkforceTeamsPanel";
 
 const steps = [
   "Create", "Role", "Tasks", "Business context", "Connected apps",
@@ -599,6 +600,14 @@ export function AIWorkforcePanel() {
             </>}
           </div>
         </div>
+        {writable && <div className="mt-6">
+          <AIWorkforceTeamsPanel
+            tenantId={tenantId}
+            productKey={productKey}
+            employees={employees}
+            writable={writable}
+          />
+        </div>}
       </>}
     </AppShell>
   );
