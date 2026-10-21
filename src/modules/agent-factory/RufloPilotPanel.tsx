@@ -72,7 +72,7 @@ export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKe
   finally{setStopping(false);}
  }
  const runnable=readiness.stagingProbeEligibleForRequest&&
-  binding.allowed_probe_tools.includes(probeName) &&
+  Boolean(binding?.allowed_probe_tools?.includes(probeName)) &&
   !status.data?.probes?.some(p=>p.status==="queued"||p.status==="processing");
  return <Card><CardContent className="space-y-4 p-5">
   <div className="flex flex-wrap items-center justify-between gap-2">
