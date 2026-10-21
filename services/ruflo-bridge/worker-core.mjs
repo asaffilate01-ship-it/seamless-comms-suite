@@ -32,6 +32,26 @@ function preflightIsValid(preflight,task,config){
 }
 
 /**
+ * A network failure after a successful database commit is ambiguous.
+ * Retry the SAME finalisation payload, never the remote MCP tool. Existing
+ * SQL deduplicates exact receipt references and rejects altered reports.
+ */
+export async function finishProbeWithRetry(gateway,payload){
+ if(typeof gateway!=="function"||typeof payload?.receiptRef!=="string")
+  throw new Error("Trusted Ruflo receipt finalisation required");
+ for(let attempt=0;attempt<2;attempt++){
+  try{
+   const response=await gateway("probe.finish",payload);
+   if(["passed","failed","timed_out","denied"].includes(response?.status))
+    return response;
+  }catch{
+   // Avoid logging transport errors, tool outputs and possible credentials.
+  }
+ }
+ throw new Error("Trusted Ruflo probe receipt was not acknowledged");
+}
+
+/**
  * One gated read-only MCP probe, never a customer/business AI job.
  * gateway(operation, params) must enforce scoped server identity and SQL RPCs.
  * All tool outputs are discarded. No model call, agent spawn or memory writes.
@@ -76,10 +96,8 @@ export async function processOneRufloProbe({gateway,clientFactory,config,receipt
  const receiptRef=receiptFactory();
  if(typeof receiptRef!=="string"||!/^ruflo_[a-f0-9-]{36}$/i.test(receiptRef))
   throw new Error("Invalid generated Ruflo audit receipt");
- const done=await gateway("probe.finish",{
+ const done=await finishProbeWithRetry(gateway,{
   taskId:task.taskId,claimToken:task.claimToken,result,receiptRef,errorCode,
  });
- if(!["passed","failed","timed_out","denied"].includes(done?.status))
-  throw new Error("Trusted Ruflo report was not acknowledged");
  return {status:done.status,processed:1,receiptRecorded:true};
 }
