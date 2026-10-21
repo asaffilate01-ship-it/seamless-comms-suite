@@ -10,6 +10,7 @@ import {Badge} from "@/components/ui/badge";
 import {ShieldCheck,Cable,RefreshCw} from "lucide-react";
 import {toast} from "sonner";
 import {listAgentMcpPlatformReview,reviewAgentMcpSetup} from "@/modules/agent-factory/operations.functions";
+import {RufloReviewPanel} from "@/modules/agent-factory/RufloReviewPanel";
 
 export const Route=createFileRoute("/_authenticated/app/mcp-review")({
  component:McpReview,
@@ -54,6 +55,7 @@ function McpReview(){
     </div>
    </CardContent></Card>)}</div>
    {!q.isLoading&&!q.error&&q.data?.length===0&&<Card><CardContent className="p-5 text-sm text-muted-foreground">No pending setup requests.</CardContent></Card>}
+   <RufloReviewPanel/>
    <Link to="/app/intelligence" className="text-sm text-primary underline">Back to AI Agent Factory</Link>
   </div>
  </AppShell>;
