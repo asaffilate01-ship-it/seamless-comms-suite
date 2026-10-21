@@ -73,6 +73,8 @@ jobs:
         run: node --test verification/control-plane/ai-workforce-phase4d.test.mjs
       - name: AI Workforce operator worker allowlist, stale-charge quarantine and stop controls
         run: node --test verification/control-plane/ai-workforce-phase4e.test.mjs
+      - name: AI Workforce shadow team role isolation and no-execution handoffs
+        run: node --test verification/control-plane/ai-workforce-phase5a.test.mjs
       - name: Ruflo isolated MCP sandbox and tenant RLS gates
         run: node --test services/ruflo-bridge/ruflo-bridge.test.mjs verification/control-plane/ruflo-pilot-contract.test.mjs
       - name: Ruflo scoped probe worker, lease and audit tests
