@@ -5,7 +5,7 @@ import ts from "typescript";
 import {executeOperatorAction,main} from "../../services/ai-workforce-readonly/operator-ops.mjs";
 
 const read=path=>readFile(new URL("../../"+path,import.meta.url),"utf8");
-const sql=await read("supabase/migrations/20261021073000_ai_workforce_operator_safety_v4e.sql");
+const sql=await read("supabase/migrations/20261021073500_ai_workforce_operator_safety_v4e.sql");
 const ops=await read("src/modules/ai-workforce/operations.functions.ts");
 const panel=await read("src/modules/ai-workforce/AIWorkforceOperationsPanel.tsx");
 const parent=await read("src/modules/ai-workforce/AIWorkforceReadonlyPanel.tsx");

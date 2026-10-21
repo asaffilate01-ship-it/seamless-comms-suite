@@ -20,7 +20,7 @@ This is an additional database allowlist, **not independent cryptographic per-wo
 
 ## Code inventory
 
-- supabase/migrations/20261021073000_ai_workforce_operator_safety_v4e.sql
+- supabase/migrations/20261021073500_ai_workforce_operator_safety_v4e.sql
 - src/modules/ai-workforce/operations.functions.ts
 - src/modules/ai-workforce/AIWorkforceOperationsPanel.tsx
 - src/modules/ai-workforce/AIWorkforceReadonlyPanel.tsx
