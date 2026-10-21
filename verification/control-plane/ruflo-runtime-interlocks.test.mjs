@@ -60,8 +60,15 @@ test("Ruflo staging interlock, permissions and emergency stop on isolated Postgr
    "ON CONFLICT(tenant_id,service_key) DO UPDATE SET status='active', "+
    "valid_from=EXCLUDED.valid_from,valid_until=NULL",[tenant]
   );
+  // The canonical test blueprint deliberately leaves tenant products in
+  // "requested"; activate THIS disposable PGlite fixture only to exercise
+  // the downstream approval boundary. Never use this as a live provisioner.
+  await rows(
+   "UPDATE public.tenant_products SET status='active',activated_at=now() "+
+   "WHERE tenant_id=$1 AND product_key=$2",[tenant,product]
+  );
   const productRow=await rows("SELECT status FROM public.tenant_products WHERE tenant_id=$1 AND product_key=$2",[tenant,product]);
-  assert.equal(productRow[0]?.status,"active","Synthetic tenant needs an active Dishbee product");
+  assert.equal(productRow[0]?.status,"active","Disposable fixture is explicitly activated");
   await rows(
    "INSERT INTO public.ai_ruflo_pilot_requests "+
    "(tenant_id,product_key,data_region,reason,status,requested_by,reviewed_by,reviewed_at) "+
