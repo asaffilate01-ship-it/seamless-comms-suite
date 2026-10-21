@@ -8,6 +8,7 @@ import {Badge} from "@/components/ui/badge";
 import {Bot,RefreshCw,ShieldCheck} from "lucide-react";
 import {toast} from "sonner";
 import {getRufloPilotStatus,requestRufloPilot,queueRufloHealthProbe,stopRufloSandbox} from "./ruflo.functions";
+import {evaluateRufloStagingReadiness} from "./ruflo-readiness";
 
 /**
  * Ruflo is an optional orchestration backend, never a second tenant authority.
@@ -51,8 +52,8 @@ export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKe
   }catch(e){toast.error(e instanceof Error?e.message:String(e));}
   finally{setProbeBusy(false);}
  }
- const stagingApproved=staging?.status==="staging_approved"&&
-  !!staging.expires_at&&Date.parse(staging.expires_at)>Date.now();
+ const readiness=evaluateRufloStagingReadiness({pilot:pilot??null,binding:binding??null,staging:staging??null});
+ const stagingApproved=readiness.checks.find(c=>c.key==="stage")?.passed??false;
  const recent=(status.data?.probes??[]).filter(p=>Date.parse(p.created_at)>=Date.now()-86400000);
  const counts={
   total:recent.length,passed:recent.filter(p=>p.status==="passed").length,
@@ -70,7 +71,7 @@ export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKe
   }catch(e){toast.error(e instanceof Error?e.message:String(e));}
   finally{setStopping(false);}
  }
- const runnable=stagingApproved&&pilot?.status==="shortlisted"&&binding?.status==="sandbox_verified"&&
+ const runnable=readiness.stagingProbeEligibleForRequest&&
   binding.allowed_probe_tools.includes(probeName) &&
   !status.data?.probes?.some(p=>p.status==="queued"||p.status==="processing");
  return <Card><CardContent className="space-y-4 p-5">
@@ -129,6 +130,19 @@ export function RufloPilotPanel({tenantId,productKey}:{tenantId:string;productKe
      {p.probe_key} · {p.status} · {p.created_at} · attempts {p.attempts}
     </p>)}
    </div>}
+  </div>}
+  {pilot&&<div className="space-y-2 rounded-md border p-3">
+   <h3 className="text-sm font-semibold">Staging readiness checklist</h3>
+   <p className="text-xs text-muted-foreground">These checks display the operator view only. SQL admission and worker rechecks remain authoritative; customer-agent execution is disabled.</p>
+   <div className="grid gap-2 sm:grid-cols-2">
+    {readiness.checks.map(check=><div key={check.key} className="rounded-md bg-muted/50 p-2">
+     <div className="flex items-center justify-between gap-2">
+      <span className="text-xs font-medium">{check.label}</span>
+      <Badge variant="outline">{check.passed?"Passed":"Blocked"}</Badge>
+     </div>
+     <p className="mt-1 text-xs text-muted-foreground">{check.description}</p>
+    </div>)}
+   </div>
   </div>}
   {pilot&&<div className="space-y-3 rounded-md border p-3">
    <h3 className="text-sm font-semibold">Sandbox health and emergency controls</h3>
