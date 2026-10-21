@@ -47,6 +47,14 @@ SELECT public.configure_ai_workforce_readonly_pilot(
  now()+interval '30 minutes',2,50,
  'Disposable local operator evidence for human-supervised CRM read-only pilot');
 
+SELECT public.configure_ai_workforce_worker_allowlist(
+ 'aaaaaaaa-3333-4333-8333-333333333333','omniqora',
+ 'readonly_worker_01','gpt-4.1-mini',true,
+ now()+interval '20 minutes',2,
+ 'Staging operator independently authorised one bounded CRM worker',
+ 'https://example.test/workforce/staging-attestation');
+
+
 DO $audit$
 BEGIN
  BEGIN
