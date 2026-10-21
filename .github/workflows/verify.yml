@@ -67,6 +67,10 @@ jobs:
         run: node --test services/ruflo-bridge/worker-core.test.mjs verification/control-plane/ruflo-probe-worker-contract.test.mjs
       - name: Ruflo Phase 8–9 MCP manifest pin and synthetic multi-agent verifier
         run: node --test services/ruflo-bridge/manifest-attestation.test.mjs services/ruflo-bridge/shadow-missions.test.mjs verification/control-plane/ruflo-phase8-9.test.mjs
+      - name: Ruflo Phase 10–12 staged authorisation, emergency stop and receipt safety
+        run: |
+          node --test verification/control-plane/ruflo-phase10-12.test.mjs verification/control-plane/ruflo-runtime-interlocks.test.mjs
+          bun test verification/control-plane/ruflo-readiness.test.ts
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
