@@ -78,10 +78,15 @@ export const getAiWorkforceOperationsWorkspace=createServerFn({method:"POST"})
        :Promise.resolve({data:[],error:null}),
    ]);
    if(bills.error||jobRows.error)throw new Error((bills.error||jobRows.error).message);
-   const billsById=new Map((bills.data??[]).map((x:any)=>[x.id,x]));
-   const jobsById=new Map((jobRows.data??[]).map((x:any)=>[x.id,x]));
+   type BillRow={id:string;reserved_minor:number|null;actual_minor:number|null;
+     currency:string|null;provider_receipt_ref:string|null};
+   type JobRow={id:string;locked_at:string|null;status:string};
+   const billsById=new Map<string,BillRow>(
+     (bills.data??[]).map((x:any):[string,BillRow]=>[x.id,x as BillRow]));
+   const jobsById=new Map<string,JobRow>(
+     (jobRows.data??[]).map((x:any):[string,JobRow]=>[x.id,x as JobRow]));
    const now=Date.now();
-   const permitted=(permits.data??[]).map((w:any)=>({
+   const permitted:WorkforceWorkerPermit[]=(permits.data??[]).map((w:any)=>({
      workerRef:String(w.worker_ref),modelKey:String(w.model_key),
      status:w.status as WorkforceWorkerPermit["status"],
      maxClaims:Number(w.max_claims),usedClaims:Number(w.used_claims),
