@@ -69,6 +69,12 @@ jobs:
         run: node --test verification/control-plane/ai-workforce-phase4b.test.mjs
       - name: AI Workforce read-only model pilot request, usage and no-tool guards
         run: node --test verification/control-plane/ai-workforce-phase4c.test.mjs
+      - name: Ruflo isolated MCP sandbox and tenant RLS gates
+        run: node --test services/ruflo-bridge/ruflo-bridge.test.mjs verification/control-plane/ruflo-pilot-contract.test.mjs
+      - name: Ruflo scoped probe worker, lease and audit tests
+        run: node --test services/ruflo-bridge/worker-core.test.mjs verification/control-plane/ruflo-probe-worker-contract.test.mjs
+      - name: Ruflo Phase 8–9 MCP manifest pin and synthetic multi-agent verifier
+        run: node --test services/ruflo-bridge/manifest-attestation.test.mjs services/ruflo-bridge/shadow-missions.test.mjs verification/control-plane/ruflo-phase8-9.test.mjs
       - run: bun run test:control-plane
       - run: bun run test:automotive-auctions
       - run: bun run test:automotive-bids
