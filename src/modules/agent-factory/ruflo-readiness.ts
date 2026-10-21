@@ -35,14 +35,10 @@ export function evaluateRufloStagingReadiness(s:RufloReadinessSnapshot,now=Date.
    description:"Tenant and sandbox must be bound to the same approved jurisdiction."},
   {key:"stage",label:"Unexpired staging release",
    passed:staging?.status==="staging_approved"&&
-    current(staging.expires_at,now,-1),
+    !!staging.expires_at&&Number.isFinite(Date.parse(staging.expires_at))&&
+    Date.parse(staging.expires_at)>now,
    description:"A separate, short-lived staging approval is required; absent means disabled."},
  ];
- // A stage expiry is a FUTURE timestamp; check it explicitly rather than
- // using the past-evidence predicate used for independent review timestamps.
- checks[4].passed=staging?.status==="staging_approved"&&
-  !!staging.expires_at&&Number.isFinite(Date.parse(staging.expires_at))&&
-  Date.parse(staging.expires_at)>now;
  return{
   checks,
   stagingProbeEligibleForRequest:checks.every(x=>x.passed),
