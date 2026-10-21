@@ -176,6 +176,7 @@ END $check$;
 
 \ir ai-workforce-phase4b-access.sql
 \ir ai-workforce-phase4d-access.sql
+\ir ai-workforce-phase4e-operator.sql
 
 ROLLBACK;
 \echo 'AI Workforce real PostgreSQL RLS/role/attribution checks passed (all fixtures rolled back).'

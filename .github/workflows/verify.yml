@@ -71,6 +71,8 @@ jobs:
         run: node --test verification/control-plane/ai-workforce-phase4c.test.mjs
       - name: AI Workforce first-party CRM consent, budget, read-only worker and metered review
         run: node --test verification/control-plane/ai-workforce-phase4d.test.mjs
+      - name: AI Workforce operator worker allowlist, stale-charge quarantine and stop controls
+        run: node --test verification/control-plane/ai-workforce-phase4e.test.mjs
       - name: Ruflo isolated MCP sandbox and tenant RLS gates
         run: node --test services/ruflo-bridge/ruflo-bridge.test.mjs verification/control-plane/ruflo-pilot-contract.test.mjs
       - name: Ruflo scoped probe worker, lease and audit tests
