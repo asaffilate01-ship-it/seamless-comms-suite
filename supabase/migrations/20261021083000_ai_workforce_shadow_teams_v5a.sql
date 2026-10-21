@@ -178,12 +178,14 @@ RETURNS public.ai_workforce_shadow_teams
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $transition$
 DECLARE t public.ai_workforce_shadow_teams;result public.ai_workforce_shadow_teams;
  new_status text;event text;reviewer uuid;reviewed_time timestamptz;
- invalid_members integer;
+ invalid_members integer;step_count integer;
 BEGIN
  PERFORM public.ai_workforce_require_admin(_tenant,_product);
  SELECT * INTO STRICT t FROM public.ai_workforce_shadow_teams
   WHERE id=_team AND tenant_id=_tenant AND product_key=_product FOR UPDATE;
  IF length(COALESCE(_note,''))>1000 THEN RAISE EXCEPTION 'Review note too long'; END IF;
+ SELECT count(*) INTO step_count FROM public.ai_workforce_shadow_steps
+ WHERE team_id=t.id AND tenant_id=_tenant AND product_key=_product;
  SELECT count(*) INTO invalid_members FROM public.ai_workforce_shadow_steps s
  JOIN public.ai_employees e ON e.id=s.employee_id AND e.tenant_id=s.tenant_id
   AND e.product_key=s.product_key
@@ -192,14 +194,12 @@ BEGIN
  CASE _action
   WHEN 'submit' THEN
    IF t.status<>'draft' OR t.revision<1 OR
-    (SELECT count(*) FROM public.ai_workforce_shadow_steps
-     WHERE team_id=t.id AND tenant_id=_tenant AND product_key=_product) NOT BETWEEN 2 AND 8 OR
-     invalid_members>0 THEN
+     step_count NOT BETWEEN 2 AND 8 OR invalid_members>0 THEN
     RAISE EXCEPTION 'Save an approved-member team plan before independent review';
    END IF;
    new_status:='pending_review';event:='review_requested';
   WHEN 'approve' THEN
-   IF t.status<>'pending_review' OR invalid_members>0 OR
+   IF t.status<>'pending_review' OR step_count NOT BETWEEN 2 AND 8 OR invalid_members>0 OR
     auth.uid() IN(t.created_by,t.last_edited_by) THEN
     RAISE EXCEPTION 'Independent reviewer and current employee approvals required';
    END IF;
@@ -214,7 +214,7 @@ BEGIN
    IF t.status<>'approved_plan' THEN RAISE EXCEPTION 'Only approved team plans can pause'; END IF;
    new_status:='paused';event:='paused';
   WHEN 'resume' THEN
-   IF t.status<>'paused' OR invalid_members>0 THEN
+   IF t.status<>'paused' OR step_count NOT BETWEEN 2 AND 8 OR invalid_members>0 THEN
     RAISE EXCEPTION 'Cannot resume team with unapproved members';
    END IF;
    new_status:='approved_plan';event:='resumed';
