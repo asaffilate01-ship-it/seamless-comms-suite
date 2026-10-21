@@ -63,6 +63,8 @@ jobs:
         run: node --test verification/control-plane/agent-factory-phase2.test.mjs
       - name: Governed AI Workforce configuration and tenant isolation
         run: node --test verification/control-plane/ai-workforce-phase3.test.mjs
+      - name: AI Workforce task review and locked execution safety
+        run: node --test verification/control-plane/ai-workforce-phase4a.test.mjs
       - name: Ruflo isolated MCP sandbox and tenant RLS gates
         run: node --test services/ruflo-bridge/ruflo-bridge.test.mjs verification/control-plane/ruflo-pilot-contract.test.mjs
       - name: Ruflo scoped probe worker, lease and audit tests
