@@ -18,6 +18,11 @@ export interface RufloTenantBinding{
  allowed_probe_tools:string[];probe_manifest_sha256:string|null;verified_at:string|null;
  evidence_reference:string|null;
 }
+export interface RufloStagingControl{
+ status:"disabled"|"staging_approved"|"suspended";
+ approved_at:string|null;expires_at:string|null;stopped_at:string|null;
+ stop_reason:string|null;updated_at:string;
+}
 export interface RufloProbeReceipt{
  id:string;probe_key:string;result_status:"passed"|"failed"|"timed_out"|"denied";
  recorded_at:string;
@@ -35,7 +40,7 @@ export const getRufloPilotStatus=createServerFn({method:"POST"}).middleware([req
 .handler(async({context,data})=>{
  await requireTenantMembership(context,data.tenantId);
  const db=context.supabase as any;
- const [request,binding,receipts,probes]=await Promise.all([
+ const [request,binding,receipts,probes,staging]=await Promise.all([
   db.from("ai_ruflo_pilot_requests")
     .select("id,tenant_id,product_key,data_region,reason,status,requested_by,created_at")
     .eq("tenant_id",data.tenantId).eq("product_key",data.productKey).maybeSingle(),
@@ -50,14 +55,18 @@ export const getRufloPilotStatus=createServerFn({method:"POST"}).middleware([req
    .select("id,probe_key,status,created_at,started_at,completed_at,attempts,error_code")
    .eq("tenant_id",data.tenantId).eq("product_key",data.productKey)
    .order("created_at",{ascending:false}).limit(15),
+  db.from("ai_ruflo_staging_controls")
+    .select("status,approved_at,expires_at,stopped_at,stop_reason,updated_at")
+    .eq("tenant_id",data.tenantId).eq("product_key",data.productKey).maybeSingle(),
  ]);
- if(request.error||binding.error||receipts.error||probes.error)
+ if(request.error||binding.error||receipts.error||probes.error||staging.error)
   throw new Error("Ruflo pilot schema or tenant permissions unavailable");
  return{
   pilot:(request.data??null) as RufloPilotRequest|null,
   binding:(binding.data??null) as RufloTenantBinding|null,
   receipts:(receipts.data??[]) as RufloProbeReceipt[],
   probes:(probes.data??[]) as RufloProbeTask[],
+  staging:(staging.data??null) as RufloStagingControl|null,
   customerAgentExecutionReady:false as const,
   notice:"Sandbox probes only. Shortlisting is not a connection, credential grant, or customer agent execution.",
  };
@@ -125,4 +134,26 @@ export const queueRufloHealthProbe=createServerFn({method:"POST"}).middleware([r
  });
  if(result.error)throw new Error(result.error.message);
  return {taskId:result.data.id as string,status:result.data.status as string};
+});
+
+
+/**
+ * Emergency stop is available to tenant owners/admins and platform operators.
+ * It cannot activate or provision Ruflo, and invalidates queued probes.
+ */
+export const stopRufloSandbox=createServerFn({method:"POST"})
+.middleware([requireSupabaseAuth])
+.inputValidator((i:unknown)=>scope.extend({
+ reason:z.string().trim().min(16).max(500),
+}).parse(i))
+.handler(async({context,data})=>{
+ const access=await requireTenantMembership(context,data.tenantId);
+ requireAdminRole(access.role);
+ const result=await(context.supabase as any).rpc("stop_ruflo_sandbox",{
+  _tenant:data.tenantId,_product:data.productKey,_reason:data.reason,
+ });
+ if(result.error)throw new Error(result.error.message);
+ return result.data as {
+  status:"suspended";queuedProbesDenied:number;customerAgentExecutionEnabled:false;
+ };
 });

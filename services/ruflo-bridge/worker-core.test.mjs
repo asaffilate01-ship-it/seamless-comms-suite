@@ -129,3 +129,40 @@ test("Ruflo MCP tool-schema drift prevents tool execution and records a failed r
  assert.equal(events.includes("UNEXPECTED_TOOL_CALL"),false);
  assert.equal(events.includes("stopped"),true);
 });
+
+
+test("ambiguous finalisation retries the identical receipt without another MCP call",async()=>{
+ let calls=0,finishes=[];
+ const h=harness();
+ const gateway=async(operation,payload)=>{
+  if(operation!=="probe.finish")return h.gateway(operation,payload);
+  finishes.push(structuredClone(payload));
+  if(++calls===1)throw new Error("Simulated dropped response after a successful database commit");
+  return {status:payload.result,alreadyExists:true};
+ };
+ const result=await processOneRufloProbe({config:data,gateway,
+  clientFactory:h.clientFactory,receiptFactory});
+ assert.equal(result.status,"passed");
+ assert.equal(calls,2);
+ assert.deepEqual(finishes[0],finishes[1]);
+ assert.equal(h.events.filter(x=>x==="client.probe").length,1);
+});
+
+test("failed finalisation reports an unresolved receipt; it never reruns the tool",async()=>{
+ let toolCalls=0,finishes=0;
+ const h=harness();
+ const gateway=async(operation,payload)=>{
+  if(operation==="probe.finish"){finishes++;throw new Error("untrusted provider secret");}
+  return h.gateway(operation,payload);
+ };
+ const clientFactory=async()=>({
+  connect:async()=>({probeTools:["swarm_health"],probeManifestSha256:data.expectedManifestDigest}),
+  probe:async()=>{toolCalls++;return{tool:"swarm_health",received:true};},
+  stop:()=>{},
+ });
+ await assert.rejects(processOneRufloProbe({
+  config:data,gateway,clientFactory,receiptFactory,
+ }),/receipt was not acknowledged/);
+ assert.equal(toolCalls,1);
+ assert.equal(finishes,2);
+});
