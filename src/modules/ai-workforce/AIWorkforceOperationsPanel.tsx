@@ -54,12 +54,16 @@ export function AIWorkforceOperationsPanel({tenantId,productKey,employeeId}:Prop
    <Stat title="Outstanding charge reviews" value={data?.totals.uncertainCharges??0}/>
    <Stat title="Stalled worker leases" value={data?.totals.staleWorkers??0}/>
    <Stat title="Results awaiting human review" value={data?.totals.waitingReview??0}/>
-   <Stat title="Held reserve, minor units*" value={data?.totals.reservedMinorOutstanding??0}/>
+   <Stat title="Currencies with held reserves" value={data?.totals.heldReservesByCurrency.length??0}/>
   </div>
-  <p className="text-xs text-muted-foreground">
-   *Held reserve totals may involve different currencies. Review amounts by currency below;
-   do not treat the aggregate as a financial balance.
-  </p>
+  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+   {(data?.totals.heldReservesByCurrency??[]).map(x=>
+    <Badge key={x.currency} variant="outline">
+     Reserved {x.amountMinor} minor units · {x.currency}
+    </Badge>)}
+   {!data?.totals.heldReservesByCurrency.length&&
+    <span>No outstanding unverified provider charges in the recent employee window.</span>}
+  </div>
   <div className="grid gap-4 lg:grid-cols-2">
    <div className="min-w-0 space-y-3">
     <h4 className="font-semibold">Approved worker references</h4>
