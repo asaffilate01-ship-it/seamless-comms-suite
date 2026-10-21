@@ -9,6 +9,7 @@ import {Badge} from "@/components/ui/badge";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
 import {StatusBadge} from "@/components/app/shell";
+import {AIWorkforceOperationsPanel} from "./AIWorkforceOperationsPanel";
 import type {AiEmployee} from "./functions";
 import type {AiEmployeeTask} from "./tasks.functions";
 import {
@@ -303,6 +304,11 @@ export function AIWorkforceReadonlyPanel({tenantId,productKey,employee,tasks}:Pr
     </p>}
    </div>
   </div>
+  <AIWorkforceOperationsPanel
+    tenantId={tenantId}
+    productKey={productKey}
+    employeeId={employee.id}
+  />
   <p className="border-t pt-3 text-xs text-muted-foreground">
    <LockKeyhole className="mr-1 inline h-4 w-4"/> Real employee analysis is read-only.
    Generated conclusions are drafts for an independent reviewer—not permission to contact
