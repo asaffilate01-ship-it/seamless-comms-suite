@@ -19,6 +19,7 @@ import {
   type AiEmployeeTask, type AiEmployeeAccessProposal, type AiEmployeeTaskPreflight,
   type ProposedTaskTrigger,
 } from "./tasks.functions";
+import {AIWorkforceSandboxPanel} from "./AIWorkforceSandboxPanel";
 
 type Props = { tenantId: string; productKey: string; employee: AiEmployee };
 const capsOf = (employee: AiEmployee): string[] => {
@@ -403,6 +404,13 @@ export function AIWorkforceTaskPanel({ tenantId, productKey, employee }: Props) 
         </div>
       </div>
     </CardContent></Card>
+
+    <AIWorkforceSandboxPanel
+      tenantId={tenantId}
+      productKey={productKey}
+      employee={employee}
+      tasks={tasks}
+    />
 
     <Card><CardContent className="p-5">
       <h4 className="flex items-center gap-2 font-semibold">
