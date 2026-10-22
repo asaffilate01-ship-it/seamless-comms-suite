@@ -39,6 +39,8 @@ jobs:
         run: |
           node verification/control-plane/sales-runtime.test.mjs
           node verification/control-plane/sales-queue-fairness.test.mjs
+      - name: Finvessa Treasury Analyst exact-cash and reconciliation tests
+        run: bun run test:treasury
       - run: bun run build
       - run: bun run typecheck
       - name: Build four local-language TraveNexa UK travel storefronts
