@@ -9,7 +9,7 @@ const MAX_AGE = 300_000;
 function deny() { throw new Error('EventPlanr Factory connection is unavailable or does not match this deployment'); }
 export function connectionConfig(env, country) {
   if (typeof window !== 'undefined') deny();
-  const market = MARKETS[country];
+  const market = Object.hasOwn(MARKETS, country) ? MARKETS[country] : null;
   if (!market || env.EVENTPLANR_FACTORY_ENABLED !== 'true') deny();
   let origin;
   try { origin = new URL(env.OMNIQORA_FACTORY_ORIGIN); } catch { deny(); }
