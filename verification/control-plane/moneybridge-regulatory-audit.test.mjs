@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const migration = await readFile(new URL('../../supabase/migrations/20261010110000_regulatory_audit_factory_registration.sql',import.meta.url),'utf8');
+const source = await readFile(new URL('../../supabase/migrations/20261005071500_moneybridge_factory_advisory.sql',import.meta.url),'utf8');
+assert.match(source,/VALUES\('moneybridge-uk'/);
+assert.match(migration,/omniqora\.regulatory-audit/);
+assert.match(migration,/provisioning_mode,status,metadata/);
+assert.match(migration,/'manual','beta'/);
+assert.match(migration,/VALUES\('fastremit','omniqora\.regulatory-audit',false,false/);
+assert.match(migration,/VALUES\('moneybridge-uk','omniqora\.regulatory-audit',false/);
+assert.match(migration,/"submissions_enabled":false/);
+assert.match(migration,/"liveVerified":false/);
+assert.doesNotMatch(migration,/INSERT INTO public\.tenant_services/i);
+assert.doesNotMatch(migration,/INSERT INTO public\.tenant_products/i);
+assert.doesNotMatch(migration,/INSERT INTO public\.tenants\b/i);
+console.log('MoneyBridge Factory regulatory audit registration requires manual service provisioning and does not activate tenants or regulatory submissions.');
