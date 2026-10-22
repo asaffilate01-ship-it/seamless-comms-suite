@@ -4,6 +4,7 @@ import {Badge} from "@/components/ui/badge";
 import {Card,CardContent} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
+import eventplanrMarkets from "./eventplanr-markets.json";
 import dishbeeHandover from "./dishbee-import-handover.json";
 
 type Product={
@@ -72,6 +73,18 @@ export default function PortfolioFactoryDirectory({registry}:Props){
     </div>)}
     {!items.length&&<p className="p-4 text-sm text-muted-foreground">No matching products, tenants or brands.</p>}
    </div>
+   <section className="rounded-xl border p-4" aria-labelledby="eventplanr-markets-title">
+     <h3 id="eventplanr-markets-title" className="font-semibold">EventPlanr country connections</h3>
+     <p className="mt-1 text-sm text-muted-foreground">One Factory product with separate UK and German operations. Country connections require their own tenant binding and credentials.</p>
+     <div className="mt-3 grid gap-3 sm:grid-cols-2">
+       {eventplanrMarkets.markets.map(market => <div key={market.country} className="rounded-lg border p-3">
+         <div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-medium">{market.name}</h4><Badge variant="outline">Live binding unverified</Badge></div>
+         <p className="mt-2 text-sm">{market.currency} · {market.locale} · {market.timezone}</p>
+         <a className="mt-2 inline-block break-all text-sm underline" href={`https://github.com/${market.repository}`} target="_blank" rel="noopener noreferrer">View country source</a>
+         <p className="mt-2 text-xs text-muted-foreground">Required: active workspace and product, matching country settings, scoped connection key and successful connection check. Payments and launch approval are checked separately.</p>
+       </div>)}
+     </div>
+   </section>
    <section className="rounded-xl border p-4">
      <h3 className="font-semibold">Dishbee tenant-import handover</h3>
      <p className="mt-1 text-xs text-muted-foreground">
