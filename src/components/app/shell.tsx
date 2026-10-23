@@ -29,6 +29,7 @@ type NavItem = {
   badge?: string;
 };
 const nav: NavItem[] = [
+  { to: "/app/aegis", labelKey: "", label: "Aegis Command", icon: ShieldCheck },
   { to: "/app", labelKey: "app.nav.overview", icon: LayoutDashboard, exact: true },
   { to: "/app/whatsapp", labelKey: "app.nav.whatsapp", icon: MessageCircle },
   { to: "/app/order-intake", labelKey: "", label: "Assisted Ordering", icon: ShoppingBasket },

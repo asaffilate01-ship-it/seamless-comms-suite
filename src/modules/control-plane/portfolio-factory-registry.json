@@ -11,6 +11,18 @@
   },
   "products": [
     {
+      "productKey": "aegis-command",
+      "displayName": "Aegis Command",
+      "sourceRows": [],
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/seamless-comms-suite.git"
+      ],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "factory_module_source_only",
+      "tenantProvisioning": "not_activated"
+    },
+    {
       "productKey": "affivon",
       "displayName": "AFFIVON",
       "sourceRows": [
