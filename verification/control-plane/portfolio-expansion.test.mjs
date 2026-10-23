@@ -12,7 +12,8 @@ test("inventory preserves source records and every named tenant without duplicat
  assert.equal(seed.length,127);
  assert.equal(registry.sourceRowCount,seed.length);
  assert.equal(new Set(seed.map(x=>x.sourceRow)).size,seed.length);
- assert.equal(registry.products.length,88);
+ assert.equal(registry.products.length,89); // 88 historic source identities plus Aegis Factory candidate
+ assert.equal(registry.products.filter(p=>p.productKey==="aegis-command").length,1);
  assert.equal(new Set(registry.products.map(x=>x.productKey)).size,registry.products.length);
  const tenantSources=seed.filter(x=>x.architectureRole==="tenant");
  assert.equal(registry.tenants.length,tenantSources.length);

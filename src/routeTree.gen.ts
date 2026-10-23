@@ -28,6 +28,7 @@ import { Route as AuthenticatedLandlordRouteImport } from './routes/_authenticat
 import { Route as TrackTokenRouteImport } from './routes/track.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAccessControlRouteImport } from './routes/_authenticated/app.access-control'
+import { Route as AuthenticatedAppAegisRouteImport } from './routes/_authenticated/app.aegis'
 import { Route as AuthenticatedAppAgentRouteImport } from './routes/_authenticated/app.agent'
 import { Route as AuthenticatedAppAiEmployeesRouteImport } from './routes/_authenticated/app.ai-employees'
 import { Route as AuthenticatedAppAnalyticsRouteImport } from './routes/_authenticated/app.analytics'
@@ -205,6 +206,11 @@ const AuthenticatedAppAccessControlRoute =
     path: '/access-control',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAegisRoute = AuthenticatedAppAegisRouteImport.update({
+  id: '/aegis',
+  path: '/aegis',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppAgentRoute = AuthenticatedAppAgentRouteImport.update({
   id: '/agent',
   path: '/agent',
@@ -690,6 +696,7 @@ export interface FileRoutesByFullPath {
   '/landlord': typeof AuthenticatedLandlordRoute
   '/track/$token': typeof TrackTokenRoute
   '/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/app/aegis': typeof AuthenticatedAppAegisRoute
   '/app/agent': typeof AuthenticatedAppAgentRoute
   '/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
@@ -790,6 +797,7 @@ export interface FileRoutesByTo {
   '/landlord': typeof AuthenticatedLandlordRoute
   '/track/$token': typeof TrackTokenRoute
   '/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/app/aegis': typeof AuthenticatedAppAegisRoute
   '/app/agent': typeof AuthenticatedAppAgentRoute
   '/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
@@ -892,6 +900,7 @@ export interface FileRoutesById {
   '/_authenticated/landlord': typeof AuthenticatedLandlordRoute
   '/track/$token': typeof TrackTokenRoute
   '/_authenticated/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/_authenticated/app/aegis': typeof AuthenticatedAppAegisRoute
   '/_authenticated/app/agent': typeof AuthenticatedAppAgentRoute
   '/_authenticated/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/_authenticated/app/analytics': typeof AuthenticatedAppAnalyticsRoute
@@ -995,6 +1004,7 @@ export interface FileRouteTypes {
     | '/landlord'
     | '/track/$token'
     | '/app/access-control'
+    | '/app/aegis'
     | '/app/agent'
     | '/app/ai-employees'
     | '/app/analytics'
@@ -1095,6 +1105,7 @@ export interface FileRouteTypes {
     | '/landlord'
     | '/track/$token'
     | '/app/access-control'
+    | '/app/aegis'
     | '/app/agent'
     | '/app/ai-employees'
     | '/app/analytics'
@@ -1196,6 +1207,7 @@ export interface FileRouteTypes {
     | '/_authenticated/landlord'
     | '/track/$token'
     | '/_authenticated/app/access-control'
+    | '/_authenticated/app/aegis'
     | '/_authenticated/app/agent'
     | '/_authenticated/app/ai-employees'
     | '/_authenticated/app/analytics'
@@ -1462,6 +1474,13 @@ declare module '@tanstack/react-router' {
       path: '/access-control'
       fullPath: '/app/access-control'
       preLoaderRoute: typeof AuthenticatedAppAccessControlRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/aegis': {
+      id: '/_authenticated/app/aegis'
+      path: '/aegis'
+      fullPath: '/app/aegis'
+      preLoaderRoute: typeof AuthenticatedAppAegisRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/agent': {
@@ -2051,6 +2070,7 @@ const AuthenticatedAppCasesRouteWithChildren =
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAccessControlRoute: typeof AuthenticatedAppAccessControlRoute
+  AuthenticatedAppAegisRoute: typeof AuthenticatedAppAegisRoute
   AuthenticatedAppAgentRoute: typeof AuthenticatedAppAgentRoute
   AuthenticatedAppAiEmployeesRoute: typeof AuthenticatedAppAiEmployeesRoute
   AuthenticatedAppAnalyticsRoute: typeof AuthenticatedAppAnalyticsRoute
@@ -2103,6 +2123,7 @@ interface AuthenticatedAppRouteChildren {
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAccessControlRoute: AuthenticatedAppAccessControlRoute,
+  AuthenticatedAppAegisRoute: AuthenticatedAppAegisRoute,
   AuthenticatedAppAgentRoute: AuthenticatedAppAgentRoute,
   AuthenticatedAppAiEmployeesRoute: AuthenticatedAppAiEmployeesRoute,
   AuthenticatedAppAnalyticsRoute: AuthenticatedAppAnalyticsRoute,
