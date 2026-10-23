@@ -125,6 +125,32 @@ const foreignSite=(await add(admin,'site','static-guarding','Other agency site',
 await asUser(admin,()=>db.query("UPDATE aegis_operations SET status='active',revision=2 WHERE id=$1",[foreignSite.id]));
 await assert.rejects(()=>resource('equipment','Foreign site',foreignSite.id));
 assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_resources WHERE tenant_id=$1',[other]))).rows.length,0);
+// Reports preserve evidence and require an independent supervisor.
+async function report(user,siteId=site.id,tenantId=tenant){return asUser(user,()=>db.query("INSERT INTO aegis_reports(tenant_id,site_id,kind,title,request_id) VALUES($1,$2,'inspection','Weekly inspection',gen_random_uuid()) RETURNING *",[tenantId,siteId]))}
+await assert.rejects(()=>report(viewer));
+await assert.rejects(()=>report(officer,restricted.id));
+await assert.rejects(()=>report(admin,foreignSite.id));
+const rpt=(await report(officer)).rows[0];
+async function reportMove(user,revision,stage,body='Door inspection complete',checks=[{label:'Door latch',result:'fail',finding:'Repair latch'}],note='Reviewed'){return asUser(user,()=>db.query('UPDATE aegis_reports SET stage=$2,body=$3,checks=$4,review_note=$5,revision=$6 WHERE id=$1 AND revision=$7 RETURNING *',[rpt.id,stage,body,JSON.stringify(checks),note,revision+1,revision]))}
+await assert.rejects(()=>reportMove(officer,1,'approved'),/Invalid report transition/);
+await assert.rejects(()=>reportMove(officer,1,'submitted','',[]),/Complete report evidence/);
+await assert.rejects(()=>reportMove(officer,1,'submitted','x',[{label:'Door',result:'fail',finding:''}]),/Invalid checklist evidence/);
+await reportMove(officer,1,'submitted');
+await assert.rejects(()=>reportMove(officer,2,'approved'),/Independent supervisor/);
+await assert.rejects(()=>reportMove(admin,2,'approved','Altered evidence'),/Review cannot alter/);
+await assert.rejects(()=>reportMove(admin,2,'approved',undefined,undefined,''),/Review note required/);
+await reportMove(admin,2,'changes_requested');
+await reportMove(officer,3,'submitted');
+await reportMove(admin,4,'approved');
+assert.equal((await reportMove(admin,4,'approved')).rows.length,0);
+await assert.rejects(()=>reportMove(officer,5,'draft'),/Invalid report transition/);
+const reportHistory=(await asUser(admin,()=>db.query('SELECT * FROM aegis_report_events WHERE report_id=$1 ORDER BY revision',[rpt.id]))).rows;
+assert.equal(reportHistory.length,5);assert.equal(reportHistory[4].snapshot.reviewed_by,admin);assert.equal(reportHistory[1].snapshot.checks[0].finding,'Repair latch');
+await assert.rejects(()=>asUser(admin,()=>db.query('DELETE FROM aegis_report_events WHERE report_id=$1',[rpt.id])));
+const self=(await report(admin)).rows[0];
+await asUser(admin,()=>db.query("UPDATE aegis_reports SET body='x',checks='[{\"label\":\"Door\",\"result\":\"pass\",\"finding\":\"\"}]',stage='submitted',revision=2 WHERE id=$1",[self.id]));
+await assert.rejects(()=>asUser(admin,()=>db.query("UPDATE aegis_reports SET stage='approved',review_note='Self',revision=3 WHERE id=$1",[self.id])),/Independent supervisor/);
+assert.equal((await asUser(stranger,()=>db.query('SELECT * FROM aegis_reports'))).rows.length,0);
 await db.query("UPDATE tenant_products SET status='suspended' WHERE tenant_id=$1 AND product_key='aegis-command'",[tenant]);
 assert.equal((await asUser(admin,()=>db.query('SELECT * FROM aegis_operations WHERE tenant_id=$1',[tenant]))).rows.length,0);
 await assert.rejects(()=>add(admin,'site','static-guarding','Suspended'));
@@ -132,5 +158,6 @@ await assert.rejects(()=>field(officer,'welfare_check'));
 assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_field_events'))).rows.length,0);
 assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_resources'))).rows.length,0);
 assert.equal((await move(officer,key.id,3,'issued',officer)).rows.length,0);
-console.log('Aegis full-chain database checks passed: restricted areas, assignments, cross-tenant denial, viewer denial, immutable audit, transitions, stale revisions, revocation, visitors, asset custody and cross-agency references.');
+assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_reports'))).rows.length,0);
+console.log('Aegis reports and full-chain database checks passed: restricted areas, assignments, cross-tenant denial, viewer denial, immutable audit, transitions, stale revisions, revocation, visitors, asset custody and cross-agency references.');
 await db.close();
