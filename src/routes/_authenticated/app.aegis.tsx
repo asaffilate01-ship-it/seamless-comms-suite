@@ -1,3 +1,4 @@
+import {PostOrdersPanel} from '@/modules/aegis/PostOrdersPanel';
 import {HandoversPanel} from '@/modules/aegis/HandoversPanel';
 import {CorrectivePanel} from '@/modules/aegis/CorrectivePanel';
 import {ReportsPanel} from '@/modules/aegis/ReportsPanel';
@@ -25,6 +26,7 @@ function Aegis(){const tenant=useTenant(),tenantId=tenant.tenantId??'',statusFn=
  <div className="my-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{securityAreas.map(a=><Card key={a.key}><CardContent className="p-4"><h3 className="font-semibold">{a.name}</h3><p className="mt-2 text-sm text-muted-foreground">{a.features}</p></CardContent></Card>)}</div>
  <OperationsPanel key={tenantId} tenantId={tenantId} role={tenant.role??''}/>
  <FieldPanel key={'field-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
+ <PostOrdersPanel key={'orders-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
  <HandoversPanel key={'handovers-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
  <CorrectivePanel key={'corrective-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
  <ReportsPanel key={'reports-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>

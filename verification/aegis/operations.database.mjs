@@ -235,6 +235,31 @@ await db.query("INSERT INTO tenant_members(tenant_id,user_id,role) VALUES($1,$2,
 const inaccessible=(await handover(admin,stranger)).rows[0];
 assert.equal((await asUser(stranger,()=>db.query('SELECT * FROM aegis_handovers WHERE id=$1',[inaccessible.id]))).rows.length,0);
 assert.equal((await asUser(stranger,()=>db.query("UPDATE aegis_handovers SET stage='acknowledged',response='x',revision=2 WHERE id=$1 RETURNING *",[inaccessible.id]))).rows.length,0);
+// Published instructions and version-specific receipts are immutable.
+async function postOrder(user=admin,siteId=site.id,tenantId=tenant){return asUser(user,()=>db.query("INSERT INTO aegis_post_orders(tenant_id,site_id,title,content,request_id,version,created_at) VALUES($1,$2,'Post duties','Escalate defects using incident references',gen_random_uuid(),999,'1990-01-01') RETURNING *",[tenantId,siteId]))}
+await assert.rejects(()=>postOrder(officer));
+await assert.rejects(()=>postOrder(viewer));
+await assert.rejects(()=>postOrder(admin,foreignSite.id));
+const order1=(await postOrder()).rows[0];
+assert.equal(order1.version,1);assert.equal(order1.created_by,admin);assert.ok(Date.parse(order1.created_at)>Date.now()-60000);
+async function postReceipt(user,orderId=order1.id,tenantId=tenant){return asUser(user,()=>db.query("INSERT INTO aegis_post_order_receipts(tenant_id,order_id,actor,recorded_at) VALUES($1,$2,$3,'1990-01-01') RETURNING *",[tenantId,orderId,admin]))}
+const receipt=(await postReceipt(officer)).rows[0];assert.equal(receipt.actor,officer);assert.ok(Date.parse(receipt.recorded_at)>Date.now()-60000);
+await assert.rejects(()=>postReceipt(officer),/unique constraint/);
+await assert.rejects(()=>postReceipt(viewer),/Officer authoring role/);
+await assert.rejects(()=>postReceipt(stranger));
+await assert.rejects(()=>postReceipt(admin,order1.id,other));
+const order2=(await postOrder()).rows[0];assert.equal(order2.version,2);
+await assert.rejects(()=>postReceipt(admin,order1.id),/Superseded instructions/);
+await postReceipt(officer,order2.id);
+const versions=(await asUser(officer,()=>db.query('SELECT version,is_current FROM aegis_post_orders_status WHERE site_id=$1 ORDER BY version',[site.id]))).rows;
+assert.deepEqual(versions,[{version:1,is_current:false},{version:2,is_current:true}]);
+const restrictedOrder=(await postOrder(admin,restricted.id)).rows[0];
+assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_post_orders_status WHERE id=$1',[restrictedOrder.id]))).rows.length,0);
+await assert.rejects(()=>postReceipt(officer,restrictedOrder.id),/Accessible post order/);
+await assert.rejects(()=>asUser(admin,()=>db.query("UPDATE aegis_post_orders SET content='Changed' WHERE id=$1",[order1.id])));
+await assert.rejects(()=>asUser(admin,()=>db.query('DELETE FROM aegis_post_orders WHERE id=$1',[order1.id])));
+await assert.rejects(()=>asUser(officer,()=>db.query('DELETE FROM aegis_post_order_receipts WHERE id=$1',[receipt.id])));
+assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_post_order_receipts'))).rows.every(r=>r.actor===officer),true);
 await db.query("UPDATE tenant_products SET status='suspended' WHERE tenant_id=$1 AND product_key='aegis-command'",[tenant]);
 assert.equal((await asUser(admin,()=>db.query('SELECT * FROM aegis_operations WHERE tenant_id=$1',[tenant]))).rows.length,0);
 await assert.rejects(()=>add(admin,'site','static-guarding','Suspended'));
@@ -247,5 +272,7 @@ assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_corrective_
 assert.equal((await asUser(admin,()=>db.query('SELECT * FROM aegis_corrective_events WHERE tenant_id=$1',[tenant]))).rows.length,0);
 assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_handovers'))).rows.length,0);
 assert.equal((await asUser(admin,()=>db.query('SELECT * FROM aegis_handover_events WHERE tenant_id=$1',[tenant]))).rows.length,0);
-console.log('Aegis handovers, corrective actions, reports and full-chain database checks passed: restricted areas, assignments, cross-tenant denial, viewer denial, immutable audit, transitions, stale revisions, revocation, visitors, asset custody and cross-agency references.');
+assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_post_orders_status'))).rows.length,0);
+assert.equal((await asUser(admin,()=>db.query('SELECT * FROM aegis_post_order_receipts WHERE tenant_id=$1',[tenant]))).rows.length,0);
+console.log('Aegis post orders, handovers, corrective actions, reports and full-chain database checks passed: restricted areas, assignments, cross-tenant denial, viewer denial, immutable audit, transitions, stale revisions, revocation, visitors, asset custody and cross-agency references.');
 await db.close();
