@@ -1,3 +1,4 @@
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import assert from "node:assert/strict";
 import {readFile,readdir} from "node:fs/promises";
 import {PGlite} from "@electric-sql/pglite";
@@ -27,8 +28,7 @@ async function asService(fn){
  try{let out=await fn();await db.exec("COMMIT");return out;}
  catch(error){await db.exec("ROLLBACK");throw error;}
 }
-const bootstrap=await asUser(admin,async()=>(
- await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS data")).rows[0].data);
+const bootstrap=await seedIsolatedDishbeeTestTenants(db,admin);
 const t=bootstrap.tenants.find(x=>x.tenantSlug==="mealdeck");assert(t?.tenantId);
 await asService(async()=>{
  await db.query("UPDATE public.tenant_products SET status='active' WHERE tenant_id=$1 AND product_key='mealdeck'",[t.tenantId]);

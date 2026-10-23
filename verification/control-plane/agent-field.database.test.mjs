@@ -1,3 +1,4 @@
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import assert from "node:assert/strict";
 import {readFile,readdir} from "node:fs/promises";
 import {PGlite} from "@electric-sql/pglite";
@@ -31,8 +32,7 @@ async function asService(callback){
  try{const result=await callback();await db.exec("COMMIT");return result;}
  catch(error){await db.exec("ROLLBACK");throw error;}
 }
-const pilot=await asUser(admin,async()=>(
- await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS data")).rows[0].data);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);
 const tenant=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");
 assert(tenant?.tenantId);
 await asService(async()=>{

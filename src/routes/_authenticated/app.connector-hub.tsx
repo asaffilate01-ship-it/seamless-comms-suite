@@ -12,6 +12,7 @@ import {getTenantControlPlane} from "@/lib/control-plane.functions";
 import {getConnectorHub,recordConnectorObservation,saveReceptionSettings,upsertCommunicationIdentity} from "@/modules/connectors/functions";
 import {Cable,HeartPulse,Inbox,RefreshCw,Radio} from "lucide-react";
 import {connectorSetupCatalogue} from "@/modules/connectors/onboarding-catalogue";
+import {ConnectorIntelligenceWorkbench} from "@/modules/connectors/ConnectorIntelligenceWorkbench";
 import {toast} from "sonner";
 
 export const Route=createFileRoute("/_authenticated/app/connector-hub")({component:ConnectorHub,head:()=>({meta:[{title:"Connector Hub — Omniqora"},{name:"robots",content:"noindex"}]})});
@@ -28,6 +29,7 @@ function ConnectorHub(){
  return <AppShell title="Connector & Communications Hub" subtitle="Provider connections, independent health evidence, webhook receipts, reconciliation and reception. Operator observations do not activate integrations."
  actions={<Button size="sm" variant="outline" onClick={()=>q.refetch()}><RefreshCw className="mr-2 h-4 w-4"/>Refresh</Button>}>
   <Card><CardContent className="p-5"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={productKey} onChange={e=>setProductKey(e.target.value)}>{products.map((p:string)=><option key={p}>{p}</option>)}</select></CardContent></Card>
+  {tenantId&&productKey&&<ConnectorIntelligenceWorkbench/>}
   <div className="mt-6 grid gap-4 md:grid-cols-4"><Metric icon={Cable} label="Bindings" value={q.data?.bindings?.length??0}/><Metric icon={HeartPulse} label="Health checks" value={q.data?.health?.length??0}/><Metric icon={Inbox} label="Webhook inbox" value={q.data?.webhookInbox?.length??0}/><Metric icon={Radio} label="Channel IDs" value={q.data?.communicationIdentities?.length??0}/></div>
   <div className="mt-6 grid gap-6 xl:grid-cols-2">
    <Card><CardContent className="p-5"><h2 className="font-semibold">Provider bindings</h2><p className="mt-1 text-xs text-muted-foreground">Binding status describes configuration, not current external provider success. Historical manually entered health checks are not accepted as verified receipts.</p><div className="mt-3 space-y-2">{(q.data?.bindings??[]).map((b:any)=>{const last=(q.data?.health??[]).find((h:any)=>h.provider_key===b.provider_key);return <div key={b.id} className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm"><div><b>{b.provider_key}</b><p className="text-xs text-muted-foreground">{b.environment} · {b.status}</p></div><div className="flex gap-2"><StatusBadge status={last?.status==="healthy"?"unverified":last?.status??"unverified"}/><Button size="sm" variant="outline" onClick={()=>run(()=>observationFn({data:{tenantId,productKey,providerKey:b.provider_key,bindingId:b.id,status:"unverified",note:"Operator requested provider-side verification"}}),"Verification-needed observation recorded")}>Flag unverified</Button></div></div>})}</div>
