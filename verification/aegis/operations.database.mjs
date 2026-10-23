@@ -203,6 +203,38 @@ await asUser(admin,()=>db.query("UPDATE aegis_reports SET body='Restricted check
 await asUser(stranger,()=>db.query("UPDATE aegis_reports SET stage='approved',review_note='Accepted',revision=3 WHERE id=$1",[restrictedReport.id]));
 await assert.rejects(()=>corrective(admin,restrictedReport.id,0,officer),/Assignee must have site access/);
 await db.query('DELETE FROM tenant_members WHERE tenant_id=$1 AND user_id=$2',[tenant,stranger]);
+// Shift handover receipt is exclusive to the named incoming member.
+async function handover(user=officer,receiver=admin,siteId=site.id,tenantId=tenant){return asUser(user,()=>db.query("INSERT INTO aegis_handovers(tenant_id,site_id,incoming_id,summary,outstanding,request_id) VALUES($1,$2,$3,'Evening handover','Incident reference: door defect',gen_random_uuid()) RETURNING *",[tenantId,siteId,receiver]))}
+await assert.rejects(()=>handover(viewer));
+await assert.rejects(()=>handover(officer,viewer),/Eligible incoming/);
+await assert.rejects(()=>handover(officer,stranger),/Eligible incoming/);
+await assert.rejects(()=>handover(officer,officer));
+await assert.rejects(()=>handover(officer,admin,restricted.id));
+await assert.rejects(()=>handover(admin,officer,foreignSite.id));
+const ho=(await handover()).rows[0];
+async function handoverMove(user,rev,stage,summary='Evening handover',response='Received and read'){return asUser(user,()=>db.query('UPDATE aegis_handovers SET stage=$2,summary=$3,response=$4,revision=$5 WHERE id=$1 AND revision=$6 RETURNING *',[ho.id,stage,summary,response,rev+1,rev]))}
+await assert.rejects(()=>handoverMove(officer,1,'acknowledged'),/Invalid handover transition/);
+await assert.rejects(()=>handoverMove(admin,1,'offered'),/Only outgoing/);
+await handoverMove(officer,1,'offered');
+await assert.rejects(()=>handoverMove(officer,2,'acknowledged'),/Only incoming/);
+await assert.rejects(()=>handoverMove(admin,2,'acknowledged','Changed evidence'),/cannot alter offered/);
+await assert.rejects(()=>handoverMove(admin,2,'acknowledged',undefined,''),/note required/);
+await handoverMove(admin,2,'returned');
+await handoverMove(officer,3,'offered');
+await handoverMove(admin,4,'acknowledged');
+assert.equal((await handoverMove(admin,4,'acknowledged')).rows.length,0);
+await assert.rejects(()=>handoverMove(officer,5,'draft'),/Invalid handover transition/);
+await assert.rejects(()=>asUser(officer,()=>db.query('UPDATE aegis_handovers SET incoming_id=$2,revision=6 WHERE id=$1',[ho.id,viewer])),/identity is immutable/);
+const handoverTrail=(await asUser(admin,()=>db.query('SELECT * FROM aegis_handover_events WHERE handover_id=$1 ORDER BY revision',[ho.id]))).rows;
+assert.equal(handoverTrail.length,5);assert.equal(handoverTrail[4].actor,admin);assert.equal(handoverTrail[1].snapshot.outstanding,'Incident reference: door defect');
+await assert.rejects(()=>asUser(admin,()=>db.query('DELETE FROM aegis_handover_events WHERE handover_id=$1',[ho.id])));
+await assert.rejects(()=>asUser(admin,()=>db.query('DELETE FROM aegis_handovers WHERE id=$1',[ho.id])));
+await assert.rejects(()=>asUser(admin,()=>db.query("INSERT INTO aegis_handover_events(tenant_id,handover_id,actor,revision,snapshot) VALUES($1,$2,$3,99,'{}')",[tenant,ho.id,officer])));
+// A named recipient without site access cannot read or acknowledge a handover.
+await db.query("INSERT INTO tenant_members(tenant_id,user_id,role) VALUES($1,$2,'agent')",[tenant,stranger]);
+const inaccessible=(await handover(admin,stranger)).rows[0];
+assert.equal((await asUser(stranger,()=>db.query('SELECT * FROM aegis_handovers WHERE id=$1',[inaccessible.id]))).rows.length,0);
+assert.equal((await asUser(stranger,()=>db.query("UPDATE aegis_handovers SET stage='acknowledged',response='x',revision=2 WHERE id=$1 RETURNING *",[inaccessible.id]))).rows.length,0);
 await db.query("UPDATE tenant_products SET status='suspended' WHERE tenant_id=$1 AND product_key='aegis-command'",[tenant]);
 assert.equal((await asUser(admin,()=>db.query('SELECT * FROM aegis_operations WHERE tenant_id=$1',[tenant]))).rows.length,0);
 await assert.rejects(()=>add(admin,'site','static-guarding','Suspended'));
@@ -213,5 +245,7 @@ assert.equal((await move(officer,key.id,3,'issued',officer)).rows.length,0);
 assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_reports'))).rows.length,0);
 assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_corrective_actions'))).rows.length,0);
 assert.equal((await asUser(admin,()=>db.query('SELECT * FROM aegis_corrective_events WHERE tenant_id=$1',[tenant]))).rows.length,0);
-console.log('Aegis corrective actions, reports and full-chain database checks passed: restricted areas, assignments, cross-tenant denial, viewer denial, immutable audit, transitions, stale revisions, revocation, visitors, asset custody and cross-agency references.');
+assert.equal((await asUser(officer,()=>db.query('SELECT * FROM aegis_handovers'))).rows.length,0);
+assert.equal((await asUser(admin,()=>db.query('SELECT * FROM aegis_handover_events WHERE tenant_id=$1',[tenant]))).rows.length,0);
+console.log('Aegis handovers, corrective actions, reports and full-chain database checks passed: restricted areas, assignments, cross-tenant denial, viewer denial, immutable audit, transitions, stale revisions, revocation, visitors, asset custody and cross-agency references.');
 await db.close();
