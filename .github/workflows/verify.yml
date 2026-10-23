@@ -44,7 +44,9 @@ jobs:
           node verification/control-plane/sales-runtime.test.mjs
           node verification/control-plane/sales-queue-fairness.test.mjs
       - name: Aegis Factory readiness and agent boundaries
-        run: node --experimental-strip-types --test verification/aegis/*.test.mjs
+        run: |
+          node --experimental-strip-types --test verification/aegis/*.test.mjs
+          node verification/aegis/operations.database.mjs
       - run: bun run build
       - run: bun run typecheck
       - name: Build four local-language TraveNexa UK travel storefronts

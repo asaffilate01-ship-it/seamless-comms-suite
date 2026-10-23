@@ -43,3 +43,17 @@ Reuse existing identity/entitlements, Geo, dispatch/routing, Connect communicati
 ## Verification and release
 
 Run focused tests, portfolio registry tests/strict audit, application typecheck/build and security tests. Source-only checks do not establish authenticated database correctness. No production migration, provider secret, budget consumption, tenant activation, Lovable publication or automatic merge is authorised by this PR. Staging RLS, real source binding, provider evaluation and operational acceptance remain release prerequisites.
+
+## Phase 2 — full-suite operations foundation
+
+The suite scope now has fourteen service areas: static/building guarding; close protection; access/visitors; mobile patrol/response; events; control rooms; retail loss prevention; industrial/construction/logistics; residential/estate security; protective travel/journey coordination; investigations/evidence; life safety/resilience; workforce/compliance; clients/contracts/commercial.
+
+Additional benchmark: Genetec Security Center unifies access control, video, ALPR and communications (https://www.genetec.com/products/unified-security/security-center). Hardware capability is a future adapter requirement, not implemented by this change. The service list is Aegis product scope; it is not a claim that every comparator offers every area.
+
+Phase 2 implements the shared **site → engagement → incident** record chain inside Factory with tenant-aware parent/assignee foreign keys, owner/admin lifecycle changes, request UUID retry identification, revision checks and atomic trigger-written audit events. Its operations panel creates and reads actual database records after migration and separately approved product activation. The latest-200 list is explicitly bounded; comprehensive pagination/search remains future work.
+
+The migration inserts only an internal candidate product, never an active tenant entitlement. All table operations require an active tenant product and authenticated membership. Owner/admin sees the agency's records; agents see only created/assigned nonrestricted records and may report incidents against a visible same-area parent. Viewers cannot create. Close protection, protective travel and investigations are initially restricted to owner/admin; per-engagement cleared-team access is not yet implemented. Client portal identities and client-site visibility are not enabled in this phase.
+
+Do not store principal identity, routes, itineraries, credential secrets or sensitive investigative evidence in the generic notes field. That requires separately encrypted protected storage, reviewed retention, redaction and approved specialist access. The present workflow stores operational references only. Checkpoint scanning, timekeeping evidence, live access/CCTV/alarms, patrol dispatch, SOS, workforce decisions and model inference remain later, separately verified integrations.
+
+Database validation runs the complete migration chain in disposable PGlite and checks cross-tenant/restricted-area denial, agent assignment visibility, viewer insert denial, audit forgery rejection, invalid/skipped stages, stale revisions, tenant reassignment and product suspension. Hosted staging and operational safety acceptance remain required; this does not apply production migrations or deploy customer operations.
