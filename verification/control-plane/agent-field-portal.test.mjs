@@ -1,0 +1,21 @@
+import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
+const sql=await readFile(new URL("../../supabase/migrations/20261014120000_agent_field_portal.sql",import.meta.url),"utf8");
+const service=await readFile(new URL("../../src/modules/dispatch/agent-portal.functions.ts",import.meta.url),"utf8");
+const ui=await readFile(new URL("../../src/routes/_authenticated/app.agent.tsx",import.meta.url),"utf8");
+for(const fn of ["agent_portal_bind_user","agent_portal_scope","agent_portal_status","agent_portal_position","agent_portal_pod"])
+  assert.match(sql,new RegExp(fn));
+assert.match(sql,/a\.user_id=auth\.uid\(\)/);
+assert.match(sql,/j\.assigned_agent_id IS DISTINCT FROM bound\.agent_id/);
+assert.match(sql,/dispatch_status_transition_allowed/);
+assert.match(sql,/verifiedByRecipient',false/);
+assert.match(sql,/DROP POLICY IF EXISTS/);
+assert.match(sql,/has_tenant_role\(j\.tenant_id,auth\.uid\(\)/);
+assert.match(service,/requireService\(context,data.tenantId,"omniqora.agent"\)/);
+assert.match(service,/requireAdminRole\(access.role\)/);
+assert.match(service,/\.eq\("user_id",context.userId\)/);
+assert.match(ui,/getCurrentPosition/);
+assert.match(ui,/Share GPS once/);
+assert.doesNotMatch(ui,/watchPosition/);
+assert.match(ui,/no background tracking/);
+console.log("Field agent identity, guarded updates, attestation and opt-in GPS reviewed");

@@ -25,8 +25,11 @@ import { Route as WebsiteRouteImport } from './routes/website'
 import { Route as WorkflowPacksRouteImport } from './routes/workflow-packs'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedLandlordRouteImport } from './routes/_authenticated/landlord'
+import { Route as TrackTokenRouteImport } from './routes/track.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAccessControlRouteImport } from './routes/_authenticated/app.access-control'
+import { Route as AuthenticatedAppAgentRouteImport } from './routes/_authenticated/app.agent'
+import { Route as AuthenticatedAppAiEmployeesRouteImport } from './routes/_authenticated/app.ai-employees'
 import { Route as AuthenticatedAppAnalyticsRouteImport } from './routes/_authenticated/app.analytics'
 import { Route as AuthenticatedAppAutomotiveRouteImport } from './routes/_authenticated/app.automotive'
 import { Route as AuthenticatedAppCampaignsRouteImport } from './routes/_authenticated/app.campaigns'
@@ -62,6 +65,7 @@ import { Route as AuthenticatedAppPlatformDepthRouteImport } from './routes/_aut
 import { Route as AuthenticatedAppPlatformKernelRouteImport } from './routes/_authenticated/app.platform-kernel'
 import { Route as AuthenticatedAppProcurementReadinessRouteImport } from './routes/_authenticated/app.procurement-readiness'
 import { Route as AuthenticatedAppRegulatoryMonitoringRouteImport } from './routes/_authenticated/app.regulatory-monitoring'
+import { Route as AuthenticatedAppRoutingRouteImport } from './routes/_authenticated/app.routing'
 import { Route as AuthenticatedAppSalesRouteImport } from './routes/_authenticated/app.sales'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 import { Route as AuthenticatedAppSharedEnginesRouteImport } from './routes/_authenticated/app.shared-engines'
@@ -82,6 +86,7 @@ import { Route as ApiPlatformDeliveryRouteImport } from './routes/api.platform.d
 import { Route as ApiPlatformGrowthRouteImport } from './routes/api.platform.growth'
 import { Route as ApiPlatformIntelligenceRouteImport } from './routes/api.platform.intelligence'
 import { Route as ApiPlatformOrderIntakeRouteImport } from './routes/api.platform.order-intake'
+import { Route as ApiPlatformRufloProbeRouteImport } from './routes/api.platform.ruflo-probe'
 import { Route as ApiPlatformRuntimeRouteImport } from './routes/api.platform.runtime'
 import { Route as ApiPublicFeedbackRouteImport } from './routes/api.public.feedback'
 import { Route as ApiPublicNetworkExpansionRouteImport } from './routes/api.public.network-expansion'
@@ -184,6 +189,11 @@ const AuthenticatedLandlordRoute = AuthenticatedLandlordRouteImport.update({
   path: '/landlord',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const TrackTokenRoute = TrackTokenRouteImport.update({
+  id: '/track/$token',
+  path: '/track/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -193,6 +203,17 @@ const AuthenticatedAppAccessControlRoute =
   AuthenticatedAppAccessControlRouteImport.update({
     id: '/access-control',
     path: '/access-control',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAgentRoute = AuthenticatedAppAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppAiEmployeesRoute =
+  AuthenticatedAppAiEmployeesRouteImport.update({
+    id: '/ai-employees',
+    path: '/ai-employees',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppAnalyticsRoute =
@@ -401,6 +422,11 @@ const AuthenticatedAppRegulatoryMonitoringRoute =
     path: '/regulatory-monitoring',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppRoutingRoute = AuthenticatedAppRoutingRouteImport.update({
+  id: '/routing',
+  path: '/routing',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppSalesRoute = AuthenticatedAppSalesRouteImport.update({
   id: '/sales',
   path: '/sales',
@@ -509,6 +535,11 @@ const ApiPlatformIntelligenceRoute = ApiPlatformIntelligenceRouteImport.update({
 const ApiPlatformOrderIntakeRoute = ApiPlatformOrderIntakeRouteImport.update({
   id: '/api/platform/order-intake',
   path: '/api/platform/order-intake',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlatformRufloProbeRoute = ApiPlatformRufloProbeRouteImport.update({
+  id: '/api/platform/ruflo-probe',
+  path: '/api/platform/ruflo-probe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPlatformRuntimeRoute = ApiPlatformRuntimeRouteImport.update({
@@ -657,7 +688,10 @@ export interface FileRoutesByFullPath {
   '/workflow-packs': typeof WorkflowPacksRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/landlord': typeof AuthenticatedLandlordRoute
+  '/track/$token': typeof TrackTokenRoute
   '/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/app/agent': typeof AuthenticatedAppAgentRoute
+  '/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/app/campaigns': typeof AuthenticatedAppCampaignsRoute
@@ -693,6 +727,7 @@ export interface FileRoutesByFullPath {
   '/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/app/routing': typeof AuthenticatedAppRoutingRoute
   '/app/sales': typeof AuthenticatedAppSalesRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
@@ -713,6 +748,7 @@ export interface FileRoutesByFullPath {
   '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
+  '/api/platform/ruflo-probe': typeof ApiPlatformRufloProbeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/api/public/feedback': typeof ApiPublicFeedbackRoute
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
@@ -752,7 +788,10 @@ export interface FileRoutesByTo {
   '/website': typeof WebsiteRoute
   '/workflow-packs': typeof WorkflowPacksRoute
   '/landlord': typeof AuthenticatedLandlordRoute
+  '/track/$token': typeof TrackTokenRoute
   '/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/app/agent': typeof AuthenticatedAppAgentRoute
+  '/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/app/campaigns': typeof AuthenticatedAppCampaignsRoute
@@ -787,6 +826,7 @@ export interface FileRoutesByTo {
   '/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/app/routing': typeof AuthenticatedAppRoutingRoute
   '/app/sales': typeof AuthenticatedAppSalesRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
@@ -807,6 +847,7 @@ export interface FileRoutesByTo {
   '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
+  '/api/platform/ruflo-probe': typeof ApiPlatformRufloProbeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/api/public/feedback': typeof ApiPublicFeedbackRoute
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
@@ -849,7 +890,10 @@ export interface FileRoutesById {
   '/workflow-packs': typeof WorkflowPacksRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/landlord': typeof AuthenticatedLandlordRoute
+  '/track/$token': typeof TrackTokenRoute
   '/_authenticated/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/_authenticated/app/agent': typeof AuthenticatedAppAgentRoute
+  '/_authenticated/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/_authenticated/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/_authenticated/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/_authenticated/app/campaigns': typeof AuthenticatedAppCampaignsRoute
@@ -885,6 +929,7 @@ export interface FileRoutesById {
   '/_authenticated/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/_authenticated/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/_authenticated/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/_authenticated/app/routing': typeof AuthenticatedAppRoutingRoute
   '/_authenticated/app/sales': typeof AuthenticatedAppSalesRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
@@ -905,6 +950,7 @@ export interface FileRoutesById {
   '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
+  '/api/platform/ruflo-probe': typeof ApiPlatformRufloProbeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/api/public/feedback': typeof ApiPublicFeedbackRoute
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
@@ -947,7 +993,10 @@ export interface FileRouteTypes {
     | '/workflow-packs'
     | '/app'
     | '/landlord'
+    | '/track/$token'
     | '/app/access-control'
+    | '/app/agent'
+    | '/app/ai-employees'
     | '/app/analytics'
     | '/app/automotive'
     | '/app/campaigns'
@@ -983,6 +1032,7 @@ export interface FileRouteTypes {
     | '/app/platform-kernel'
     | '/app/procurement-readiness'
     | '/app/regulatory-monitoring'
+    | '/app/routing'
     | '/app/sales'
     | '/app/settings'
     | '/app/shared-engines'
@@ -1003,6 +1053,7 @@ export interface FileRouteTypes {
     | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
+    | '/api/platform/ruflo-probe'
     | '/api/platform/runtime'
     | '/api/public/feedback'
     | '/api/public/network-expansion'
@@ -1042,7 +1093,10 @@ export interface FileRouteTypes {
     | '/website'
     | '/workflow-packs'
     | '/landlord'
+    | '/track/$token'
     | '/app/access-control'
+    | '/app/agent'
+    | '/app/ai-employees'
     | '/app/analytics'
     | '/app/automotive'
     | '/app/campaigns'
@@ -1077,6 +1131,7 @@ export interface FileRouteTypes {
     | '/app/platform-kernel'
     | '/app/procurement-readiness'
     | '/app/regulatory-monitoring'
+    | '/app/routing'
     | '/app/sales'
     | '/app/settings'
     | '/app/shared-engines'
@@ -1097,6 +1152,7 @@ export interface FileRouteTypes {
     | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
+    | '/api/platform/ruflo-probe'
     | '/api/platform/runtime'
     | '/api/public/feedback'
     | '/api/public/network-expansion'
@@ -1138,7 +1194,10 @@ export interface FileRouteTypes {
     | '/workflow-packs'
     | '/_authenticated/app'
     | '/_authenticated/landlord'
+    | '/track/$token'
     | '/_authenticated/app/access-control'
+    | '/_authenticated/app/agent'
+    | '/_authenticated/app/ai-employees'
     | '/_authenticated/app/analytics'
     | '/_authenticated/app/automotive'
     | '/_authenticated/app/campaigns'
@@ -1174,6 +1233,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/platform-kernel'
     | '/_authenticated/app/procurement-readiness'
     | '/_authenticated/app/regulatory-monitoring'
+    | '/_authenticated/app/routing'
     | '/_authenticated/app/sales'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/shared-engines'
@@ -1194,6 +1254,7 @@ export interface FileRouteTypes {
     | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
+    | '/api/platform/ruflo-probe'
     | '/api/platform/runtime'
     | '/api/public/feedback'
     | '/api/public/network-expansion'
@@ -1234,6 +1295,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WebsiteRoute: typeof WebsiteRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
+  TrackTokenRoute: typeof TrackTokenRoute
   ApiControlPlaneTenantSnapshotRoute: typeof ApiControlPlaneTenantSnapshotRoute
   ApiHaccoraBridgeRoute: typeof ApiHaccoraBridgeRoute
   ApiIntegrationsEventsRoute: typeof ApiIntegrationsEventsRoute
@@ -1245,6 +1307,7 @@ export interface RootRouteChildren {
   ApiPlatformGrowthRoute: typeof ApiPlatformGrowthRoute
   ApiPlatformIntelligenceRoute: typeof ApiPlatformIntelligenceRoute
   ApiPlatformOrderIntakeRoute: typeof ApiPlatformOrderIntakeRoute
+  ApiPlatformRufloProbeRoute: typeof ApiPlatformRufloProbeRoute
   ApiPlatformRuntimeRoute: typeof ApiPlatformRuntimeRoute
   ApiPublicFeedbackRoute: typeof ApiPublicFeedbackRoute
   ApiPublicNetworkExpansionRoute: typeof ApiPublicNetworkExpansionRoute
@@ -1380,6 +1443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLandlordRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/track/$token': {
+      id: '/track/$token'
+      path: '/track/$token'
+      fullPath: '/track/$token'
+      preLoaderRoute: typeof TrackTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/'
@@ -1392,6 +1462,20 @@ declare module '@tanstack/react-router' {
       path: '/access-control'
       fullPath: '/app/access-control'
       preLoaderRoute: typeof AuthenticatedAppAccessControlRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/agent': {
+      id: '/_authenticated/app/agent'
+      path: '/agent'
+      fullPath: '/app/agent'
+      preLoaderRoute: typeof AuthenticatedAppAgentRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/ai-employees': {
+      id: '/_authenticated/app/ai-employees'
+      path: '/ai-employees'
+      fullPath: '/app/ai-employees'
+      preLoaderRoute: typeof AuthenticatedAppAiEmployeesRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/analytics': {
@@ -1639,6 +1723,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRegulatoryMonitoringRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/routing': {
+      id: '/_authenticated/app/routing'
+      path: '/routing'
+      fullPath: '/app/routing'
+      preLoaderRoute: typeof AuthenticatedAppRoutingRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/sales': {
       id: '/_authenticated/app/sales'
       path: '/sales'
@@ -1777,6 +1868,13 @@ declare module '@tanstack/react-router' {
       path: '/api/platform/order-intake'
       fullPath: '/api/platform/order-intake'
       preLoaderRoute: typeof ApiPlatformOrderIntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform/ruflo-probe': {
+      id: '/api/platform/ruflo-probe'
+      path: '/api/platform/ruflo-probe'
+      fullPath: '/api/platform/ruflo-probe'
+      preLoaderRoute: typeof ApiPlatformRufloProbeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/platform/runtime': {
@@ -1953,6 +2051,8 @@ const AuthenticatedAppCasesRouteWithChildren =
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAccessControlRoute: typeof AuthenticatedAppAccessControlRoute
+  AuthenticatedAppAgentRoute: typeof AuthenticatedAppAgentRoute
+  AuthenticatedAppAiEmployeesRoute: typeof AuthenticatedAppAiEmployeesRoute
   AuthenticatedAppAnalyticsRoute: typeof AuthenticatedAppAnalyticsRoute
   AuthenticatedAppAutomotiveRoute: typeof AuthenticatedAppAutomotiveRoute
   AuthenticatedAppCampaignsRoute: typeof AuthenticatedAppCampaignsRoute
@@ -1988,6 +2088,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPlatformKernelRoute: typeof AuthenticatedAppPlatformKernelRoute
   AuthenticatedAppProcurementReadinessRoute: typeof AuthenticatedAppProcurementReadinessRoute
   AuthenticatedAppRegulatoryMonitoringRoute: typeof AuthenticatedAppRegulatoryMonitoringRoute
+  AuthenticatedAppRoutingRoute: typeof AuthenticatedAppRoutingRoute
   AuthenticatedAppSalesRoute: typeof AuthenticatedAppSalesRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppSharedEnginesRoute: typeof AuthenticatedAppSharedEnginesRoute
@@ -2002,6 +2103,8 @@ interface AuthenticatedAppRouteChildren {
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAccessControlRoute: AuthenticatedAppAccessControlRoute,
+  AuthenticatedAppAgentRoute: AuthenticatedAppAgentRoute,
+  AuthenticatedAppAiEmployeesRoute: AuthenticatedAppAiEmployeesRoute,
   AuthenticatedAppAnalyticsRoute: AuthenticatedAppAnalyticsRoute,
   AuthenticatedAppAutomotiveRoute: AuthenticatedAppAutomotiveRoute,
   AuthenticatedAppCampaignsRoute: AuthenticatedAppCampaignsRoute,
@@ -2042,6 +2145,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
     AuthenticatedAppProcurementReadinessRoute,
   AuthenticatedAppRegulatoryMonitoringRoute:
     AuthenticatedAppRegulatoryMonitoringRoute,
+  AuthenticatedAppRoutingRoute: AuthenticatedAppRoutingRoute,
   AuthenticatedAppSalesRoute: AuthenticatedAppSalesRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppSharedEnginesRoute: AuthenticatedAppSharedEnginesRoute,
@@ -2099,6 +2203,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WebsiteRoute: WebsiteRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,
+  TrackTokenRoute: TrackTokenRoute,
   ApiControlPlaneTenantSnapshotRoute: ApiControlPlaneTenantSnapshotRoute,
   ApiHaccoraBridgeRoute: ApiHaccoraBridgeRoute,
   ApiIntegrationsEventsRoute: ApiIntegrationsEventsRoute,
@@ -2110,6 +2215,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlatformGrowthRoute: ApiPlatformGrowthRoute,
   ApiPlatformIntelligenceRoute: ApiPlatformIntelligenceRoute,
   ApiPlatformOrderIntakeRoute: ApiPlatformOrderIntakeRoute,
+  ApiPlatformRufloProbeRoute: ApiPlatformRufloProbeRoute,
   ApiPlatformRuntimeRoute: ApiPlatformRuntimeRoute,
   ApiPublicFeedbackRoute: ApiPublicFeedbackRoute,
   ApiPublicNetworkExpansionRoute: ApiPublicNetworkExpansionRoute,
