@@ -22,7 +22,7 @@ jobs:
           python-version: '3.12'
       - run: bun install --frozen-lockfile
       - name: CRM routing hosted-schema inventory and drift regression
-        run: node --test verification/routing/schema-preflight.test.mjs
+        run: node --test verification/routing/*.test.mjs
       - name: EventPlanr country and entitlement boundaries
         run: node --test verification/eventplanr/*.test.mjs
       - name: Public release smoke contract tests

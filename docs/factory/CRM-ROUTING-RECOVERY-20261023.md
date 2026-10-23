@@ -29,6 +29,24 @@ Read-only SHA-256 checks of the stored SQL identified two timestamp aliases:
 
 These two files are already represented under different ledger versions and must not be replayed blindly. The third version, `20261023073521`, is named `craftvaro_factory_readiness` (3,549 SQL bytes; SHA-256 `4b2de12d5de28451abd457e43a8a04eab6cae5f3be18e67141cf16185eed1dd6`). It is separate product work and must be preserved and reconciled with its owning change. The automated inventory deliberately still reports all version differences; this handover is not an instruction to rewrite the hosted ledger.
 
+### Content reconciliation follow-up
+
+Main now includes Craftvaro PR #159 and `20261023073521_craftvaro_factory_readiness.sql`. Its exact file digest matches the previously observed hosted digest above. Together with the two timestamp aliases, this accounts for the three previously unexplained entries **using the earlier observation**, not a fresh hosted certification. Two attempts to refresh the hosted ledger during this follow-up returned “Database is possibly not accessible at the moment”; no hosted SQL changes or ledger repairs were made.
+
+The new offline content classifier makes this comparison reproducible:
+
+```sh
+node scripts/routing/reconcile-ledger.mjs --sql
+# Run that metadata-only SELECT on the identified target and save its snapshot object.
+node scripts/routing/reconcile-ledger.mjs --snapshot ledger-snapshot.json EXACT_40_CHARACTER_RELEASE_SHA
+```
+
+It checks exact same-version bytes, unique byte-identical timestamp aliases, changed same-version contents, unknown hosted contents and ambiguous duplicates. Multi-statement or missing stored SQL requires separate review; it never certifies a partial first-statement digest. No SQL is exported. Evidence must be less than 24 hours old; independently verify the selected checkout SHA and target identity as with the inventory checker.
+
+Exit 0 means the supplied hosted ledger contents are accounted for, **not** that migrations are installed or safe to apply. Exit 2 means unresolved ledger entries; exit 1 means invalid evidence. `pendingCandidates` is an inventory for review, never an executable apply list: prior DDL/data effects, dependencies and later migrations can make historical replay unsafe. `applyAllowed` always remains false, including for an empty or fully matched ledger. Keep the schema inventory and staging checks as independent gates.
+
+Next: obtain fresh complete ledger metadata and schema/grant definitions, compare all same-version contents, and rehearse the resulting forward plan on an isolated copy that preserves representative tenant data. Then run the authenticated Phase 3 pilot. The historical three-digest regression does not prove the other ledger entries, live schema equivalence, data preservation or deployment.
+
 ### Repeat the inventory
 
 From the selected source checkout:
