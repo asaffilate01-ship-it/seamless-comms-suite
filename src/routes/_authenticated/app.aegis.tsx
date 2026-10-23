@@ -1,3 +1,4 @@
+import {CustodyPanel} from '@/modules/aegis/CustodyPanel';
 import {FieldPanel} from '@/modules/aegis/FieldPanel';
 import {OperationsPanel} from '@/modules/aegis/OperationsPanel';
 import {securityAreas} from '@/modules/aegis/suite';
@@ -21,6 +22,7 @@ function Aegis(){const tenant=useTenant(),tenantId=tenant.tenantId??'',statusFn=
  <div className="my-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{securityAreas.map(a=><Card key={a.key}><CardContent className="p-4"><h3 className="font-semibold">{a.name}</h3><p className="mt-2 text-sm text-muted-foreground">{a.features}</p></CardContent></Card>)}</div>
  <OperationsPanel key={tenantId} tenantId={tenantId} role={tenant.role??''}/>
  <FieldPanel key={'field-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
+ <CustodyPanel key={'custody-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
  <h3 className="mb-3 mt-8 text-xl font-semibold">Competitor capability map</h3><p className="mb-4 text-sm text-muted-foreground">Vendor-published benchmark: Ctrl Room, TrackTik/Trackforce, Silvertrac, Connecteam and GuardsPro. Requirements below are build targets, not delivered parity.</p><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{aegisCapabilities.map(c=><Card key={c.key}><CardContent className="p-5"><h4 className="font-semibold">{c.name}</h4><p className="mt-2 text-xs text-muted-foreground">{c.benchmark}</p><p className="mt-4 text-sm"><b>Reuse:</b> {c.shared}</p><p className="mt-3 text-sm text-muted-foreground"><b>Build:</b> {c.gap}</p></CardContent></Card>)}</div>
  <Card className="my-6"><CardContent className="p-5"><h3 className="font-semibold">Delivery stages</h3><ol className="mt-3 list-inside list-decimal space-y-2 text-sm">{aegisStages.map(s=><li key={s}>{s}</li>)}</ol></CardContent></Card>
  {status.data?.canConfigure&&ai.data?<AgentFactoryPanel key={tenantId} tenantId={tenantId} productKey={AEGIS_PRODUCT_KEY} useCases={ai.data.useCases} providers={ai.data.providers} onChanged={()=>ai.refetch()}/>:<p className="text-sm text-muted-foreground">Aegis agents appear after the tenant product and governance gates pass. Configuration is an assessment, not execution or approval.</p>}{ai.error&&<p role="alert">{ai.error.message}</p>}
