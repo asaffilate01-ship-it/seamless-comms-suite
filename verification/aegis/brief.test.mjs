@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {buildSupervisorBrief} from '../../src/modules/aegis/brief.ts';
+const event=(id,operation,actor,kind,time)=>({id,operation_id:operation,actor,kind,recorded_at:time,evidence_class:'operator_reported'});
+test('brief closes attendance by engagement and actor without mixing officers',()=>{const r=buildSupervisorBrief([event('out','a','u','attendance_out','2026-10-23T12:00:00Z'),event('in','a','u','attendance_in','2026-10-23T08:00:00Z'),event('other','a','v','attendance_in','2026-10-23T09:00:00Z')]);assert.deepEqual(r.openAttendance,[{operationId:'a',sourceRef:'other'}]);assert.equal(r.mode,'deterministic_source_brief');assert.match(r.warning,/No GPS/)});
+test('brief cites checkpoints and welfare without claiming verified physical presence',()=>{const r=buildSupervisorBrief([event('cp','a','u','checkpoint_observation','2026-10-23T10:00:00Z'),event('w','a','u','welfare_check','2026-10-23T11:00:00Z')]);assert.deepEqual(r.checkpointObservations,['cp']);assert.deepEqual(r.welfareRecords,['w']);assert.equal(r.evidenceClass,'operator_reported');assert.match(r.window,/incomplete/)});
+test('empty visible source set produces no invented operational facts',()=>{assert.equal(buildSupervisorBrief([]).total,0);assert.deepEqual(buildSupervisorBrief([]).openAttendance,[])});
