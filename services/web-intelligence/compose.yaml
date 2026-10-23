@@ -1,0 +1,15 @@
+services:
+  omniqora-web-intelligence:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 512m
+    tmpfs:
+      - /tmp:size=32m,noexec,nosuid
+    # No inbound ports. Provision external egress controls blocking all RFC1918,
+    # loopback, link-local, metadata and other special-purpose address ranges.
