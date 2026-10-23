@@ -41,6 +41,8 @@ jobs:
         run: |
           node verification/control-plane/sales-runtime.test.mjs
           node verification/control-plane/sales-queue-fairness.test.mjs
+      - name: Service Desk queue and intake regressions
+        run: node --experimental-strip-types --test verification/service-desk/model.test.mjs
       - run: bun run build
       - run: bun run typecheck
       - name: Build four local-language TraveNexa UK travel storefronts
@@ -103,3 +105,4 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm run build
+

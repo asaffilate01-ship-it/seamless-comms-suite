@@ -36,6 +36,7 @@ const nav: NavItem[] = [
   { to: "/app/commerce", labelKey: "", label: "Syndriva Commerce", icon: Store },
   { to: "/app/connected-operations", labelKey: "", label: "Connected Operations", icon: Wrench },
   { to: "/app/inbox", labelKey: "app.nav.inbox", icon: Inbox },
+  { to: "/app/service-desk", labelKey: "", label: "Service Desk", icon: MessageCircle },
   { to: "/app/cases", labelKey: "app.nav.cases", icon: MessageCircle },
   { to: "/app/contacts", labelKey: "app.nav.contacts", icon: Users },
   { to: "/app/crm", labelKey: "", label: "CRM & Customer 360", icon: ContactRound },
@@ -294,3 +295,4 @@ export function StatusBadge({ status }: { status: string }) {
     <Badge variant="outline" className={cn("capitalize", map[status] ?? "")}>{label}</Badge>
   );
 }
+
