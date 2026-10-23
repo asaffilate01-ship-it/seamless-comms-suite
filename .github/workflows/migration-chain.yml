@@ -59,6 +59,17 @@ jobs:
           supabase start --workdir "$REPLAY_DIR" --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
           supabase db reset --local --no-seed --workdir "$REPLAY_DIR"
           supabase migration list --local --workdir "$REPLAY_DIR" > rehearsal-evidence/local-migration-ledger.txt
+      - name: AI Workforce role, tenant and no-execution checks (disposable database)
+        shell: bash
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f verification/staging/ai-workforce-phase4a-access.sql
       - name: Record the actual result, never production acceptance
         if: ${{ always() }}
         env:

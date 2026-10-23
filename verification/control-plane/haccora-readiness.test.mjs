@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 
@@ -31,7 +32,7 @@ async function inContext(role,subject,fn){
 const asAdmin=fn=>inContext("authenticated",admin,fn);
 const asService=fn=>inContext("service_role","",fn);
 
-await asAdmin(()=>db.query("SELECT public.platform_bootstrap_dishbee_pilot()"));
+await seedIsolatedDishbeeTestTenants(db,admin);
 await asAdmin(()=>db.query("SELECT public.platform_enable_haccora_dishbee_pilot(true)"));
 
 const pilot=await asAdmin(async()=> (await db.query("SELECT public.platform_haccora_pilot_readiness() AS r")).rows[0].r);

@@ -25,8 +25,11 @@ import { Route as WebsiteRouteImport } from './routes/website'
 import { Route as WorkflowPacksRouteImport } from './routes/workflow-packs'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedLandlordRouteImport } from './routes/_authenticated/landlord'
+import { Route as TrackTokenRouteImport } from './routes/track.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAccessControlRouteImport } from './routes/_authenticated/app.access-control'
+import { Route as AuthenticatedAppAgentRouteImport } from './routes/_authenticated/app.agent'
+import { Route as AuthenticatedAppAiEmployeesRouteImport } from './routes/_authenticated/app.ai-employees'
 import { Route as AuthenticatedAppAnalyticsRouteImport } from './routes/_authenticated/app.analytics'
 import { Route as AuthenticatedAppAutomotiveRouteImport } from './routes/_authenticated/app.automotive'
 import { Route as AuthenticatedAppCampaignsRouteImport } from './routes/_authenticated/app.campaigns'
@@ -54,6 +57,7 @@ import { Route as AuthenticatedAppIdentityRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppInboxRouteImport } from './routes/_authenticated/app.inbox'
 import { Route as AuthenticatedAppIntegrationsRouteImport } from './routes/_authenticated/app.integrations'
 import { Route as AuthenticatedAppIntelligenceRouteImport } from './routes/_authenticated/app.intelligence'
+import { Route as AuthenticatedAppMcpReviewRouteImport } from './routes/_authenticated/app.mcp-review'
 import { Route as AuthenticatedAppMigrationFactoryRouteImport } from './routes/_authenticated/app.migration-factory'
 import { Route as AuthenticatedAppOrderIntakeRouteImport } from './routes/_authenticated/app.order-intake'
 import { Route as AuthenticatedAppPartnersRouteImport } from './routes/_authenticated/app.partners'
@@ -61,6 +65,7 @@ import { Route as AuthenticatedAppPlatformDepthRouteImport } from './routes/_aut
 import { Route as AuthenticatedAppPlatformKernelRouteImport } from './routes/_authenticated/app.platform-kernel'
 import { Route as AuthenticatedAppProcurementReadinessRouteImport } from './routes/_authenticated/app.procurement-readiness'
 import { Route as AuthenticatedAppRegulatoryMonitoringRouteImport } from './routes/_authenticated/app.regulatory-monitoring'
+import { Route as AuthenticatedAppRoutingRouteImport } from './routes/_authenticated/app.routing'
 import { Route as AuthenticatedAppSalesRouteImport } from './routes/_authenticated/app.sales'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 import { Route as AuthenticatedAppSharedEnginesRouteImport } from './routes/_authenticated/app.shared-engines'
@@ -81,17 +86,25 @@ import { Route as ApiPlatformDeliveryRouteImport } from './routes/api.platform.d
 import { Route as ApiPlatformGrowthRouteImport } from './routes/api.platform.growth'
 import { Route as ApiPlatformIntelligenceRouteImport } from './routes/api.platform.intelligence'
 import { Route as ApiPlatformOrderIntakeRouteImport } from './routes/api.platform.order-intake'
+import { Route as ApiPlatformRufloProbeRouteImport } from './routes/api.platform.ruflo-probe'
 import { Route as ApiPlatformRuntimeRouteImport } from './routes/api.platform.runtime'
 import { Route as ApiPublicFeedbackRouteImport } from './routes/api.public.feedback'
 import { Route as ApiPublicNetworkExpansionRouteImport } from './routes/api.public.network-expansion'
 import { Route as AuthenticatedAppCasesIndexRouteImport } from './routes/_authenticated/app.cases.index'
 import { Route as AuthenticatedAppCasesCaseIdRouteImport } from './routes/_authenticated/app.cases.$caseId'
+import { Route as ApiControlPlaneNafsiConnectRouteImport } from './routes/api.control-plane.nafsi.connect'
+import { Route as ApiControlPlaneNafsiConnectEventsRouteImport } from './routes/api.control-plane.nafsi.connect-events'
+import { Route as ApiControlPlaneNafsiEventsRouteImport } from './routes/api.control-plane.nafsi.events'
+import { Route as ApiControlPlaneNafsiIntelligenceRouteImport } from './routes/api.control-plane.nafsi.intelligence'
+import { Route as ApiControlPlaneNafsiIntelligenceShadowRouteImport } from './routes/api.control-plane.nafsi.intelligence-shadow'
+import { Route as ApiControlPlaneNafsiParityRouteImport } from './routes/api.control-plane.nafsi.parity'
 import { Route as ApiControlPlaneWorkersProvisioningRouteImport } from './routes/api.control-plane.workers.provisioning'
 import { Route as ApiIntegrationsConnectEventsRouteImport } from './routes/api.integrations.connect.events'
 import { Route as ApiIntegrationsHaccoraConnectionIdRouteImport } from './routes/api.integrations.haccora.$connectionId'
 import { Route as ApiIntegrationsRunsRunIdRouteImport } from './routes/api.integrations.runs.$runId'
 import { Route as ApiPlatformWebhooksDrainRouteImport } from './routes/api.platform.webhooks.drain'
 import { Route as ApiPublicTrackTokenRouteImport } from './routes/api.public.track.$token'
+import { Route as ApiPublicTwilioMaskedVoiceRouteImport } from './routes/api.public.twilio.masked-voice'
 import { Route as ApiPublicTwilioOrderIntakeRouteImport } from './routes/api.public.twilio.order-intake'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiVerticalsLessonaheadRuntimeRouteImport } from './routes/api.verticals.lessonahead.runtime'
@@ -176,6 +189,11 @@ const AuthenticatedLandlordRoute = AuthenticatedLandlordRouteImport.update({
   path: '/landlord',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const TrackTokenRoute = TrackTokenRouteImport.update({
+  id: '/track/$token',
+  path: '/track/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -185,6 +203,17 @@ const AuthenticatedAppAccessControlRoute =
   AuthenticatedAppAccessControlRouteImport.update({
     id: '/access-control',
     path: '/access-control',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAgentRoute = AuthenticatedAppAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppAiEmployeesRoute =
+  AuthenticatedAppAiEmployeesRouteImport.update({
+    id: '/ai-employees',
+    path: '/ai-employees',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppAnalyticsRoute =
@@ -345,6 +374,12 @@ const AuthenticatedAppIntelligenceRoute =
     path: '/intelligence',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppMcpReviewRoute =
+  AuthenticatedAppMcpReviewRouteImport.update({
+    id: '/mcp-review',
+    path: '/mcp-review',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppMigrationFactoryRoute =
   AuthenticatedAppMigrationFactoryRouteImport.update({
     id: '/migration-factory',
@@ -387,6 +422,11 @@ const AuthenticatedAppRegulatoryMonitoringRoute =
     path: '/regulatory-monitoring',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppRoutingRoute = AuthenticatedAppRoutingRouteImport.update({
+  id: '/routing',
+  path: '/routing',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppSalesRoute = AuthenticatedAppSalesRouteImport.update({
   id: '/sales',
   path: '/sales',
@@ -497,6 +537,11 @@ const ApiPlatformOrderIntakeRoute = ApiPlatformOrderIntakeRouteImport.update({
   path: '/api/platform/order-intake',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPlatformRufloProbeRoute = ApiPlatformRufloProbeRouteImport.update({
+  id: '/api/platform/ruflo-probe',
+  path: '/api/platform/ruflo-probe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPlatformRuntimeRoute = ApiPlatformRuntimeRouteImport.update({
   id: '/api/platform/runtime',
   path: '/api/platform/runtime',
@@ -524,6 +569,42 @@ const AuthenticatedAppCasesCaseIdRoute =
     id: '/$caseId',
     path: '/$caseId',
     getParentRoute: () => AuthenticatedAppCasesRoute,
+  } as any)
+const ApiControlPlaneNafsiConnectRoute =
+  ApiControlPlaneNafsiConnectRouteImport.update({
+    id: '/api/control-plane/nafsi/connect',
+    path: '/api/control-plane/nafsi/connect',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiConnectEventsRoute =
+  ApiControlPlaneNafsiConnectEventsRouteImport.update({
+    id: '/api/control-plane/nafsi/connect-events',
+    path: '/api/control-plane/nafsi/connect-events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiEventsRoute =
+  ApiControlPlaneNafsiEventsRouteImport.update({
+    id: '/api/control-plane/nafsi/events',
+    path: '/api/control-plane/nafsi/events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiIntelligenceRoute =
+  ApiControlPlaneNafsiIntelligenceRouteImport.update({
+    id: '/api/control-plane/nafsi/intelligence',
+    path: '/api/control-plane/nafsi/intelligence',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiIntelligenceShadowRoute =
+  ApiControlPlaneNafsiIntelligenceShadowRouteImport.update({
+    id: '/api/control-plane/nafsi/intelligence-shadow',
+    path: '/api/control-plane/nafsi/intelligence-shadow',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiControlPlaneNafsiParityRoute =
+  ApiControlPlaneNafsiParityRouteImport.update({
+    id: '/api/control-plane/nafsi/parity',
+    path: '/api/control-plane/nafsi/parity',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiControlPlaneWorkersProvisioningRoute =
   ApiControlPlaneWorkersProvisioningRouteImport.update({
@@ -560,6 +641,12 @@ const ApiPublicTrackTokenRoute = ApiPublicTrackTokenRouteImport.update({
   path: '/api/public/track/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTwilioMaskedVoiceRoute =
+  ApiPublicTwilioMaskedVoiceRouteImport.update({
+    id: '/api/public/twilio/masked-voice',
+    path: '/api/public/twilio/masked-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTwilioOrderIntakeRoute =
   ApiPublicTwilioOrderIntakeRouteImport.update({
     id: '/api/public/twilio/order-intake',
@@ -601,7 +688,10 @@ export interface FileRoutesByFullPath {
   '/workflow-packs': typeof WorkflowPacksRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/landlord': typeof AuthenticatedLandlordRoute
+  '/track/$token': typeof TrackTokenRoute
   '/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/app/agent': typeof AuthenticatedAppAgentRoute
+  '/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/app/campaigns': typeof AuthenticatedAppCampaignsRoute
@@ -629,6 +719,7 @@ export interface FileRoutesByFullPath {
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -636,6 +727,7 @@ export interface FileRoutesByFullPath {
   '/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/app/routing': typeof AuthenticatedAppRoutingRoute
   '/app/sales': typeof AuthenticatedAppSalesRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
@@ -656,17 +748,25 @@ export interface FileRoutesByFullPath {
   '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
+  '/api/platform/ruflo-probe': typeof ApiPlatformRufloProbeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/api/public/feedback': typeof ApiPublicFeedbackRoute
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
+  '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
+  '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -688,7 +788,10 @@ export interface FileRoutesByTo {
   '/website': typeof WebsiteRoute
   '/workflow-packs': typeof WorkflowPacksRoute
   '/landlord': typeof AuthenticatedLandlordRoute
+  '/track/$token': typeof TrackTokenRoute
   '/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/app/agent': typeof AuthenticatedAppAgentRoute
+  '/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/app/campaigns': typeof AuthenticatedAppCampaignsRoute
@@ -715,6 +818,7 @@ export interface FileRoutesByTo {
   '/app/inbox': typeof AuthenticatedAppInboxRoute
   '/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -722,6 +826,7 @@ export interface FileRoutesByTo {
   '/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/app/routing': typeof AuthenticatedAppRoutingRoute
   '/app/sales': typeof AuthenticatedAppSalesRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
@@ -742,17 +847,25 @@ export interface FileRoutesByTo {
   '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
+  '/api/platform/ruflo-probe': typeof ApiPlatformRufloProbeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/api/public/feedback': typeof ApiPublicFeedbackRoute
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
+  '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
+  '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -777,7 +890,10 @@ export interface FileRoutesById {
   '/workflow-packs': typeof WorkflowPacksRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/landlord': typeof AuthenticatedLandlordRoute
+  '/track/$token': typeof TrackTokenRoute
   '/_authenticated/app/access-control': typeof AuthenticatedAppAccessControlRoute
+  '/_authenticated/app/agent': typeof AuthenticatedAppAgentRoute
+  '/_authenticated/app/ai-employees': typeof AuthenticatedAppAiEmployeesRoute
   '/_authenticated/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/_authenticated/app/automotive': typeof AuthenticatedAppAutomotiveRoute
   '/_authenticated/app/campaigns': typeof AuthenticatedAppCampaignsRoute
@@ -805,6 +921,7 @@ export interface FileRoutesById {
   '/_authenticated/app/inbox': typeof AuthenticatedAppInboxRoute
   '/_authenticated/app/integrations': typeof AuthenticatedAppIntegrationsRoute
   '/_authenticated/app/intelligence': typeof AuthenticatedAppIntelligenceRoute
+  '/_authenticated/app/mcp-review': typeof AuthenticatedAppMcpReviewRoute
   '/_authenticated/app/migration-factory': typeof AuthenticatedAppMigrationFactoryRoute
   '/_authenticated/app/order-intake': typeof AuthenticatedAppOrderIntakeRoute
   '/_authenticated/app/partners': typeof AuthenticatedAppPartnersRoute
@@ -812,6 +929,7 @@ export interface FileRoutesById {
   '/_authenticated/app/platform-kernel': typeof AuthenticatedAppPlatformKernelRoute
   '/_authenticated/app/procurement-readiness': typeof AuthenticatedAppProcurementReadinessRoute
   '/_authenticated/app/regulatory-monitoring': typeof AuthenticatedAppRegulatoryMonitoringRoute
+  '/_authenticated/app/routing': typeof AuthenticatedAppRoutingRoute
   '/_authenticated/app/sales': typeof AuthenticatedAppSalesRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/shared-engines': typeof AuthenticatedAppSharedEnginesRoute
@@ -832,17 +950,25 @@ export interface FileRoutesById {
   '/api/platform/growth': typeof ApiPlatformGrowthRoute
   '/api/platform/intelligence': typeof ApiPlatformIntelligenceRoute
   '/api/platform/order-intake': typeof ApiPlatformOrderIntakeRoute
+  '/api/platform/ruflo-probe': typeof ApiPlatformRufloProbeRoute
   '/api/platform/runtime': typeof ApiPlatformRuntimeRoute
   '/api/public/feedback': typeof ApiPublicFeedbackRoute
   '/api/public/network-expansion': typeof ApiPublicNetworkExpansionRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/cases/$caseId': typeof AuthenticatedAppCasesCaseIdRoute
+  '/api/control-plane/nafsi/connect': typeof ApiControlPlaneNafsiConnectRoute
+  '/api/control-plane/nafsi/connect-events': typeof ApiControlPlaneNafsiConnectEventsRoute
+  '/api/control-plane/nafsi/events': typeof ApiControlPlaneNafsiEventsRoute
+  '/api/control-plane/nafsi/intelligence': typeof ApiControlPlaneNafsiIntelligenceRoute
+  '/api/control-plane/nafsi/intelligence-shadow': typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  '/api/control-plane/nafsi/parity': typeof ApiControlPlaneNafsiParityRoute
   '/api/control-plane/workers/provisioning': typeof ApiControlPlaneWorkersProvisioningRoute
   '/api/integrations/connect/events': typeof ApiIntegrationsConnectEventsRoute
   '/api/integrations/haccora/$connectionId': typeof ApiIntegrationsHaccoraConnectionIdRoute
   '/api/integrations/runs/$runId': typeof ApiIntegrationsRunsRunIdRouteWithChildren
   '/api/platform/webhooks/drain': typeof ApiPlatformWebhooksDrainRoute
   '/api/public/track/$token': typeof ApiPublicTrackTokenRoute
+  '/api/public/twilio/masked-voice': typeof ApiPublicTwilioMaskedVoiceRoute
   '/api/public/twilio/order-intake': typeof ApiPublicTwilioOrderIntakeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/verticals/lessonahead/runtime': typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -867,7 +993,10 @@ export interface FileRouteTypes {
     | '/workflow-packs'
     | '/app'
     | '/landlord'
+    | '/track/$token'
     | '/app/access-control'
+    | '/app/agent'
+    | '/app/ai-employees'
     | '/app/analytics'
     | '/app/automotive'
     | '/app/campaigns'
@@ -895,6 +1024,7 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/integrations'
     | '/app/intelligence'
+    | '/app/mcp-review'
     | '/app/migration-factory'
     | '/app/order-intake'
     | '/app/partners'
@@ -902,6 +1032,7 @@ export interface FileRouteTypes {
     | '/app/platform-kernel'
     | '/app/procurement-readiness'
     | '/app/regulatory-monitoring'
+    | '/app/routing'
     | '/app/sales'
     | '/app/settings'
     | '/app/shared-engines'
@@ -922,17 +1053,25 @@ export interface FileRouteTypes {
     | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
+    | '/api/platform/ruflo-probe'
     | '/api/platform/runtime'
     | '/api/public/feedback'
     | '/api/public/network-expansion'
     | '/app/'
     | '/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
+    | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
+    | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -954,7 +1093,10 @@ export interface FileRouteTypes {
     | '/website'
     | '/workflow-packs'
     | '/landlord'
+    | '/track/$token'
     | '/app/access-control'
+    | '/app/agent'
+    | '/app/ai-employees'
     | '/app/analytics'
     | '/app/automotive'
     | '/app/campaigns'
@@ -981,6 +1123,7 @@ export interface FileRouteTypes {
     | '/app/inbox'
     | '/app/integrations'
     | '/app/intelligence'
+    | '/app/mcp-review'
     | '/app/migration-factory'
     | '/app/order-intake'
     | '/app/partners'
@@ -988,6 +1131,7 @@ export interface FileRouteTypes {
     | '/app/platform-kernel'
     | '/app/procurement-readiness'
     | '/app/regulatory-monitoring'
+    | '/app/routing'
     | '/app/sales'
     | '/app/settings'
     | '/app/shared-engines'
@@ -1008,17 +1152,25 @@ export interface FileRouteTypes {
     | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
+    | '/api/platform/ruflo-probe'
     | '/api/platform/runtime'
     | '/api/public/feedback'
     | '/api/public/network-expansion'
     | '/app'
     | '/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
+    | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
+    | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -1042,7 +1194,10 @@ export interface FileRouteTypes {
     | '/workflow-packs'
     | '/_authenticated/app'
     | '/_authenticated/landlord'
+    | '/track/$token'
     | '/_authenticated/app/access-control'
+    | '/_authenticated/app/agent'
+    | '/_authenticated/app/ai-employees'
     | '/_authenticated/app/analytics'
     | '/_authenticated/app/automotive'
     | '/_authenticated/app/campaigns'
@@ -1070,6 +1225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/inbox'
     | '/_authenticated/app/integrations'
     | '/_authenticated/app/intelligence'
+    | '/_authenticated/app/mcp-review'
     | '/_authenticated/app/migration-factory'
     | '/_authenticated/app/order-intake'
     | '/_authenticated/app/partners'
@@ -1077,6 +1233,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/platform-kernel'
     | '/_authenticated/app/procurement-readiness'
     | '/_authenticated/app/regulatory-monitoring'
+    | '/_authenticated/app/routing'
     | '/_authenticated/app/sales'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/shared-engines'
@@ -1097,17 +1254,25 @@ export interface FileRouteTypes {
     | '/api/platform/growth'
     | '/api/platform/intelligence'
     | '/api/platform/order-intake'
+    | '/api/platform/ruflo-probe'
     | '/api/platform/runtime'
     | '/api/public/feedback'
     | '/api/public/network-expansion'
     | '/_authenticated/app/'
     | '/_authenticated/app/cases/$caseId'
+    | '/api/control-plane/nafsi/connect'
+    | '/api/control-plane/nafsi/connect-events'
+    | '/api/control-plane/nafsi/events'
+    | '/api/control-plane/nafsi/intelligence'
+    | '/api/control-plane/nafsi/intelligence-shadow'
+    | '/api/control-plane/nafsi/parity'
     | '/api/control-plane/workers/provisioning'
     | '/api/integrations/connect/events'
     | '/api/integrations/haccora/$connectionId'
     | '/api/integrations/runs/$runId'
     | '/api/platform/webhooks/drain'
     | '/api/public/track/$token'
+    | '/api/public/twilio/masked-voice'
     | '/api/public/twilio/order-intake'
     | '/api/public/whatsapp/webhook'
     | '/api/verticals/lessonahead/runtime'
@@ -1130,6 +1295,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WebsiteRoute: typeof WebsiteRoute
   WorkflowPacksRoute: typeof WorkflowPacksRoute
+  TrackTokenRoute: typeof TrackTokenRoute
   ApiControlPlaneTenantSnapshotRoute: typeof ApiControlPlaneTenantSnapshotRoute
   ApiHaccoraBridgeRoute: typeof ApiHaccoraBridgeRoute
   ApiIntegrationsEventsRoute: typeof ApiIntegrationsEventsRoute
@@ -1141,15 +1307,23 @@ export interface RootRouteChildren {
   ApiPlatformGrowthRoute: typeof ApiPlatformGrowthRoute
   ApiPlatformIntelligenceRoute: typeof ApiPlatformIntelligenceRoute
   ApiPlatformOrderIntakeRoute: typeof ApiPlatformOrderIntakeRoute
+  ApiPlatformRufloProbeRoute: typeof ApiPlatformRufloProbeRoute
   ApiPlatformRuntimeRoute: typeof ApiPlatformRuntimeRoute
   ApiPublicFeedbackRoute: typeof ApiPublicFeedbackRoute
   ApiPublicNetworkExpansionRoute: typeof ApiPublicNetworkExpansionRoute
+  ApiControlPlaneNafsiConnectRoute: typeof ApiControlPlaneNafsiConnectRoute
+  ApiControlPlaneNafsiConnectEventsRoute: typeof ApiControlPlaneNafsiConnectEventsRoute
+  ApiControlPlaneNafsiEventsRoute: typeof ApiControlPlaneNafsiEventsRoute
+  ApiControlPlaneNafsiIntelligenceRoute: typeof ApiControlPlaneNafsiIntelligenceRoute
+  ApiControlPlaneNafsiIntelligenceShadowRoute: typeof ApiControlPlaneNafsiIntelligenceShadowRoute
+  ApiControlPlaneNafsiParityRoute: typeof ApiControlPlaneNafsiParityRoute
   ApiControlPlaneWorkersProvisioningRoute: typeof ApiControlPlaneWorkersProvisioningRoute
   ApiIntegrationsConnectEventsRoute: typeof ApiIntegrationsConnectEventsRoute
   ApiIntegrationsHaccoraConnectionIdRoute: typeof ApiIntegrationsHaccoraConnectionIdRoute
   ApiIntegrationsRunsRunIdRoute: typeof ApiIntegrationsRunsRunIdRouteWithChildren
   ApiPlatformWebhooksDrainRoute: typeof ApiPlatformWebhooksDrainRoute
   ApiPublicTrackTokenRoute: typeof ApiPublicTrackTokenRoute
+  ApiPublicTwilioMaskedVoiceRoute: typeof ApiPublicTwilioMaskedVoiceRoute
   ApiPublicTwilioOrderIntakeRoute: typeof ApiPublicTwilioOrderIntakeRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiVerticalsLessonaheadRuntimeRoute: typeof ApiVerticalsLessonaheadRuntimeRoute
@@ -1269,6 +1443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLandlordRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/track/$token': {
+      id: '/track/$token'
+      path: '/track/$token'
+      fullPath: '/track/$token'
+      preLoaderRoute: typeof TrackTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/'
@@ -1281,6 +1462,20 @@ declare module '@tanstack/react-router' {
       path: '/access-control'
       fullPath: '/app/access-control'
       preLoaderRoute: typeof AuthenticatedAppAccessControlRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/agent': {
+      id: '/_authenticated/app/agent'
+      path: '/agent'
+      fullPath: '/app/agent'
+      preLoaderRoute: typeof AuthenticatedAppAgentRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/ai-employees': {
+      id: '/_authenticated/app/ai-employees'
+      path: '/ai-employees'
+      fullPath: '/app/ai-employees'
+      preLoaderRoute: typeof AuthenticatedAppAiEmployeesRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/analytics': {
@@ -1472,6 +1667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIntelligenceRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/mcp-review': {
+      id: '/_authenticated/app/mcp-review'
+      path: '/mcp-review'
+      fullPath: '/app/mcp-review'
+      preLoaderRoute: typeof AuthenticatedAppMcpReviewRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/migration-factory': {
       id: '/_authenticated/app/migration-factory'
       path: '/migration-factory'
@@ -1519,6 +1721,13 @@ declare module '@tanstack/react-router' {
       path: '/regulatory-monitoring'
       fullPath: '/app/regulatory-monitoring'
       preLoaderRoute: typeof AuthenticatedAppRegulatoryMonitoringRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/routing': {
+      id: '/_authenticated/app/routing'
+      path: '/routing'
+      fullPath: '/app/routing'
+      preLoaderRoute: typeof AuthenticatedAppRoutingRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/sales': {
@@ -1661,6 +1870,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPlatformOrderIntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/platform/ruflo-probe': {
+      id: '/api/platform/ruflo-probe'
+      path: '/api/platform/ruflo-probe'
+      fullPath: '/api/platform/ruflo-probe'
+      preLoaderRoute: typeof ApiPlatformRufloProbeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/platform/runtime': {
       id: '/api/platform/runtime'
       path: '/api/platform/runtime'
@@ -1695,6 +1911,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/cases/$caseId'
       preLoaderRoute: typeof AuthenticatedAppCasesCaseIdRouteImport
       parentRoute: typeof AuthenticatedAppCasesRoute
+    }
+    '/api/control-plane/nafsi/connect': {
+      id: '/api/control-plane/nafsi/connect'
+      path: '/api/control-plane/nafsi/connect'
+      fullPath: '/api/control-plane/nafsi/connect'
+      preLoaderRoute: typeof ApiControlPlaneNafsiConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/connect-events': {
+      id: '/api/control-plane/nafsi/connect-events'
+      path: '/api/control-plane/nafsi/connect-events'
+      fullPath: '/api/control-plane/nafsi/connect-events'
+      preLoaderRoute: typeof ApiControlPlaneNafsiConnectEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/events': {
+      id: '/api/control-plane/nafsi/events'
+      path: '/api/control-plane/nafsi/events'
+      fullPath: '/api/control-plane/nafsi/events'
+      preLoaderRoute: typeof ApiControlPlaneNafsiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/intelligence': {
+      id: '/api/control-plane/nafsi/intelligence'
+      path: '/api/control-plane/nafsi/intelligence'
+      fullPath: '/api/control-plane/nafsi/intelligence'
+      preLoaderRoute: typeof ApiControlPlaneNafsiIntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/intelligence-shadow': {
+      id: '/api/control-plane/nafsi/intelligence-shadow'
+      path: '/api/control-plane/nafsi/intelligence-shadow'
+      fullPath: '/api/control-plane/nafsi/intelligence-shadow'
+      preLoaderRoute: typeof ApiControlPlaneNafsiIntelligenceShadowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/control-plane/nafsi/parity': {
+      id: '/api/control-plane/nafsi/parity'
+      path: '/api/control-plane/nafsi/parity'
+      fullPath: '/api/control-plane/nafsi/parity'
+      preLoaderRoute: typeof ApiControlPlaneNafsiParityRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/control-plane/workers/provisioning': {
       id: '/api/control-plane/workers/provisioning'
@@ -1736,6 +1994,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/track/$token'
       fullPath: '/api/public/track/$token'
       preLoaderRoute: typeof ApiPublicTrackTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/twilio/masked-voice': {
+      id: '/api/public/twilio/masked-voice'
+      path: '/api/public/twilio/masked-voice'
+      fullPath: '/api/public/twilio/masked-voice'
+      preLoaderRoute: typeof ApiPublicTwilioMaskedVoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/twilio/order-intake': {
@@ -1786,6 +2051,8 @@ const AuthenticatedAppCasesRouteWithChildren =
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAccessControlRoute: typeof AuthenticatedAppAccessControlRoute
+  AuthenticatedAppAgentRoute: typeof AuthenticatedAppAgentRoute
+  AuthenticatedAppAiEmployeesRoute: typeof AuthenticatedAppAiEmployeesRoute
   AuthenticatedAppAnalyticsRoute: typeof AuthenticatedAppAnalyticsRoute
   AuthenticatedAppAutomotiveRoute: typeof AuthenticatedAppAutomotiveRoute
   AuthenticatedAppCampaignsRoute: typeof AuthenticatedAppCampaignsRoute
@@ -1813,6 +2080,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppInboxRoute: typeof AuthenticatedAppInboxRoute
   AuthenticatedAppIntegrationsRoute: typeof AuthenticatedAppIntegrationsRoute
   AuthenticatedAppIntelligenceRoute: typeof AuthenticatedAppIntelligenceRoute
+  AuthenticatedAppMcpReviewRoute: typeof AuthenticatedAppMcpReviewRoute
   AuthenticatedAppMigrationFactoryRoute: typeof AuthenticatedAppMigrationFactoryRoute
   AuthenticatedAppOrderIntakeRoute: typeof AuthenticatedAppOrderIntakeRoute
   AuthenticatedAppPartnersRoute: typeof AuthenticatedAppPartnersRoute
@@ -1820,6 +2088,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPlatformKernelRoute: typeof AuthenticatedAppPlatformKernelRoute
   AuthenticatedAppProcurementReadinessRoute: typeof AuthenticatedAppProcurementReadinessRoute
   AuthenticatedAppRegulatoryMonitoringRoute: typeof AuthenticatedAppRegulatoryMonitoringRoute
+  AuthenticatedAppRoutingRoute: typeof AuthenticatedAppRoutingRoute
   AuthenticatedAppSalesRoute: typeof AuthenticatedAppSalesRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppSharedEnginesRoute: typeof AuthenticatedAppSharedEnginesRoute
@@ -1834,6 +2103,8 @@ interface AuthenticatedAppRouteChildren {
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAccessControlRoute: AuthenticatedAppAccessControlRoute,
+  AuthenticatedAppAgentRoute: AuthenticatedAppAgentRoute,
+  AuthenticatedAppAiEmployeesRoute: AuthenticatedAppAiEmployeesRoute,
   AuthenticatedAppAnalyticsRoute: AuthenticatedAppAnalyticsRoute,
   AuthenticatedAppAutomotiveRoute: AuthenticatedAppAutomotiveRoute,
   AuthenticatedAppCampaignsRoute: AuthenticatedAppCampaignsRoute,
@@ -1864,6 +2135,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppInboxRoute: AuthenticatedAppInboxRoute,
   AuthenticatedAppIntegrationsRoute: AuthenticatedAppIntegrationsRoute,
   AuthenticatedAppIntelligenceRoute: AuthenticatedAppIntelligenceRoute,
+  AuthenticatedAppMcpReviewRoute: AuthenticatedAppMcpReviewRoute,
   AuthenticatedAppMigrationFactoryRoute: AuthenticatedAppMigrationFactoryRoute,
   AuthenticatedAppOrderIntakeRoute: AuthenticatedAppOrderIntakeRoute,
   AuthenticatedAppPartnersRoute: AuthenticatedAppPartnersRoute,
@@ -1873,6 +2145,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
     AuthenticatedAppProcurementReadinessRoute,
   AuthenticatedAppRegulatoryMonitoringRoute:
     AuthenticatedAppRegulatoryMonitoringRoute,
+  AuthenticatedAppRoutingRoute: AuthenticatedAppRoutingRoute,
   AuthenticatedAppSalesRoute: AuthenticatedAppSalesRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppSharedEnginesRoute: AuthenticatedAppSharedEnginesRoute,
@@ -1930,6 +2203,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WebsiteRoute: WebsiteRoute,
   WorkflowPacksRoute: WorkflowPacksRoute,
+  TrackTokenRoute: TrackTokenRoute,
   ApiControlPlaneTenantSnapshotRoute: ApiControlPlaneTenantSnapshotRoute,
   ApiHaccoraBridgeRoute: ApiHaccoraBridgeRoute,
   ApiIntegrationsEventsRoute: ApiIntegrationsEventsRoute,
@@ -1941,9 +2215,18 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlatformGrowthRoute: ApiPlatformGrowthRoute,
   ApiPlatformIntelligenceRoute: ApiPlatformIntelligenceRoute,
   ApiPlatformOrderIntakeRoute: ApiPlatformOrderIntakeRoute,
+  ApiPlatformRufloProbeRoute: ApiPlatformRufloProbeRoute,
   ApiPlatformRuntimeRoute: ApiPlatformRuntimeRoute,
   ApiPublicFeedbackRoute: ApiPublicFeedbackRoute,
   ApiPublicNetworkExpansionRoute: ApiPublicNetworkExpansionRoute,
+  ApiControlPlaneNafsiConnectRoute: ApiControlPlaneNafsiConnectRoute,
+  ApiControlPlaneNafsiConnectEventsRoute:
+    ApiControlPlaneNafsiConnectEventsRoute,
+  ApiControlPlaneNafsiEventsRoute: ApiControlPlaneNafsiEventsRoute,
+  ApiControlPlaneNafsiIntelligenceRoute: ApiControlPlaneNafsiIntelligenceRoute,
+  ApiControlPlaneNafsiIntelligenceShadowRoute:
+    ApiControlPlaneNafsiIntelligenceShadowRoute,
+  ApiControlPlaneNafsiParityRoute: ApiControlPlaneNafsiParityRoute,
   ApiControlPlaneWorkersProvisioningRoute:
     ApiControlPlaneWorkersProvisioningRoute,
   ApiIntegrationsConnectEventsRoute: ApiIntegrationsConnectEventsRoute,
@@ -1952,6 +2235,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiIntegrationsRunsRunIdRoute: ApiIntegrationsRunsRunIdRouteWithChildren,
   ApiPlatformWebhooksDrainRoute: ApiPlatformWebhooksDrainRoute,
   ApiPublicTrackTokenRoute: ApiPublicTrackTokenRoute,
+  ApiPublicTwilioMaskedVoiceRoute: ApiPublicTwilioMaskedVoiceRoute,
   ApiPublicTwilioOrderIntakeRoute: ApiPublicTwilioOrderIntakeRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiVerticalsLessonaheadRuntimeRoute: ApiVerticalsLessonaheadRuntimeRoute,

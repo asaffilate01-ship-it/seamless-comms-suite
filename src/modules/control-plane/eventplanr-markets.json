@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "productKey": "eventplanr",
+  "activation": "not_activated",
+  "markets": [
+    {
+      "country": "GB",
+      "name": "EventPlanr UK",
+      "currency": "GBP",
+      "locale": "en-GB",
+      "timezone": "Europe/London",
+      "repository": "asaffilate01-ship-it/eventplanr2"
+    },
+    {
+      "country": "DE",
+      "name": "EventPlanr Germany",
+      "currency": "EUR",
+      "locale": "de-DE",
+      "timezone": "Europe/Berlin",
+      "repository": "asaffilate01-ship-it/eventplanrger"
+    }
+  ]
+}

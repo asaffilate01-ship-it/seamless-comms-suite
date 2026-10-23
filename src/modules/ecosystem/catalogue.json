@@ -382,7 +382,7 @@
   },
   {
     "id": "loungetech-founders-38",
-    "name": "LoungeTech Gr\u00fcndungsportal",
+    "name": "LoungeTech Gründungsportal",
     "product": "loungetech-founders",
     "repository": null,
     "source": "https://loungetech-gruendung.amersaleem.chatgpt.site",
@@ -752,7 +752,7 @@
   },
   {
     "id": "syndryvia-75",
-    "name": "Syndryvia / user spelling Syndrivya \u2014 identity to confirm",
+    "name": "Syndryvia / user spelling Syndrivya — identity to confirm",
     "product": "syndryvia",
     "repository": null,
     "source": null,
@@ -849,5 +849,15 @@
     "profile": "generic",
     "boundary": "One MoneyBridge deployment per operator workspace. Treasury/admin-only frozen snapshot counts; no customer identities, bank references, individual amounts or payment/compliance actions. Separate central binding and reviewed AI policy required.",
     "status": "source-adapter-built-not-live-verified"
+  },
+  {
+    "id": "nafsi-gb",
+    "name": "Nafsi UK",
+    "product": "nafsi",
+    "repository": "asaffilate01-ship-it/nafsiapp",
+    "source": "https://github.com/asaffilate01-ship-it/nafsiapp",
+    "profile": "wellbeing",
+    "boundary": "Nafsi remains authoritative for consumer wellbeing data, reviewed Islamic content and recitation. Omniqora receives no prompt, journal, mood or free-text wellbeing content through operational events.",
+    "status": "source-adapter-in-progress"
   }
 ]

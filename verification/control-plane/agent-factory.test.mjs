@@ -16,9 +16,23 @@ async function loadTs(relative,deps={}){
 }
 const catalog=await loadTs("../../src/modules/agent-factory/catalogue.ts");
 const planner=await loadTs("../../src/modules/agent-factory/planner.ts",{"./catalogue":catalog});
+const cricketPolicy=await loadTs("../../src/modules/intelligence/criclume-policy.ts");
+
+test("CricLume cannot queue unbudgeted AI runs on Omniqora generic route",async()=>{
+ assert.equal(cricketPolicy.legacyIntelligenceRunAllowed("criclume"),false);
+ assert.equal(cricketPolicy.legacyIntelligenceRunAllowed("  CriClUmE "),false);
+ assert.equal(cricketPolicy.legacyIntelligenceRunAllowed("dishbee"),true);
+ assert.match(cricketPolicy.CRICLUME_BUDGET_REQUIRED,/budgeted Agent Factory admission/);
+ const route=await readFile(new URL("../../src/modules/intelligence/service.server.ts",import.meta.url),"utf8");
+ assert.match(route,/if\(!legacyIntelligenceRunAllowed\(input.productKey\)\)/);
+ assert.match(route,/BUDGETED_ADMISSION_REQUIRED/);
+ assert.match(route,/connection.verify/);
+ assert.match(route,/intelligence.connection.verify/);
+ assert.match(route,/modelExecutionReady:false/);
+});
 
 test("universal agent factory covers every product, plus named SaaS blueprints",()=>{
- for(const key of ["xpertjobs","autohashi","zivvo","craftvaro","gabley","taxnuvia","lawquo","eventplanr","dishbee","finvessa","haccora","kindelo","moneybridge","unipathway","formation-genie","merqano"]){
+ for(const key of ["xpertjobs","autohashi","zivvo","craftvaro","gabley","taxnuvia","lawquo","eventplanr","dishbee","finvessa","haccora","kindelo","moneybridge","unipathway","formation-genie","merqano","criclume"]){
   const agents=catalog.agentsForProduct(key);
   assert.ok(agents.some(a=>a.key==="shared.daily-brief"),"missing core for "+key);
   assert.ok(agents.some(a=>a.productKeys.includes(key)),"missing vertical for "+key);
@@ -28,6 +42,27 @@ test("universal agent factory covers every product, plus named SaaS blueprints",
  assert.equal(keys.length,new Set(keys).size);
  assert.ok(catalog.mcpConnectorFamilies.length>=15);
  assert.ok(catalog.mcpConnectorFamilies.every(f=>f.status==="catalogue_only"));
+});
+
+test("CricLume cricket agents are exclusively read-only or human-reviewed drafts",()=>{
+ const agents=catalog.agentsForProduct("criclume").filter(a=>a.key.startsWith("criclume."));
+ assert.equal(agents.length,6);
+ assert.ok(agents.every(a=>a.requiredCapabilities.length===1));
+ assert.ok(agents.every(a=>a.requiredCapabilities[0]==="criclume.matches.aggregate.read"));
+ assert.ok(agents.every(a=>["read_only","draft"].includes(a.mode)));
+ assert.ok(agents.every(a=>a.risk==="sensitive"));
+ const denied=planner.planAgentActivation({
+  productKey:"criclume",blueprintKey:"criclume.match-analyst",
+  verifiedCapabilities:[],approvedCapabilities:[]
+ });
+ assert.equal(denied.status,"design_only");
+ const accepted=planner.planAgentActivation({
+  productKey:"criclume",blueprintKey:"criclume.match-analyst",
+  verifiedCapabilities:["criclume.matches.aggregate.read"],
+  approvedCapabilities:["criclume.matches.aggregate.read"]
+ });
+ assert.equal(accepted.status,"configuration_ready");
+ assert.equal(accepted.requiresHumanReview,true);
 });
 
 test("tenant tool permissions and live connector verification are both required",()=>{

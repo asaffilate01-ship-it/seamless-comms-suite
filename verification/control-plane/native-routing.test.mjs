@@ -1,3 +1,4 @@
+import {seedIsolatedDishbeeTestTenants} from "./dishbee-fixture.mjs";
 import assert from "node:assert/strict";
 import {readFile,readdir} from "node:fs/promises";
 import {PGlite} from "@electric-sql/pglite";
@@ -18,7 +19,7 @@ await db.query("INSERT INTO public.platform_admins(user_id) VALUES($1)",[admin])
 async function asUser(user,fn){await db.exec("BEGIN;SET LOCAL ROLE authenticated;");await db.query("SELECT set_config('request.jwt.claim.sub',$1,true)",[user]);try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
 async function asService(fn){await db.exec("BEGIN;SET LOCAL ROLE service_role;");try{const v=await fn();await db.exec("COMMIT");return v;}catch(e){await db.exec("ROLLBACK");throw e;}}
 
-const pilot=await asUser(admin,async()=> (await db.query("SELECT public.platform_bootstrap_dishbee_pilot() AS result")).rows[0].result);
+const pilot=await seedIsolatedDishbeeTestTenants(db,admin);
 const tenant=pilot.tenants.find(x=>x.tenantSlug==="mealdeck");assert(tenant?.tenantId);
 
 await asUser(admin,()=>db.query("INSERT INTO public.routing_policies(tenant_id,product_key,policy_key,objective,status) VALUES($1,'mealdeck','default','balanced','active')",[tenant.tenantId]));
