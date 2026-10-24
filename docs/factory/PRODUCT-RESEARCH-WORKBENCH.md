@@ -32,7 +32,7 @@ The output file must not already exist. It is created with owner-only permission
 
 ## Next connected stages
 
-1. Persist dossiers through an authenticated operator workspace with tenant isolation, versioned reviews and audit events. The current browser workspace uses local files and has no hosted storage or authenticated review.
+1. Validate the implemented tenant workspace, saved revisions and authenticated reviews in staging. The independent local browser tool continues to use files only.
 2. Add adapters for reviewed REA evidence and the existing web-intelligence snapshot contract once those collectors are verified. Keep analysis execution in disposable workers with bounded resources and explicit inputs.
 3. Hand reviewed requirements to repository-specific development agents, with tests and a PR as the output. Approval applies to the concrete diff before merge/release.
 4. Add customer packaging through existing Factory entitlements and provider cost controls: research limits, analysis minutes, storage and build quotas. Subscription billing and customer access are not implemented by this change.
@@ -60,7 +60,7 @@ Tests: `node --test verification/control-plane/product-research*.test.mjs`.
 
 The Tenant Factory now mounts a Research Projects panel for the selected tenant. Upload a version 1 dossier, name the project, and save. Reopen/download a project or edit its JSON and save another revision. The Tenant Factory panel now embeds a visual editor for project details, sources, observations and features. The separate local tool remains available for offline work; files can move between either editor.
 
-Server functions use the existing Supabase authentication middleware and require actual tenant membership. Owners, admins and agents can save; other members can read. Platform-admin status alone grants no research access. SQL repeats write authorisation, enables RLS on both tables, revokes direct writes and permits only scoped reads and the guarded save RPC. Immutable-to-client revision rows record the authenticated saver. Dossier review labels remain untrusted local research statements; this release introduces no approval endpoint.
+Server functions use the existing Supabase authentication middleware and require actual tenant membership. Owners, admins and agents can save; other members can read. Platform-admin status alone grants no research access. SQL repeats write authorisation, enables RLS on both tables, revokes direct writes and permits only scoped reads and the guarded save RPC. Immutable-to-client revision rows record the authenticated saver. Dossier review labels remain untrusted local research statements. Separate authenticated review records are described below.
 
 Apply `supabase/migrations/20261024201227_product_research_projects.sql` after existing tenant/auth migrations in staging. The private schema must not be added to exposed Data API schemas. The public wrapper uses invoker permissions; its private definer checks the current authenticated user's membership on every call. No service-role key is used by the application.
 
@@ -68,7 +68,7 @@ Save requests include project ID, expected revision and request UUID. The SQL tr
 
 Validation: local PGlite execution covers save/retry, request-content mismatch, stale writes, retained history, cross-tenant reads/writes, read-only roles, direct-write denial, anonymous denial, malformed payloads and membership revocation. Run `node --test verification/control-plane/product-research*.test.mjs` with the repository's existing PGlite dev dependency. This uses minimal tenant/auth fixtures and does not validate the full deployed migration chain, PostgREST schema exposure or real sessions.
 
-Before activation: run the full application typecheck/build/security checks, apply in staging, run database advisors and test two real tenants, role changes, large dossiers, uncertain network saves and mobile UI. The panel requires downloading/saving edits before changing tenants or navigating away. History restoration UI, authenticated reviews, retention controls, production monitoring, REA jobs and subscription entitlements remain outstanding. No production migration or release was performed here.
+Before activation: run the full application typecheck/build/security checks, apply in staging, run database advisors and test two real tenants, role changes, large dossiers, uncertain network saves and mobile UI. The panel requires downloading/saving edits before changing tenants or navigating away. Retention controls, production monitoring, REA jobs and subscription entitlements remain outstanding. No production migration or release was performed here.
 
 ## Hosted visual editing (source implementation)
 
@@ -76,4 +76,15 @@ Saved projects now open directly into a visual dossier editor. New projects star
 
 Read-only members can inspect and export but cannot change records. Source edits clear local review metadata; referenced sources/observations cannot be removed. All saves still use the same authenticated persistence and expected-revision contract. Browser refresh/close warns about unsaved work. Save or download before switching tenants; in-app navigation protection is not yet complete.
 
-Additional verification: strict TypeScript check of the visual editor and shared declarations, plus a jsdom interaction test for record creation, validation feedback and read-only controls. The test workflow installs pinned isolated test dependencies including jsdom; it does not modify the application lockfile. jsdom is not a substitute for signed-in browser, accessibility or mobile visual acceptance. Authenticated reviewer decisions remain unimplemented.
+Additional verification: strict TypeScript check of the visual editor and shared declarations, plus a jsdom interaction test for record creation, validation feedback and read-only controls. The test workflow installs pinned isolated test dependencies including jsdom; it does not modify the application lockfile. jsdom is not a substitute for signed-in browser, accessibility or mobile visual acceptance. Authenticated reviewer decisions now have a separate saved-revision workflow described below.
+
+
+## Authenticated reviews and restoration (source implementation)
+
+Saved projects display paginated revision history with saver identity and review records. Owners and admins can record `reviewed` or `changes_requested` with a required note against the current saved revision. The database supplies reviewer identity and time, repeats membership checks, serialises with saves and rejects stale reviews. One immutable decision is permitted per reviewer per revision; an identical retry is safe. Agents may save but cannot review. Tenant readers can inspect history and reviews. Reviews do not grant execution, publishing, legal clearance or change the local planner's readiness labels; no authenticated review is claimed in downloaded build packs.
+
+Restore as draft loads historical content without changing the stored project. Source review labels reset to pending. Saving uses the existing optimistic save contract to append a new revision; authenticated reviews stay attached to their original revision and never transfer. A concurrent save requires reopening and reconciling, and failed reads leave the current draft intact.
+
+Apply CLI-generated `20261024205930_product_research_reviews.sql` after the projects migration in staging. It adds a tenant-scoped RLS table and guarded invoker/private-definer review RPC. No direct client inserts, updates or deletes are permitted. Full migration-chain validation, real authenticated browser/PostgREST acceptance, full application typecheck/build/security checks and database advisors remain required before activation. Neither migration has been applied remotely.
+
+Focused database tests cover reviewer identity, immutable decisions, identical retries, stale review rejection, role and tenant denial, invalid review input, restoration retaining history without copying reviews and revoked membership. UI interactions are tested with mocked server/query boundaries; real session and visual acceptance remain outstanding.

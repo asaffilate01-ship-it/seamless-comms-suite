@@ -39,3 +39,36 @@ export const saveResearchProject=createServerFn({method:'POST'}).middleware([req
   if(r.error){if(r.error.code==='40001')throw new Error('A newer revision exists. Download your draft, then reopen the saved project before applying changes.');throw new Error('Research save failed. Retry the same save or reopen the project.');}
   return r.data as {id:string;revision:number;replayed:boolean};
  });
+
+export const listResearchHistory=createServerFn({method:'POST'}).middleware([requireSupabaseAuth])
+ .inputValidator((input:unknown)=>scope.extend({projectId:z.string().uuid(),offset:z.number().int().min(0).max(100000).default(0)}).parse(input))
+ .handler(async({context,data})=>{
+  const role=await membership(context,data.tenantId);
+  const r=await(context.supabase as any).from('product_research_revisions').select('revision,name,saved_by,saved_at').eq('tenant_id',data.tenantId).eq('project_id',data.projectId).order('revision',{ascending:false}).range(data.offset,data.offset+24);
+  if(r.error)throw new Error('Research history unavailable');
+  const revisions=r.data as {revision:number;name:string;saved_by:string;saved_at:string}[];
+  const reviews=await(context.supabase as any).from('product_research_reviews').select('revision,reviewer_id,decision,note,reviewed_at').eq('tenant_id',data.tenantId).eq('project_id',data.projectId).in('revision',revisions.map(r=>r.revision));
+  if(reviews.error)throw new Error('Research reviews unavailable. Check the review migration.');
+  return {revisions,reviews:reviews.data as {revision:number;reviewer_id:string;decision:string;note:string;reviewed_at:string}[],canReview:['owner','admin'].includes(role)};
+ });
+// Restore loads historical content as an unsaved draft. Saving creates a new revision
+// through the existing optimistic/idempotent save path; it never rewrites history.
+export const readResearchRevision=createServerFn({method:'POST'}).middleware([requireSupabaseAuth])
+ .inputValidator((input:unknown)=>scope.extend({projectId:z.string().uuid(),revision:z.number().int().positive()}).parse(input))
+ .handler(async({context,data})=>{
+  await membership(context,data.tenantId);
+  const r=await(context.supabase as any).from('product_research_revisions').select('name,dossier').eq('tenant_id',data.tenantId).eq('project_id',data.projectId).eq('revision',data.revision).single();
+  if(r.error||!r.data)throw new Error('Research revision unavailable');
+  const dossier=parseDraft(r.data.dossier);
+  dossier.sources=dossier.sources.map(source=>({...source,review:'pending',reviewer:''}));
+  return {name:r.data.name as string,dossierJson:JSON.stringify(dossier)};
+ });
+export const reviewResearchProject=createServerFn({method:'POST'}).middleware([requireSupabaseAuth])
+ .inputValidator((input:unknown)=>scope.extend({projectId:z.string().uuid(),revision:z.number().int().positive(),decision:z.enum(['reviewed','changes_requested']),note:z.string().trim().min(1).max(2000)}).parse(input))
+ .handler(async({context,data})=>{
+  const role=await membership(context,data.tenantId);
+  if(!['owner','admin'].includes(role))throw new Error('Research review access required');
+  const r=await(context.supabase as any).rpc('review_product_research_project',{_tenant:data.tenantId,_project:data.projectId,_revision:data.revision,_decision:data.decision,_note:data.note});
+  if(r.error){if(r.error.code==='40001')throw new Error('A newer revision exists. Reopen the project before reviewing.');throw new Error('Review could not be recorded. An existing review cannot be changed; save a new revision for another review.');}
+  return r.data as {revision:number;replayed:boolean};
+ });

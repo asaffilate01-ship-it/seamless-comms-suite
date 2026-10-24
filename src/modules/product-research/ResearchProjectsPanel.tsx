@@ -2,6 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {useServerFn} from '@tanstack/react-start';
 import {DossierEditor} from './DossierEditor';
+import {ResearchHistory} from './ResearchHistory';
 import {blankDossier,parseDraft} from '../../../tools/product-research/editor-model.mjs';
 import {listResearchProjects,readResearchProject,saveResearchProject} from './functions';
 
@@ -41,6 +42,7 @@ export function ResearchProjectsPanel({tenantId}:{tenantId:string}){
    const request=pending.current;setBusy(true);
    try{const result=await save({data:{tenantId,projectId:request.projectId,requestId:request.requestId,expectedRevision:project?.revision??0,name,dossierJson:json}});setProject({id:result.id,revision:result.revision});pending.current=null;setDirty(false);setMessage('Saved revision '+result.revision);await projects.refetch();}catch(e){setMessage(e instanceof Error?e.message:'Save failed');}finally{setBusy(false);}
   }}>{busy?'Working…':'Save revision'}</button></div>
+  {project&&<ResearchHistory key={project.id} tenantId={tenantId} project={project} disabled={busy} canWrite={!!projects.data?.canWrite} dirty={dirty} onBusy={setBusy} onMessage={setMessage} onRestore={value=>{const parsed=parseDraft(JSON.parse(value.dossierJson));setName(value.name);setJson(JSON.stringify(parsed,null,2));setDirty(true);pending.current=null;}}/>}
   <p role="status" aria-live="polite">{message}{dirty?' · Unsaved changes':''}</p>
  </section>;
 }
