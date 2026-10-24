@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SalesBoard } from "@/modules/crm/sales-board";
+import { forecastByCurrency, formatDealMoney } from "@/modules/crm/sales-model";
 import { useTenant } from "@/hooks/useTenant";
 import {
   getCustomer360,listCrmCompanies,listCrmLeads,listCrmOpportunities,listCrmPeople,listCrmPipelines,listCrmTasks,
-  saveCrmCompany,saveCrmLead,saveCrmOpportunity,saveCrmPerson,saveCrmTask
+  saveCrmCompany,saveCrmLead,saveCrmPerson,saveCrmTask
 } from "@/modules/crm/functions";
 import { BriefcaseBusiness, Building2, ClipboardCheck, ContactRound, Target, UserRoundPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -27,7 +29,7 @@ function CrmWorkspace(){
  const peopleFn=useServerFn(listCrmPeople),companiesFn=useServerFn(listCrmCompanies),leadsFn=useServerFn(listCrmLeads);
  const opportunitiesFn=useServerFn(listCrmOpportunities),pipelinesFn=useServerFn(listCrmPipelines),tasksFn=useServerFn(listCrmTasks);
  const customerFn=useServerFn(getCustomer360),personFn=useServerFn(saveCrmPerson),companyFn=useServerFn(saveCrmCompany);
- const leadFn=useServerFn(saveCrmLead),opportunityFn=useServerFn(saveCrmOpportunity),taskFn=useServerFn(saveCrmTask);
+ const leadFn=useServerFn(saveCrmLead),taskFn=useServerFn(saveCrmTask);
  const enabled=!!tenantId&&!tenant.loading;
  const people=useQuery({queryKey:["crm-people",tenantId],enabled,queryFn:()=>peopleFn({data:{tenantId}}),retry:false});
  const companies=useQuery({queryKey:["crm-companies",tenantId],enabled,queryFn:()=>companiesFn({data:{tenantId}}),retry:false});
@@ -46,9 +48,6 @@ function CrmWorkspace(){
  const [company,setCompany]=useState({name:"",industry:"",website:""});
  const [lead,setLead]=useState({title:"",personId:""});
  const [task,setTask]=useState({title:"",priority:"normal"});
- const defaultPipeline=pipelineRows.find(p=>p.is_default)??pipelineRows[0];
- const defaultStage=defaultPipeline?.stages?.find((s:any)=>!s.is_closed_won&&!s.is_closed_lost)??defaultPipeline?.stages?.[0];
- const [opportunity,setOpportunity]=useState({title:"",personId:"",amount:""});
 
  async function refresh(){
   await Promise.all(["crm-people","crm-companies","crm-leads","crm-opportunities","crm-pipelines","crm-tasks"].map(key=>qc.invalidateQueries({queryKey:[key,tenantId]})));
@@ -57,17 +56,18 @@ function CrmWorkspace(){
  async function run(key:string,fn:()=>Promise<unknown>){try{setBusy(key);await fn();await refresh();toast.success("CRM updated");}catch(e){toast.error(e instanceof Error?e.message:String(e));}finally{setBusy("");}}
 
  if(tenant.loading)return <AppShell title="CRM & Customer 360"><State text="Loading workspace…"/></AppShell>;
- const anyError=[people.error,companies.error,leads.error,opportunities.error,pipelines.error,tasks.error].find(Boolean);
- if(anyError)return <AppShell title="CRM & Customer 360"><State destructive text={anyError instanceof Error?anyError.message:"CRM unavailable"}/></AppShell>;
+ const anyError=[tenant.error,people.error,companies.error,leads.error,opportunities.error,pipelines.error,tasks.error].find(Boolean);
+ if(anyError)return <AppShell title="CRM & Customer 360"><State destructive text={anyError instanceof Error?anyError.message:String(anyError)}/></AppShell>;
 
- const openPipeline=opportunityRows.filter(r=>r.status==="open").reduce((sum,r)=>sum+Number(r.amount??0),0);
+ if(!tenantId)return <AppShell title="CRM & Customer 360"><State text="No workspace available."/></AppShell>;
+ if([people,companies,leads,opportunities,pipelines,tasks].some(q=>q.isPending))return <AppShell title="CRM & Customer 360"><State text="Loading CRM records…"/></AppShell>;
  const currency=opportunityRows.find(r=>r.currency)?.currency??"GBP";
  return <AppShell title="CRM & Customer 360" subtitle="One tenant-wide customer graph shared by WhatsApp and connected SaaS products.">
   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
    <Metric icon={ContactRound} label="People" value={personRows.length}/><Metric icon={Building2} label="Companies" value={companyRows.length}/>
    <Metric icon={Target} label="Open leads" value={leadRows.filter(r=>!["converted","closed","unqualified"].includes(r.status)).length}/>
    <Metric icon={BriefcaseBusiness} label="Opportunities" value={opportunityRows.filter(r=>r.status==="open").length}/>
-   <Metric icon={BriefcaseBusiness} label="Open pipeline" value={money(openPipeline,currency)}/>
+   <Metric icon={BriefcaseBusiness} label="Open pipeline" value={forecastByCurrency(opportunityRows).map(t=>formatDealMoney(t.amount,t.currency)).join(" · ") || "No open deals"}/>
    <Metric icon={ClipboardCheck} label="Open tasks" value={taskRows.filter(r=>!["completed","cancelled"].includes(r.status)).length}/>
   </div>
   <Tabs defaultValue="customer360" className="mt-6">
@@ -113,12 +113,7 @@ function CrmWorkspace(){
     </form></CardContent></Card>
     <Table columns={["Lead","Status","Score","Source"]} rows={leadRows.map(r=>[r.title,r.status,r.score??"—",r.source||"—"])}/>
    </div></TabsContent>
-   <TabsContent value="pipeline"><div className="space-y-4">
-    {defaultPipeline&&<Card><CardContent className="p-5"><h3 className="font-semibold">{defaultPipeline.name}</h3><div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{(defaultPipeline.stages??[]).map((s:any)=><div key={s.id} className="rounded-lg border p-3"><b>{s.name}</b><p className="mt-1 text-xs text-muted-foreground">{opportunityRows.filter(o=>o.stage_id===s.id&&o.status==="open").length} open</p></div>)}</div></CardContent></Card>}
-    <div className="grid gap-4 xl:grid-cols-[360px_1fr]"><Card><CardContent className="p-5"><h3 className="font-semibold">New opportunity</h3><form className="mt-4 space-y-3" onSubmit={(e)=>{e.preventDefault();if(!defaultPipeline||!defaultStage)return;run("opportunity",async()=>{await opportunityFn({data:{tenantId,pipelineId:defaultPipeline.id,stageId:defaultStage.id,personId:opportunity.personId||null,companyId:null,title:opportunity.title,amount:opportunity.amount?Number(opportunity.amount):null,currency:"GBP",probabilityPercent:null,expectedCloseAt:null,status:"open",sourceProductKey:"omniqora",externalRef:null,metadata:{}}});setOpportunity({title:"",personId:"",amount:""});});}}>
-     <Field label="Title"><Input required value={opportunity.title} onChange={e=>setOpportunity(v=>({...v,title:e.target.value}))}/></Field><Field label="Person"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={opportunity.personId} onChange={e=>setOpportunity(v=>({...v,personId:e.target.value}))}><option value="">No person</option>{personRows.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select></Field><Field label="Value GBP"><Input type="number" min="0" step="0.01" value={opportunity.amount} onChange={e=>setOpportunity(v=>({...v,amount:e.target.value}))}/></Field><Button type="submit" disabled={busy==="opportunity"}>Create opportunity</Button>
-    </form></CardContent></Card><Table columns={["Opportunity","Status","Amount","Probability"]} rows={opportunityRows.map(r=>[r.title,r.status,r.amount==null?"—":money(r.amount,r.currency||currency),r.probability_percent==null?"—":r.probability_percent+"%"])}/></div>
-   </div></TabsContent>
+   <TabsContent value="pipeline"><SalesBoard key={tenantId} tenantId={tenantId} pipelines={pipelineRows} deals={opportunityRows} tasks={taskRows} people={personRows} canWrite={["owner","admin","agent","platform_admin"].includes(tenant.role??"")} /></TabsContent>
    <TabsContent value="tasks"><div className="grid gap-4 xl:grid-cols-[360px_1fr]">
     <Card><CardContent className="p-5"><h3 className="font-semibold">New task</h3><form className="mt-4 space-y-3" onSubmit={(e)=>{e.preventDefault();run("task",async()=>{await taskFn({data:{tenantId,title:task.title,description:null,status:"open",priority:task.priority as any,dueAt:null,assigneeUserId:null,relatedType:selectedPersonId?"person":null,relatedId:selectedPersonId||null,sourceProductKey:"omniqora",externalRef:null,metadata:{}}});setTask({title:"",priority:"normal"});});}}>
      <Field label="Title"><Input required value={task.title} onChange={e=>setTask(v=>({...v,title:e.target.value}))}/></Field><Field label="Priority"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={task.priority} onChange={e=>setTask(v=>({...v,priority:e.target.value}))}>{["low","normal","high","urgent"].map(x=><option key={x}>{x}</option>)}</select></Field><Button type="submit" disabled={busy==="task"}>Create task</Button>
@@ -127,7 +122,7 @@ function CrmWorkspace(){
   </Tabs>
  </AppShell>;
 }
-function Metric({icon:Icon,label,value}:{icon:typeof ContactRound;label:string;value:string|number}){return <Card><CardContent className="p-5"><div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground"><span>{label}</span><Icon className="h-4 w-4 text-primary"/></div><div className="mt-2 truncate font-display text-xl font-semibold">{value}</div></CardContent></Card>;}
+function Metric({icon:Icon,label,value}:{icon:typeof ContactRound;label:string;value:string|number}){return <Card><CardContent className="p-5"><div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground"><span>{label}</span><Icon className="h-4 w-4 text-primary"/></div><div className="mt-2 break-words font-display text-xl font-semibold">{value}</div></CardContent></Card>;}
 function Header({title,subtitle}:{title:string;subtitle:string}){return <div className="border-b px-5 py-4"><h3 className="font-semibold">{title}</h3><p className="text-xs text-muted-foreground">{subtitle}</p></div>;}
 function Mini({label,value}:{label:string;value:string}){return <div className="rounded-lg bg-surface-2 p-3"><p className="text-xs text-muted-foreground">{label}</p><b className="mt-1 block">{value}</b></div>;}
 function Field({label,children}:{label:string;children:ReactNode}){return <div><Label className="text-xs text-muted-foreground">{label}</Label><div className="mt-1">{children}</div></div>;}
