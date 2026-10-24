@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { moveCrmOpportunity, saveCrmOpportunity, saveCrmTask } from "./functions";
+import { completeCrmFollowUp, moveCrmOpportunity, saveCrmOpportunity, saveCrmTask } from "./functions";
 import { forecastByCurrency, formatDealMoney, nextFollowUp, type Deal, type Pipeline, type FollowUp } from "./sales-model";
 import { toast } from "sonner";
 
@@ -26,6 +26,8 @@ export function SalesBoard({ tenantId, pipelines, deals, tasks, people, canWrite
   const [closeAt, setCloseAt] = useState("");
   const [followTitle, setFollowTitle] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const mutationLock = useRef(false);
+  const complete = useServerFn(completeCrmFollowUp);
   const move = useServerFn(moveCrmOpportunity);
   const create = useServerFn(saveCrmOpportunity);
   const saveTask = useServerFn(saveCrmTask);
@@ -39,11 +41,12 @@ export function SalesBoard({ tenantId, pipelines, deals, tasks, people, canWrite
     await Promise.all(['crm-opportunities', 'crm-tasks', 'crm-360'].map(key => qc.invalidateQueries({ queryKey: [key, tenantId] })));
   }
   async function run(action: () => Promise<unknown>) {
-    if (busy || !canWrite) return;
+    if (mutationLock.current || !canWrite) return;
+    mutationLock.current = true;
     setBusy(true);
     try { await action(); await refresh(); toast.success('CRM updated'); }
     catch (error) { toast.error(error instanceof Error ? error.message : 'CRM update failed'); await refresh(); }
-    finally { setBusy(false); setDragged(null); }
+    finally { mutationLock.current = false; setBusy(false); setDragged(null); }
   }
   function moveDeal(deal: Deal, stageId: string) {
     if (deal.stage_id === stageId || !stages.some(s => s.id === stageId)) return;
@@ -100,7 +103,7 @@ export function SalesBoard({ tenantId, pipelines, deals, tasks, people, canWrite
               <p className="text-xs text-muted-foreground">{deal.status} · {deal.probability_percent ?? 0}% probability</p>
               {deal.expected_close_at && <p className="text-xs">Expected close: {new Date(deal.expected_close_at).toLocaleString()}</p>}
               <p className={"text-xs " + (overdue ? 'text-destructive' : 'text-muted-foreground')}>{follow ? `${overdue ? 'Overdue: ' : 'Next: '}${follow.title} · ${new Date(follow.due_at!).toLocaleString()}` : 'No dated follow-up'}</p>
-              {canWrite && <><label className="grid gap-1 text-xs">Move {deal.title}<select className={selectClass + ' w-full'} disabled={busy} value={deal.stage_id} onChange={e => moveDeal(deal, e.target.value)}>{stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+              {canWrite && <>{follow && <Button variant="outline" size="sm" disabled={busy} onClick={() => void run(() => complete({ data: { tenantId, taskId: follow.id, expectedUpdatedAt: follow.updated_at } }))}>Complete follow-up</Button>}<label className="grid gap-1 text-xs">Move {deal.title}<select className={selectClass + ' w-full'} disabled={busy} value={deal.stage_id} onChange={e => moveDeal(deal, e.target.value)}>{stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
                 <Button variant="outline" size="sm" disabled={busy} onClick={() => { setFollowDeal(deal.id); setFollowTitle(`Follow up: ${deal.title}`.slice(0,240)); setDueAt(''); }}>Schedule follow-up</Button></>}
             </CardContent>
           </Card>;

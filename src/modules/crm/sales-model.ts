@@ -6,7 +6,7 @@ export type Deal = {
 };
 export type Stage = { id: string; name: string; position: number; is_closed_won: boolean; is_closed_lost: boolean };
 export type Pipeline = { id: string; name: string; is_default: boolean; stages: Stage[] };
-export type FollowUp = { id: string; title: string; status: string; due_at: string | null; related_type: string | null; related_id: string | null };
+export type FollowUp = { updated_at: string; id: string; title: string; status: string; due_at: string | null; related_type: string | null; related_id: string | null };
 
 export function forecastByCurrency(deals: Deal[]) {
   const totals = new Map<string, { currency: string; amount: number; weighted: number; count: number }>();
