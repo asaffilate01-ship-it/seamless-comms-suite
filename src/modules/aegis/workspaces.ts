@@ -1,0 +1,5 @@
+export const workspaceTabs=[{key:'command',label:'Control room'},{key:'operations',label:'Sites & field'},{key:'reviews',label:'Reviews & remediation'},{key:'access',label:'Visitors & assets'},{key:'handover',label:'Handovers & instructions'},{key:'records',label:'Record register'},{key:'factory',label:'Factory setup'}] as const;
+export type WorkspaceKey=typeof workspaceTabs[number]['key'];
+const targets:Record<string,WorkspaceKey>={'aegis-command':'command','aegis-operations':'operations','aegis-field':'operations','aegis-reports':'reviews','aegis-corrective':'reviews','aegis-custody':'access','aegis-handovers':'handover','aegis-orders':'handover','aegis-records':'records','aegis-factory':'factory'};
+export function workspaceForHash(hash:string):WorkspaceKey|null{const id=hash.replace(/^#/,'');return Object.hasOwn(targets,id)?targets[id]:null;}
+export function adjacentWorkspace(key:WorkspaceKey,direction:'next'|'previous'|'first'|'last'):WorkspaceKey{const i=workspaceTabs.findIndex(t=>t.key===key);return workspaceTabs[direction==='first'?0:direction==='last'?workspaceTabs.length-1:(i+(direction==='next'?1:-1)+workspaceTabs.length)%workspaceTabs.length].key;}

@@ -159,3 +159,25 @@ Filters run before pagination. Pages include 25 records plus a sentinel row to d
 This phase adds read-only navigation, not wider access, mutations, exports, notifications or AI execution. It does not change existing workflow panels or their bounded lists. Full-text title search, cross-category global pagination, transactional evidence snapshots and export/retention remain separate work. Browser/staging acceptance and deployment remain outstanding; no earlier PR is merged by this phase.
 
 Phase 11 checks passed: typecheck, production build, all 29 focused Aegis tests, full migration-chain PGlite checks, repository hygiene and 32 PostgreSQL policy/integration checks, plus `git diff --check`. The Git tree uploaded for the PR is compared with the tested local tree before branch publication.
+
+## Phases 12–14 — connected operational workspace release
+
+### Phase 12: grouped workspaces
+
+Replaces the long all-panels page with Control room, Sites & field, Reviews & remediation, Visitors & assets, Handovers & instructions, Record register and Factory setup workspaces. Panels mount on first visit and remain mounted while switching tabs, preserving local form state in the same tenant session. Changing tenant or leaving the page resets local drafts; drafts are not persisted offline. Factory capability/gate/Intelligence configuration content is grouped under setup. Existing product/role gates remain authoritative.
+
+Tab controls provide keyboard arrows and Home/End, labelled panels and horizontal overflow for narrow screens. Source-workspace anchors activate the matching tab, including repeated navigation to an unchanged hash. Unknown/prototype hash values are ignored. Initial hash navigation is resolved on the client. Browser acceptance remains required; source/keyboard-target unit checks do not constitute browser or screen-reader validation.
+
+### Phase 13: keyword and UTC date search
+
+The record register adds server-side case-insensitive keyword matching, inclusive UTC date ranges and clear-filters recovery. Search uses a fixed category-specific column: title, handover summary, resource label or remediation evidence. It is substring matching, not full-text search or automatic semantic interpretation. Wildcard/control characters and searches longer than 120 characters are rejected rather than expanding the pattern. Dates are validated as real calendar days between 1900 and 2200; inverted ranges are refused. To-date uses an exclusive next-day boundary, including leap days and month/year changes.
+
+Category/status/source/keyword/date predicates are applied before the existing 25-row pagination. Query keys include all applied filters, which reset paging when applied or cleared. Instructions use publication time; other records use recorded update time. Search does not scan earlier audit snapshots, attachments or protected external sources. Date/keyword results remain subject to existing RLS and offset-page limitations.
+
+### Phase 14: visitor and asset evidence in the register
+
+Adds distinct Visitor, Key and Equipment categories to the register and exact-source inspector, reusing existing manual custody workflows. Both list and single-record requests constrain tenant and exact resource kind; resource/status combinations are whitelisted. The inspector shows host/custodian references, latest handover notes, and paged custody events including previous/new custodian evidence. Source-workspace links open Visitors & assets. Historical records are accessible only while current membership/site/product rules permit; this does not grant historical access after revocation.
+
+No database schema or permission expansion is introduced. Supervisor visit approval, asset loss/maintenance decisions, stage validation and immutable audit remain enforced by the existing database. This phase does not issue credentials, operate doors, verify identity, transfer assets, send notifications or run AI models. Those remain separate integrations.
+
+Validation passed for the combined release: typecheck, production build, all 37 focused Aegis tests (eight new search/resource/navigation cases), full migration-chain PGlite checks, repository hygiene and 32 PostgreSQL policy/integration checks, plus `git diff --check`. Existing isolated database coverage includes cross-tenant/restricted-site denial, custody audit and product suspension. Source tests verify keyword/date predicates, invalid input denial, exact resource kind/history scoping, valid statuses, source-target activation and keyboard navigation order. Browser/staging acceptance, production migrations and deployment remain outstanding. No previous PR is merged; the upload tree is checked against the tested local tree before branch publication.
