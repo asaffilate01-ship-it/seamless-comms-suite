@@ -1,0 +1,37 @@
+name: Product research workbench
+on:
+  pull_request:
+    paths:
+      - 'scripts/product-research.mjs'
+      - 'scripts/lib/product-research*.mjs'
+      - 'tools/product-research/**'
+      - 'src/modules/product-research/**'
+      - 'supabase/migrations/*_product_research*.sql'
+      - 'verification/control-plane/product-research*.test.mjs'
+      - 'docs/factory/examples/product-research.json'
+      - '.github/workflows/product-research.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/product-research.mjs'
+      - 'scripts/lib/product-research*.mjs'
+      - 'tools/product-research/**'
+      - 'src/modules/product-research/**'
+      - 'supabase/migrations/*_product_research*.sql'
+      - 'verification/control-plane/product-research*.test.mjs'
+      - 'docs/factory/examples/product-research.json'
+      - '.github/workflows/product-research.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix /tmp/research-test-deps --no-audit --no-fund @electric-sql/pglite@0.5.8 react@19.2.0 react-dom@19.2.0 typescript@5.8.3 jsdom@26.1.0
+      - run: ln -s /tmp/research-test-deps/node_modules node_modules
+      - run: node --test verification/control-plane/product-research*.test.mjs

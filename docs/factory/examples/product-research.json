@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "product": "VOXENTRI creative workflow",
+  "repository": "asaffilate01-ship-it/creative-studio",
+  "scope": "selected-features",
+  "sources": [{
+    "id": "voxentri", "url": "https://github.com/asaffilate01-ship-it/creative-studio",
+    "basis": "owned", "permissionNote": "Operator must confirm the repository scope before marking this source reviewed.",
+    "review": "pending", "reviewer": ""
+  }],
+  "observations": [{
+    "id": "brief-snapshot", "sourceId": "voxentri", "method": "manual", "kind": "observed",
+    "summary": "Campaign creation copies the initial brief into each deliverable's production notes. Subsequent campaign brief edits do not refresh those notes.",
+    "evidenceRef": "src/lib/campaign-kits.ts and src/components/studio/CampaignEditor.tsx at 982088510ab8506602d07511df37035d2ab57dd9"
+  }],
+  "features": [{
+    "id": "brief-refresh", "title": "Review brief changes before updating production notes",
+    "decision": "build", "area": "frontend",
+    "requirement": "Show which deliverables use an older brief and let the creator preview a new production brief without overwriting manually edited notes.",
+    "acceptance": [
+      "Changing a campaign brief marks affected generated notes as needing review.",
+      "Cancelling the preview preserves all existing notes and review states.",
+      "Applying a changed production brief resets the affected deliverable's approval checks."
+    ],
+    "observationIds": ["brief-snapshot"]
+  }]
+}
