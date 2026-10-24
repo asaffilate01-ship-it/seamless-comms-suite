@@ -1,6 +1,8 @@
 import type {QueueItem,QueueKind} from './control-room';
-export const registerStatuses={incident:['open','review','resolved','closed'],corrective:['open','in_progress','submitted','closed'],handover:['draft','offered','returned','acknowledged'],report:['draft','submitted','approved','changes_requested'],instructions:['current','superseded'],visitor:['expected','approved','onsite','departed','cancelled'],key:['available','issued','returned','maintenance','lost'],equipment:['available','issued','returned','maintenance','lost']} as const;
+export const registerStatuses={site:['draft','active','archived'],engagement:['draft','scheduled','active','completed','cancelled'],incident:['open','review','resolved','closed'],corrective:['open','in_progress','submitted','closed'],handover:['draft','offered','returned','acknowledged'],report:['draft','submitted','approved','changes_requested'],instructions:['current','superseded'],visitor:['expected','approved','onsite','departed','cancelled'],key:['available','issued','returned','maintenance','lost'],equipment:['available','issued','returned','maintenance','lost']} as const;
 const plans={
+ site:{table:'aegis_operations',columns:'id,title,status,updated_at',sort:'updated_at',section:'aegis-operations'},
+ engagement:{table:'aegis_operations',columns:'id,title,status,updated_at',sort:'updated_at',section:'aegis-operations'},
  incident:{table:'aegis_operations',columns:'id,title,status,updated_at',sort:'updated_at',section:'aegis-operations'},
  corrective:{table:'aegis_corrective_actions',columns:'id,stage,priority,due_on,updated_at',sort:'updated_at',section:'aegis-corrective'},
  handover:{table:'aegis_handovers',columns:'id,summary,stage,updated_at',sort:'updated_at',section:'aegis-handovers'},
@@ -20,8 +22,8 @@ export async function readRecordRegister(db:any,tenantId:string,kind:QueueKind,s
  const from=filters.from?date(filters.from):'',to=filters.to?date(filters.to):'';
  if(from&&to&&from>to)throw new Error('From date must not follow to date');
  const plan=plans[kind];let q=db.from(plan.table).select(plan.columns).eq('tenant_id',tenantId);
- if(kind==='incident'||['visitor','key','equipment'].includes(kind))q=q.eq('kind',kind);
- if(status!=='all')q=q.eq(kind==='instructions'?'is_current':kind==='incident'?'status':'stage',kind==='instructions'?status==='current':status);
+ if(['site','engagement','incident','visitor','key','equipment'].includes(kind))q=q.eq('kind',kind);
+ if(status!=='all')q=q.eq(kind==='instructions'?'is_current':['site','engagement','incident'].includes(kind)?'status':'stage',kind==='instructions'?status==='current':status);
  if(sourceId)q=q.eq('id',sourceId);
  const searchColumn=kind==='corrective'?'evidence':kind==='handover'?'summary':['visitor','key','equipment'].includes(kind)?'label':'title';
  if(keyword)q=q.ilike(searchColumn,'%'+keyword+'%');

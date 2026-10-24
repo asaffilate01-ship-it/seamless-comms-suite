@@ -1,5 +1,7 @@
-export type SourceKind='incident'|'corrective'|'handover'|'report'|'instructions'|'visitor'|'key'|'equipment';
+export type SourceKind='incident'|'corrective'|'handover'|'report'|'instructions'|'visitor'|'key'|'equipment'|'site'|'engagement';
 const sources={
+ site:{table:'aegis_operations',history:'aegis_operation_events',foreignKey:'operation_id',sort:'revision'},
+ engagement:{table:'aegis_operations',history:'aegis_operation_events',foreignKey:'operation_id',sort:'revision'},
  incident:{table:'aegis_operations',history:'aegis_operation_events',foreignKey:'operation_id',sort:'revision'},
  corrective:{table:'aegis_corrective_actions',history:'aegis_corrective_events',foreignKey:'action_id',sort:'revision'},
  handover:{table:'aegis_handovers',history:'aegis_handover_events',foreignKey:'handover_id',sort:'revision'},
@@ -14,7 +16,7 @@ export async function readSourceRecord(db:any,tenantId:string,kind:SourceKind,id
  if(!Object.hasOwn(sources,kind)||!Number.isInteger(page)||page<0||page>10000)throw new Error('Invalid source request');
  const plan=sources[kind];
  let query=db.from(plan.table).select('*').eq('tenant_id',tenantId).eq('id',id);
- if(kind==='incident'||['visitor','key','equipment'].includes(kind))query=query.eq('kind',kind);
+ if(['site','engagement','incident','visitor','key','equipment'].includes(kind))query=query.eq('kind',kind);
  const result=await query.maybeSingle();
  if(result.error||!result.data)throw new Error('Source record unavailable or access denied');
  const start=page*SOURCE_HISTORY_PAGE_SIZE;

@@ -8,7 +8,7 @@ import {SourceRecordDialog} from './SourceRecordDialog';
 import {getAegisRecordRegister} from './record-register.functions';
 import {registerStatuses} from './record-register';
 import type {QueueItem,QueueKind} from './control-room';
-const labels:Record<QueueKind,string>={incident:'Incidents',corrective:'Corrective actions',handover:'Shift handovers',report:'Inspections & reports',instructions:'Site instructions',visitor:'Visitors',key:'Keys',equipment:'Equipment'};
+const labels:Record<QueueKind,string>={site:'Sites',engagement:'Engagements',incident:'Incidents',corrective:'Corrective actions',handover:'Shift handovers',report:'Inspections & reports',instructions:'Site instructions',visitor:'Visitors',key:'Keys',equipment:'Equipment'};
 export function RecordRegisterPanel({tenantId}:{tenantId:string}){
  const [kind,setKind]=useState<QueueKind>('incident');
  return <Card className="my-6"><CardContent className="p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><Badge variant="outline">Operational records</Badge><h3 className="mt-3 text-2xl font-semibold">Find current and historical work</h3><p className="mt-2 text-sm text-muted-foreground">Browse beyond the control-room snapshot, including completed records you are authorised to see.</p></div><label className="text-sm">Category<select aria-label="Record register category" value={kind} onChange={e=>setKind(e.target.value as QueueKind)} className="mt-1 block rounded border bg-background p-2">{Object.entries(labels).map(([k,label])=><option key={k} value={k}>{label}</option>)}</select></label></div><RegisterList key={tenantId+':'+kind} tenantId={tenantId} kind={kind}/></CardContent></Card>;
