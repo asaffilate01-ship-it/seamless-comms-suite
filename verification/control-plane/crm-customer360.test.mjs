@@ -153,11 +153,34 @@ await db.exec("DROP TRIGGER reject_test_receipt ON public.crm_activities; DROP F
 const cleared=(await edit(admin,converted.id,edited.version,'Cleared',null,null,null)).rows[0];
 assert.equal(cleared.amount,null);assert.equal(cleared.expected_close_at,null);
 console.log("CRM deal details: guarded edits, unchanged fields, no-op audit and rollback verified");
+
+const requestId='12345678-1234-4234-8234-123456789012';
+const log=(user,request=requestId,kind='note',text='Customer requested a proposal',dealId=converted.id)=>asUser(user,()=>db.query("SELECT * FROM public.crm_log_deal_activity($1,$2,$3,$4,$5)",[luton.tenantId,dealId,request,kind,text]));
+await assert.rejects(()=>log(stranger),/write access denied/);
+await assert.rejects(()=>log(admin,null),/Invalid activity request/);
+await assert.rejects(()=>log(admin,requestId,'email'),/Invalid activity request/);
+await assert.rejects(()=>log(admin,requestId,'note','   '),/Activity text required/);
+await assert.rejects(()=>log(admin,requestId,'note','x'.repeat(4001)),/Activity text required/);
+await assert.rejects(()=>log(admin,requestId,'note','Missing deal','00000000-0000-4000-8000-000000000000'),/opportunity unavailable/);
+const logged=(await log(admin)).rows[0];assert.equal(logged.person_id,personId);assert.equal(logged.actor_user_id,admin);
+assert.equal(logged.metadata.capture,'manual');assert.equal(logged.opportunity_id,converted.id);
+assert.equal((await log(admin)).rows[0].id,logged.id);
+assert.equal((await db.query("SELECT count(*)::int n FROM public.crm_activities WHERE tenant_id=$1 AND external_ref=$2",[luton.tenantId,requestId])).rows[0].n,1);
+await assert.rejects(()=>log(admin,requestId,'call'),/different details/);
+await assert.rejects(()=>log(admin,requestId,'note','Changed'),/different details/);
+await assert.rejects(()=>log(admin,requestId,'note','Customer requested a proposal',opportunity.id),/different details/);
+for(const kind of ['call','meeting']){
+ const id=(await db.query('SELECT gen_random_uuid() AS id')).rows[0].id;
+ assert.equal((await log(admin,id,kind,'Discussed next steps')).rows[0].activity_type,kind);
+}
+assert.equal((await db.query("SELECT title FROM public.crm_opportunities WHERE id=$1",[converted.id])).rows[0].title,'Cleared');
+console.log("CRM manual activity: linked customer, allowed types, actor and idempotent retry verified");
 await db.query("UPDATE public.tenant_services SET status='suspended' WHERE tenant_id=$1 AND service_key='omniqora.crm'",[luton.tenantId]);
 await assert.rejects(()=>move(admin,opportunity.id,stageRows[0].id,lost.version),/entitlement required/);
 await assert.rejects(()=>convert(admin,rollbackLead),/entitlement required/);
 await assert.rejects(()=>complete(admin,rollbackTask),/entitlement required/);
 await assert.rejects(()=>edit(admin,converted.id,cleared.version),/entitlement required/);
+await assert.rejects(()=>log(admin),/entitlement required/);
 console.log("CRM sales stage transitions, concurrency, rollback, outcomes and isolation verified");
 await db.close();
 console.log("CRM Customer 360 contact bridge, pipeline and tenant isolation verified");
