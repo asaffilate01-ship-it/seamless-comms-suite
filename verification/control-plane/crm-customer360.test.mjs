@@ -54,5 +54,40 @@ assert.equal(hidden.rows.length,0);
 const service=await db.query("SELECT implementation_status FROM public.service_catalogue WHERE service_key='omniqora.crm'");
 assert.equal(service.rows[0].implementation_status,"built_main");
 
+
+// Sales-board stage transitions execute as authenticated users against real SQL/RLS.
+const stageRows=(await asUser(admin,()=>db.query("SELECT * FROM public.crm_pipeline_stages WHERE pipeline_id=$1 ORDER BY position",[pipeline]))).rows;
+const opportunity=(await asUser(admin,()=>db.query("INSERT INTO public.crm_opportunities(tenant_id,pipeline_id,stage_id,title,amount,currency,probability_percent,metadata) VALUES($1,$2,$3,'Sales test',100,'GBP',10,'{\"keep\":true}') RETURNING *,updated_at::text AS version",[luton.tenantId,pipeline,stageRows[0].id]))).rows[0];
+const move=async(user,id,stage,version)=>asUser(user,()=>db.query("SELECT r.*,r.updated_at::text AS version FROM public.crm_move_opportunity($1,$2,$3,$4) r",[luton.tenantId,id,stage,version]));
+await assert.rejects(()=>move(stranger,opportunity.id,stageRows[1].id,opportunity.version),/write access denied/);
+await assert.rejects(()=>move(admin,opportunity.id,stageRows[1].id,null),/Refresh and try again/);
+await db.query("INSERT INTO public.tenant_members(tenant_id,user_id,role) VALUES($1,$2,'viewer')",[luton.tenantId,stranger]);
+await assert.rejects(()=>move(stranger,opportunity.id,stageRows[1].id,opportunity.version),/write access denied/);
+const secondPipeline=(await db.query("INSERT INTO public.crm_pipelines(tenant_id,name,pipeline_key) VALUES($1,'Other','other-test') RETURNING id",[luton.tenantId])).rows[0].id;
+const secondStage=(await db.query("INSERT INTO public.crm_pipeline_stages(tenant_id,pipeline_id,name,stage_key) VALUES($1,$2,'Other','other') RETURNING id",[luton.tenantId,secondPipeline])).rows[0].id;
+await assert.rejects(()=>move(admin,opportunity.id,secondStage,opportunity.version),/stage unavailable/);
+const won=(await move(admin,opportunity.id,stageRows[3].id,opportunity.version)).rows[0];
+assert.equal(won.status,'won');assert.equal(won.probability_percent,100);assert.deepEqual(won.metadata,{keep:true});
+await assert.rejects(()=>move(admin,opportunity.id,stageRows[1].id,opportunity.version),/Refresh and try again/);
+const reopened=(await move(admin,opportunity.id,stageRows[1].id,won.version)).rows[0];
+assert.equal(reopened.status,'open');assert.equal(reopened.probability_percent,30);
+const lost=(await move(admin,opportunity.id,stageRows[4].id,reopened.version)).rows[0];
+assert.equal(lost.status,'lost');assert.equal(lost.probability_percent,0);
+const receipts=await asUser(admin,()=>db.query("SELECT metadata FROM public.crm_activities WHERE opportunity_id=$1",[opportunity.id]));
+assert.equal(receipts.rows.length,3);
+await move(admin,opportunity.id,stageRows[4].id,lost.version);
+assert.equal((await db.query("SELECT count(*)::int AS n FROM public.crm_activities WHERE opportunity_id=$1",[opportunity.id])).rows[0].n,3);
+const otherTenant=pilot.tenants.find(x=>x.tenantId!==luton.tenantId).tenantId;
+const otherPipeline=await asUser(admin,async()=> (await db.query("SELECT public.crm_ensure_default_pipeline($1) AS id",[otherTenant])).rows[0].id);
+const otherStage=(await db.query("SELECT id FROM public.crm_pipeline_stages WHERE pipeline_id=$1 LIMIT 1",[otherPipeline])).rows[0].id;
+await assert.rejects(()=>move(admin,opportunity.id,otherStage,lost.version),/stage unavailable/);
+// A failed audit insert must roll the deal transition back.
+await db.exec("CREATE FUNCTION public.reject_test_receipt() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'receipt failure'; END; $$; CREATE TRIGGER reject_test_receipt BEFORE INSERT ON public.crm_activities FOR EACH ROW EXECUTE FUNCTION public.reject_test_receipt();");
+await assert.rejects(()=>move(admin,opportunity.id,stageRows[0].id,lost.version),/receipt failure/);
+assert.equal((await db.query("SELECT status FROM public.crm_opportunities WHERE id=$1",[opportunity.id])).rows[0].status,'lost');
+await db.exec("DROP TRIGGER reject_test_receipt ON public.crm_activities; DROP FUNCTION public.reject_test_receipt();");
+await db.query("UPDATE public.tenant_services SET status='suspended' WHERE tenant_id=$1 AND service_key='omniqora.crm'",[luton.tenantId]);
+await assert.rejects(()=>move(admin,opportunity.id,stageRows[0].id,lost.version),/entitlement required/);
+console.log("CRM sales stage transitions, concurrency, rollback, outcomes and isolation verified");
 await db.close();
 console.log("CRM Customer 360 contact bridge, pipeline and tenant isolation verified");
