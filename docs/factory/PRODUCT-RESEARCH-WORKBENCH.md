@@ -58,7 +58,7 @@ Tests: `node --test verification/control-plane/product-research*.test.mjs`.
 
 ## Tenant project persistence (source implementation, not deployed)
 
-The Tenant Factory now mounts a Research Projects panel for the selected tenant. Upload a version 1 dossier, name the project, and save. Reopen/download a project or edit its JSON and save another revision. The visual editor remains the separate local tool; its downloaded files are the import/export boundary.
+The Tenant Factory now mounts a Research Projects panel for the selected tenant. Upload a version 1 dossier, name the project, and save. Reopen/download a project or edit its JSON and save another revision. The Tenant Factory panel now embeds a visual editor for project details, sources, observations and features. The separate local tool remains available for offline work; files can move between either editor.
 
 Server functions use the existing Supabase authentication middleware and require actual tenant membership. Owners, admins and agents can save; other members can read. Platform-admin status alone grants no research access. SQL repeats write authorisation, enables RLS on both tables, revokes direct writes and permits only scoped reads and the guarded save RPC. Immutable-to-client revision rows record the authenticated saver. Dossier review labels remain untrusted local research statements; this release introduces no approval endpoint.
 
@@ -69,3 +69,11 @@ Save requests include project ID, expected revision and request UUID. The SQL tr
 Validation: local PGlite execution covers save/retry, request-content mismatch, stale writes, retained history, cross-tenant reads/writes, read-only roles, direct-write denial, anonymous denial, malformed payloads and membership revocation. Run `node --test verification/control-plane/product-research*.test.mjs` with the repository's existing PGlite dev dependency. This uses minimal tenant/auth fixtures and does not validate the full deployed migration chain, PostgREST schema exposure or real sessions.
 
 Before activation: run the full application typecheck/build/security checks, apply in staging, run database advisors and test two real tenants, role changes, large dossiers, uncertain network saves and mobile UI. The panel requires downloading/saving edits before changing tenants or navigating away. History restoration UI, authenticated reviews, retention controls, production monitoring, REA jobs and subscription entitlements remain outstanding. No production migration or release was performed here.
+
+## Hosted visual editing (source implementation)
+
+Saved projects now open directly into a visual dossier editor. New projects start with an empty dossier; no JSON file is required. Advanced JSON remains collapsed for technical users. Invalid imports preserve the current project. Incomplete drafts can be saved, while build export requires the planner validation to succeed. A build preview displays selected/deferred counts, requirements, acceptance tests and evidence blockers. Export uses the current draft, including unsaved edits, and is explicitly labelled accordingly.
+
+Read-only members can inspect and export but cannot change records. Source edits clear local review metadata; referenced sources/observations cannot be removed. All saves still use the same authenticated persistence and expected-revision contract. Browser refresh/close warns about unsaved work. Save or download before switching tenants; in-app navigation protection is not yet complete.
+
+Additional verification: strict TypeScript check of the visual editor and shared declarations, plus a jsdom interaction test for record creation, validation feedback and read-only controls. The test workflow installs pinned isolated test dependencies including jsdom; it does not modify the application lockfile. jsdom is not a substitute for signed-in browser, accessibility or mobile visual acceptance. Authenticated reviewer decisions remain unimplemented.
