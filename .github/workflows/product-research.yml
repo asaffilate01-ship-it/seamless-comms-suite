@@ -1,0 +1,29 @@
+name: Product research workbench
+on:
+  pull_request:
+    paths:
+      - 'scripts/product-research.mjs'
+      - 'scripts/lib/product-research.mjs'
+      - 'verification/control-plane/product-research.test.mjs'
+      - 'docs/factory/examples/product-research.json'
+      - '.github/workflows/product-research.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/product-research.mjs'
+      - 'scripts/lib/product-research.mjs'
+      - 'verification/control-plane/product-research.test.mjs'
+      - 'docs/factory/examples/product-research.json'
+      - '.github/workflows/product-research.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test verification/control-plane/product-research.test.mjs
