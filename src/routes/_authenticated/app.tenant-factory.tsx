@@ -1,3 +1,4 @@
+import {ResearchProjectsPanel} from "@/modules/product-research/ResearchProjectsPanel";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -398,6 +399,8 @@ function ControlPlane() {
           value={String(detail.data?.provisioning?.length ?? 0)}
         />
       </div>
+
+      {selectedTenantId && <ResearchProjectsPanel key={selectedTenantId} tenantId={selectedTenantId}/>}
 
       {selectedTenantId && (
         <DishbeeFamilyReadinessPanel
