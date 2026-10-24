@@ -1,3 +1,4 @@
+import {RecordRegisterPanel} from '@/modules/aegis/RecordRegisterPanel';
 import {ControlRoomPanel} from '@/modules/aegis/ControlRoomPanel';
 import {PostOrdersPanel} from '@/modules/aegis/PostOrdersPanel';
 import {HandoversPanel} from '@/modules/aegis/HandoversPanel';
@@ -25,6 +26,7 @@ function Aegis(){const tenant=useTenant(),tenantId=tenant.tenantId??'',statusFn=
  return <AppShell title="Aegis Command" subtitle="Security operations, powered by Omniqora. Factory implementation workspace."><div className="rounded-xl bg-slate-950 p-7 text-white"><Badge variant="outline" className="text-emerald-200">SaaS Factory · Build in progress</Badge><h2 className="mt-4 text-3xl font-semibold">Every site. Every shift. One accountable operation.</h2><p className="mt-3 max-w-3xl text-slate-300">Reuse Omniqora identity, Geo, dispatch, communications, analytics and governed Intelligence. Agencies are tenants; officers and client contacts are scoped users.</p><div className="mt-5 flex flex-wrap gap-4 text-sm"><Link to="/app/tenant-factory" className="underline">Tenant Factory</Link><Link to="/app/connector-hub" className="underline">Connector Hub</Link><Link to="/app/intelligence" className="underline">AI governance</Link></div></div>
  <Card className="mt-5"><CardContent className="p-5"><h3 className="font-semibold">Verified connection gates</h3>{status.isPending?<p>Checking tenant product and entitlements…</p>:status.error?<p role="alert">{status.error.message}</p>:<><p className="mt-2 text-sm">Source implementation only. No live guard operation, alert delivery or model run is asserted.</p><ul className="mt-3 list-inside list-disc text-sm text-muted-foreground">{status.data?.blockers.map(b=><li key={b}>{b}</li>)}</ul></>}</CardContent></Card>
  <ControlRoomPanel key={'control-'+tenantId} tenantId={tenantId}/>
+ <RecordRegisterPanel key={'register-'+tenantId} tenantId={tenantId}/>
  <div className="my-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{securityAreas.map(a=><Card key={a.key}><CardContent className="p-4"><h3 className="font-semibold">{a.name}</h3><p className="mt-2 text-sm text-muted-foreground">{a.features}</p></CardContent></Card>)}</div>
 <section id="aegis-operations" className="scroll-mt-6" aria-label="operations workspace"><OperationsPanel key={tenantId} tenantId={tenantId} role={tenant.role??''}/></section>
  <FieldPanel key={'field-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
