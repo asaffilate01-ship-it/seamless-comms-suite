@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LeadConversion } from "@/modules/crm/lead-conversion";
 import { SalesBoard } from "@/modules/crm/sales-board";
 import { forecastByCurrency, formatDealMoney } from "@/modules/crm/sales-model";
 import { useTenant } from "@/hooks/useTenant";
@@ -111,7 +112,7 @@ function CrmWorkspace(){
     <Card><CardContent className="p-5"><h3 className="font-semibold">New lead</h3><form className="mt-4 space-y-3" onSubmit={(e)=>{e.preventDefault();run("lead",async()=>{await leadFn({data:{tenantId,title:lead.title,personId:lead.personId||null,companyId:null,source:"crm_workspace",status:"new",score:null,sourceProductKey:"omniqora",externalRef:null,metadata:{}}});setLead({title:"",personId:""});});}}>
      <Field label="Title"><Input required value={lead.title} onChange={e=>setLead(v=>({...v,title:e.target.value}))}/></Field><Field label="Person"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={lead.personId} onChange={e=>setLead(v=>({...v,personId:e.target.value}))}><option value="">No person</option>{personRows.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select></Field><Button type="submit" disabled={busy==="lead"}>Create lead</Button>
     </form></CardContent></Card>
-    <Table columns={["Lead","Status","Score","Source"]} rows={leadRows.map(r=>[r.title,r.status,r.score??"—",r.source||"—"])}/>
+    <Table columns={["Lead","Status","Score","Source","Action"]} rows={leadRows.map(r=>[r.title,r.status,r.score??"—",r.source||"—",<LeadConversion key={tenantId+":"+r.id} tenantId={tenantId} lead={r} pipelines={pipelineRows} canWrite={["owner","admin","agent"].includes(tenant.role??"")} />])}/>
    </div></TabsContent>
    <TabsContent value="pipeline"><SalesBoard key={tenantId} tenantId={tenantId} pipelines={pipelineRows} deals={opportunityRows} tasks={taskRows} people={personRows} canWrite={["owner","admin","agent","platform_admin"].includes(tenant.role??"")} /></TabsContent>
    <TabsContent value="tasks"><div className="grid gap-4 xl:grid-cols-[360px_1fr]">

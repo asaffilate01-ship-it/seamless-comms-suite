@@ -230,3 +230,28 @@ export const moveCrmOpportunity = createServerFn({ method: "POST" })
     if (result.error) throw new Error(result.error.message);
     return result.data;
   });
+
+const convertLead = scope.extend({ leadId: uuid, stageId: uuid,
+  expectedUpdatedAt: z.string().datetime({ offset: true }),
+  amount: z.number().finite().nonnegative().max(9999999999999999).nullable(),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+}).strict();
+export const convertCrmLead = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((input: z.infer<typeof convertLead>) => convertLead.parse(input))
+  .handler(async ({ context, data }) => {
+    const { db } = await crmAccess(context, data.tenantId, true);
+    const result = await db.rpc("crm_convert_lead", { _tenant: data.tenantId, _lead: data.leadId,
+      _stage: data.stageId, _expected_updated_at: data.expectedUpdatedAt, _amount: data.amount, _currency: data.currency });
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
+const completeFollowUp = scope.extend({ taskId: uuid, expectedUpdatedAt: z.string().datetime({ offset: true }) }).strict();
+export const completeCrmFollowUp = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((input: z.infer<typeof completeFollowUp>) => completeFollowUp.parse(input))
+  .handler(async ({ context, data }) => {
+    const { db } = await crmAccess(context, data.tenantId, true);
+    const result = await db.rpc("crm_complete_deal_followup", { _tenant: data.tenantId,
+      _task: data.taskId, _expected_updated_at: data.expectedUpdatedAt });
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
