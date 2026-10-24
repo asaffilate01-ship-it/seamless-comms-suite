@@ -4,11 +4,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getCrmDeal, editCrmDeal } from './functions';
+import { getCrmDeal, editCrmDeal, logCrmDealActivity } from './functions';
 import type { Deal } from './sales-model';
 import { toast } from 'sonner';
 
 export function DealDetails({tenantId,dealId,canWrite,onClose}:{tenantId:string;dealId:string;canWrite:boolean;onClose:()=>void}){
+ const log=useServerFn(logCrmDealActivity);
  const [page,setPage]=useState(0),[busy,setBusy]=useState(false);
  const read=useServerFn(getCrmDeal),save=useServerFn(editCrmDeal),qc=useQueryClient(),locked=useRef(false);
  const query=useQuery({queryKey:['crm-deal',tenantId,dealId,page],queryFn:()=>read({data:{tenantId,dealId,page}}),retry:false,gcTime:0,refetchOnWindowFocus:false,refetchOnReconnect:false,placeholderData:previous=>previous});
@@ -21,9 +22,15 @@ export function DealDetails({tenantId,dealId,canWrite,onClose}:{tenantId:string;
  catch(error){toast.error(error instanceof Error?error.message:'Deal update failed');}
  finally{locked.current=false;setBusy(false);}
  }}/>
+ {canWrite&&<ActivityForm busy={busy} onSave={async values=>{
+  if(locked.current)return false;locked.current=true;setBusy(true);
+  try{await log({data:{tenantId,dealId,...values}});setPage(0);await refresh();toast.success('Activity recorded');return true;}
+  catch(error){toast.error(error instanceof Error?error.message:'Activity could not be recorded');return false;}
+  finally{locked.current=false;setBusy(false);}
+ }}/>}
  <div className="flex items-center justify-between"><h3 className="font-semibold">Activity history</h3><Button variant="outline" disabled={busy} onClick={()=>{setPage(0);void refresh();}}>Refresh deal and history</Button></div>
  <p className="text-xs text-muted-foreground">Refreshing reloads saved values and discards unsaved edits if the deal changed.</p>
- {query.isFetching?<p role="status">Loading activity…</p>:<ol className="space-y-3">{query.data.activities.map((a:any)=><li key={a.id} className="rounded-md border p-3"><p className="text-sm">{a.summary}</p><time className="text-xs text-muted-foreground" dateTime={a.occurred_at}>{new Date(a.occurred_at).toLocaleString()}</time></li>)}</ol>}
+ {query.isFetching?<p role="status">Loading activity…</p>:<ol className="space-y-3">{query.data.activities.map((a:any)=><li key={a.id} className="rounded-md border p-3"><p className="text-xs uppercase text-muted-foreground">{a.activity_type.replaceAll("_"," ")}</p><p className="whitespace-pre-wrap break-words text-sm">{a.summary}</p><time className="text-xs text-muted-foreground" dateTime={a.occurred_at}>{new Date(a.occurred_at).toLocaleString()}</time></li>)}</ol>}
  {!query.isFetching&&!query.data.activities.length&&<p className="text-sm text-muted-foreground">No activity on this page.</p>}
  <div className="flex items-center gap-3"><Button variant="outline" disabled={page===0||busy||query.isFetching} onClick={()=>setPage(p=>p-1)}>Previous</Button><span className="text-sm">Page {page+1}</span><Button variant="outline" disabled={!query.data.hasMore||busy||query.isFetching} onClick={()=>setPage(p=>p+1)}>Next</Button></div>
  </>}
@@ -40,5 +47,22 @@ function DealForm({deal,canWrite,busy,onSave}:{deal:Deal;canWrite:boolean;busy:b
  <label className="grid gap-1 text-sm">Currency<Input placeholder="GBP" pattern="[A-Z]{3}" maxLength={3} required={amount!==''} disabled={!canWrite||busy} value={currency} onChange={e=>setCurrency(e.target.value.toUpperCase())}/></label></div>
  <label className="grid gap-1 text-sm">Expected close (local time)<Input type="datetime-local" disabled={!canWrite||busy} value={closeAt} onChange={e=>setCloseAt(e.target.value)}/></label>
  {canWrite?<Button disabled={busy} type="submit">{busy?'Saving…':'Save deal'}</Button>:<p className="text-sm text-muted-foreground">Read-only access</p>}
+ </form>;
+}
+
+function ActivityForm({busy,onSave}:{busy:boolean;onSave:(data:{requestId:string;kind:'note'|'call'|'meeting';summary:string})=>Promise<boolean>}){
+ const [kind,setKind]=useState<'note'|'call'|'meeting'>('note'),[summary,setSummary]=useState('');
+ const request=useRef<{signature:string;id:string}|null>(null);
+ return <form className="space-y-3 rounded-md border p-4" onSubmit={async e=>{
+  e.preventDefault();if(busy||!summary.trim())return;
+  const signature=JSON.stringify([kind,summary.trim()]);
+  if(request.current?.signature!==signature)request.current={signature,id:crypto.randomUUID()};
+  if(await onSave({kind,summary:summary.trim(),requestId:request.current.id})){setSummary('');request.current=null;}
+ }}>
+ <h3 className="font-semibold">Record an activity</h3>
+ <p className="text-xs text-muted-foreground">Add a note or a record of a call or meeting that took place. Logged with the current time.</p>
+ <label className="grid gap-1 text-sm">Activity type<select className="h-10 rounded-md border bg-background px-3" disabled={busy} value={kind} onChange={e=>setKind(e.target.value as 'note'|'call'|'meeting')}><option value="note">Note</option><option value="call">Call log</option><option value="meeting">Meeting log</option></select></label>
+ <label className="grid gap-1 text-sm">Details<textarea className="min-h-24 rounded-md border bg-background p-3" required maxLength={4000} disabled={busy} value={summary} onChange={e=>setSummary(e.target.value)}/></label>
+ <Button disabled={busy||!summary.trim()} type="submit">{busy?'Saving…':'Record activity'}</Button>
  </form>;
 }

@@ -280,3 +280,12 @@ export const editCrmDeal=createServerFn({method:"POST"}).middleware([requireSupa
    _title:data.title,_amount:data.amount,_currency:data.currency,_expected_close_at:data.expectedCloseAt});
   if(result.error)throw new Error(result.error.message);return result.data;
  });
+
+const logDealActivity=scope.extend({dealId:uuid,requestId:uuid,kind:z.enum(["note","call","meeting"]),summary:z.string().trim().min(1).max(4000)}).strict();
+export const logCrmDealActivity=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+ .inputValidator((input:z.infer<typeof logDealActivity>)=>logDealActivity.parse(input))
+ .handler(async({context,data})=>{
+  const {db}=await crmAccess(context,data.tenantId,true);
+  const result=await db.rpc("crm_log_deal_activity",{_tenant:data.tenantId,_deal:data.dealId,_request:data.requestId,_kind:data.kind,_summary:data.summary});
+  if(result.error)throw new Error(result.error.message);return result.data;
+ });
