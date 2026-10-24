@@ -1,4 +1,4 @@
-export type QueueKind='incident'|'corrective'|'handover'|'report'|'instructions'|'visitor'|'key'|'equipment';
+export type QueueKind='incident'|'corrective'|'handover'|'report'|'instructions'|'visitor'|'key'|'equipment'|'site'|'engagement';
 export type QueueItem={id:string;kind:QueueKind;title:string;status:string;sourceRef:string;section:string;rank:number;dueOn?:string;overdue?:boolean;mine:boolean};
 type Incident={id:string;title:string;status:string;assigned_user_id:string|null};
 type Action={id:string;report_id:string;stage:string;priority:string;due_on:string;assignee_id:string};
