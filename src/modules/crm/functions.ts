@@ -289,3 +289,12 @@ export const logCrmDealActivity=createServerFn({method:"POST"}).middleware([requ
   const result=await db.rpc("crm_log_deal_activity",{_tenant:data.tenantId,_deal:data.dealId,_request:data.requestId,_kind:data.kind,_summary:data.summary});
   if(result.error)throw new Error(result.error.message);return result.data;
  });
+
+const followUpList=scope.extend({filter:z.enum(["all","overdue","upcoming","undated"]).default("all"),page:z.number().int().min(0).max(10000).default(0)}).strict();
+export const listCrmDealFollowUps=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+ .inputValidator((input:z.input<typeof followUpList>)=>followUpList.parse(input))
+ .handler(async({context,data})=>{
+  const {db}=await crmAccess(context,data.tenantId);
+  const {readDealFollowUps}=await import("./followups.server");
+  return readDealFollowUps(db,data.tenantId,data.filter,data.page);
+ });
