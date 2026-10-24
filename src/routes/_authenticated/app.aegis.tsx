@@ -1,3 +1,4 @@
+import {AegisWorkspace} from '@/modules/aegis/AegisWorkspace';
 import {RecordRegisterPanel} from '@/modules/aegis/RecordRegisterPanel';
 import {ControlRoomPanel} from '@/modules/aegis/ControlRoomPanel';
 import {PostOrdersPanel} from '@/modules/aegis/PostOrdersPanel';
@@ -24,18 +25,18 @@ function Aegis(){const tenant=useTenant(),tenantId=tenant.tenantId??'',statusFn=
  const status=useQuery({queryKey:['aegis-status',tenantId],queryFn:()=>statusFn({data:{tenantId}}),enabled:!!tenantId,retry:false});
  const ai=useQuery({queryKey:['aegis-ai',tenantId],queryFn:()=>intelligenceFn({data:{tenantId,productKey:AEGIS_PRODUCT_KEY}}),enabled:!!tenantId&&status.data?.canConfigure===true,retry:false});
  return <AppShell title="Aegis Command" subtitle="Security operations, powered by Omniqora. Factory implementation workspace."><div className="rounded-xl bg-slate-950 p-7 text-white"><Badge variant="outline" className="text-emerald-200">SaaS Factory · Build in progress</Badge><h2 className="mt-4 text-3xl font-semibold">Every site. Every shift. One accountable operation.</h2><p className="mt-3 max-w-3xl text-slate-300">Reuse Omniqora identity, Geo, dispatch, communications, analytics and governed Intelligence. Agencies are tenants; officers and client contacts are scoped users.</p><div className="mt-5 flex flex-wrap gap-4 text-sm"><Link to="/app/tenant-factory" className="underline">Tenant Factory</Link><Link to="/app/connector-hub" className="underline">Connector Hub</Link><Link to="/app/intelligence" className="underline">AI governance</Link></div></div>
+ <AegisWorkspace key={tenantId} panels={{
+ command:<section id="aegis-command" className="scroll-mt-24"><ControlRoomPanel key={'command-'+tenantId} tenantId={tenantId}/></section>,
+ operations:<><section id="aegis-operations" className="scroll-mt-24"><OperationsPanel key={'operations-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section><section id="aegis-field" className="scroll-mt-24"><FieldPanel key={'field-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section></>,
+ reviews:<><section id="aegis-reports" className="scroll-mt-24"><ReportsPanel key={'reports-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section><section id="aegis-corrective" className="scroll-mt-24"><CorrectivePanel key={'corrective-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section></>,
+ access:<section id="aegis-custody" className="scroll-mt-24"><CustodyPanel key={'custody-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section>,
+ handover:<><section id="aegis-handovers" className="scroll-mt-24"><HandoversPanel key={'handovers-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section><section id="aegis-orders" className="scroll-mt-24"><PostOrdersPanel key={'orders-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section></>,
+ records:<section id="aegis-records" className="scroll-mt-24"><RecordRegisterPanel key={'records-'+tenantId} tenantId={tenantId}/></section>,
+ factory:<section id="aegis-factory"> <div className="my-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{securityAreas.map(a=><Card key={a.key}><CardContent className="p-4"><h3 className="font-semibold">{a.name}</h3><p className="mt-2 text-sm text-muted-foreground">{a.features}</p></CardContent></Card>)}</div>
  <Card className="mt-5"><CardContent className="p-5"><h3 className="font-semibold">Verified connection gates</h3>{status.isPending?<p>Checking tenant product and entitlements…</p>:status.error?<p role="alert">{status.error.message}</p>:<><p className="mt-2 text-sm">Source implementation only. No live guard operation, alert delivery or model run is asserted.</p><ul className="mt-3 list-inside list-disc text-sm text-muted-foreground">{status.data?.blockers.map(b=><li key={b}>{b}</li>)}</ul></>}</CardContent></Card>
- <ControlRoomPanel key={'control-'+tenantId} tenantId={tenantId}/>
- <RecordRegisterPanel key={'register-'+tenantId} tenantId={tenantId}/>
- <div className="my-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{securityAreas.map(a=><Card key={a.key}><CardContent className="p-4"><h3 className="font-semibold">{a.name}</h3><p className="mt-2 text-sm text-muted-foreground">{a.features}</p></CardContent></Card>)}</div>
-<section id="aegis-operations" className="scroll-mt-6" aria-label="operations workspace"><OperationsPanel key={tenantId} tenantId={tenantId} role={tenant.role??''}/></section>
- <FieldPanel key={'field-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
-<section id="aegis-orders" className="scroll-mt-6" aria-label="orders workspace"><PostOrdersPanel key={'orders-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section>
-<section id="aegis-handovers" className="scroll-mt-6" aria-label="handovers workspace"><HandoversPanel key={'handovers-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section>
-<section id="aegis-corrective" className="scroll-mt-6" aria-label="corrective workspace"><CorrectivePanel key={'corrective-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section>
-<section id="aegis-reports" className="scroll-mt-6" aria-label="reports workspace"><ReportsPanel key={'reports-'+tenantId} tenantId={tenantId} role={tenant.role??''}/></section>
- <CustodyPanel key={'custody-'+tenantId} tenantId={tenantId} role={tenant.role??''}/>
  <h3 className="mb-3 mt-8 text-xl font-semibold">Competitor capability map</h3><p className="mb-4 text-sm text-muted-foreground">Vendor-published benchmark: Ctrl Room, TrackTik/Trackforce, Silvertrac, Connecteam and GuardsPro. Requirements below are build targets, not delivered parity.</p><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{aegisCapabilities.map(c=><Card key={c.key}><CardContent className="p-5"><h4 className="font-semibold">{c.name}</h4><p className="mt-2 text-xs text-muted-foreground">{c.benchmark}</p><p className="mt-4 text-sm"><b>Reuse:</b> {c.shared}</p><p className="mt-3 text-sm text-muted-foreground"><b>Build:</b> {c.gap}</p></CardContent></Card>)}</div>
  <Card className="my-6"><CardContent className="p-5"><h3 className="font-semibold">Delivery stages</h3><ol className="mt-3 list-inside list-decimal space-y-2 text-sm">{aegisStages.map(s=><li key={s}>{s}</li>)}</ol></CardContent></Card>
  {status.data?.canConfigure&&ai.data?<AgentFactoryPanel key={tenantId} tenantId={tenantId} productKey={AEGIS_PRODUCT_KEY} useCases={ai.data.useCases} providers={ai.data.providers} onChanged={()=>ai.refetch()}/>:<p className="text-sm text-muted-foreground">Aegis agents appear after the tenant product and governance gates pass. Configuration is an assessment, not execution or approval.</p>}{ai.error&&<p role="alert">{ai.error.message}</p>}
+</section>
+ }}/>
  </AppShell>}
