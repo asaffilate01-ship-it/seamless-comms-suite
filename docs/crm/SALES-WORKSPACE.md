@@ -21,7 +21,7 @@ Verify with an authorised staging tenant: create GBP/EUR deals, select each pipe
 ## Limits and remaining work
 
 - Existing list APIs load at most 500 recent deals/tasks. Forecasts are explicitly labelled as covering loaded records, not tenant-wide financial reporting. Server pagination/aggregates are future work.
-- Pipeline selection uses existing active pipelines. Creating/editing custom pipelines, deal detail editing, assignment controls and duplicate management are not added here.
+- Pipeline selection uses existing active pipelines. Creating/editing custom pipelines, assignment controls and duplicate management are not added here.
 - Follow-ups are stored tasks, not delivered emails/WhatsApp messages or an automation scheduler. The next dated deal follow-up can be completed from its deal card. General task editing/completion remains outside this board.
 - No standalone billing/checkout, external product connector, provider activation, AI scoring or production deployment is part of this change.
 - Existing wider CRM write endpoints retain their earlier audit behavior; the new stage RPC alone guarantees atomic stage/receipt writes.
@@ -43,3 +43,11 @@ Deal cards can complete their next dated follow-up. A tenant-scoped RPC checks t
 Apply `20261024190920_crm_lead_conversion_followup_completion.sql` after the stage-transition migration. No live migration has been applied by this work. The database suite also covers repeat conversion/completion, invalid values/stages, stale versions, cancelled/unqualified records, cross-tenant IDs, viewers, missing entitlements, and rollback if audit insertion fails. The UI prevents duplicate submissions while requests are pending.
 
 Staging acceptance: convert one lead and retry from an old browser session; verify only one linked deal exists. Schedule and complete its follow-up; confirm it leaves the open follow-up list and appears in the customer's activity history. Validate read-only users and keyboard navigation through the conversion dialog. Hosted/browser acceptance remains outstanding.
+
+## Phase 3: deal details and recorded history
+
+Click a deal title to open its detail dialog. Entitled tenant readers can inspect it; writers can edit title, value, currency and expected close time. The RPC locks and version-checks the deal, preserves its stage/outcome/ownership/links/metadata, and writes the update plus before/after activity receipt atomically. No-op saves do not create redundant receipts. Empty values and dates can be cleared; a numeric value requires a currency.
+
+History reads first authorise the tenant and verify the exact deal, then return 25 activity entries plus a next-page indicator. Queries are scoped by tenant and deal, ordered by time and ID, with bounded page input. The dialog resets between records, removes unmounted query cache, disables automatic focus/reconnect refetch while editing and hides history during page fetches. Concurrent activity can still shift offset pages; these are not transactional audit exports.
+
+Apply `20261024201119_crm_deal_details.sql` after the earlier CRM migrations. Local tests cover write denial, stale versions, invalid/empty inputs, non-finite dates, preserved fields, no-op receipts, clearing values and audit-failure rollback. Typecheck, build, security and existing CRM regressions are required. Hosted migration and signed-in browser acceptance remain outstanding. Test keyboard dialog use, read-only viewing, history paging, successful save, and a conflicting edit from a second browser session before activation.

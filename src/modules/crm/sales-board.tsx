@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { completeCrmFollowUp, moveCrmOpportunity, saveCrmOpportunity, saveCrmTask } from "./functions";
 import { forecastByCurrency, formatDealMoney, nextFollowUp, type Deal, type Pipeline, type FollowUp } from "./sales-model";
+import { DealDetails } from "./deal-details";
 import { toast } from "sonner";
 
 const selectClass = "h-10 rounded-md border bg-background px-3 text-sm";
@@ -13,6 +14,7 @@ export function SalesBoard({ tenantId, pipelines, deals, tasks, people, canWrite
   tenantId: string; pipelines: Pipeline[]; deals: Deal[]; tasks: FollowUp[];
   people: { id: string; display_name: string }[]; canWrite: boolean;
 }) {
+  const [detailId, setDetailId] = useState("");
   const [pipelineId, setPipelineId] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("open");
@@ -54,6 +56,7 @@ export function SalesBoard({ tenantId, pipelines, deals, tasks, people, canWrite
   }
   if (!pipeline) return <p className="p-5 text-muted-foreground">No active sales pipeline is available.</p>;
   return <div className="space-y-5" aria-busy={busy}>
+    {detailId && <DealDetails key={tenantId+":"+detailId} tenantId={tenantId} dealId={detailId} canWrite={canWrite} onClose={()=>setDetailId("")} />}
     <div className="flex flex-wrap items-end gap-3">
       <label className="grid gap-1 text-sm">Pipeline<select className={selectClass} value={pipeline.id} onChange={e => { setPipelineId(e.target.value); setFollowDeal(''); }}>
         {pipelines.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -98,7 +101,7 @@ export function SalesBoard({ tenantId, pipelines, deals, tasks, people, canWrite
           const overdue = follow?.due_at && Date.parse(follow.due_at) < Date.now();
           return <Card key={deal.id} draggable={canWrite && !busy} onDragStart={e => { e.dataTransfer.setData('text/plain', deal.id); setDragged(deal); }} onDragEnd={() => setDragged(null)}>
             <CardContent className="space-y-3 p-4">
-              <h4 className="break-words font-semibold">{deal.title}</h4>
+              <h4 className="break-words font-semibold"><button type="button" className="text-left underline-offset-4 hover:underline focus-visible:underline" onClick={()=>setDetailId(deal.id)}>{deal.title}</button></h4>
               <p>{deal.amount === null ? 'Value not set' : formatDealMoney(deal.amount, deal.currency)}</p>
               <p className="text-xs text-muted-foreground">{deal.status} · {deal.probability_percent ?? 0}% probability</p>
               {deal.expected_close_at && <p className="text-xs">Expected close: {new Date(deal.expected_close_at).toLocaleString()}</p>}

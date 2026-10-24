@@ -255,3 +255,28 @@ export const completeCrmFollowUp = createServerFn({ method: "POST" }).middleware
     if (result.error) throw new Error(result.error.message);
     return result.data;
   });
+
+const inspectDeal = scope.extend({ dealId: uuid, page: z.number().int().min(0).max(10000).default(0) }).strict();
+export const getCrmDeal = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+ .inputValidator((input: z.input<typeof inspectDeal>) => inspectDeal.parse(input))
+ .handler(async ({context,data}) => {
+  const {db}=await crmAccess(context,data.tenantId);
+  const deal=await db.from("crm_opportunities").select("*").eq("tenant_id",data.tenantId).eq("id",data.dealId).maybeSingle();
+  if(deal.error||!deal.data)throw new Error("CRM opportunity unavailable");
+  const history=await db.from("crm_activities").select("id,summary,activity_type,occurred_at")
+   .eq("tenant_id",data.tenantId).eq("opportunity_id",data.dealId)
+   .order("occurred_at",{ascending:false}).order("id",{ascending:false}).range(data.page*25,data.page*25+25);
+  if(history.error)throw new Error("Deal activity could not be loaded");
+  return {deal:deal.data,activities:(history.data??[]).slice(0,25),hasMore:(history.data??[]).length>25};
+ });
+const editDeal=scope.extend({dealId:uuid,expectedUpdatedAt:z.string().datetime({offset:true}),
+ title:z.string().trim().min(1).max(240),amount:z.number().finite().nonnegative().max(9999999999999999).nullable(),
+ currency:z.string().regex(/^[A-Z]{3}$/).nullable(),expectedCloseAt:z.string().datetime({offset:true}).nullable()}).strict();
+export const editCrmDeal=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+ .inputValidator((input:z.infer<typeof editDeal>)=>editDeal.parse(input))
+ .handler(async({context,data})=>{
+  const {db}=await crmAccess(context,data.tenantId,true);
+  const result=await db.rpc("crm_edit_deal",{_tenant:data.tenantId,_deal:data.dealId,_expected_updated_at:data.expectedUpdatedAt,
+   _title:data.title,_amount:data.amount,_currency:data.currency,_expected_close_at:data.expectedCloseAt});
+  if(result.error)throw new Error(result.error.message);return result.data;
+ });
