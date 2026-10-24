@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeadConversion } from "@/modules/crm/lead-conversion";
+import { FollowUpWorklist } from "@/modules/crm/followup-worklist";
 import { SalesBoard } from "@/modules/crm/sales-board";
 import { forecastByCurrency, formatDealMoney } from "@/modules/crm/sales-model";
 import { useTenant } from "@/hooks/useTenant";
@@ -75,7 +76,7 @@ function CrmWorkspace(){
    <TabsList className="mb-6 flex h-auto flex-wrap justify-start">
     <TabsTrigger value="customer360">Customer 360</TabsTrigger><TabsTrigger value="people">People</TabsTrigger>
     <TabsTrigger value="companies">Companies</TabsTrigger><TabsTrigger value="leads">Leads</TabsTrigger>
-    <TabsTrigger value="pipeline">Pipeline</TabsTrigger><TabsTrigger value="tasks">Tasks</TabsTrigger>
+    <TabsTrigger value="pipeline">Pipeline</TabsTrigger><TabsTrigger value="tasks">Tasks</TabsTrigger><TabsTrigger value="followups">Deal follow-ups</TabsTrigger>
    </TabsList>
    <TabsContent value="customer360">
     <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
@@ -115,6 +116,7 @@ function CrmWorkspace(){
     <Table columns={["Lead","Status","Score","Source","Action"]} rows={leadRows.map(r=>[r.title,r.status,r.score??"—",r.source||"—",<LeadConversion key={tenantId+":"+r.id} tenantId={tenantId} lead={r} pipelines={pipelineRows} canWrite={["owner","admin","agent"].includes(tenant.role??"")} />])}/>
    </div></TabsContent>
    <TabsContent value="pipeline"><SalesBoard key={tenantId} tenantId={tenantId} pipelines={pipelineRows} deals={opportunityRows} tasks={taskRows} people={personRows} canWrite={["owner","admin","agent","platform_admin"].includes(tenant.role??"")} /></TabsContent>
+   <TabsContent value="followups"><FollowUpWorklist key={tenantId} tenantId={tenantId} canWrite={["owner","admin","agent"].includes(tenant.role??"")} /></TabsContent>
    <TabsContent value="tasks"><div className="grid gap-4 xl:grid-cols-[360px_1fr]">
     <Card><CardContent className="p-5"><h3 className="font-semibold">New task</h3><form className="mt-4 space-y-3" onSubmit={(e)=>{e.preventDefault();run("task",async()=>{await taskFn({data:{tenantId,title:task.title,description:null,status:"open",priority:task.priority as any,dueAt:null,assigneeUserId:null,relatedType:selectedPersonId?"person":null,relatedId:selectedPersonId||null,sourceProductKey:"omniqora",externalRef:null,metadata:{}}});setTask({title:"",priority:"normal"});});}}>
      <Field label="Title"><Input required value={task.title} onChange={e=>setTask(v=>({...v,title:e.target.value}))}/></Field><Field label="Priority"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={task.priority} onChange={e=>setTask(v=>({...v,priority:e.target.value}))}>{["low","normal","high","urgent"].map(x=><option key={x}>{x}</option>)}</select></Field><Button type="submit" disabled={busy==="task"}>Create task</Button>

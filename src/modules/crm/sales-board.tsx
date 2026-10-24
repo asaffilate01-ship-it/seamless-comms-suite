@@ -40,7 +40,7 @@ export function SalesBoard({ tenantId, pipelines, deals, tasks, people, canWrite
   const visible = pipelineDeals.filter(d => (status === 'all' || d.status === status) && d.title.toLowerCase().includes(search.toLowerCase()));
   const firstStage = stages.find(s => !s.is_closed_won && !s.is_closed_lost);
   async function refresh() {
-    await Promise.all(['crm-opportunities', 'crm-tasks', 'crm-360'].map(key => qc.invalidateQueries({ queryKey: [key, tenantId] })));
+    await Promise.all(['crm-opportunities', 'crm-tasks', 'crm-360', 'crm-followups', 'crm-deal'].map(key => qc.invalidateQueries({ queryKey: [key, tenantId] })));
   }
   async function run(action: () => Promise<unknown>) {
     if (mutationLock.current || !canWrite) return;
