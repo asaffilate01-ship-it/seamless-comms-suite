@@ -55,3 +55,17 @@ The editor supports project details, sources, local reviewer attribution, observ
 Build packs use the same validated planning model as the CLI and Web Crypto for an identical digest. Imports are capped at 1 MB, malformed imports preserve the existing project, and imported text is rendered as text. Dossier downloads and implementation pack downloads are separate; a build pack is not an editable dossier. Browser downloads follow the user's OS permissions, unlike the CLI's owner-only file creation.
 
 Tests: `node --test verification/control-plane/product-research*.test.mjs`.
+
+## Tenant project persistence (source implementation, not deployed)
+
+The Tenant Factory now mounts a Research Projects panel for the selected tenant. Upload a version 1 dossier, name the project, and save. Reopen/download a project or edit its JSON and save another revision. The visual editor remains the separate local tool; its downloaded files are the import/export boundary.
+
+Server functions use the existing Supabase authentication middleware and require actual tenant membership. Owners, admins and agents can save; other members can read. Platform-admin status alone grants no research access. SQL repeats write authorisation, enables RLS on both tables, revokes direct writes and permits only scoped reads and the guarded save RPC. Immutable-to-client revision rows record the authenticated saver. Dossier review labels remain untrusted local research statements; this release introduces no approval endpoint.
+
+Apply `supabase/migrations/20261024201227_product_research_projects.sql` after existing tenant/auth migrations in staging. The private schema must not be added to exposed Data API schemas. The public wrapper uses invoker permissions; its private definer checks the current authenticated user's membership on every call. No service-role key is used by the application.
+
+Save requests include project ID, expected revision and request UUID. The SQL transaction serialises creation/updates, prevents cross-tenant reuse, preserves every revision and returns the same result for an identical retry. Reusing a request UUID with different content is rejected. A stale revision must be reopened and reconciled. Uploading a file never overwrites another project automatically.
+
+Validation: local PGlite execution covers save/retry, request-content mismatch, stale writes, retained history, cross-tenant reads/writes, read-only roles, direct-write denial, anonymous denial, malformed payloads and membership revocation. Run `node --test verification/control-plane/product-research*.test.mjs` with the repository's existing PGlite dev dependency. This uses minimal tenant/auth fixtures and does not validate the full deployed migration chain, PostgREST schema exposure or real sessions.
+
+Before activation: run the full application typecheck/build/security checks, apply in staging, run database advisors and test two real tenants, role changes, large dossiers, uncertain network saves and mobile UI. The panel requires downloading/saving edits before changing tenants or navigating away. History restoration UI, authenticated reviews, retention controls, production monitoring, REA jobs and subscription entitlements remain outstanding. No production migration or release was performed here.
