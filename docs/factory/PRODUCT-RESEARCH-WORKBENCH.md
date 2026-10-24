@@ -32,10 +32,26 @@ The output file must not already exist. It is created with owner-only permission
 
 ## Next connected stages
 
-1. Persist dossiers through an authenticated operator workspace with tenant isolation, versioned reviews and audit events. The current tool is local development tooling and has no hosted UI/storage.
+1. Persist dossiers through an authenticated operator workspace with tenant isolation, versioned reviews and audit events. The current browser workspace uses local files and has no hosted storage or authenticated review.
 2. Add adapters for reviewed REA evidence and the existing web-intelligence snapshot contract once those collectors are verified. Keep analysis execution in disposable workers with bounded resources and explicit inputs.
 3. Hand reviewed requirements to repository-specific development agents, with tests and a PR as the output. Approval applies to the concrete diff before merge/release.
 4. Add customer packaging through existing Factory entitlements and provider cost controls: research limits, analysis minutes, storage and build quotas. Subscription billing and customer access are not implemented by this change.
 5. Reuse VOXENTRI for creative assets and Native App Factory for mobile packages. Each product retains its source, business logic and release checks.
 
 The commercially useful outcome is a research-to-build workflow producing our own implementation. It does not promise recovery of a hosted SaaS backend or private model weights from a website.
+
+## Browser workspace
+
+From the repository root, serve only on loopback:
+
+```sh
+python3 -m http.server 8765 --bind 127.0.0.1
+```
+
+Open `http://127.0.0.1:8765/tools/product-research/`. Stop the server when finished. Do not expose this development server publicly or use it as a production deployment.
+
+The editor supports project details, sources, local reviewer attribution, observations, evidence links, original requirements, acceptance tests and build/defer/exclude decisions. Download a dossier to preserve incomplete work and reopen it later. There is no autosave, browser-storage persistence or network API. Unsaved edits trigger a navigation warning. Editing a source URL, access basis or permission note clears its local review. Referenced sources and observations cannot be deleted until their references are removed.
+
+Build packs use the same validated planning model as the CLI and Web Crypto for an identical digest. Imports are capped at 1 MB, malformed imports preserve the existing project, and imported text is rendered as text. Dossier downloads and implementation pack downloads are separate; a build pack is not an editable dossier. Browser downloads follow the user's OS permissions, unlike the CLI's owner-only file creation.
+
+Tests: `node --test verification/control-plane/product-research*.test.mjs`.
