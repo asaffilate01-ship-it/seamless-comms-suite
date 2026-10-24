@@ -133,3 +133,17 @@ Ranking is deterministic within the loaded window: recorded remediation priority
 Validation adds five executable queue cases for priority/due ordering, terminal exclusions, handover responsibility, old-version receipt isolation, source references and deterministic empty/equal-priority results. Browser/staging acceptance remains outstanding; no deployment, production mutation, notification delivery or prior PR merge is performed.
 
 Phase 9 checks passed: typecheck, production build, all 18 focused Aegis tests, full migration-chain PGlite checks, repository hygiene and 32 PostgreSQL policy/integration checks, plus `git diff --check`.
+
+## Phase 10 — exact source inspection and paged evidence
+
+Control-room queue items now open an accessible read-only dialog for the exact incident, corrective action, handover, report or instruction version. Records are fetched by tenant and source UUID independently of the bounded workspace lists. The inspector shows recorded state, narrative/checklist evidence, relevant member/source references and paged history or version receipts. It does not modify workflows or acknowledge instructions. Source workspace links remain available for authorised changes.
+
+The server accepts a strict source-kind whitelist, tenant/source UUIDs and a bounded integer page. It checks authenticated tenant membership and active Aegis product status, then uses the authenticated Supabase client and existing RLS. Table names/history keys are fixed in code, never accepted from the caller. Source and history queries each filter tenant and exact source ID; incident lookup also requires incident kind. Missing and denied records share one response. History is queried only after successful record access, and history failure rejects the inspection instead of presenting incomplete evidence as success.
+
+History pages contain up to 25 entries, with a 26th row detecting another page and deterministic revision/time plus ID ordering. Existing receipt visibility remains unchanged. Reads are separate snapshots, so edits during offset pagination can shift entries. Query caches are scoped by tenant, kind, ID and page and discarded when the inspector unmounts. Errors hide stale record content. The history page limit is 10,001 pages; export/retention workflows and transactional snapshots remain separate work.
+
+A dependency restore also exposed a damaged `package-lock.json` in the previously transferred phase-8 source. This phase restores the intact earlier lockfile and regenerates only the already-declared Lovable build-config version alignment. Published Git tree/blob hashes are checked against the tested local files to catch transfer corruption before creating the PR.
+
+Five new executable inspection cases verify all source mappings and tenant/ID filters, prototype/table-name rejection, page bounds, indistinguishable missing/denied records, no history reads after access failure, pagination boundaries and history failure handling. No new schema, permissions, model calls, notifications or production mutations are introduced. Browser/staging acceptance remains outstanding.
+
+Phase 10 checks passed: typecheck, production build, all 23 focused Aegis tests, full migration-chain PGlite checks, repository hygiene and 32 PostgreSQL integration checks, clean-install dry-run and `git diff --check`. The repaired lockfile blob is independently hash-verified against the tested local file before branch publication. No production migration or earlier PR merge is performed.
