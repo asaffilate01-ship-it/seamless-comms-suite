@@ -81,6 +81,12 @@ export function auditPortfolioRegistry(registry) {
     }
     if (seenTenants.has(key)) errors.push("Duplicate tenantKey: " + key);
     seenTenants.add(key);
+    // Tenant-owned applications remain discoverable after landlord consolidation.
+    for (const entry of Array.isArray(tenant.repositories) ? tenant.repositories : []) {
+      const repo = canonicalGithubRepo(entry);
+      if (repo) repoSet.add(repo);
+      else unverifiedRepoEntries.push({ tenantKey: key, repository: String(typeof entry === "string" ? entry : "[unsupported reference]") });
+    }
     if (seenProducts.has(key)) errors.push("Tenant is also registered as a SaaS product: " + key);
     if (!tenant?.parentLandlord || !seenProducts.has(tenant.parentLandlord)) {
       errors.push("Tenant " + key + " references an unknown parentLandlord: " + String(tenant?.parentLandlord));
@@ -218,3 +224,4 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exitCode = 1;
   });
 }
+

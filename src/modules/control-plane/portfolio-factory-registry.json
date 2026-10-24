@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "reviewDate": "2026-10-15",
+  "reviewDate": "2026-10-24",
   "source": "src/modules/control-plane/portfolio-seed.json",
   "sourceRowCount": 127,
   "safety": {
@@ -512,20 +512,6 @@
       "tenantProvisioning": "not_activated"
     },
     {
-      "productKey": "ilmvero",
-      "displayName": "ILMVERO",
-      "sourceRows": [
-        44
-      ],
-      "repositories": [
-        "https://github.com/asaffilate01-ship-it/schooldash.git"
-      ],
-      "editions": [],
-      "lifecycle": "candidate",
-      "sourceAudit": "pending_unless_separately_verified",
-      "tenantProvisioning": "not_activated"
-    },
-    {
       "productKey": "immoviq",
       "displayName": "IMMOVIQ",
       "sourceRows": [
@@ -991,20 +977,6 @@
       "tenantProvisioning": "not_activated"
     },
     {
-      "productKey": "skillfinch",
-      "displayName": "SKILLFINCH",
-      "sourceRows": [
-        48
-      ],
-      "repositories": [
-        "https://github.com/asaffilate01-ship-it/dreamweaver-canvas-74.git"
-      ],
-      "editions": [],
-      "lifecycle": "candidate",
-      "sourceAudit": "pending_unless_separately_verified",
-      "tenantProvisioning": "not_activated"
-    },
-    {
       "productKey": "sparesgrid",
       "displayName": "SPARESGRID",
       "sourceRows": [
@@ -1114,37 +1086,6 @@
       "tenantProvisioning": "not_activated"
     },
     {
-      "productKey": "traindirekt",
-      "displayName": "TRAINDIREKT",
-      "sourceRows": [
-        53
-      ],
-      "repositories": [
-        "https://github.com/asaffilate01-ship-it/horizon-educate.git"
-      ],
-      "editions": [
-        "TRAINDIREKT"
-      ],
-      "lifecycle": "candidate",
-      "sourceAudit": "pending_unless_separately_verified",
-      "tenantProvisioning": "not_activated"
-    },
-    {
-      "productKey": "unipathway",
-      "displayName": "UNIPATHWAY",
-      "sourceRows": [
-        4,
-        29
-      ],
-      "repositories": [
-        "https://github.com/asaffilate01-ship-it/ascent-education-cloud.git"
-      ],
-      "editions": [],
-      "lifecycle": "established",
-      "sourceAudit": "pending_unless_separately_verified",
-      "tenantProvisioning": "not_activated"
-    },
-    {
       "productKey": "veyumo",
       "displayName": "VEYUMO",
       "sourceRows": [
@@ -1248,13 +1189,25 @@
       "lifecycle": "established",
       "sourceAudit": "verified_in_main_branch_source_not_production",
       "tenantProvisioning": "not_activated"
+    },
+    {
+      "productKey": "itecheducation",
+      "displayName": "iTechEducation",
+      "sourceRows": [],
+      "repositories": [],
+      "editions": [],
+      "lifecycle": "candidate",
+      "sourceAudit": "hierarchy_defined_runtime_not_verified",
+      "tenantProvisioning": "not_activated",
+      "role": "education_landlord",
+      "controlPlaneRepository": "https://github.com/asaffilate01-ship-it/seamless-comms-suite.git"
     }
   ],
   "tenants": [
     {
       "sourceRow": 9,
       "tenantKey": "cafe1stalbans",
-      "displayName": "Café 1 St Albans",
+      "displayName": "Caf\u00e9 1 St Albans",
       "productKey": "dishbee-one",
       "blueprintKey": "dishbee.cafe1stalbans",
       "parentLandlord": "dishbee",
@@ -1276,13 +1229,13 @@
       "sourceIdentity": "historical_inventory",
       "provisioning": "not_activated",
       "aliases": [
-        "Dulicis — alternate request spelling"
+        "Dulicis \u2014 alternate request spelling"
       ]
     },
     {
       "sourceRow": 28,
       "tenantKey": "cafe1luton",
-      "displayName": "Café 1 Luton",
+      "displayName": "Caf\u00e9 1 Luton",
       "productKey": "dishbee-one",
       "blueprintKey": "dishbee.cafe1luton",
       "parentLandlord": "dishbee",
@@ -1373,7 +1326,7 @@
     {
       "sourceRow": 90,
       "tenantKey": "kalethon",
-      "displayName": "Kalëthon",
+      "displayName": "Kal\u00ebthon",
       "productKey": "merqano",
       "blueprintKey": "merqano.kalethon",
       "parentLandlord": "merqano",
@@ -1395,7 +1348,7 @@
       "sourceIdentity": "historical_inventory",
       "provisioning": "not_activated",
       "aliases": [
-        "Sofellea — historic spelling, verification required"
+        "Sofellea \u2014 historic spelling, verification required"
       ]
     },
     {
@@ -1475,6 +1428,95 @@
       "sourceIdentity": "travenexa_main_branch_inventory",
       "provisioning": "not_activated",
       "aliases": []
+    },
+    {
+      "sourceRow": 44,
+      "sourceRows": [
+        44
+      ],
+      "tenantKey": "ilmvero",
+      "displayName": "Ilmvero",
+      "productKey": "itecheducation",
+      "blueprintKey": "itecheducation.ilmvero",
+      "parentLandlord": "itecheducation",
+      "blueprintState": "draft",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "owner_requested_hierarchy_2026_10_24",
+      "provisioning": "not_activated",
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/schooldash.git"
+      ],
+      "repositoryVerification": "historical_mapping_readme_accessible_not_runtime_verified",
+      "legacyProductKey": "ilmvero",
+      "legacyLifecycle": "candidate",
+      "aliases": []
+    },
+    {
+      "sourceRow": 53,
+      "sourceRows": [
+        53
+      ],
+      "tenantKey": "traindirekt",
+      "displayName": "TrainDirekt",
+      "productKey": "itecheducation",
+      "blueprintKey": "itecheducation.traindirekt",
+      "parentLandlord": "itecheducation",
+      "blueprintState": "draft",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "owner_requested_hierarchy_2026_10_24",
+      "provisioning": "not_activated",
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/horizon-educate.git"
+      ],
+      "repositoryVerification": "historical_mapping_readme_accessible_not_runtime_verified",
+      "legacyProductKey": "traindirekt",
+      "legacyLifecycle": "candidate",
+      "aliases": []
+    },
+    {
+      "sourceRow": 48,
+      "sourceRows": [
+        48
+      ],
+      "tenantKey": "skillfinch",
+      "displayName": "Skillfinch",
+      "productKey": "itecheducation",
+      "blueprintKey": "itecheducation.skillfinch",
+      "parentLandlord": "itecheducation",
+      "blueprintState": "draft",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "owner_requested_hierarchy_2026_10_24",
+      "provisioning": "not_activated",
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/care-quest-learn.git"
+      ],
+      "repositoryVerification": "source_inspected_not_runtime_verified",
+      "legacyProductKey": "skillfinch",
+      "legacyLifecycle": "candidate",
+      "aliases": []
+    },
+    {
+      "sourceRow": 4,
+      "sourceRows": [
+        4,
+        29
+      ],
+      "tenantKey": "unipathway",
+      "displayName": "UniPathway",
+      "productKey": "itecheducation",
+      "blueprintKey": "itecheducation.unipathway",
+      "parentLandlord": "itecheducation",
+      "blueprintState": "draft",
+      "country": "UNSPECIFIED",
+      "sourceIdentity": "owner_requested_hierarchy_2026_10_24",
+      "provisioning": "not_activated",
+      "repositories": [
+        "https://github.com/asaffilate01-ship-it/ascent-education-cloud.git"
+      ],
+      "repositoryVerification": "historical_mapping_readme_accessible_not_runtime_verified",
+      "legacyProductKey": "unipathway",
+      "legacyLifecycle": "established",
+      "aliases": []
     }
   ],
   "aliases": [
@@ -1548,18 +1590,18 @@
     {
       "parentTenantKey": "kalethon",
       "landlordProductKey": "merqano",
-      "label": "Kalëthon retail",
+      "label": "Kal\u00ebthon retail",
       "brands": [
-        "Kalëthon"
+        "Kal\u00ebthon"
       ],
       "note": "Distinct from Kalethon Play and Kalethon Teams source products"
     },
     {
       "parentTenantKey": "cafe1luton",
       "landlordProductKey": "dishbee",
-      "label": "Café 1 operating locations",
+      "label": "Caf\u00e9 1 operating locations",
       "brands": [
-        "Café 1 Luton",
+        "Caf\u00e9 1 Luton",
         "Futures House (location; verify)"
       ],
       "note": "Futures House is a possible site/location, not a separate SaaS tenant"
