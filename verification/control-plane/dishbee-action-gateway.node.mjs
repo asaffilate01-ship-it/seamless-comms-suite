@@ -20,11 +20,11 @@ const {serveIntelligenceService}=await import(compile(entry));
 const tenant='10000000-0000-4000-8000-000000000001',id='10000000-0000-4000-8000-000000000003',claimToken='10000000-0000-4000-8000-000000000004';
 const secret='a'.repeat(64),key='oqsvc_test01',credentialId='10000000-0000-4000-8000-000000000005';
 let calls=[];
-function setup({capabilities=['intelligence.action.finish','intelligence.action.claim','intelligence.action.review'],locations,connector=false,product='dishbee',budgetReply=null}={}){
+function setup({capabilities=['intelligence.action.finish','intelligence.action.claim','intelligence.action.review'],locations,connector=false,product='dishbee',budgetReply=null,cancelReply=null}={}){
  calls=[];
  const record=connector?{id:credentialId,tenant_id:tenant,product_key:product,status:'connected',capabilities,credential_hash:createHash('sha256').update('oqcp_'+secret).digest('hex')}:
  {id:credentialId,key_id:key,secret_hash:createHash('sha256').update(secret).digest('hex'),status:'active',scopes:[{tenantId:tenant,productKey:product,capabilities,locationIds:locations}]};
- globalThis.__actionDB={from(){return {select(){return this;},eq(){return this;},update(){return this;},maybeSingle:async()=>({data:record,error:null})};},rpc:async(name,args)=>{calls.push({name,args});return {data:name==='has_tenant_entitlement'?true:name==='queue_criclume_budgeted_agent'?budgetReply:[],error:null};}};
+ globalThis.__actionDB={from(){return {select(){return this;},eq(){return this;},update(){return this;},maybeSingle:async()=>({data:record,error:null})};},rpc:async(name,args)=>{calls.push({name,args});return {data:name==='has_tenant_entitlement'?true:name==='queue_criclume_budgeted_agent'?budgetReply:name==='cancel_criclume_budgeted_agent'?cancelReply:[],error:null};}};
  return 'Bearer '+(connector?'oqcp_'+secret:key+'.'+secret);
 }
 const payload={tenantId:tenant,productKey:'dishbee',operation:'action.finish',actionRequestId:id,claimToken,workerKey:'worker-a',success:true,result:{ok:true}};
@@ -138,4 +138,28 @@ test('budgeted API rejects an invalid database reservation result (no phantom su
  const response=await invoke(cricketRequest,setup({product:'criclume',
   capabilities:['intelligence.run.budgeted'],budgetReply:{status:'queued',reservedMinor:0}}));
  assert.notEqual(response.status,202);
+});
+
+
+test('separate cancel permission releases only an operator-approved queued cricket reservation',async()=>{
+ const receipt={admissionId:cricketReceipt.admissionId,runId:cricketReceipt.runId,
+  releasedMinor:42,alreadyCancelled:false};
+ const response=await invoke({tenantId:tenant,productKey:'criclume',
+  operation:'run.cancel.budgeted',admissionId:cricketReceipt.admissionId},
+  setup({product:'criclume',capabilities:['intelligence.run.cancel'],cancelReply:receipt}));
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.releasedMinor,42);
+ assert.equal(body.humanReviewRequired,true);
+ assert.equal(calls.filter(c=>c.name==='cancel_criclume_budgeted_agent').length,1);
+ const call=calls.find(c=>c.name==='cancel_criclume_budgeted_agent');
+ assert.equal(call.args._tenant,tenant);
+ assert.equal(call.args._service_credential,credentialId);
+});
+test('model-spend credential alone cannot release cricket budget',async()=>{
+ const response=await invoke({tenantId:tenant,productKey:'criclume',
+  operation:'run.cancel.budgeted',admissionId:cricketReceipt.admissionId},
+  setup({product:'criclume',capabilities:['intelligence.run.budgeted']}));
+ assert.equal(response.status,403);
+ assert.equal(calls.length,0);
 });
