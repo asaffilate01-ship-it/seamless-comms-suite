@@ -296,6 +296,10 @@ DECLARE
    AND pg_catalog.cardinality(r.supported_regions)>0
    AND country=ANY(r.supported_regions)
    AND r.minimum_risk_grade IN('sensitive','regulated')
+   AND (CASE r.minimum_risk_grade WHEN 'regulated' THEN 3
+       WHEN 'sensitive' THEN 2 ELSE 1 END)
+       >=(CASE uc.risk_level WHEN 'high' THEN 3
+           WHEN 'review' THEN 2 ELSE 1 END)
   ORDER BY r.provider_key,r.model_key,r.verified_at DESC,r.rate_version DESC
  ) best
  ORDER BY best.cost_minor,best.provider_key,best.model_key LIMIT 1;
