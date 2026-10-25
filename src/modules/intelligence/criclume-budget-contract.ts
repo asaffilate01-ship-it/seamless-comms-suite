@@ -37,6 +37,15 @@ export const criclumeBudgetedStartSchema = z
   })
   .strict();
 
+export const criclumeBudgetedCancelSchema = z
+  .object({
+    operation: z.literal("run.cancel.budgeted"),
+    tenantId: z.string().uuid(),
+    productKey: z.literal("criclume"),
+    admissionId: z.string().uuid(),
+  })
+  .strict();
+
 export type CriclumeBudgetedStart = z.infer<typeof criclumeBudgetedStartSchema>;
 
 export function isBudgetedCricketRequest(input: unknown): input is CriclumeBudgetedStart {
@@ -62,5 +71,19 @@ export function sanitizeBudgetAdmissionResult(data: unknown) {
     humanReviewRequired: true as const,
     sourceProduct: "criclume" as const,
     modelExecutionReady: false as const,
+  };
+}
+
+export function sanitizeBudgetCancelResult(data: unknown) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Invalid model reservation cancellation receipt");
+  }
+  const value = data as Record<string, unknown>;
+  return {
+    admissionId: z.string().uuid().parse(value["admissionId"]),
+    runId: z.string().uuid().parse(value["runId"]),
+    releasedMinor: z.number().int().min(0).max(10000).parse(value["releasedMinor"]),
+    alreadyCancelled: z.boolean().parse(value["alreadyCancelled"]),
+    humanReviewRequired: true as const,
   };
 }
