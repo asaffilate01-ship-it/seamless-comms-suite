@@ -175,12 +175,35 @@ for(const kind of ['call','meeting']){
 }
 assert.equal((await db.query("SELECT title FROM public.crm_opportunities WHERE id=$1",[converted.id])).rows[0].title,'Cleared');
 console.log("CRM manual activity: linked customer, allowed types, actor and idempotent retry verified");
+
+const editTask=(user,task,version=task.version,title='Rescheduled call',due='2026-12-01T12:00:00Z',priority='high')=>asUser(user,()=>db.query("SELECT r.*,r.updated_at::text AS version FROM public.crm_edit_deal_followup($1,$2,$3,$4,$5,$6) r",[luton.tenantId,task.id,version,title,due,priority]));
+await assert.rejects(()=>editTask(stranger,rollbackTask),/write access denied/);
+await assert.rejects(()=>editTask(admin,rollbackTask,null),/Refresh and try again/);
+await assert.rejects(()=>editTask(admin,rollbackTask,rollbackTask.version,' '),/title required/);
+await assert.rejects(()=>editTask(admin,rollbackTask,rollbackTask.version,'Test','infinity'),/Invalid due date/);
+await assert.rejects(()=>editTask(admin,rollbackTask,rollbackTask.version,'Test',null,'invalid'),/Invalid priority/);
+await assert.rejects(()=>editTask(admin,cancelled),/Only active follow-ups/);
+await assert.rejects(()=>editTask(admin,done),/Only active follow-ups/);
+await assert.rejects(()=>editTask(admin,foreignTask),/follow-up unavailable/);
+const rescheduled=(await editTask(admin,rollbackTask)).rows[0];
+assert.equal(rescheduled.title,'Rescheduled call');assert.equal(rescheduled.priority,'high');assert.equal(rescheduled.status,'open');assert.equal(rescheduled.related_id,rollbackTask.related_id);
+await assert.rejects(()=>editTask(admin,rollbackTask),/Refresh and try again/);
+const beforeTaskNoop=(await db.query("SELECT count(*)::int n FROM public.crm_activities WHERE metadata->>'taskId'=$1",[rollbackTask.id])).rows[0].n;
+await editTask(admin,rescheduled);
+assert.equal((await db.query("SELECT count(*)::int n FROM public.crm_activities WHERE metadata->>'taskId'=$1",[rollbackTask.id])).rows[0].n,beforeTaskNoop);
+await db.exec("CREATE FUNCTION public.reject_test_receipt() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'receipt failure'; END; $$; CREATE TRIGGER reject_test_receipt BEFORE INSERT ON public.crm_activities FOR EACH ROW EXECUTE FUNCTION public.reject_test_receipt();");
+await assert.rejects(()=>editTask(admin,rescheduled,rescheduled.version,'Rollback please'),/receipt failure/);
+assert.equal((await db.query("SELECT title FROM public.crm_tasks WHERE id=$1",[rollbackTask.id])).rows[0].title,'Rescheduled call');
+await db.exec("DROP TRIGGER reject_test_receipt ON public.crm_activities; DROP FUNCTION public.reject_test_receipt();");
+const undated=(await editTask(admin,rescheduled,rescheduled.version,'Undated call',null,'urgent')).rows[0];assert.equal(undated.due_at,null);assert.equal(undated.priority,'urgent');
+console.log("CRM follow-up editing: stale versions, active status, validation, no-op and atomic rollback verified");
 await db.query("UPDATE public.tenant_services SET status='suspended' WHERE tenant_id=$1 AND service_key='omniqora.crm'",[luton.tenantId]);
 await assert.rejects(()=>move(admin,opportunity.id,stageRows[0].id,lost.version),/entitlement required/);
 await assert.rejects(()=>convert(admin,rollbackLead),/entitlement required/);
 await assert.rejects(()=>complete(admin,rollbackTask),/entitlement required/);
 await assert.rejects(()=>edit(admin,converted.id,cleared.version),/entitlement required/);
 await assert.rejects(()=>log(admin),/entitlement required/);
+await assert.rejects(()=>editTask(admin,undated),/entitlement required/);
 console.log("CRM sales stage transitions, concurrency, rollback, outcomes and isolation verified");
 await db.close();
 console.log("CRM Customer 360 contact bridge, pipeline and tenant isolation verified");
