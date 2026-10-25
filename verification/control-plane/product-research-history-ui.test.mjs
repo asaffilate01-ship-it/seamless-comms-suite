@@ -15,7 +15,7 @@ test('history UI restores only after confirmation and blocks review of unsaved e
  const state={data:{revisions:[{revision:1,name:'Earlier',saved_by:'saver',saved_at:'2026-10-24'}],reviews:[],canReview:true},calls:[],restored:null};
  globalThis.__researchHistoryTest=state;
  writeFileSync(join(temp,'boundary.mjs'),`export const useServerFn=f=>f; export const useQuery=()=>({data:globalThis.__researchHistoryTest.data,refetch:async()=>{}});
- export const listResearchHistory=async()=>{};
+ export const listResearchHistory=async()=>{}; export const exportResearchHandoff=async()=>{throw new Error("An authenticated review is required for this revision.")};
  export const readResearchRevision=async input=>{globalThis.__researchHistoryTest.calls.push(input);return {name:'Earlier',dossierJson:'{}'}};
  export const reviewResearchProject=async input=>{globalThis.__researchHistoryTest.calls.push(input)};`);
  let source=readFileSync(join(rootDir,'src/modules/product-research/ResearchHistory.tsx'),'utf8');
@@ -28,10 +28,10 @@ test('history UI restores only after confirmation and blocks review of unsaved e
  const render=()=>React.act(async()=>root.render(React.createElement(ResearchHistory,props)));
  const button=name=>[...document.querySelectorAll('button')].find(b=>b.textContent===name);
  try{
-  await render();assert.equal(document.querySelector('fieldset').disabled,true);
+  await render();assert.equal(document.querySelector('fieldset').disabled,true);assert.equal(button('Download reviewed handoff').disabled,true);
   globalThis.confirm=()=>false;await React.act(async()=>button('Restore as draft').click());assert.equal(state.calls.length,0);
   globalThis.confirm=()=>true;await React.act(async()=>button('Restore as draft').click());assert.deepEqual(state.calls[0],{data:{tenantId:'tenant',projectId:'project',revision:1}});assert.equal(state.restored.name,'Earlier');
-  props.dirty=false;await render();assert.equal(document.querySelector('fieldset').disabled,false);
+  props.dirty=false;await render();assert.equal(document.querySelector('fieldset').disabled,false);assert.equal(button('Download reviewed handoff').disabled,false);let status='';props.onMessage=value=>{status=value;};await render();await React.act(async()=>button('Download reviewed handoff').click());assert.match(status,/authenticated review is required/);
   const area=document.querySelector('textarea');
   await React.act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value').set.call(area,'Checked evidence');area.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
   assert.equal(button('Record review').disabled,false);

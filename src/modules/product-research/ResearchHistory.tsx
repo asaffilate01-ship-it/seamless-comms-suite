@@ -1,15 +1,24 @@
 import {useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {useServerFn} from '@tanstack/react-start';
-import {listResearchHistory,readResearchRevision,reviewResearchProject} from './functions';
+import {listResearchHistory,readResearchRevision,reviewResearchProject,exportResearchHandoff} from './functions';
 
 export function ResearchHistory({tenantId,project,disabled,canWrite,dirty,onRestore,onBusy,onMessage}:{tenantId:string;project:{id:string;revision:number};disabled:boolean;canWrite:boolean;dirty:boolean;onRestore:(value:{name:string;dossierJson:string})=>void;onBusy:(value:boolean)=>void;onMessage:(value:string)=>void}){
- const list=useServerFn(listResearchHistory),read=useServerFn(readResearchRevision),review=useServerFn(reviewResearchProject);
+ const list=useServerFn(listResearchHistory),read=useServerFn(readResearchRevision),review=useServerFn(reviewResearchProject),exportHandoff=useServerFn(exportResearchHandoff);
  const [offset,setOffset]=useState(0),[note,setNote]=useState(''),[decision,setDecision]=useState<'reviewed'|'changes_requested'>('reviewed');
  const history=useQuery({queryKey:['research-history',tenantId,project.id,project.revision,offset],queryFn:()=>list({data:{tenantId,projectId:project.id,offset}}),retry:false});
  return <section className="space-y-3 rounded border p-4">
   <h3 className="font-semibold">Saved history and reviews</h3>
   <p className="text-sm">Reviews apply only to the saved revision shown. They do not authorise code execution or publishing. Restoring creates an unsaved draft; save it as a new revision.</p>
+  <button disabled={disabled||dirty} onClick={async()=>{
+   onBusy(true);try{
+    const result=await exportHandoff({data:{tenantId,projectId:project.id,revision:project.revision}});
+    const url=URL.createObjectURL(new Blob([result.handoffJson],{type:'application/json'}));
+    const link=document.createElement('a');link.href=url;link.download='research-handoff-r'+project.revision+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    onMessage('Downloaded reviewed handoff for saved revision '+project.revision+'.');
+   }catch(e){onMessage(e instanceof Error?e.message:'Handoff export failed');}finally{onBusy(false);}
+  }}>Download reviewed handoff</button>
+  <p className="text-sm">Save edits first. Export requires an authenticated review, no requested changes and no research blockers. The file contains requirements and tests; it does not start a build.</p>
   {history.isLoading&&<p>Loading history…</p>}{history.error&&<p role="alert">{history.error.message}</p>}
   {history.data?.revisions.map(r=><article key={r.revision} className="space-y-2 rounded border p-3">
    <p>Revision {r.revision}: {r.name} · {r.saved_at}</p>

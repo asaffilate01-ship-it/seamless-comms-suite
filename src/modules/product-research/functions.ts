@@ -72,3 +72,13 @@ export const reviewResearchProject=createServerFn({method:'POST'}).middleware([r
   if(r.error){if(r.error.code==='40001')throw new Error('A newer revision exists. Reopen the project before reviewing.');throw new Error('Review could not be recorded. An existing review cannot be changed; save a new revision for another review.');}
   return r.data as {revision:number;replayed:boolean};
  });
+
+export const exportResearchHandoff=createServerFn({method:'POST'}).middleware([requireSupabaseAuth])
+ .inputValidator((input:unknown)=>scope.extend({projectId:z.string().uuid(),revision:z.number().int().positive()}).parse(input))
+ .handler(async({context,data})=>{
+  const {loadReviewedHandoff}=await import('../../../scripts/lib/product-research-handoff.mjs');
+  const handoff=await loadReviewedHandoff(context.supabase,data,context.userId);
+  const bytes=new TextEncoder().encode(JSON.stringify(handoff));
+  const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
+  return {handoffJson:JSON.stringify({...handoff,digest},null,2)};
+ });
