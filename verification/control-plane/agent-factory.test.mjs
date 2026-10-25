@@ -120,3 +120,32 @@ test("agent registration is explicitly an assessed use case, not implicit live e
  assert.match(doc,/budget reservations/i);
  assert.match(doc,/made-up percentage savings/i);
 });
+
+test("CricLume budget admission remains service-only, region-priced and worker quarantined",async()=>{
+ const sql=await readFile(new URL("../../supabase/migrations/20261025090000_criclume_budgeted_admission_v1.sql",import.meta.url),"utf8");
+ assert.match(sql,/CREATE TABLE public.criclume_ai_pilot_controls/);
+ assert.match(sql,/enabled boolean NOT NULL DEFAULT false/);
+ assert.match(sql,/worker_ready boolean NOT NULL DEFAULT false/);
+ assert.match(sql,/CREATE TABLE public.criclume_ai_source_bindings/);
+ assert.match(sql,/CREATE TABLE public.criclume_ai_budgeted_admissions/);
+ assert.match(sql,/FORCE ROW LEVEL SECURITY/);
+ assert.match(sql,/auth.role\(\) IS DISTINCT FROM 'service_role'/);
+ assert.match(sql,/intelligence.run.budgeted/);
+ assert.match(sql,/intelligence.run.cancel/);
+ assert.match(sql,/source_organisation_id=_source_org/);
+ assert.match(sql,/Independently approved aggregate-only cricket agent required/);
+ assert.match(sql,/r.evaluation_passed/);
+ assert.match(sql,/r.status='approved'/);
+ assert.match(sql,/country=ANY\(r.supported_regions\)/);
+ assert.match(sql,/CASE uc.risk_level WHEN 'high' THEN 3/);
+ assert.match(sql,/budget.reserved_minor\+budget.spent_minor\+chosen.cost_minor>budget.limit_minor/);
+ assert.match(sql,/ai_budgeted_run_reservations/);
+ assert.match(sql,/criclume.budgeted.readonly/);
+ assert.match(sql,/j.job_type NOT IN\(/);
+ assert.match(sql,/job.attempts<>0/);
+ assert.match(sql,/s.v->'brandIds' IS NULL/);
+ assert.match(sql,/s.v->'locationIds' IS NULL/);
+ assert.match(sql,/status='released'/);
+ assert.doesNotMatch(sql,/set_config\(.+request.jwt.claim.sub/);
+ assert.doesNotMatch(sql,/EXECUTE format\(.+user_supplied/);
+});

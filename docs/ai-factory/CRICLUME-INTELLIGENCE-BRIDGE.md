@@ -131,3 +131,73 @@ Implement a new, reviewed server-to-server budgeted request API that:
 
 No default-on flag or wildcard access can bypass the above. Never
 manually enable a provider for CricLume by editing the generic route.
+
+## Phase 3 — scoped budget admission and worker quarantine (25 October 2026)
+
+Implemented as reviewed **source**, not an activated tenant or billable model:
+
+- `POST /api/platform/intelligence` now accepts
+  `operation:"run.start.budgeted"` for **`productKey:"criclume"` only**.
+  Only a platform service credential scoped to the exact tenant/product and
+  capability `intelligence.run.budgeted` may call it. Connector `oqcp_`
+  credentials, browser JWTs and arbitrary model/tool selections cannot.
+- `20261025090000_criclume_budgeted_admission_v1.sql` adds operator-owned
+  `criclume_ai_pilot_controls`, independently approved
+  `criclume_ai_source_bindings`, and an append-only admission receipt ledger.
+  All are service-role-only with forced RLS. No tenant or funding is seeded.
+- A valid admission requires active product/entitlement, approved unexpired
+  source/tenant binding, independently reviewed cricket blueprint, exact
+  aggregate-only source schema, pilot worker-readiness proof and quotas.
+- Omniqora selects the cheapest *currently approved* qualified text model
+  using a verified provider binding and reviewed tariff in the tenant's
+  **own country and currency**. No exchange-rate assumptions, guessed
+  prices or model chosen by the caller are accepted.
+- A single database transaction locks the monthly AI budget; checks the
+  per-run/monthly/use-case caps and idempotency; creates
+  `ai_budgeted_run_reservations`, `ai_agent_runs`,
+  `intelligence_jobs` and a CricLume-specific source admission receipt.
+- `criclume.budgeted.readonly` jobs are excluded from
+  `claim_intelligence_jobs_for_scope`: the general-purpose model worker
+  cannot grab them. A dedicated read-only, usage-reconciling worker still
+  needs a separate certified release.
+- `run.cancel.budgeted` is operator/service-only, requires separate
+  `intelligence.run.cancel` permission, and atomically releases a cost
+  reservation **only while the job has never been claimed or charged**.
+  Processing or settled jobs need independent worker receipt reconciliation.
+
+### Safe default and activation order
+
+Both `criclume_ai_pilot_controls.enabled` and `worker_ready` default
+**false**. They must not be enabled by merely merging the code. Confirm:
+
+1. Source application's **existing Lovable-connected CricLume Supabase**
+   migration, authenticated club and owner-scoped match record.
+2. Hosted Omniqora Supabase migration lineage and RLS (the current
+   connected account is not evidence that the correct project was deployed).
+3. Separate approved source-club mapping and service credential with
+   `intelligence.run.budgeted` (and a different
+   `intelligence.run.cancel` operator key for cancelling).
+4. Independent reviewed cricket `ai_use_cases` with only capability
+   `criclume.matches.aggregate.read` and tested model evaluation/region
+   evidence. No write tools, payment tools or cross-tenant retrieval.
+5. Tenant budget, verified source snapshot and reliable return path for
+   pending, stale and reviewed results.
+6. **Dedicated worker** with bounded token execution, cancellation,
+   real provider invoices/usage receipts, `settle_budgeted_ai_agent`
+   reconciliation, revocation and emergency-stop. Do not mark
+   `worker_ready` true before those tests pass.
+7. Club pilot end-to-end, cross-tenant negative cases and backup restore
+   evidence; only then set source
+   `OMNIQORA_CRICLUME_PAID_ENABLED=true`.
+
+Current `connection.verify` deliberately still reports
+`modelExecutionReady:false`. A successful no-cost handshake is not a
+billable execution capability. Reserved budget is **not** final actual spend.
+
+### Remaining next work
+
+Build and independently certify `criclume.budgeted.readonly` **worker
+claim and settlement** with source revision revalidation and human sign-off
+before enabling the front-end Generate button. Do not add or reuse a
+generic unrestricted agent, arbitrary MCP tool executor or scoring-write
+connector as a shortcut.

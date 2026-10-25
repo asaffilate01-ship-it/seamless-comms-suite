@@ -2,10 +2,13 @@ import {z} from "zod";
 import {createHash,timingSafeEqual} from "node:crypto";
 import {authoriseServiceScope,parseServiceAuthorization,verifyServiceSecret,type ServiceCredentialRecord} from "@/modules/platform/service-identity";
 import {CRICLUME_BUDGET_REQUIRED,legacyIntelligenceRunAllowed} from "@/modules/intelligence/criclume-policy";
+import {criclumeBudgetedStartSchema,criclumeBudgetedCancelSchema,sanitizeBudgetAdmissionResult,sanitizeBudgetCancelResult} from "@/modules/intelligence/criclume-budget-contract";
 
 const uuid=z.string().uuid();
 const scope=z.object({tenantId:uuid,productKey:z.string().min(2).max(80)});
 const requestSchema=z.discriminatedUnion("operation",[
+ criclumeBudgetedStartSchema,
+ criclumeBudgetedCancelSchema,
  scope.extend({operation:z.literal("connection.verify")}),
  scope.extend({operation:z.literal("run.start"),profile:z.enum(["discovery","finance","technical","compliance","product","transaction","accounting","tax","operations"]),
   goal:z.string().min(4).max(5000),maxSteps:z.number().int().min(1).max(32).default(8),providerKey:z.string().max(120).nullish(),model:z.string().max(200).nullish(),
@@ -49,6 +52,8 @@ async function auth(request:Request,input:z.infer<typeof requestSchema>){
   if(row.credential_expires_at&&Date.parse(row.credential_expires_at)<=Date.now())throw new Error("Connector credential expired");
   if(row.tenant_id!==input.tenantId||row.product_key!==input.productKey)throw new Error("Connector tenant scope refused");
   const capability=
+    input.operation==="run.cancel.budgeted"?"intelligence.run.cancel":
+    input.operation==="run.start.budgeted"?"intelligence.run.budgeted":
     input.operation==="connection.verify"?"intelligence.connection.verify":
     input.operation==="run.start"?"intelligence.run.start":
     input.operation==="run.get"?"intelligence.run.read":
@@ -72,7 +77,9 @@ export async function serveIntelligenceService(httpRequest:Request){
   const raw=await httpRequest.text();if(raw.length>524288)return reply({error:"Payload too large"},413);
   let json:unknown;try{json=JSON.parse(raw);}catch{return reply({error:"Invalid JSON"},400);}
   const input=requestSchema.parse(json);const {db,credential,keyId,connectorId}=await auth(httpRequest,input);
-  const capability=input.operation==="connection.verify"?"intelligence.connection.verify":
+  const capability=input.operation==="run.cancel.budgeted"?"intelligence.run.cancel":
+    input.operation==="run.start.budgeted"?"intelligence.run.budgeted":
+    input.operation==="connection.verify"?"intelligence.connection.verify":
     input.operation==="run.start"?"intelligence.run.start":
    input.operation==="run.get"?"intelligence.run.read":
    input.operation==="job.claim"?"intelligence.jobs":
@@ -96,6 +103,62 @@ export async function serveIntelligenceService(httpRequest:Request){
   if(input.productKey==="haccora"&&(input.operation==="run.start"||input.operation==="run.get")){
    const haccora=await db.rpc("has_tenant_entitlement",{_tenant:input.tenantId,_service:"haccora.ai-copilot"});
    if(haccora.error||!haccora.data)throw new Error("Haccora AI Copilot entitlement required");
+  }
+
+  // Disallow generic model workers from claiming/completing cricket work.
+  // The new budgeted job type has no generic worker or write-tool capability.
+  if(input.productKey==="criclume" &&
+     !["connection.verify","run.get","run.start","run.start.budgeted","run.cancel.budgeted"].includes(input.operation)){
+    return reply({error:"CricLume model work requires a dedicated budgeted worker",
+      code:"CRICLUME_WORKER_NOT_CERTIFIED"},403);
+  }
+
+  if(input.operation==="run.cancel.budgeted"){
+    if(!credential || connectorId || input.productKey!=="criclume") {
+      return reply({error:"Scoped platform cancellation credential required"},403);
+    }
+    const {data,error}=await db.rpc("cancel_criclume_budgeted_agent",{
+      _tenant:input.tenantId,
+      _admission:input.admissionId,
+      _service_credential:credential.id,
+    });
+    if(error){
+      return reply({
+        error:"The cricket AI run cannot be safely cancelled without verified worker settlement",
+        code:"CRICLUME_CANCELLATION_REQUIRES_REVIEW",
+      },409);
+    }
+    return reply(sanitizeBudgetCancelResult(data),200);
+  }
+
+  if(input.operation==="run.start.budgeted"){
+    if(!credential || connectorId || input.productKey!=="criclume") {
+      return reply({error:"Scoped platform service credential required"},403);
+    }
+    // The service-role-only SQL RPC re-verifies the credential, exact
+    // source organisation, independent approvals, model tariff and budget.
+    // No provider, model, token ceiling, arbitrary tool or URL comes from
+    // the calling CricLume app.
+    const {data,error}=await db.rpc("queue_criclume_budgeted_agent",{
+      _tenant:input.tenantId,
+      _source_org:input.sourceOrganisationId,
+      _source_match:input.matchId,
+      _source_revision:input.sourceRevision,
+      _task:input.task,
+      _source_snapshot:input.snapshot,
+      _idempotency:input.idempotencyKey,
+      _service_credential:credential.id,
+    });
+    if(error){
+      // A missing hosted migration or a failed approval is never a
+      // successful queue. Do not leak database rows or service secrets.
+      return reply({error:"CricLume budgeted admission is not activated or approved",
+        code:"CRICLUME_BUDGETED_ADMISSION_UNAVAILABLE"},503);
+    }
+    const receipt=sanitizeBudgetAdmissionResult(data);
+    await db.from("platform_service_credentials")
+      .update({last_used_at:new Date().toISOString()}).eq("id",credential.id);
+    return reply(receipt,receipt.alreadyExists?200:202);
   }
 
   if(input.operation==="connection.verify") {
