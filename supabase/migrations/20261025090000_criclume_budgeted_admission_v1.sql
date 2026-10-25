@@ -442,6 +442,10 @@ BEGIN
    WHERE s.v->>'tenantId'=_tenant::text
     AND s.v->>'productKey'='criclume'
     AND s.v->'capabilities' ? 'intelligence.run.cancel'
+    AND (s.v->'brandIds' IS NULL
+     OR pg_catalog.jsonb_array_length(s.v->'brandIds')=0)
+    AND (s.v->'locationIds' IS NULL
+     OR pg_catalog.jsonb_array_length(s.v->'locationIds')=0)
   ) THEN
   RAISE EXCEPTION 'Explicit tenant-scoped cancel credential required';
  END IF;
