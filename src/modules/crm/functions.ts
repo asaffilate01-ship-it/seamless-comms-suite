@@ -298,3 +298,14 @@ export const listCrmDealFollowUps=createServerFn({method:"POST"}).middleware([re
   const {readDealFollowUps}=await import("./followups.server");
   return readDealFollowUps(db,data.tenantId,data.filter,data.page);
  });
+
+const editFollowUp=scope.extend({taskId:uuid,expectedUpdatedAt:z.string().datetime({offset:true}),
+ title:z.string().trim().min(1).max(240),dueAt:z.string().datetime({offset:true}).nullable(),priority:z.enum(["low","normal","high","urgent"])}).strict();
+export const editCrmFollowUp=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])
+ .inputValidator((input:z.infer<typeof editFollowUp>)=>editFollowUp.parse(input))
+ .handler(async({context,data})=>{
+  const {db}=await crmAccess(context,data.tenantId,true);
+  const result=await db.rpc("crm_edit_deal_followup",{_tenant:data.tenantId,_task:data.taskId,_expected_updated_at:data.expectedUpdatedAt,
+   _title:data.title,_due_at:data.dueAt,_priority:data.priority});
+  if(result.error)throw new Error(result.error.message);return result.data;
+ });
