@@ -142,6 +142,8 @@ test("CricLume budget admission remains service-only, region-priced and worker q
  assert.match(sql,/criclume.budgeted.readonly/);
  assert.match(sql,/j.job_type NOT IN\(/);
  assert.match(sql,/job.attempts<>0/);
+ assert.match(sql,/s.v->'brandIds' IS NULL/);
+ assert.match(sql,/s.v->'locationIds' IS NULL/);
  assert.match(sql,/status='released'/);
  assert.doesNotMatch(sql,/set_config\(.+request.jwt.claim.sub/);
  assert.doesNotMatch(sql,/EXECUTE format\(.+user_supplied/);
