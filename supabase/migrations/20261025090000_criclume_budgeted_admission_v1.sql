@@ -417,6 +417,86 @@ GRANT EXECUTE ON FUNCTION public.claim_intelligence_jobs_for_scope(
  uuid,text,integer,text[],text
 ) TO service_role;
 
+-- Safe cancellation from an independently scoped operator/service identity.
+-- May cancel QUEUED work only; no processing/model charges may be erased.
+CREATE FUNCTION public.cancel_criclume_budgeted_agent(
+ _tenant uuid,_admission uuid,_service_credential uuid
+) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $cancel$
+DECLARE
+ source_run public.criclume_ai_budgeted_admissions;
+ res public.ai_budgeted_run_reservations;
+ item public.ai_agent_runs;
+ job public.intelligence_jobs;
+ cred public.platform_service_credentials;
+BEGIN
+ IF auth.role() IS DISTINCT FROM 'service_role' THEN
+  RAISE EXCEPTION 'Trusted service-role cancellation required';
+ END IF;
+ SELECT * INTO cred FROM public.platform_service_credentials
+  WHERE id=_service_credential;
+ IF NOT FOUND OR cred.status<>'active'
+  OR (cred.expires_at IS NOT NULL AND cred.expires_at<=now())
+  OR NOT EXISTS (
+   SELECT 1 FROM pg_catalog.jsonb_array_elements(cred.scopes::jsonb) s(v)
+   WHERE s.v->>'tenantId'=_tenant::text
+    AND s.v->>'productKey'='criclume'
+    AND s.v->'capabilities' ? 'intelligence.run.cancel'
+  ) THEN
+  RAISE EXCEPTION 'Explicit tenant-scoped cancel credential required';
+ END IF;
+ SELECT * INTO source_run FROM public.criclume_ai_budgeted_admissions
+  WHERE id=_admission AND tenant_id=_tenant FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Scoped cricket admission not found'; END IF;
+ SELECT * INTO res FROM public.ai_budgeted_run_reservations
+  WHERE id=source_run.reservation_id AND tenant_id=_tenant
+   AND product_key='criclume' FOR UPDATE;
+ SELECT * INTO item FROM public.ai_agent_runs
+  WHERE id=source_run.run_id AND tenant_id=_tenant
+   AND product_key='criclume' FOR UPDATE;
+ SELECT * INTO job FROM public.intelligence_jobs
+  WHERE id=source_run.job_id AND tenant_id=_tenant
+   AND product_key='criclume' AND job_type='criclume.budgeted.readonly' FOR UPDATE;
+ IF res.id IS NULL OR item.id IS NULL OR job.id IS NULL THEN
+  RAISE EXCEPTION 'AI run and reservation ledgers are inconsistent';
+ END IF;
+ IF source_run.status='cancelled' AND res.status='released'
+  AND item.status='cancelled' AND job.status='cancelled' THEN
+  RETURN pg_catalog.jsonb_build_object(
+   'admissionId',source_run.id,'runId',item.id,
+   'releasedMinor',0,'alreadyCancelled',true);
+ END IF;
+ IF source_run.status<>'queued' OR res.status<>'reserved'
+  OR item.status<>'queued' OR job.status<>'queued' OR job.attempts<>0
+  OR EXISTS(SELECT 1 FROM public.ai_agent_steps WHERE run_id=item.id) THEN
+  RAISE EXCEPTION 'Model work began; cancellation requires verified worker usage settlement';
+ END IF;
+ PERFORM 1 FROM public.ai_spend_budgets
+  WHERE tenant_id=_tenant AND product_key='criclume'
+    AND period_month=res.period_month AND currency=res.currency FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Reserved monthly budget row missing'; END IF;
+ UPDATE public.intelligence_jobs SET status='cancelled',updated_at=now(),
+  completed_at=now() WHERE id=job.id;
+ UPDATE public.ai_agent_runs SET status='cancelled',updated_at=now(),
+  completed_at=now() WHERE id=item.id;
+ UPDATE public.ai_budgeted_run_reservations
+  SET status='released',actual_minor=0,settled_at=now() WHERE id=res.id;
+ UPDATE public.criclume_ai_budgeted_admissions
+  SET status='cancelled',updated_at=now() WHERE id=source_run.id;
+ UPDATE public.ai_spend_budgets
+  SET reserved_minor=reserved_minor-res.reserved_minor,updated_at=now()
+  WHERE tenant_id=_tenant AND product_key='criclume'
+    AND period_month=res.period_month AND currency=res.currency;
+ RETURN pg_catalog.jsonb_build_object(
+  'admissionId',source_run.id,'runId',item.id,
+  'releasedMinor',res.reserved_minor,'alreadyCancelled',false);
+END;
+$cancel$;
+REVOKE ALL ON FUNCTION public.cancel_criclume_budgeted_agent(uuid,uuid,uuid)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cancel_criclume_budgeted_agent(uuid,uuid,uuid)
+ TO service_role;
+
 COMMENT ON FUNCTION public.queue_criclume_budgeted_agent(
  uuid,uuid,uuid,timestamptz,text,jsonb,uuid,uuid
 ) IS 'CricLume service-role-only, explicit pilot-and-worker gated, tenant-bound, atomic cost reservation with no direct model/tool execution.';
