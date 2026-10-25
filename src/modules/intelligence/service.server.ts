@@ -2,12 +2,13 @@ import {z} from "zod";
 import {createHash,timingSafeEqual} from "node:crypto";
 import {authoriseServiceScope,parseServiceAuthorization,verifyServiceSecret,type ServiceCredentialRecord} from "@/modules/platform/service-identity";
 import {CRICLUME_BUDGET_REQUIRED,legacyIntelligenceRunAllowed} from "@/modules/intelligence/criclume-policy";
-import {criclumeBudgetedStartSchema,sanitizeBudgetAdmissionResult} from "@/modules/intelligence/criclume-budget-contract";
+import {criclumeBudgetedStartSchema,criclumeBudgetedCancelSchema,sanitizeBudgetAdmissionResult,sanitizeBudgetCancelResult} from "@/modules/intelligence/criclume-budget-contract";
 
 const uuid=z.string().uuid();
 const scope=z.object({tenantId:uuid,productKey:z.string().min(2).max(80)});
 const requestSchema=z.discriminatedUnion("operation",[
  criclumeBudgetedStartSchema,
+ criclumeBudgetedCancelSchema,
  scope.extend({operation:z.literal("connection.verify")}),
  scope.extend({operation:z.literal("run.start"),profile:z.enum(["discovery","finance","technical","compliance","product","transaction","accounting","tax","operations"]),
   goal:z.string().min(4).max(5000),maxSteps:z.number().int().min(1).max(32).default(8),providerKey:z.string().max(120).nullish(),model:z.string().max(200).nullish(),
@@ -51,6 +52,7 @@ async function auth(request:Request,input:z.infer<typeof requestSchema>){
   if(row.credential_expires_at&&Date.parse(row.credential_expires_at)<=Date.now())throw new Error("Connector credential expired");
   if(row.tenant_id!==input.tenantId||row.product_key!==input.productKey)throw new Error("Connector tenant scope refused");
   const capability=
+    input.operation==="run.cancel.budgeted"?"intelligence.run.cancel":
     input.operation==="run.start.budgeted"?"intelligence.run.budgeted":
     input.operation==="connection.verify"?"intelligence.connection.verify":
     input.operation==="run.start"?"intelligence.run.start":
@@ -75,7 +77,8 @@ export async function serveIntelligenceService(httpRequest:Request){
   const raw=await httpRequest.text();if(raw.length>524288)return reply({error:"Payload too large"},413);
   let json:unknown;try{json=JSON.parse(raw);}catch{return reply({error:"Invalid JSON"},400);}
   const input=requestSchema.parse(json);const {db,credential,keyId,connectorId}=await auth(httpRequest,input);
-  const capability=input.operation==="run.start.budgeted"?"intelligence.run.budgeted":
+  const capability=input.operation==="run.cancel.budgeted"?"intelligence.run.cancel":
+    input.operation==="run.start.budgeted"?"intelligence.run.budgeted":
     input.operation==="connection.verify"?"intelligence.connection.verify":
     input.operation==="run.start"?"intelligence.run.start":
    input.operation==="run.get"?"intelligence.run.read":
@@ -105,9 +108,27 @@ export async function serveIntelligenceService(httpRequest:Request){
   // Disallow generic model workers from claiming/completing cricket work.
   // The new budgeted job type has no generic worker or write-tool capability.
   if(input.productKey==="criclume" &&
-     !["connection.verify","run.get","run.start","run.start.budgeted"].includes(input.operation)){
+     !["connection.verify","run.get","run.start","run.start.budgeted","run.cancel.budgeted"].includes(input.operation)){
     return reply({error:"CricLume model work requires a dedicated budgeted worker",
       code:"CRICLUME_WORKER_NOT_CERTIFIED"},403);
+  }
+
+  if(input.operation==="run.cancel.budgeted"){
+    if(!credential || connectorId || input.productKey!=="criclume") {
+      return reply({error:"Scoped platform cancellation credential required"},403);
+    }
+    const {data,error}=await db.rpc("cancel_criclume_budgeted_agent",{
+      _tenant:input.tenantId,
+      _admission:input.admissionId,
+      _service_credential:credential.id,
+    });
+    if(error){
+      return reply({
+        error:"The cricket AI run cannot be safely cancelled without verified worker settlement",
+        code:"CRICLUME_CANCELLATION_REQUIRES_REVIEW",
+      },409);
+    }
+    return reply(sanitizeBudgetCancelResult(data),200);
   }
 
   if(input.operation==="run.start.budgeted"){
