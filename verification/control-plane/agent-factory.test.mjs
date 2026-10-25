@@ -137,6 +137,7 @@ test("CricLume budget admission remains service-only, region-priced and worker q
  assert.match(sql,/r.evaluation_passed/);
  assert.match(sql,/r.status='approved'/);
  assert.match(sql,/country=ANY\(r.supported_regions\)/);
+ assert.match(sql,/CASE uc.risk_level WHEN 'high' THEN 3/);
  assert.match(sql,/budget.reserved_minor\+budget.spent_minor\+chosen.cost_minor>budget.limit_minor/);
  assert.match(sql,/ai_budgeted_run_reservations/);
  assert.match(sql,/criclume.budgeted.readonly/);
