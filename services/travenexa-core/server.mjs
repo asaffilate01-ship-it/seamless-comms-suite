@@ -1,6 +1,7 @@
 // Node 22 HTTP entry point for TraveNexa's authenticated server-to-server gateway.
 // All supplier adapters are absent by default; no demo fare ever appears as live.
 import http from 'node:http';
+import {createOfferRefresh} from './flightlounge/offer-refresh.mjs';
 import {createFlexibleFlightSearch} from './flightlounge/flexible-search.mjs';
 import {createLiveFlightSearch} from './flightlounge/live-search.mjs';
 import { fileURLToPath } from 'node:url';
@@ -39,14 +40,14 @@ async function bodyJson(req) {
   }
   return JSON.parse(Buffer.concat(parts).toString('utf8'));
 }
-export function createServer({engine=defaultEngine(),flightSearch=createLiveFlightSearch(),flexibleFlightSearch=createFlexibleFlightSearch()}={}) {
+export function createServer({engine=defaultEngine(),flightSearch=createLiveFlightSearch(),flexibleFlightSearch=createFlexibleFlightSearch(),offerRefresh=createOfferRefresh()}={}) {
   const hits=new Map();
   const server=http.createServer(async (req,res)=>{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
     if (path==='/healthz' && req.method==='GET')
       return reply(res,200,{service:'travenexa-core',supplierInventory:'not_verified_by_health',
         configuredTenants:engine.hasConfiguredTenants(),bookingsEnabled:false,paymentsEnabled:false});
-    const scopedPaths=['/v1/flights/flexible-search','/v1/flights/search','/v1/travel/search','/v1/inbound-uk/search','/v1/travel/readiness',
+    const scopedPaths=['/v1/flights/refresh','/v1/flights/flexible-search','/v1/flights/search','/v1/travel/search','/v1/inbound-uk/search','/v1/travel/readiness',
       '/v1/travel/booking-preflight','/v1/omniqora/tools','/v1/omniqora/tool-call'];
     if (!scopedPaths.includes(path)) return reply(res,404,{status:'unavailable',reason:'unknown_api'});
     if (!engine.hasConfiguredTenants()) return reply(res,503,{status:'unavailable',reason:'tenant_auth_not_configured'});
@@ -75,6 +76,11 @@ export function createServer({engine=defaultEngine(),flightSearch=createLiveFlig
     let data;
     try {data=await bodyJson(req);} catch {
       return reply(res,400,{status:'unavailable',reason:'invalid_json_request'});
+    }
+    if (path==='/v1/flights/refresh') {
+      const controller=new AbortController();res.on('close',()=>controller.abort());
+      try {const answer=await offerRefresh.refresh(tenantId,data,{signal:controller.signal});return reply(res,answer.httpStatus,answer);}
+      catch {return reply(res,503,{status:'unavailable',reason:'offer_refresh_unavailable'});}
     }
     if (path==='/v1/flights/flexible-search') {
       const controller=new AbortController();res.on('close',()=>controller.abort());
