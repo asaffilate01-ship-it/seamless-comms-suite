@@ -1,0 +1,17 @@
+# CricLume provider worker and MCP client
+
+The dedicated worker implements the existing aggregate-only CricLume admission contract. It is disabled by default and makes at most one provider attempt per admitted job. No live provider or tenant is enabled by this source change.
+
+Apply the `criclume_dedicated_worker` migration after the existing `criclume_budgeted_admission_v1` migration. Current entitlement, active product, expiring source/pilot approval, independent use-case approval, verified provider binding and reviewed regional model rate are required at claim time. The host must inject the provider token from that exact central binding.
+
+For a manually supervised one-pass job, inject `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRICLUME_ALLOWED_DATABASE_HOST`, `CRICLUME_TENANT_ID`, `CRICLUME_PROVIDER_KEY` (`openai`, `anthropic`, `google`), `CRICLUME_MODEL_KEY`, `CRICLUME_PROVIDER_TOKEN`, `CRICLUME_WORKER_ENABLED=true` and `CRICLUME_WORKER_REVIEWED=true` into the central server runtime, then run `node services/criclume-worker/main.mjs`. Never put these credentials in CricLume or browser environment variables. No model or tariff is hardcoded.
+
+OpenAI Responses, Claude Messages and Gemini generateContent use fixed HTTPS destinations, bounded responses, token ceilings and genuine usage receipts. Gemini thinking tokens count toward output usage. Unsupported cache accounting, unexpected tools, incomplete responses and missing usage fail closed. Output remains advisory and `waiting_review`. A failed or ambiguous provider attempt retains its reservation for reconciliation; never auto-retry or fabricate a receipt. A crash after claim also requires operator investigation. Recover the actual receipt and original lease reference before calling `finish_criclume_worker_job`; an identical settled receipt is idempotent.
+
+`readCricketTool` in `mcp.mjs` is a user-delegated connector API. The trusted central caller supplies an expiring reviewed binding with `tenantId`, `organisationId`, exact `allowedHost`, `endpoint`, `allowedTools`, `enabled`, `reviewed` and `productKey: criclume`, plus the source user's JWT. The source server independently checks current club membership and match ownership. It implements the MCP initialise handshake and only `criclume_match_summary` / `criclume_media_inventory`. It cannot write scores or export images, video, identities, SQL or signed URLs. Do not accept caller-supplied bindings without central authorization.
+
+Provider capability metadata describes potential provider inputs, not enabled media execution. Raw media admission, model-specific video/image costing, dispatch-time consent checks and result review remain future work. Current worker inputs are aggregates only, with no identities or child/biometric evidence. No generic computer vision library has been installed as a validated cricket tracker.
+
+Verification: `node --test verification/control-plane/criclume-worker.test.mjs`, `npm run test:security`, `npm run typecheck`, `npm run build`. Tests use synthetic fixtures and embedded PostgreSQL, not a hosted database or paid provider. A hosted pilot with genuine usage settlement and operational recovery remains required before activation.
+
+Rollback: disable the worker host and source paid switch; keep leases and reservations for reconciliation. Do not drop receipt tables or release possibly-spent reservations to undo a release.
