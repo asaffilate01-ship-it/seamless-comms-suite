@@ -17,7 +17,8 @@ export function validateFlightSearch(raw,now=Date.now()) {
 const unavailable=reason=>({httpStatus:503,status:'unavailable',reason,offers:[],coverage:{attempted:[],succeeded:[]}});
 // Inject persisted server-side supplier approval and tenant-scoped secrets. Nothing enabled by default.
 export function createLiveFlightSearch({authorize,secretReader,audit,fetchImpl=fetch,now=()=>Date.now()}={}) {
-  return {async search(tenantId,raw){
+  return {async search(tenantId,raw,{signal}={}){
+    if(signal?.aborted)return unavailable('search_cancelled');
     const query=validateFlightSearch(raw,now());
     if(!query)return {httpStatus:400,status:'invalid_request',reason:'unsupported_or_invalid_search',offers:[]};
     if(tenantId!=='travenexa-flightlounge')return {httpStatus:403,status:'unavailable',reason:'flightlounge_tenant_required',offers:[]};
@@ -31,7 +32,7 @@ export function createLiveFlightSearch({authorize,secretReader,audit,fetchImpl=f
       const response=await fetchImpl('https://api.duffel.com/air/offer_requests?return_offers=true&supplier_timeout=10000',{
         method:'POST',headers:{Authorization:`Bearer ${token}`,'Duffel-Version':'v2','Content-Type':'application/json',Accept:'application/json'},
         body:JSON.stringify({data:{slices:query.legs,passengers:Array.from({length:query.adults},()=>({type:'adult'})),cabin_class:query.cabin,max_connections:query.maxConnections}}),
-        redirect:'error',signal:AbortSignal.timeout(15000)
+        redirect:'error',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)
       });
       if(!response.ok)return {...unavailable('supplier_request_failed'),coverage:{attempted:['duffel'],succeeded:[]}};
       const text=await response.text();if(text.length>4000000)throw Error('response_too_large');
@@ -77,3 +78,4 @@ export function isoDurationMinutes(value){
   const n=Number(m[1]||0)*1440+Number(m[2]||0)*60+Number(m[3]||0)+Number(m[4]||0)/60;
   return Number.isFinite(n)&&n>0&&n<=10080?n:null;
 }
+

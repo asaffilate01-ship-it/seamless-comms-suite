@@ -1,6 +1,7 @@
 // Node 22 HTTP entry point for TraveNexa's authenticated server-to-server gateway.
 // All supplier adapters are absent by default; no demo fare ever appears as live.
 import http from 'node:http';
+import {createFlexibleFlightSearch} from './flightlounge/flexible-search.mjs';
 import {createLiveFlightSearch} from './flightlounge/live-search.mjs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
@@ -38,14 +39,14 @@ async function bodyJson(req) {
   }
   return JSON.parse(Buffer.concat(parts).toString('utf8'));
 }
-export function createServer({engine=defaultEngine(),flightSearch=createLiveFlightSearch()}={}) {
+export function createServer({engine=defaultEngine(),flightSearch=createLiveFlightSearch(),flexibleFlightSearch=createFlexibleFlightSearch()}={}) {
   const hits=new Map();
   const server=http.createServer(async (req,res)=>{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
     if (path==='/healthz' && req.method==='GET')
       return reply(res,200,{service:'travenexa-core',supplierInventory:'not_verified_by_health',
         configuredTenants:engine.hasConfiguredTenants(),bookingsEnabled:false,paymentsEnabled:false});
-    const scopedPaths=['/v1/flights/search','/v1/travel/search','/v1/inbound-uk/search','/v1/travel/readiness',
+    const scopedPaths=['/v1/flights/flexible-search','/v1/flights/search','/v1/travel/search','/v1/inbound-uk/search','/v1/travel/readiness',
       '/v1/travel/booking-preflight','/v1/omniqora/tools','/v1/omniqora/tool-call'];
     if (!scopedPaths.includes(path)) return reply(res,404,{status:'unavailable',reason:'unknown_api'});
     if (!engine.hasConfiguredTenants()) return reply(res,503,{status:'unavailable',reason:'tenant_auth_not_configured'});
@@ -75,6 +76,11 @@ export function createServer({engine=defaultEngine(),flightSearch=createLiveFlig
     try {data=await bodyJson(req);} catch {
       return reply(res,400,{status:'unavailable',reason:'invalid_json_request'});
     }
+    if (path==='/v1/flights/flexible-search') {
+      const controller=new AbortController();res.on('close',()=>controller.abort());
+      try {const answer=await flexibleFlightSearch.search(tenantId,data,{signal:controller.signal});return reply(res,answer.httpStatus,answer);}
+      catch {return reply(res,503,{status:'unavailable',reason:'flexible_search_unavailable',offers:[]});}
+    }
     if (path==='/v1/flights/search') {
       try {const answer=await flightSearch.search(tenantId,data);return reply(res,answer.httpStatus,answer);}
       catch {return reply(res,503,{status:'unavailable',reason:'flight_search_unavailable',offers:[]});}
@@ -98,3 +104,4 @@ if (process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)
     process.stdout.write('TraveNexa core API listening on '+port+'; external suppliers are not connected.\n');
   });
 }
+
