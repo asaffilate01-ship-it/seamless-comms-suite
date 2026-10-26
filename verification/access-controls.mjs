@@ -91,5 +91,12 @@ await business('a','stranger','admin',async()=>{
 });
 await business('a','owner-a','owner',()=>db.query("DELETE FROM members WHERE \"user\"='viewer'"));
 await business('a','viewer','member',async()=>assert.equal((await db.query('SELECT * FROM ai_runs')).rows.length,0));checks++;
+for (const sig of ['claim_criclume_worker_job(uuid,uuid)','finish_criclume_worker_job(uuid,uuid,uuid,jsonb)','flag_criclume_worker_reconciliation(uuid,uuid,uuid)']) {
+ for (const role of ['anon','authenticated']) {assert.equal((await db.query('SELECT has_function_privilege($1,$2,$3) AS allowed',[role,'public.'+sig,'execute'])).rows[0].allowed,false);checks++;}
+}
+await assert.rejects(()=>host(A,()=>db.query('SELECT public.claim_criclume_worker_job($1,$2)',[ta.id,A])),e=>e.code==='42501');checks++;
+await assert.rejects(()=>db.query('SELECT public.claim_criclume_worker_job($1,$2)',[ta.id,A]),/Entitlement inactive/);checks++;
+await db.query("INSERT INTO public.tenant_services(tenant_id,service_key,status,source) VALUES($1,'omniqora.intelligence-runtime','active','manual')",[ta.id]);
+assert.equal((await db.query('SELECT public.claim_criclume_worker_job($1,$2) AS c',[ta.id,A])).rows[0].c,null);checks++;
 await db.close();
 console.log(`${checks} PostgreSQL policy/integration checks passed (PGlite, disposable fixtures).`);
