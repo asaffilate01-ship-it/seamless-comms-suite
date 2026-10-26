@@ -37,3 +37,25 @@ Accepted input is strictly `{legs:[{origin,destination,departure_date}], adults,
 - ChatGPT plugin discovery returned no suitable flight supplier integration. This is not an exhaustive provider directory and does not establish product runtime rights.
 
 MCP can expose approved `travel.search` and comparison tools to models, but is not itself a supplier or licence. All model calls must inherit server tenant scope, budget controls and audit; search does not grant book/pay/refund permissions.
+
+## Phase 3: browser boundary, practical filters and GitHub reuse
+
+`createFlightBrowserBridge` is a Fetch Request/Response handler ready to mount on the passenger application's server at a same-origin path such as `/api/flights/search`. It is source code, not a deployed route. Configure exact HTTPS `siteOrigin` and `gatewayOrigin`, a `resolveAccess(request)` function backed by verified sessions/current membership/FlightLounge entitlement/rate-budget-region controls, a tenant-scoped server `secretReader`, and durable `audit`. Access is rechecked before returning a result. The handler fixes the tenant and `/v1/flights/search` endpoint, enforces POST + JSON + exact Origin, caps bodies, rejects redirects, applies a deadline, redacts upstream failures and never forwards browser cookies or authorization. Missing dependencies fail closed. Do not substitute a constant allow grant in production. Host request deadlines must also protect incoming slow bodies.
+
+The bridge deliberately follows the existing adapters/product-bridges access-resolution pattern. The generic adapters/omniqora-server-client run/task API does not implement travel search, so no competing generic AI client was introduced. No dependency installation, arbitrary MCP execution, or public transport activation occurred.
+
+The search contract now additionally accepts `maxDurationMinutes` (60–4320, optional, per leg), `includedBagsOnly` (boolean, default false) and `allowAirportChanges` (boolean, default false). Limits use supplier ISO elapsed duration; missing duration fails a requested duration limit. Airport changes are identified from adjacent airport codes and excluded unless explicitly allowed. Allowing a change does not establish ground-transfer availability, cost, minimum connecting time, visa eligibility or ticket protection. Baggage remains quantities only. These filters are applied to returned supplier offers, so coverage is still limited to the requested provider response, not an exhaustive global fare search.
+
+### Reviewed GitHub sources (26 October 2026)
+
+| Source | Role | Current integration |
+| --- | --- | --- |
+| https://github.com/duffelhq/duffel-api-javascript | Official Duffel server SDK | Candidate; existing bounded REST adapter retained |
+| https://github.com/anthropics/anthropic-sdk-typescript | Official Claude client | Candidate; existing REST adapter retained |
+| https://github.com/googleapis/js-genai | Official Gemini client | Candidate; existing REST adapter retained |
+| https://github.com/modelcontextprotocol/typescript-sdk | Official MCP server/client SDK | Candidate; no transport installed or exposed |
+| https://github.com/googlemaps/google-maps-services-js | Official Maps Node client, including legacy APIs | Candidate; modern Routes REST retained; review newer routing package for SDK adoption |
+
+Review and pin compatible versions, licences and transitive dependencies before installation. Repository availability and ChatGPT connector access confer no supplier contract, API credential or customer-runtime permission. Existing repository source evidence: adapters/product-bridges, adapters/omniqora-server-client, services/ai-workforce-readonly. Their production deployment is not established by this change.
+
+Activation still requires the host session integration, actual BFF/gateway deployment, persisted Duffel approval catalogue integration, contracted live supplier account and staging acceptance. Never set the passenger `flightSearchPath` until its route is deployed and tested. Broader build/typecheck are unavailable without this checkout's dependencies/Bun; access-controls database check is blocked by missing @electric-sql/pglite.

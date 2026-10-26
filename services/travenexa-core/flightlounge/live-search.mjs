@@ -2,15 +2,17 @@ import {validTravelDate,safeText} from '../policy.mjs';
 const CABINS=['economy','premium_economy','business','first'];
 export function validateFlightSearch(raw,now=Date.now()) {
   if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
-  const allowed=['legs','adults','cabin','maxConnections','checkedBags'];
+  const allowed=['legs','adults','cabin','maxConnections','checkedBags','maxDurationMinutes','includedBagsOnly','allowAirportChanges'];
   if(Object.keys(raw).some(k=>!allowed.includes(k)))return null;
   if(!Array.isArray(raw.legs)||raw.legs.length<1||raw.legs.length>6||!Number.isInteger(raw.adults)||raw.adults<1||raw.adults>9||!CABINS.includes(raw.cabin)||!Number.isInteger(raw.maxConnections)||raw.maxConnections<0||raw.maxConnections>2||!Number.isInteger(raw.checkedBags)||raw.checkedBags<0||raw.checkedBags>2)return null;
+  if(raw.maxDurationMinutes!==undefined&&(!Number.isInteger(raw.maxDurationMinutes)||raw.maxDurationMinutes<60||raw.maxDurationMinutes>4320))return null;
+  if(['includedBagsOnly','allowAirportChanges'].some(k=>raw[k]!==undefined&&typeof raw[k]!=='boolean'))return null;
   let last='';const legs=[];
   for(const leg of raw.legs){
     if(!leg||Object.keys(leg).some(k=>!['origin','destination','departure_date'].includes(k))||!/^([A-Z]{3})$/.test(leg.origin)||!/^([A-Z]{3})$/.test(leg.destination)||leg.origin===leg.destination||!validTravelDate(leg.departure_date,now)||leg.departure_date<last)return null;
     last=leg.departure_date;legs.push({...leg});
   }
-  return {legs,adults:raw.adults,cabin:raw.cabin,maxConnections:raw.maxConnections,checkedBags:raw.checkedBags};
+  return {legs,adults:raw.adults,cabin:raw.cabin,maxConnections:raw.maxConnections,checkedBags:raw.checkedBags,...(raw.maxDurationMinutes!==undefined?{maxDurationMinutes:raw.maxDurationMinutes}:{}),includedBagsOnly:raw.includedBagsOnly??false,allowAirportChanges:raw.allowAirportChanges??false};
 }
 const unavailable=reason=>({httpStatus:503,status:'unavailable',reason,offers:[],coverage:{attempted:[],succeeded:[]}});
 // Inject persisted server-side supplier approval and tenant-scoped secrets. Nothing enabled by default.
@@ -57,7 +59,21 @@ export function normalizeOffer(o,q,now){
       segments.push({origin:s.origin.iata_code,destination:s.destination.iata_code,departingAt:s.departing_at,arrivingAt:s.arriving_at,originTimezone:s.origin.time_zone||null,destinationTimezone:s.destination.time_zone||null,operatingCarrier:s.operating_carrier.name,flightNumber:s.operating_carrier_flight_number||null,cabin:q.cabin,checkedBagsPerPassenger:bags});
     }
     if(segments[0].origin!==leg.origin||segments.at(-1).destination!==leg.destination||segments[0].departingAt.slice(0,10)!==leg.departure_date)return null;
-    slices.push({segments});
+    const duration=isoDurationMinutes(slice.duration);
+    if(q.maxDurationMinutes!==undefined&&(duration===null||duration>q.maxDurationMinutes))return null;
+    const airportChanges=segments.slice(1).some((s,i)=>segments[i].destination!==s.origin);
+    if(airportChanges&&!q.allowAirportChanges)return null;
+    slices.push({segments,durationMinutes:duration,airportChanges});
   }
+  if(q.includedBagsOnly&&!baggageRequirementMet)return null;
   return {id:o.id,source:'duffel',live:true,currency:o.total_currency,amount:Number(o.total_amount),expiresAt:o.expires_at,slices,baggageRequirementMet,priceScope:'supplier_fare_only',bookable:false};
+}
+
+// Supplier ISO 8601 elapsed duration; never subtract local times across time zones.
+export function isoDurationMinutes(value){
+  if(typeof value!=='string')return null;
+  const m=/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(value);
+  if(!m||!m.slice(1).some(x=>x!==undefined))return null;
+  const n=Number(m[1]||0)*1440+Number(m[2]||0)*60+Number(m[3]||0)+Number(m[4]||0)/60;
+  return Number.isFinite(n)&&n>0&&n<=10080?n:null;
 }
