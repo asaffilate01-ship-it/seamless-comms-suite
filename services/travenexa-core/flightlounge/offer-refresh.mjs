@@ -1,3 +1,4 @@
+import {validBagSelection,baggageSubtotal} from './baggage-subtotal.mjs';
 import {normalizeOffer,validateFlightSearch} from './live-search.mjs';
 const tenant='travenexa-flightlounge';
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(v);
@@ -17,7 +18,7 @@ export function baggageServices(raw){
 export function createOfferRefresh({authorize,loadOffer,secretReader,audit,fetchImpl=fetch,now=()=>Date.now()}={}){
  return {async refresh(tenantId,raw,{signal}={}){
   if(tenantId!==tenant)return fail(403,'flightlounge_tenant_required');
-  if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).length!==1||!id(raw.offerRef))return fail(400,'invalid_offer_reference');
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).some(k=>!['offerRef','selectedBaggage'].includes(k))||!id(raw.offerRef)||!validBagSelection(raw.selectedBaggage===undefined?[]:raw.selectedBaggage))return fail(400,'invalid_offer_reference');
   if(!authorize||!loadOffer||!secretReader||!audit)return fail(503,'offer_refresh_not_configured');
   const context={tenantId,supplier:'duffel',product:'flights',action:'refresh',offerRef:raw.offerRef};
   const approved=g=>g?.allowed===true&&g.tenantId===tenantId&&g.supplier==='duffel';
@@ -47,7 +48,10 @@ export function createOfferRefresh({authorize,loadOffer,secretReader,audit,fetch
    if(signal?.aborted)return fail(409,'refresh_cancelled');
    if(!approved(await authorize(context)))return fail(403,'offer_refresh_access_revoked');
    await audit({tenantId,event:'offer_refresh_completed',priceChanged,itineraryChanged,baggageChanged});
-   return {httpStatus:200,status:'live',offer,availableCheckedBagServices:services,changes:{priceChanged,currencyChanged,itineraryChanged,baggageChanged},requiresReview:priceChanged||itineraryChanged||baggageChanged,costs:{supplierFare:{amount:supplier.total_amount,currency:offer.currency,taxesIncluded:true},selectedExtras:[],finalTotal:null,unknown:['payment_and_seller_fees','selected_extras','ground_transport'],scope:'supplier_fare_only'},refreshedAt:new Date(now()).toISOString(),bookingsEnabled:false,notice:'Refreshed supplier quote, not a reservation or guaranteed checkout price. Available bags are optional, not selected or included in the fare. Review changes and revalidate before purchase.'};
+   const answer={httpStatus:200,status:'live',offer,availableCheckedBagServices:services,changes:{priceChanged,currencyChanged,itineraryChanged,baggageChanged},requiresReview:priceChanged||itineraryChanged||baggageChanged,costs:{supplierFare:{amount:supplier.total_amount,currency:offer.currency,taxesIncluded:true},selectedExtras:[],finalTotal:null,unknown:['payment_and_seller_fees','selected_extras','ground_transport'],scope:'supplier_fare_only'},refreshedAt:new Date(now()).toISOString(),bookingsEnabled:false,notice:'Refreshed supplier quote, not a reservation or guaranteed checkout price. Available bags are optional, not selected or included in the fare. Review changes and revalidate before purchase.'};
+   try{answer.baggageSubtotal=baggageSubtotal(answer,raw.selectedBaggage===undefined?[]:raw.selectedBaggage,now());}
+   catch(error){return {...fail(409,error.message),requiresReselection:true};}
+   return answer;
   }catch{return fail(503,'offer_refresh_unavailable');}
  }};
 }
