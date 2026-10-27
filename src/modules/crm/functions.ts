@@ -136,6 +136,11 @@ export const saveCrmOpportunity=createServerFn({method:"POST"}).middleware([requ
 .inputValidator((input:z.input<typeof opportunity>)=>opportunity.parse(input))
 .handler(async({context,data})=>{
  const{db}=await crmAccess(context,data.tenantId,true);
+ for(const [table,id] of [["crm_people",data.personId],["crm_companies",data.companyId]] as const){
+  if(!id)continue;
+  const linked=await db.from(table).select("id").eq("tenant_id",data.tenantId).eq("id",id).maybeSingle();
+  if(linked.error||!linked.data)throw new Error("CRM linked record unavailable");
+ }
  const stage=await db.from("crm_pipeline_stages").select("id,pipeline_id,probability_percent,is_closed_won,is_closed_lost")
   .eq("tenant_id",data.tenantId).eq("id",data.stageId).eq("pipeline_id",data.pipelineId).maybeSingle();
  if(stage.error||!stage.data)throw new Error("CRM pipeline stage not found");
@@ -165,6 +170,10 @@ export const saveCrmTask=createServerFn({method:"POST"}).middleware([requireSupa
 .inputValidator((input:z.input<typeof task>)=>task.parse(input))
 .handler(async({context,data})=>{
  const{db}=await crmAccess(context,data.tenantId,true);
+ if(data.relatedType==="opportunity"){
+  const linked=await db.from("crm_opportunities").select("id").eq("tenant_id",data.tenantId).eq("id",data.relatedId??"").maybeSingle();
+  if(linked.error||!linked.data)throw new Error("CRM opportunity unavailable");
+ }
  const values={tenant_id:data.tenantId,title:data.title,description:data.description??null,status:data.status,priority:data.priority,
  due_at:data.dueAt??null,assignee_user_id:data.assigneeUserId??null,related_type:data.relatedType??null,related_id:data.relatedId??null,
  source_product_key:data.sourceProductKey??null,external_ref:data.externalRef??null,metadata:data.metadata};
@@ -204,3 +213,20 @@ export const getCustomer360=createServerFn({method:"POST"}).middleware([requireS
  return{person,activities:activities.data??[],tasks:tasks.data??[],leads:leads.data??[],
   opportunities:opportunities.data??[],conversations,messages};
 });
+
+const moveOpportunity = scope.extend({
+  opportunityId: uuid, stageId: uuid,
+  expectedUpdatedAt: z.string().datetime({ offset: true }),
+}).strict();
+export const moveCrmOpportunity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: z.infer<typeof moveOpportunity>) => moveOpportunity.parse(input))
+  .handler(async ({ context, data }) => {
+    const { db } = await crmAccess(context, data.tenantId, true);
+    const result = await db.rpc("crm_move_opportunity", {
+      _tenant: data.tenantId, _opportunity: data.opportunityId,
+      _stage: data.stageId, _expected_updated_at: data.expectedUpdatedAt,
+    });
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
