@@ -122,3 +122,11 @@ The integration was reconciled with current main without rewriting history. Supp
 Validation on the reconciled source: 118 travel-core tests; application build and TypeScript check; repository hygiene and 41 PostgreSQL access-policy checks; 17 bridge tests; six market-site tests; and the TraveNexa factory/database integration check passed. These package scripts were run with npm/Node against the matching installed dependencies because Bun was unavailable locally. The passenger Site separately passed 73 tests at source commit 104b60690515858a28afaec94151238b27c47a71.
 
 Merge is source integration, not supplier activation. Production credentials/approvals, verified session resolution, durable budgets/audit/storage and hosting must be configured and tested before connecting the passenger Site. No live calls, payments or bookings were performed.
+
+### Whole-request deadlines
+
+`createTravellerFlightHandler` now bounds the complete request, including authentication, body reading, request audit, supplier/session execution, access recheck and delivery audit. The default deadline is 50 seconds. A server-only `timeoutMs` option can shorten it; invalid values cannot extend it. Caller cancellation and expiry return a redacted, no-store HTTP 408 response.
+
+The verified request and the optional second argument to `resolveAccess(request, {signal})` and `audit(event, {signal})` carry the same cancellation signal supplied to session operations. Existing one-argument hooks remain compatible. Hosts should honour this signal and use bounded database/network calls: JavaScript cannot forcibly terminate a dependency that ignores cancellation. Late authentication or audit completion cannot advance to supplier dispatch, and late supplier completion cannot deliver a successful response. No automatic retry occurs.
+
+Six regression cases cover stalled authentication, stalled request/delivery audit, cancellation during service execution, cancellation before authentication, and incomplete body streams. Travel-core total: 124 tests. Live supplier access is not activated by this change.
