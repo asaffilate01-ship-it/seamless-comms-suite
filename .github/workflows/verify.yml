@@ -43,6 +43,8 @@ jobs:
         run: |
           node verification/control-plane/sales-runtime.test.mjs
           node verification/control-plane/sales-queue-fairness.test.mjs
+      - name: CricLume provider, worker and MCP boundaries
+        run: node --test verification/control-plane/criclume-worker.test.mjs
       - run: bun run build
       - run: bun run typecheck
       - name: Build four local-language TraveNexa UK travel storefronts

@@ -51,11 +51,11 @@ export function normalizeOffer(o,q,now){
   const slices=[];let baggageRequirementMet=true;
   for(let i=0;i<q.legs.length;i++){
     const slice=o.slices[i],leg=q.legs[i];
-    if(!Array.isArray(slice.segments)||!slice.segments.length||slice.segments.length>q.maxConnections+1)return null;
+    if(!slice||!Array.isArray(slice.segments)||!slice.segments.length||slice.segments.length>q.maxConnections+1)return null;
     const segments=[];
     for(const s of slice.segments){
-      if(!/^[A-Z]{3}$/.test(s.origin?.iata_code)||! /^[A-Z]{3}$/.test(s.destination?.iata_code)||!safeText(s.operating_carrier?.name)||!safeText(s.departing_at)||!safeText(s.arriving_at)||!Number.isFinite(Date.parse(s.departing_at))||!Number.isFinite(Date.parse(s.arriving_at))||!Array.isArray(s.passengers)||s.passengers.length!==q.adults||s.passengers.some(p=>p.cabin_class!==q.cabin))return null;
-      const bags=s.passengers.map(p=>{const b=p.baggages?.find(b=>b.type==='checked');return Number.isInteger(b?.quantity)&&b.quantity>=0?b.quantity:null});
+      if(!s||!/^[A-Z]{3}$/.test(s.origin?.iata_code)||! /^[A-Z]{3}$/.test(s.destination?.iata_code)||!safeText(s.operating_carrier?.name)||!safeText(s.departing_at)||!safeText(s.arriving_at)||!Number.isFinite(Date.parse(s.departing_at))||!Number.isFinite(Date.parse(s.arriving_at))||!Array.isArray(s.passengers)||s.passengers.length!==q.adults||s.passengers.some(p=>!p||p.cabin_class!==q.cabin||(p.baggages!==undefined&&!Array.isArray(p.baggages))))return null;
+      const bags=s.passengers.map(p=>{const b=p.baggages?.find(b=>b?.type==='checked');return Number.isInteger(b?.quantity)&&b.quantity>=0?b.quantity:null});
       if(bags.some(b=>b===null||b<q.checkedBags))baggageRequirementMet=false;
       segments.push({origin:s.origin.iata_code,destination:s.destination.iata_code,departingAt:s.departing_at,arrivingAt:s.arriving_at,originTimezone:s.origin.time_zone||null,destinationTimezone:s.destination.time_zone||null,operatingCarrier:s.operating_carrier.name,flightNumber:s.operating_carrier_flight_number||null,cabin:q.cabin,checkedBagsPerPassenger:bags});
     }

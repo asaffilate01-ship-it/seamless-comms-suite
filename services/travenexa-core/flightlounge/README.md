@@ -114,3 +114,11 @@ Validation: 108 travel-core tests pass, including six tests for date/reference a
 Responses are no-store, capped at 4 MB and limited to supported top-level result fields. The injected session is trusted in-process code, not an arbitrary remote response; nested offer fields rely on the existing normalized service contracts. Errors are redacted and no booking endpoint is exposed. Mount this handler only after connecting the real session resolver, entitlements, budgets, audit and persistent offer store. The legacy tenant-token bridge is not a substitute for traveller identity. This phase does not mount or deploy the handler, enable the passenger Site, or provision credentials.
 
 Validation: 115 travel-core tests pass; seven new HTTP tests cover all routes, verified actor dispatch, origin checks, malformed/oversized requests, identity/price injection, revocation, no-store/error redaction and booking refusal. Focused HTTP tests rerun after tightening the body-timeout check. Full application checks and live staging remain unverified under the earlier documented environment limitations.
+
+### Merge validation — 28 October 2026
+
+The integration was reconciled with current main without rewriting history. Supplier normalization now rejects malformed slices, segments and passenger baggage structures per offer, retaining valid sibling offers. Traveller single-search rejects an already-cancelled request before invoking the supplier service and removes references for offers that expire during persistence.
+
+Validation on the reconciled source: 118 travel-core tests; application build and TypeScript check; repository hygiene and 41 PostgreSQL access-policy checks; 17 bridge tests; six market-site tests; and the TraveNexa factory/database integration check passed. These package scripts were run with npm/Node against the matching installed dependencies because Bun was unavailable locally. The passenger Site separately passed 73 tests at source commit 104b60690515858a28afaec94151238b27c47a71.
+
+Merge is source integration, not supplier activation. Production credentials/approvals, verified session resolution, durable budgets/audit/storage and hosting must be configured and tested before connecting the passenger Site. No live calls, payments or bookings were performed.

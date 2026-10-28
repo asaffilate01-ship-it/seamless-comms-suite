@@ -13,6 +13,7 @@ export function createTravellerFlightSession({searchService,flexibleSearchServic
    try{
     if(!await allowed(context,'search'))return fail(403,'traveller_access_denied');
     const query=validateFlightSearch(raw,now());if(!query)return fail(400,'invalid_search');
+    if(options?.signal?.aborted)return fail(409,'search_cancelled');
     const result=await searchService.search(context.tenantId,query,options);
     if(result.status!=='live')return result;
     if(!Array.isArray(result.offers)||result.offers.length>200)throw Error('invalid_offers');
@@ -20,7 +21,8 @@ export function createTravellerFlightSession({searchService,flexibleSearchServic
     const offers=[];
     for(const offer of result.offers){const offerRef=await offerStore.put(context,{query,offer});refs.push(offerRef);offers.push({...offer,offerRef});}
     if(options?.signal?.aborted||!await allowed(context,'search'))throw Error('access_changed');
-    return {...result,offers};
+    const current=[];for(const offer of offers){if(Date.parse(offer.expiresAt)>now())current.push(offer);else await offerStore.remove(context,offer.offerRef);}
+    return {...result,offers:current};
    }catch{await Promise.allSettled(refs.map(ref=>offerStore.remove(context,ref)));return fail(503,'traveller_search_unavailable');}
   },
   async flexibleSearch(context,raw,options){
