@@ -1,0 +1,19 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,rm,readdir} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createFileOfferStore} from '../flightlounge/offer-store.mjs';
+import {createTravellerFlightSession} from '../flightlounge/traveller-session.mjs';
+import {expandFlexibleSearch} from '../flightlounge/flexible-search.mjs';
+const at=Date.parse('2026-10-26T12:00:00Z'),context={tenantId:'travenexa-flightlounge',actorId:'user_1'};
+const raw={query:{legs:[{origin:'LHR',destination:'ISB',departure_date:'2026-11-20'}],adults:1,cabin:'economy',maxConnections:1,checkedBags:1},dateOffsets:[[-1,1]]};
+const grant=async c=>({allowed:true,tenantId:c.tenantId,actorId:c.actorId});
+const result=()=>({status:'live',candidates:expandFlexibleSearch(raw,at).map((c,i)=>({...c,status:'live',offers:[{id:'off_'+i,source:'duffel',live:true,bookable:false,amount:250-i*10,currency:'GBP',priceScope:'supplier_fare_only',baggageRequirementMet:true,expiresAt:'2026-10-26T13:00:00Z'}]}))});
+async function setup(t,extra={}){const directory=await mkdtemp(join(tmpdir(),'flex-offers-'));t.after(()=>rm(directory,{recursive:true,force:true}));const store=createFileOfferStore({directory,now:()=>at});const service=createTravellerFlightSession({now:()=>at,authorize:grant,offerStore:store,flexibleSearchService:{search:async()=>result()},...extra});return {directory,store,service};}
+test('each flexible offer reference stores its own dates and links savings winner',async t=>{const {service,store}=await setup(t),r=await service.flexibleSearch(context,raw);assert.equal(r.status,'live');for(const c of r.candidates){const saved=await store.get(context,c.offers[0].offerRef);assert.deepEqual(saved.query.legs,c.query.legs);}assert.equal(r.summaries[0].best.offerRef,r.candidates[2].offers[0].offerRef);assert.equal(r.summaries[0].supplierFareSaving,20);});
+test('candidate tampering fails and removes previously stored references',async t=>{const bad=result();bad.candidates[1].query.legs[0].origin='JFK';const {service,directory}=await setup(t,{flexibleSearchService:{search:async()=>bad}});assert.equal((await service.flexibleSearch(context,raw)).status,'unavailable');assert.deepEqual(await readdir(directory),[]);});
+test('revocation during candidate processing cleans up',async t=>{let n=0;const {service,directory}=await setup(t,{authorize:async c=>({...await grant(c),allowed:++n<3})});assert.equal((await service.flexibleSearch(context,raw)).status,'unavailable');assert.deepEqual(await readdir(directory),[]);});
+test('failed candidates do not gain references or synthetic prices',async t=>{const r=result();r.candidates[1].status='unavailable';r.candidates[1].offers=[];const {service}=await setup(t,{flexibleSearchService:{search:async()=>r}});const answer=await service.flexibleSearch(context,raw);assert.equal(answer.candidates[1].status,'unavailable');assert.deepEqual(answer.candidates[1].offers,[]);});
+test('expired offers are not stored or ranked',async t=>{const r=result();r.candidates[2].offers[0].expiresAt='2020-01-01';const {service}=await setup(t,{flexibleSearchService:{search:async()=>r}});const answer=await service.flexibleSearch(context,raw);assert.deepEqual(answer.candidates[2].offers,[]);assert.equal(answer.summaries[0].best.candidateId,'candidate-1');});
+test('abort prevents supplier dispatch and defaults fail closed',async t=>{let calls=0;const {service}=await setup(t,{flexibleSearchService:{search:async()=>{calls++;return result();}}});const controller=new AbortController();controller.abort();assert.equal((await service.flexibleSearch(context,raw,{signal:controller.signal})).httpStatus,409);assert.equal(calls,0);assert.equal((await createTravellerFlightSession().flexibleSearch(context,raw)).httpStatus,503);});
