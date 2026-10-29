@@ -20,3 +20,20 @@ test('HTTP refresh requires tenant auth and defaults unavailable',async()=>{cons
 
 test('selected bags are priced from fresh supplier services, not browser amounts',async()=>{const s=setup(),r=await s.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage:[{id:'ase_1',quantity:1}]});assert.equal(r.status,'live');assert.equal(r.baggageSubtotal.knownSubtotal,'280');assert.equal(r.baggageSubtotal.finalTotal,null);assert.equal(r.offer.amount,250);});
 test('changed service inventory requires reselection; selection tampering fails before fetch',async()=>{const s=setup();assert.equal((await s.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage:[{id:'missing',quantity:1}]})).requiresReselection,true);const t=setup();for(const selectedBaggage of [null,[{id:'ase_1',quantity:1,unitAmount:'0'}]])assert.equal((await t.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage})).httpStatus,400);assert.equal(t.calls.length,0);});
+
+test('null ancillary entries preserve valid sibling baggage quotes',async()=>{
+ const o=supplier();o.available_services.unshift(null,42,{});
+ const s=setup({fetchImpl:async()=>Response.json({data:o})});
+ const r=await s.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage:[{id:'ase_1',quantity:1}]});
+ assert.equal(r.status,'live');assert.equal(r.baggageSubtotal.knownSubtotal,'280');assert.equal(r.availableCheckedBagServices.length,1);
+});
+test('ambiguous supplier passenger or segment identities cannot price baggage',()=>{
+ for(const mutate of [o=>o.passengers.push({...o.passengers[0]}),o=>o.passengers[0]=null,o=>o.slices[0].segments.push({...o.slices[0].segments[0]}),o=>delete o.slices[0].segments[0].id]){
+  const o=supplier();mutate(o);assert.deepEqual(baggageServices(o),[]);
+ }
+});
+test('duplicate baggage scopes are rejected without making extras free',async()=>{
+ const o=supplier();o.available_services[0].passenger_ids.push('pas_1');
+ const s=setup({fetchImpl:async()=>Response.json({data:o})});
+ const r=await s.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage:[{id:'ase_1',quantity:1}]});assert.equal(r.httpStatus,409);assert.equal(r.requiresReselection,true);
+});

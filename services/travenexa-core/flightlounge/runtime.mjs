@@ -86,7 +86,7 @@ export function createFlightLoungeRuntime({
           }
           credits--;
           await audit({ event: "supplier_dispatch", supplier: "duffel" });
-          if (!(await authorize()).allowed || signal?.aborted) throw Error("access_revoked");
+          if (!(await authorize()).allowed || signal?.aborted || init.signal?.aborted) throw Error("access_revoked");
           try {
             const result = await fetchImpl(url, init);
             await audit({

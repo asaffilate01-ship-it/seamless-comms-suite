@@ -46,6 +46,12 @@ export function createTravellerFlightHandler({siteOrigin,resolveAccess,session,a
    const json=JSON.stringify(result);if(Buffer.byteLength(json)>4000000)return failure(502,'response_too_large');
    await audit({...context,event:'traveller_flight_delivered',action},{signal:request.signal});
    if(request.signal.aborted)return failure(408,'request_cancelled');
+   // Audit and access checks can take time: never deliver a revoked or expired quote.
+   const delivery=await resolveAccess(request,{signal:request.signal});
+   if(request.signal.aborted)return failure(408,'request_cancelled');
+   if(delivery?.allowed!==true||delivery.tenantId!==context.tenantId||delivery.actorId!==context.actorId)return failure(403,'access_denied');
+   const offers=action==='search'?result.offers:action==='flexibleSearch'?result.candidates?.flatMap(c=>c.offers):result.offer?[result.offer]:[];
+   if(offers?.some(o=>!(Date.parse(o?.expiresAt)>now())))return failure(409,'fare_expired_before_delivery');
    return new Response(json,{status:200,headers:{...headers,'Content-Type':'application/json; charset=utf-8'}});
   }catch{return failure(503,'flight_request_unavailable');}
  };

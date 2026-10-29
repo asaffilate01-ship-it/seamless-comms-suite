@@ -224,3 +224,21 @@ Authentication inspection: `src/integrations/supabase/auth-middleware.ts` verifi
 for Omniqora server functions, but does not itself establish a FlightLounge passenger's
 current membership, entitlement or session revocation. It was not modified or treated as
 proof of a deployed Journeys identity integration.
+
+### Delivery and baggage integrity follow-up
+
+The passenger handler rechecks authenticated access after the final audit and checks all
+returned fare expiries immediately before delivery. A quote expiring during audit/access
+work returns 409 with no fare or savings payload; the passenger must search/refresh again.
+The final access check remains inside the existing request deadline. The runtime also
+rechecks the supplier's shorter cancellation deadline immediately before transport.
+
+Baggage parsing skips malformed ancillary entries while retaining valid siblings. Missing
+or duplicate supplier passenger/segment IDs suppress ancillary pricing; duplicate scopes
+within a baggage service are rejected. A selected option that cannot be resolved safely
+requires reselection (409), rather than being treated as free or assigned to the wrong
+passenger. These source changes do not enable live supplier access.
+
+Follow-up verification: all 144 travel-core tests passed (seven additional regressions),
+alongside application typecheck/build, 41 PostgreSQL security checks and 17 bridge tests.
+Synthetic supplier fixtures only; no production activation or schema changes.

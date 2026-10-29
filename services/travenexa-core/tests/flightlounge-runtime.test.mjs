@@ -343,3 +343,11 @@ test("private controls deny an unprivileged database role", async (t) => {
   );
   await s.pg.exec("RESET ROLE");
 });
+
+test('supplier deadline expiring in dispatch audit prevents the transport call',async t=>{
+ const s=await setup(t),controller=new AbortController(),timeout=AbortSignal.timeout;
+ t.mock.method(AbortSignal,'timeout',ms=>ms===15000?controller.signal:timeout(ms));
+ const audit=s.controls.audit;
+ s.controls.audit=async(event,options)=>{await audit(event,options);if(event.event==='supplier_dispatch')controller.abort();};
+ const response=await s.request();assert.equal(response.status,503);assert.equal(s.state.calls,0);
+});
