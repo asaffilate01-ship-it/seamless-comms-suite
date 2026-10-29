@@ -1,6 +1,7 @@
 // Node 22 HTTP entry point for TraveNexa's authenticated server-to-server gateway.
 // All supplier adapters are absent by default; no demo fare ever appears as live.
 import http from 'node:http';
+import {Readable} from 'node:stream';
 import {createOfferRefresh} from './flightlounge/offer-refresh.mjs';
 import {createFlexibleFlightSearch} from './flightlounge/flexible-search.mjs';
 import {createLiveFlightSearch} from './flightlounge/live-search.mjs';
@@ -40,13 +41,30 @@ async function bodyJson(req) {
   }
   return JSON.parse(Buffer.concat(parts).toString('utf8'));
 }
-export function createServer({engine=defaultEngine(),flightSearch=createLiveFlightSearch(),flexibleFlightSearch=createFlexibleFlightSearch(),offerRefresh=createOfferRefresh()}={}) {
+export function createServer({engine=defaultEngine(),flightSearch=createLiveFlightSearch(),flexibleFlightSearch=createFlexibleFlightSearch(),offerRefresh=createOfferRefresh(),travellerHandler,passengerOrigin}={}) {
   const hits=new Map();
   const server=http.createServer(async (req,res)=>{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
     if (path==='/healthz' && req.method==='GET')
       return reply(res,200,{service:'travenexa-core',supplierInventory:'not_verified_by_health',
         configuredTenants:engine.hasConfiguredTenants(),bookingsEnabled:false,paymentsEnabled:false});
+    // Passenger identity is resolved by the mounted handler, never tenant-token headers.
+    if (path.startsWith('/api/flights/')) {
+      if (!travellerHandler || !passengerOrigin || !/^https:\/\/[^/]+$/.test(passengerOrigin))
+        return reply(res,503,{status:'unavailable',reason:'passenger_gateway_not_configured'});
+      const controller=new AbortController();
+      const abort=()=>controller.abort();req.on('aborted',abort);res.on('close',abort);
+      try {
+        const request=new Request(new URL(req.url,passengerOrigin),{
+          method:req.method,headers:req.headers,signal:controller.signal,
+          ...(!['GET','HEAD'].includes(req.method)?{body:Readable.toWeb(req),duplex:'half'}:{})
+        });
+        const response=await travellerHandler(request);
+        if (!res.destroyed) {res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));}
+      }catch{if(!res.destroyed)reply(res,503,{status:'unavailable',reason:'passenger_gateway_unavailable'});}
+      finally{req.off('aborted',abort);res.off('close',abort);}
+      return;
+    }
     const scopedPaths=['/v1/flights/refresh','/v1/flights/flexible-search','/v1/flights/search','/v1/travel/search','/v1/inbound-uk/search','/v1/travel/readiness',
       '/v1/travel/booking-preflight','/v1/omniqora/tools','/v1/omniqora/tool-call'];
     if (!scopedPaths.includes(path)) return reply(res,404,{status:'unavailable',reason:'unknown_api'});

@@ -20,3 +20,23 @@ test('caller cancellation propagates to running session and suppresses late resp
 test('pre-cancelled request never invokes access resolver or service',async()=>{let calls=0;const c=new AbortController();c.abort();const s=setup({resolveAccess:async()=>{calls++;return access;}});assert.equal((await s.handle(req(undefined,query,{signal:c.signal}))).status,408);assert.equal(calls,0);assert.equal(s.calls.length,0);});
 test('deadline includes delivery audit after service completion',{timeout:2000},async()=>{const s=setup({timeoutMs:20,audit:async event=>{if(event.event==='traveller_flight_delivered')return new Promise(()=>{});}});const response=await s.handle(req());assert.equal(response.status,408);assert.equal((await response.json()).bookingsEnabled,false);assert.equal(s.calls.length,1);});
 test('deadline cancels an unfinished body stream',{timeout:2000},async()=>{let cancelled=false;const stream=new ReadableStream({start(c){c.enqueue(new TextEncoder().encode('{'));},cancel(){cancelled=true;}});const s=setup({timeoutMs:20});const request=new Request(origin+'/api/flights/search',{method:'POST',headers:{origin,'content-type':'application/json'},body:stream,duplex:'half'});assert.equal((await s.handle(request)).status,408);await new Promise(resolve=>setImmediate(resolve));assert.equal(cancelled,true);assert.equal(s.calls.length,0);});
+
+test('revocation during final audit suppresses delivery',async()=>{
+ let revoked=false;
+ const s=setup({resolveAccess:async()=>({...access,allowed:!revoked}),audit:async e=>{if(e.event==='traveller_flight_delivered')revoked=true;}});
+ const r=await s.handle(req());assert.equal(r.status,403);assert.equal((await r.json()).bookingsEnabled,false);
+});
+test('search, flexible and refresh fares expiring during delivery audit return 409',async()=>{
+ for(const action of ['search','flexibleSearch','refresh']){
+  let clock=at;const offer={id:'off_fixture',expiresAt:new Date(at+1000).toISOString()};
+  const result={status:'live',...(action==='search'?{offers:[offer]}:action==='refresh'?{offer}:{candidates:[{offers:[offer]}],summaries:[{best:{offerId:offer.id}}]})};
+  const s=setup({now:()=>clock,session:{[action]:async()=>result},audit:async e=>{if(e.event==='traveller_flight_delivered')clock+=1000;}});
+  const path=action==='flexibleSearch'?'flexible-search':action;
+  const data=action==='search'?query:action==='refresh'?{offerRef:'offer_'+'a'.repeat(32)}:{query,dateOffsets:[[0]]};
+  const r=await s.handle(req('/api/flights/'+path,data));assert.equal(r.status,409);const body=await r.json();assert.equal(body.reason,'fare_expired_before_delivery');assert.ok(!JSON.stringify(body).includes('off_fixture'));
+ }
+});
+test('last access check remains inside the request deadline',async()=>{
+ let count=0;const s=setup({timeoutMs:20,resolveAccess:async()=>++count===3?new Promise(()=>{}):access});
+ assert.equal((await s.handle(req())).status,408);assert.equal(count,3);
+});

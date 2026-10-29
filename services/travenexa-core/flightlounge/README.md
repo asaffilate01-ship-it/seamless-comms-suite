@@ -21,7 +21,7 @@ Sources reviewed 26 October 2026: https://docs.anthropic.com/en/api/messages ; h
 
 ## Phase 2: live flight search
 
-`createLiveFlightSearch` now implements the official Duffel offer-request protocol and `createServer` exposes authenticated `POST /v1/flights/search`. The default instance remains unavailable, with zero supplier calls. Host injection requires a current persisted supplier/tenant/product approval function, tenant-scoped live secret and durable audit sink. No default approval flags or keys are supplied. Duffel is not yet wired into the existing persisted supplier catalogue, so production activation remains blocked until that integration is reviewed.
+`createLiveFlightSearch` now implements the official Duffel offer-request protocol and `createServer` exposes authenticated `POST /v1/flights/search`. The default instance remains unavailable, with zero supplier calls. Host injection requires a current persisted supplier/tenant/product approval function, tenant-scoped live secret and durable audit sink. No default approval flags or keys are supplied. Duffel is now wired into the persisted supplier catalogue by the optional authorised runtime composition documented at the end of this file; production activation remains blocked by its deployment and acceptance prerequisites.
 
 Accepted input is strictly `{legs:[{origin,destination,departure_date}], adults, cabin, maxConnections, checkedBags}`. Unknown filters are rejected rather than silently ignored. Original supplier currencies are retained. Checked-bag requirements annotate offers; missing or insufficient baggage is not priced as zero. All amounts are supplier fares, not final checkout totals. No offers are bookable from this route. Tests use synthetic responses only and do not establish live supplier access.
 
@@ -130,3 +130,115 @@ Merge is source integration, not supplier activation. Production credentials/app
 The verified request and the optional second argument to `resolveAccess(request, {signal})` and `audit(event, {signal})` carry the same cancellation signal supplied to session operations. Existing one-argument hooks remain compatible. Hosts should honour this signal and use bounded database/network calls: JavaScript cannot forcibly terminate a dependency that ignores cancellation. Late authentication or audit completion cannot advance to supplier dispatch, and late supplier completion cannot deliver a successful response. No automatic retry occurs.
 
 Six regression cases cover stalled authentication, stalled request/delivery audit, cancellation during service execution, cancellation before authentication, and incomplete body streams. Travel-core total: 124 tests. Live supplier access is not activated by this change.
+
+## Current integration status — authorised runtime composition
+
+This section supersedes the historical phase notes above. Duffel is now a `catalogue_only`
+entry and `createFlightLoungeRuntime` reads its current approval through the existing
+`createPostgresSupplierApprovalReader`. No approval rows are seeded or changed. Existing
+approval requirements (including payment/servicing fields) are deliberately preserved;
+read-only search does not grant booking/payment rights or relax commercial policy.
+
+The runtime composes the existing search, nine-itinerary flexible comparison, private
+actor-owned offer store, fare refresh, checked-baggage subtotal and bounded passenger
+HTTP handler. It creates request-local closures so concurrent actors cannot share identity
+or reserved budget. Supplier approval and passenger access are checked before credentials,
+before outbound dispatch, and before delivery. Flexible searches reserve their worst-case
+allowance once; candidate dispatches consume that request-local reservation. Single search
+and refresh reserve one call at dispatch. Denied quotas return 429. Reservations are
+conservatively consumed even on supplier errors, cancellation or unused candidates; no
+implicit refunds or automatic retries can exceed the allowance.
+
+`createPostgresFlightControls({db})` implements atomic tenant+actor allowance debits and
+redacted durable audit records. `db.query(sql,params,{signal})` and
+`db.transaction(async tx => ..., {signal})` are **host adapter contracts**, not an assertion
+that arbitrary PostgreSQL drivers accept these signatures. Transactions must pin one
+connection, commit on success and roll back on throw, with statement/lock deadlines and
+cancellation. Apply `sql/runtime-controls.sql` explicitly to the gateway's private database
+before use; it is not an automatic Supabase migration or startup action. The tables have
+RLS, no public policies/grants, no default quotas and no seeded approvals. Provision a
+private runtime DB identity with reviewed access (the fixture uses the database owner),
+and ensure anon/authenticated roles have neither schema nor table privileges. Audit payloads
+allow only numeric counters/statuses, event name and authenticated scope; no supplier body,
+credential, itinerary or passenger names. This is a durable sink, not tamper-proof archival.
+
+`createServer({travellerHandler,passengerOrigin})` can mount this Fetch handler on
+`/api/flights/search`, `/api/flights/flexible-search` and `/api/flights/refresh`. Exact HTTPS
+origin, JSON, body limits, full-request deadline and no-store protections remain in the
+existing handler. Missing mount configuration returns unavailable. Existing `/v1/flights/*`
+tenant-token routes remain separate and disabled by default. The legacy browser bridge
+cannot supply a verified passenger identity and is not used for this passenger composition.
+Do not expose a second route with weaker authorization.
+
+### Host wiring and precise activation prerequisites
+
+1. Establish legitimate Duffel live API access and commercial/compliance approval. Record
+   the approved tenant/supplier/product row in `public.travenexa_supplier_approvals` with
+   all existing required evidence/flags, expiry and servicing arrangements. Revocation
+   and expiry must be visible on every read; do not cache an allow grant.
+2. Implement `resolveAccess(request,{signal})` using the deployed application's verified
+   session, with revocation handling. Implement `authorizePassenger(context,{signal})`
+   using current tenant membership, FlightLounge entitlement and regional policy. Both
+   must return the exact authenticated `{allowed,tenantId,actorId}`. Caller JSON, actor
+   headers, decoded-but-unverified JWTs and tenant gateway tokens are not identity proof.
+   These deployment-specific resolvers are still unverified; no auth provider was invented.
+3. Provision the private PostgreSQL tables and transactional adapter above; establish
+   database statement/lock deadlines. Create explicit tenant (`subject='*'`) and actor
+   allowance rows with `remaining` and `valid_until`. Operate reviewed quota renewal,
+   request-rate protection, retention, monitoring and alerts. Missing/expired rows deny.
+4. Supply `secretReader(tenantId,'duffel',{signal})` from a tenant-bound server secret
+   manager. Configure a legitimate live token only in that manager, never in browser code,
+   Git, logs or this document. No credential was obtained or verified in this change.
+5. Provision `createFileOfferStore` on a private persistent single-host volume, with
+   encryption at rest, disk quotas, retention cleanup and recovery procedures. For multiple
+   gateway instances provide an equivalent shared actor-scoped store before scaling.
+6. Construct the runtime with these dependencies and mount it in the existing gateway,
+   behind a same-origin trusted reverse proxy for the passenger site. Set `passengerOrigin`
+   and `siteOrigin` to the exact verified HTTPS passenger origin. Secure cookies/session
+   forwarding, TLS, incoming request limits and disconnect propagation require hosted tests.
+7. Establish controlled, authorised staging acceptance before public enablement: session
+   revocation/expiry, cross-user references, persisted approval revocation, concurrent
+   budget exhaustion, audit/database failures, 429/5xx/timeouts, cancellation, partial dates,
+   expired/repriced offers and baggage discrepancies. Fixture tests are not live acceptance.
+   Any controlled live acceptance probe itself requires legitimate access and separate
+   operator authorization; this task performs none.
+8. Only after that evidence exists, supply the explicit server activation object with
+   `commercialApproval`, `secureConfiguration`, `hostedStagingAccepted` and
+   `liveSearchEnabled` all true. They default off and are additional deployment attestations,
+   never substitutes for the persisted approval or session checks. Connect Journeys' search
+   path only after the real route is deployed and accepted. Leave booking/payment disabled.
+
+Reproduction: `npm run test:travel-core` runs adapter, flexible-search, refresh/baggage,
+offer-store, HTTP deadline and the new PostgreSQL-backed runtime integration regressions.
+All supplier transports in tests are synthetic. No live searches, booking, payment,
+production schema application or deployed endpoint has been verified by this change.
+
+Local validation for this integration: 137 travel-core tests (13 new PostgreSQL-backed
+runtime tests), application TypeScript check and production build, repository hygiene and
+41 PostgreSQL security checks, 23 bridge/market-site tests and the TraveNexa factory/database
+integration suite passed. Tests ran with npm/Node and installed declared dependencies;
+no dependency manifests or lockfiles were changed. Hosted CI/review and live staging are
+separate release gates.
+
+Authentication inspection: `src/integrations/supabase/auth-middleware.ts` verifies claims
+for Omniqora server functions, but does not itself establish a FlightLounge passenger's
+current membership, entitlement or session revocation. It was not modified or treated as
+proof of a deployed Journeys identity integration.
+
+### Delivery and baggage integrity follow-up
+
+The passenger handler rechecks authenticated access after the final audit and checks all
+returned fare expiries immediately before delivery. A quote expiring during audit/access
+work returns 409 with no fare or savings payload; the passenger must search/refresh again.
+The final access check remains inside the existing request deadline. The runtime also
+rechecks the supplier's shorter cancellation deadline immediately before transport.
+
+Baggage parsing skips malformed ancillary entries while retaining valid siblings. Missing
+or duplicate supplier passenger/segment IDs suppress ancillary pricing; duplicate scopes
+within a baggage service are rejected. A selected option that cannot be resolved safely
+requires reselection (409), rather than being treated as free or assigned to the wrong
+passenger. These source changes do not enable live supplier access.
+
+Follow-up verification: all 144 travel-core tests passed (seven additional regressions),
+alongside application typecheck/build, 41 PostgreSQL security checks and 17 bridge tests.
+Synthetic supplier fixtures only; no production activation or schema changes.

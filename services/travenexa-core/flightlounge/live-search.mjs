@@ -29,6 +29,7 @@ export function createLiveFlightSearch({authorize,secretReader,audit,fetchImpl=f
       const token=await secretReader(tenantId,'duffel');
       if(typeof token!=='string'||!token.startsWith('duffel_live_'))return unavailable('live_supplier_credential_required');
       await audit({tenantId,supplier:'duffel',event:'search_started'});
+      if(signal?.aborted)return unavailable('search_cancelled');
       const response=await fetchImpl('https://api.duffel.com/air/offer_requests?return_offers=true&supplier_timeout=10000',{
         method:'POST',headers:{Authorization:`Bearer ${token}`,'Duffel-Version':'v2','Content-Type':'application/json',Accept:'application/json'},
         body:JSON.stringify({data:{slices:query.legs,passengers:Array.from({length:query.adults},()=>({type:'adult'})),cabin_class:query.cabin,max_connections:query.maxConnections}}),
@@ -38,10 +39,14 @@ export function createLiveFlightSearch({authorize,secretReader,audit,fetchImpl=f
       const text=await response.text();if(text.length>4000000)throw Error('response_too_large');
       const data=JSON.parse(text).data;
       if(data?.live_mode!==true||!Array.isArray(data.offers))return unavailable('non_live_or_invalid_supplier_response');
+      if(signal?.aborted)return unavailable('search_cancelled');
+      const current=await authorize({tenantId,supplier:'duffel',product:'flights',action:'search'});
+      if(current?.allowed!==true||current.tenantId!==tenantId||current.supplier!=='duffel')return unavailable('supplier_access_revoked');
       const offers=data.offers.slice(0,200).map(o=>normalizeOffer(o,query,now())).filter(Boolean);
       const currencies=[...new Set(offers.map(o=>o.currency))];
       offers.sort((a,b)=>a.currency.localeCompare(b.currency)||Number(b.baggageRequirementMet)-Number(a.baggageRequirementMet)||a.amount-b.amount);
       await audit({tenantId,supplier:'duffel',event:'search_completed',offerCount:offers.length});
+      if(signal?.aborted)return unavailable('search_cancelled');
       return {httpStatus:200,status:'live',offers,currencies,coverage:{attempted:['duffel'],succeeded:['duffel'],rejectedOffers:data.offers.length-offers.length,truncated:data.offers.length>200},searchedAt:new Date(now()).toISOString(),notice:'Supplier fare quotes only. No worldwide-lowest claim. Additional baggage, seats and final seller fees must be confirmed before purchase.',bookingsEnabled:false};
     }catch{return unavailable('supplier_unavailable');}
   }};

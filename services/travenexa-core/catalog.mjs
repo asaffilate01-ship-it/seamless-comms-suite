@@ -33,6 +33,7 @@ export const INBOUND_MARKETS = Object.freeze({
 // Registered integration targets only. No invented credentials, endpoints, commissions or availability.
 const supplier = (id, name, products) => Object.freeze({id,name,products:Object.freeze(products),status:'catalogue_only'});
 export const SUPPLIERS = Object.freeze([
+  supplier('duffel','Duffel',['flights']),
   supplier('mystifly','Mystifly',['flights']),
   supplier('travelfusion','Travelfusion',['flights','rail']),
   supplier('pkfare','PKFARE',['flights']),
