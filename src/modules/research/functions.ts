@@ -1,0 +1,41 @@
+import { createServerFn } from '@tanstack/react-start';
+import { z } from 'zod';
+import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
+import { researchInput } from './contract';
+
+const scope = z.object({ tenantId: z.string().uuid(), productKey: z.string().min(2).max(80) });
+export const getResearch = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator((i: z.infer<typeof scope>) => scope.parse(i)).handler(async ({ context, data }) => {
+    const db = context.supabase as any;
+    const [allowance, history] = await Promise.all([
+      db.from('research_allowances').select('request_limit,requests_used,period_start,period_end,enabled').eq('tenant_id', data.tenantId).eq('product_key', data.productKey).maybeSingle(),
+      db.from('research_requests').select('id,status,result,created_at,preset').eq('tenant_id', data.tenantId).eq('product_key', data.productKey).order('created_at', { ascending: false }).limit(20),
+    ]);
+    if (allowance.error || history.error) throw new Error('Research setup is not available yet');
+    return { configured: process.env.PERPLEXITY_RESEARCH_ENABLED === 'true' && !!process.env.PERPLEXITY_API_KEY,
+      allowance: allowance.data, history: history.data ?? [] };
+  });
+
+export const runResearch = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator((i: z.input<typeof researchInput>) => researchInput.parse(i)).handler(async ({ context, data }) => {
+    if (process.env.PERPLEXITY_RESEARCH_ENABLED !== 'true' || !process.env.PERPLEXITY_API_KEY) throw new Error('Research provider is not configured');
+    const { createHash } = await import('node:crypto');
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { searchPerplexity } = await import('./provider.server');
+    const db = supabaseAdmin as any;
+    const admitted = await db.rpc('reserve_research_request', { _tenant: data.tenantId, _product: data.productKey,
+      _actor: context.userId, _request: data.requestId, _hash: createHash('sha256').update(data.query).digest('hex'), _preset: data.preset });
+    if (admitted.error) throw new Error('Research access or allowance unavailable');
+    if (admitted.data !== true) return { replay: true };
+    let result;
+    try { result = await searchPerplexity(data.query, data.preset, process.env.PERPLEXITY_API_KEY); }
+    catch {
+      await db.from('research_requests').update({ status: 'failed', completed_at: new Date().toISOString() })
+        .eq('id', data.requestId).eq('tenant_id', data.tenantId).eq('status', 'reserved');
+      throw new Error('Research failed. This attempt counts against the allowance; no automatic retry was made.');
+    }
+    const saved = await db.from('research_requests').update({ status: 'completed', result, completed_at: new Date().toISOString() })
+      .eq('id', data.requestId).eq('tenant_id', data.tenantId).eq('status', 'reserved').select('id').single();
+    if (saved.error) throw new Error('Search completed but its receipt could not be saved. Do not retry automatically.');
+    return { replay: false };
+  });

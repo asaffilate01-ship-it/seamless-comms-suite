@@ -21,6 +21,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: bun install --frozen-lockfile
+      - name: Perplexity provider and durable research allowance checks
+        run: |
+          bun test verification/control-plane/perplexity-research.test.ts
+          node --test verification/control-plane/perplexity-research.database.test.mjs
       - name: CRM routing hosted-schema inventory and drift regression
         run: node --test verification/routing/*.test.mjs
       - name: EventPlanr country and entitlement boundaries
