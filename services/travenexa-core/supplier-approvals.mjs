@@ -50,10 +50,11 @@ export function canPresentOffer(approval, bookingMode) {
 export function createPostgresSupplierApprovalReader({db}={}) {
   if (!db || typeof db.query!=='function')
     throw new TypeError('trusted_postgres_query_adapter_required');
+  // Signal-aware hosts supply query(sql, params, {signal}); preserve legacy two-argument calls.
   const query=db.query.bind(db);
   const list=fields.join(',');
-  return async function readApproval({tenantId,supplierKey,productType}) {
-    if (!TENANTS[tenantId] || !SUPPLIER_BY_ID[supplierKey] ||
+  return async function readApproval({tenantId,supplierKey,productType},{signal}={}) {
+    if (signal?.aborted || !TENANTS[tenantId] || !SUPPLIER_BY_ID[supplierKey] ||
         typeof productType!=='string' ||
         !SUPPLIER_BY_ID[supplierKey].products.includes(productType)) return null;
     const response=await query(
@@ -61,7 +62,9 @@ export function createPostgresSupplierApprovalReader({db}={}) {
          WHERE tenant_key=$1 AND supplier_key=$2 AND product_type=$3
            AND active=true AND status='approved' LIMIT 1`,
       [tenantId,supplierKey,productType],
+      ...(signal ? [{signal}] : []),
     );
+    if (signal?.aborted) return null;
     const row=response?.rows?.[0]||null;
     return supplierApprovalValid(row,{tenantId,supplierKey,productType})?row:null;
   };

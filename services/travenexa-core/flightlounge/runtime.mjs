@@ -50,7 +50,7 @@ export function createFlightLoungeRuntime({
       tenantId: context.tenantId,
       supplierKey: "duffel",
       productType: "flights",
-    });
+    }, { signal });
     return approval && !signal?.aborted
       ? { allowed: true, ...context, supplier: "duffel" }
       : { allowed: false };
@@ -61,13 +61,14 @@ export function createFlightLoungeRuntime({
       async (context, raw, { signal } = {}) => {
         let credits = 0,
           budgetDenied = false;
-        const authorize = () => access(context, signal);
-        const audit = (event) => controls.audit({ ...event, ...context }, { signal });
-        async function reserve(calls) {
-          if (!(await authorize()).allowed) return { allowed: false };
-          const grant = await controls.reserveBudget({ ...context, calls }, { signal });
+        const currentAccess = (operationSignal) => access(context, operationSignal);
+        const authorize = () => currentAccess(signal);
+        const audit = (event, operationSignal = signal) => controls.audit({ ...event, ...context }, { signal: operationSignal });
+        async function reserve(calls, operationSignal = signal) {
+          if (!(await currentAccess(operationSignal)).allowed) return { allowed: false };
+          const grant = await controls.reserveBudget({ ...context, calls }, { signal: operationSignal });
           if (
-            signal?.aborted ||
+            operationSignal?.aborted ||
             grant?.allowed !== true ||
             grant.tenantId !== context.tenantId ||
             grant.actorId !== context.actorId
@@ -78,26 +79,40 @@ export function createFlightLoungeRuntime({
         }
         // All network calls pass this last authorization gate, including every flexible candidate.
         const guardedFetch = async (url, init) => {
-          if (!(await authorize()).allowed) throw Error("access_denied");
-          if (init.signal?.aborted) throw Error("cancelled");
-          if (!credits && !(await reserve(1)).allowed) {
+          const operationSignal = AbortSignal.any([signal, init.signal].filter(Boolean));
+          if (!(await currentAccess(operationSignal)).allowed) throw Error("access_denied");
+          if (operationSignal.aborted) throw Error("cancelled");
+          if (!credits && !(await reserve(1, operationSignal)).allowed) {
             budgetDenied = true;
             throw Error("budget_denied");
           }
           credits--;
-          await audit({ event: "supplier_dispatch", supplier: "duffel" });
-          if (!(await authorize()).allowed || signal?.aborted || init.signal?.aborted) throw Error("access_revoked");
+          await audit({ event: "supplier_dispatch", supplier: "duffel" }, operationSignal);
+          if (!(await currentAccess(operationSignal)).allowed || operationSignal.aborted) throw Error("access_revoked");
+          let result;
+          const discard = () => {
+            try { Promise.resolve(result?.body?.cancel()).catch(() => {}); } catch {}
+          };
+          // Own the response until the audit succeeds and the body reader takes over.
+          // Cancellation must release it even if the audit provider ignores its signal.
+          operationSignal.addEventListener("abort", discard, { once: true });
           try {
-            const result = await fetchImpl(url, init);
+            result = await fetchImpl(url, { ...init, signal: operationSignal });
+            if (operationSignal.aborted) throw Error("cancelled");
             await audit({
               event: "supplier_response",
               supplier: "duffel",
               httpStatus: result.status,
-            });
+            }, operationSignal);
+            if (operationSignal.aborted) throw Error("cancelled");
             return result;
           } catch {
-            await audit({ event: "supplier_failed", supplier: "duffel" });
+            discard();
+            if (!operationSignal.aborted)
+              await audit({ event: "supplier_failed", supplier: "duffel" }, operationSignal);
             throw Error("supplier_failed");
+          } finally {
+            operationSignal.removeEventListener("abort", discard);
           }
         };
         const secrets = async (tenant, supplier) => {

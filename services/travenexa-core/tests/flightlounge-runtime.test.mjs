@@ -373,3 +373,71 @@ test('shared PostgreSQL references search on one runtime and refresh on another'
  const alternative=await request(second,'refresh',{offerRef:candidate.offers[0].offerRef});assert.equal(alternative.status,200);assert.ok((await alternative.json()).offer.slices[0].segments[0].departingAt.startsWith(candidate.query.legs[0].departure_date));
  s.state.actorId='bob';assert.equal((await request(second,'refresh',{offerRef:ref})).status,404);assert.equal(s.state.calls,5);
 });
+
+const runtimeRequest=(options,signal)=>createFlightLoungeRuntime(options)(new Request(origin+'/api/flights/search',{
+ method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(query),signal,
+}));
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+test('runtime cancellation reaches stalled persisted approval lookup before any supplier call',async t=>{
+ const s=await setup(t);let started,release,querySignal;
+ const ready=new Promise(resolve=>{started=resolve;});
+ s.options.db={query:async(sql,params,{signal})=>{
+  querySignal=signal;started();await new Promise(resolve=>{release=resolve;});
+  return s.pg.query(sql,params);
+ }};
+ const controller=new AbortController();const pending=runtimeRequest(s.options,controller.signal);
+ await ready;controller.abort();assert.equal((await pending).status,408);
+ assert.equal(querySignal.aborted,true);release();await tick();
+ assert.equal(s.state.calls,0);assert.equal(s.state.secretScopes.length,0);
+});
+test('failed supplier-response audit cancels undelivered body and exposes no fare',async t=>{
+ const s=await setup(t);let cancelled=0;
+ s.options.fetchImpl=async()=>new Response(new ReadableStream({cancel(){cancelled++;return new Promise(()=>{});}}));
+ s.options.controls={...s.controls,audit:async(event,options)=>{
+  if(event.event==='supplier_response')throw Error('private audit failure');
+  return s.controls.audit(event,options);
+ }};
+ const response=await runtimeRequest(s.options);assert.equal(response.status,503);
+ assert.equal(cancelled,1);assert.ok(!(await response.text()).includes('private audit failure'));
+});
+test('cancellation closes supplier body while its response audit ignores abort',async t=>{
+ const s=await setup(t);let started,release,auditSignal,transportSignal,cancelled=0;
+ const ready=new Promise(resolve=>{started=resolve;});
+ s.options.fetchImpl=async(url,{signal})=>{transportSignal=signal;return new Response(new ReadableStream({cancel(){cancelled++;return new Promise(()=>{});}}));};
+ s.options.controls={...s.controls,audit:async(event,options)=>{
+  if(event.event==='supplier_response'){
+   auditSignal=options.signal;started();await new Promise(resolve=>{release=resolve;});return;
+  }
+  return s.controls.audit(event,options);
+ }};
+ const controller=new AbortController();const pending=runtimeRequest(s.options,controller.signal);
+ await ready;assert.equal(auditSignal,transportSignal);controller.abort();
+ assert.equal((await pending).status,408);assert.equal(auditSignal.aborted,true);assert.equal(cancelled,1);
+ release();await tick();
+ assert.equal((await s.pg.query("SELECT count(*)::int AS n FROM flightlounge_private.audit WHERE event='search_completed'")).rows[0].n,0);
+});
+test('late supplier response after cancellation is discarded without auditing it',async t=>{
+ const s=await setup(t);let started,release,cancelled=0;
+ const ready=new Promise(resolve=>{started=resolve;});
+ s.options.fetchImpl=async()=>{started();return new Promise(resolve=>{release=resolve;});};
+ const controller=new AbortController();const pending=runtimeRequest(s.options,controller.signal);
+ await ready;controller.abort();assert.equal((await pending).status,408);
+ release(new Response(new ReadableStream({cancel(){cancelled++;}})));await tick();
+ assert.equal(cancelled,1);
+ assert.equal((await s.pg.query("SELECT count(*)::int AS n FROM flightlounge_private.audit WHERE event IN ('supplier_response','supplier_failed')")).rows[0].n,0);
+});
+test('supplier-only deadline cancels response audit without cancelling the passenger request',async t=>{
+ const s=await setup(t),supplier=new AbortController(),passenger=new AbortController();
+ const timeout=AbortSignal.timeout;let cancelled=false,auditSignal,release;
+ t.mock.method(AbortSignal,'timeout',ms=>ms===15000?supplier.signal:timeout(ms));
+ s.options.fetchImpl=async()=>new Response(new ReadableStream({cancel(){cancelled=true;}}));
+ s.options.controls={...s.controls,audit:async(event,options)=>{
+  if(event.event==='supplier_response'){
+   auditSignal=options.signal;supplier.abort();await new Promise(resolve=>{release=resolve;});return;
+  }
+  return s.controls.audit(event,options);
+ }};
+ const response=await runtimeRequest(s.options,passenger.signal);
+ assert.equal(response.status,503);assert.equal(cancelled,true);assert.equal(auditSignal.aborted,true);
+ assert.equal(passenger.signal.aborted,false);release();await tick();
+});
