@@ -12,6 +12,9 @@ export function createQueueAttempts<T extends Scope>(newId: () => string) {
     );
   return {
     isBusy: () => busy,
+    reference(scope: Scope): string | undefined {
+      return pending.get(key(scope))?.idempotencyKey;
+    },
     discard(scope: Scope) {
       if (busy) throw new Error("A queue request is already in progress.");
       pending.delete(key(scope));
