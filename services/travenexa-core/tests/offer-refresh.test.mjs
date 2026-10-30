@@ -15,7 +15,7 @@ test('GET requests fixed provider with services and returns no passenger PII or 
 test('price, itinerary, currency and baggage changes require review',async()=>{const o=supplier();o.total_amount='260.00';o.total_currency='EUR';o.slices[0].segments[0].departing_at='2026-11-20T10:00:00';o.slices[0].segments[0].passengers[0].baggages=[];const s=setup({fetchImpl:async()=>({ok:true,text:async()=>JSON.stringify({data:o})})});const r=await s.service.refresh(tenant,{offerRef:'ref_1'});assert.equal(r.requiresReview,true);assert.ok(Object.values(r.changes).every(Boolean));});
 test('wrong identity, test-mode, expired and route changes cannot be refreshed as matching',async()=>{for(const mutate of [o=>o.id='off_other',o=>o.live_mode=false,o=>o.expires_at='2020-01-01',o=>o.slices[0].segments[0].destination.iata_code='KHI']){const o=supplier();mutate(o);const s=setup({fetchImpl:async()=>({ok:true,text:async()=>JSON.stringify({data:o})})});assert.notEqual((await s.service.refresh(tenant,{offerRef:'ref_1'})).status,'live');}});
 test('revocation and audit failure discard refreshed output',async()=>{let n=0;const s=setup({authorize:async()=>({allowed:++n===1,tenantId:tenant,supplier:'duffel'})});assert.equal((await s.service.refresh(tenant,{offerRef:'ref_1'})).httpStatus,403);const t=setup({audit:async()=>{throw Error('secret')}});const r=await t.service.refresh(tenant,{offerRef:'ref_1'});assert.ok(!JSON.stringify(r).includes('secret'));assert.equal(t.calls.length,0);});
-test('malformed or unsupported baggage options are excluded, duplicates removed',()=>{const o=supplier();o.available_services.push(structuredClone(o.available_services[0]));assert.equal(baggageServices(o).length,1);o.available_services[0].segment_ids=['wrong'];assert.equal(baggageServices(o).length,1);o.available_services[1].total_amount='NaN';assert.equal(baggageServices(o).length,0);});
+test('malformed or unsupported baggage options and every duplicate ID are excluded',()=>{const o=supplier();o.available_services.push(structuredClone(o.available_services[0]));assert.equal(baggageServices(o).length,0);o.available_services[0].segment_ids=['wrong'];assert.equal(baggageServices(o).length,0);o.available_services[1].total_amount='NaN';assert.equal(baggageServices(o).length,0);});
 test('HTTP refresh requires tenant auth and defaults unavailable',async()=>{const server=createServer({engine:{hasConfiguredTenants:()=>true,authenticate:(_,b)=>b==='test'}});await new Promise(r=>server.listen(0,'127.0.0.1',r));try{const url=`http://127.0.0.1:${server.address().port}/v1/flights/refresh`,init={method:'POST',headers:{'content-type':'application/json','x-travenexa-tenant':tenant},body:JSON.stringify({offerRef:'ref_1'})};assert.equal((await fetch(url,init)).status,401);assert.equal((await fetch(url,{...init,headers:{...init.headers,authorization:'Bearer test'}})).status,503);}finally{await new Promise(r=>server.close(r));}});
 
 test('selected bags are priced from fresh supplier services, not browser amounts',async()=>{const s=setup(),r=await s.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage:[{id:'ase_1',quantity:1}]});assert.equal(r.status,'live');assert.equal(r.baggageSubtotal.knownSubtotal,'280');assert.equal(r.baggageSubtotal.finalTotal,null);assert.equal(r.offer.amount,250);});
@@ -41,4 +41,33 @@ test('duplicate baggage scopes are rejected without making extras free',async()=
 test('refresh rejects oversized streamed supplier responses and cancels their bodies',async()=>{
  let cancelled=false;const s=setup({fetchImpl:async()=>new Response(new ReadableStream({start(c){c.enqueue(new Uint8Array(4000001));},cancel(){cancelled=true;}}))});
  const r=await s.service.refresh(tenant,{offerRef:'ref_1'});assert.equal(r.httpStatus,503);assert.equal(r.offer,undefined);assert.equal(cancelled,true);
+});
+
+test('conflicting duplicate baggage IDs require reselection regardless of ordering',async()=>{
+ for(const reverse of [false,true]){
+  const o=supplier(),other={...structuredClone(o.available_services[0]),total_amount:'90.00'};
+  o.available_services.push(other);if(reverse)o.available_services.reverse();
+  const s=setup({fetchImpl:async()=>Response.json({data:o})});
+  const r=await s.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage:[{id:'ase_1',quantity:1}]});
+  assert.equal(r.httpStatus,409);assert.equal(r.requiresReselection,true);
+  assert.equal(r.baggageSubtotal,undefined);assert.equal(r.offer,undefined);
+ }
+});
+test('malformed and unsupported duplicates cannot leave an apparently unique priced service',()=>{
+ for(const duplicate of [{id:'ase_1'},{id:'ase_1',type:'seat'},{...supplier().available_services[0],segment_ids:['unknown']}]){
+  const o=supplier();o.available_services.push(duplicate);
+  assert.deepEqual(baggageServices(o),[]);
+ }
+});
+test('duplicates beyond the display limit invalidate earlier entries but preserve unique siblings',async()=>{
+ const o=supplier();
+ const unique={...structuredClone(o.available_services[0]),id:'ase_unique',total_amount:'12.50'};
+ o.available_services.push(unique);
+ while(o.available_services.length<200)o.available_services.push(null);
+ o.available_services.push({...structuredClone(o.available_services[0]),total_amount:'1.00'});
+ assert.deepEqual(baggageServices(o).map(s=>s.id),['ase_unique']);
+ const s=setup({fetchImpl:async()=>Response.json({data:o})});
+ const r=await s.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage:[{id:'ase_unique',quantity:1}]});
+ assert.equal(r.status,'live');assert.equal(r.baggageSubtotal.knownSubtotal,'262.5');
+ assert.equal(r.baggageSubtotal.finalTotal,null);assert.equal(r.bookingsEnabled,false);
 });
