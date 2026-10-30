@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { prepareStudy, parseFindings, studySchema } from './contract.ts';
+import { prepareStudy, parseFindings, parseTranscript, createExperimentBacklog, studySchema } from './contract.ts';
 
 type MembershipClient = { from: (table: string) => any };
 export async function authoriseStudy(db: MembershipClient, userId: string, tenantId: string) {
@@ -18,4 +18,12 @@ export async function prepareReview(db: MembershipClient, userId: string, input:
 export async function inspectReview(db: MembershipClient, userId: string, input: unknown, report: unknown) {
   const plan = await prepareReview(db, userId, input);
   return parseFindings(report, plan.digest, plan.study);
+}
+export async function inspectDiscussion(db: MembershipClient, userId: string, input: unknown, transcript: unknown) {
+  const plan = await prepareReview(db, userId, input);
+  return parseTranscript(transcript, plan.digest, plan.study);
+}
+export async function exportExperiments(db: MembershipClient, userId: string, input: unknown, report: unknown) {
+  const plan = await prepareReview(db, userId, input);
+  return createExperimentBacklog(report, plan.digest, plan.study);
 }
