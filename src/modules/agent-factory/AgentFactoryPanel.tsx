@@ -1,4 +1,5 @@
-import {useMemo,useState} from "react";
+import {createQueueAttempts} from "./queue-attempt";
+import {useMemo,useRef,useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {useServerFn} from "@tanstack/react-start";
 import {Bot,Cable,Search,ShieldCheck,Coins,AlertTriangle,ClipboardList} from "lucide-react";
@@ -41,6 +42,16 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
  const [customGoal,setCustomGoal]=useState("");
  const saveFn=useServerFn(upsertAiUseCase);
  const queueFn=useServerFn(queueBudgetedFactoryTask);
+ type QueuePayload={tenantId:string;productKey:string;useCaseId:string;profile:AgentBlueprint["profile"];
+  goal:string;maxSteps:number;providerKey:string;modelKey:string;currency:"GBP"|"USD"|"EUR";
+  inputTokens:number;cachedInputTokens:number;outputTokens:number;toolCeilingMinor:number};
+ const attempts=useRef(createQueueAttempts<QueuePayload>(()=>crypto.randomUUID()));
+ const [,refreshAttempt]=useState(0);
+ const [discardScope,setDiscardScope]=useState("");
+ const attemptScope=JSON.stringify([tenantId,productKey]);
+ const pendingAttempt=attempts.current.pending({tenantId,productKey});
+ const visibleScope=useRef({tenantId,productKey});
+ visibleScope.current={tenantId,productKey};
  const cancelFn=useServerFn(cancelAgentRun);
  const getOperationsFn=useServerFn(getAgentFactoryOperations);
  const setBudgetFn=useServerFn(setAgentFactoryBudget);
@@ -137,18 +148,27 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
   }
   const input=numeric(maxInputTokens),cached=numeric(cachedTokens),output=numeric(maxOutputTokens),tool=numeric(maxToolCost);
   if(input===null||cached===null||output===null||tool===null||cached>input){toast.error("Invalid token limits");return;}
-  try{
-   setRunning(true);setLastQueuedRun("");
-   const result=await queueFn({data:{tenantId,productKey,useCaseId,profile:agent.profile,
-    goal:customGoal.trim()||agent.suggestedGoal,maxSteps:agent.defaultMaxSteps,
-    providerKey:currentRate.provider_key,modelKey:currentRate.model_key,currency:currentRate.currency as "GBP"|"USD"|"EUR",
-    inputTokens:input,cachedInputTokens:cached,outputTokens:output,toolCeilingMinor:tool,idempotencyKey:crypto.randomUUID()}});
-   setLastQueuedRun(result.runId);
-   toast.success("Budget reserved and authorised AI task queued. Execution is subject to the separate worker.");
-   await operations.refetch();await onChanged?.();
-  }catch(e){toast.error(e instanceof Error?e.message:String(e));}
-  finally{setRunning(false);}
+  await admitTask({tenantId,productKey,useCaseId,profile:agent.profile,
+   goal:customGoal.trim()||agent.suggestedGoal,maxSteps:agent.defaultMaxSteps,
+   providerKey:currentRate.provider_key,modelKey:currentRate.model_key,currency:currentRate.currency as "GBP"|"USD"|"EUR",
+   inputTokens:input,cachedInputTokens:cached,outputTokens:output,toolCeilingMinor:tool});
  }
+ async function admitTask(payload:QueuePayload){
+  if(attempts.current.isBusy())return;
+  const sameScope=()=>visibleScope.current.tenantId===payload.tenantId&&visibleScope.current.productKey===payload.productKey;
+  setDiscardScope("");setRunning(true);
+  try{
+   const result=await attempts.current.submit(payload,data=>queueFn({data}));
+   if(sameScope()){
+    setLastQueuedRun(result.runId);
+    toast.success(result.alreadyExists?"Existing task recovered. Check its current status in AI Control.":"Budget reserved and authorised AI task queued. Execution is subject to the separate worker.");
+    try{await operations.refetch();await onChanged?.();}
+    catch{toast.error("Task receipt confirmed; workspace refresh failed. Do not queue again to refresh it.");}
+   }
+  }catch(e){if(sameScope())toast.error(e instanceof Error?e.message:"Queue receipt unavailable");}
+  finally{setRunning(false);refreshAttempt(n=>n+1);}
+ }
+
  async function submit(agent:AgentBlueprint){
   if(!tenantId||!productKey){toast.error("Select a tenant and product");return;}
   if(useCases.some(u=>u.use_case_key===agent.key)){toast.error("Use case already registered; review it in AI Control");return;}
@@ -168,6 +188,17 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
   finally{setSaving(false);}
  }
  return <Card><CardContent className="p-5 space-y-4">
+  {pendingAttempt&&<div role="status" className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
+   <p className="text-sm font-medium">Previous queue request needs a confirmed receipt</p>
+   <p className="text-xs">Retry uses the original task, limits and request ID, even if you changed the form. It may recover an existing task or submit it if the first request never arrived. Server permissions and approvals are checked again.</p>
+   <p className="text-xs text-muted-foreground">Recovery is available while this workspace remains open. After reloading or leaving, inspect run history before submitting again.</p>
+   <Button type="button" size="sm" variant="outline" disabled={running} onClick={()=>admitTask(pendingAttempt)}>Retry original queue request</Button>
+   {discardScope===attemptScope?<div className="space-y-2">
+    <p className="text-xs">Discarding recovery does not cancel a task or release its reserved funds. Check AI Control for an existing task before creating another.</p>
+    <Button type="button" size="sm" variant="outline" disabled={running} onClick={()=>{attempts.current.discard({tenantId,productKey});setDiscardScope("");refreshAttempt(n=>n+1);}}>I checked run history; discard recovery</Button>
+    <Button type="button" size="sm" variant="ghost" disabled={running} onClick={()=>setDiscardScope("")}>Keep recovery</Button>
+   </div>:<Button type="button" size="sm" variant="ghost" disabled={running} onClick={()=>setDiscardScope(attemptScope)}>Discard recovery…</Button>}
+  </div>}
   <div className="flex flex-wrap items-start justify-between gap-3">
    <div><h2 className="flex items-center gap-2 text-lg font-semibold"><Bot className="h-5 w-5"/> AI Agent Factory</h2>
     <p className="mt-1 text-sm text-muted-foreground">Reusable agents for every SaaS product. This catalogue is not a live connector, model or agent execution guarantee.</p>
@@ -237,7 +268,7 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
       <label className="text-xs">Tool cost ceiling (minor units)<Input inputMode="numeric" value={maxToolCost} onChange={e=>setMaxToolCost(e.target.value)}/></label>
      </div>
      {budget&&<p className="text-xs text-muted-foreground">Monthly {budget.currency} budget: {(budget.limit_minor/100).toFixed(2)} · Reserved: {(budget.reserved_minor/100).toFixed(2)} · Incurred: {(budget.spent_minor/100).toFixed(2)}</p>}
-     <Button size="sm" disabled={running||!activeProviderForRate||expected===null||!budget||expected<=0} onClick={()=>queueApproved(selected,existing.id)}>{running?"Reserving…":"Reserve budget & queue approved task"}</Button>
+     <Button size="sm" disabled={running||!!pendingAttempt||!activeProviderForRate||expected===null||!budget||expected<=0} onClick={()=>queueApproved(selected,existing.id)}>{running?"Reserving…":"Reserve budget & queue approved task"}</Button>
      {(!providerReady||!rates.length||!budget)&&<p className="text-xs text-muted-foreground">Set a monthly budget and connect an independently verified, evaluated AI model before queueing. This action does not itself execute the task.</p>}
      {lastQueuedRun&&<div className="flex flex-wrap items-center gap-2">
       <p className="text-xs text-muted-foreground">Queued run: <code>{lastQueuedRun}</code>. Track status in AI Control.</p>

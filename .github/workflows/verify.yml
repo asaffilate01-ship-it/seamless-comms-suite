@@ -73,6 +73,8 @@ jobs:
         run: node --test verification/control-plane/portfolio-expansion.test.mjs
       - name: Property matching agent and safe activation contract
         run: node --test verification/control-plane/property-matching.test.mjs
+      - name: Agent admission retry identity
+        run: node --test verification/agent-operations/queue-attempt.test.mjs
       - name: MCP setup and atomic AI budgets safety contracts
         run: node --test verification/control-plane/agent-factory-phase2.test.mjs
       - name: Governed AI Workforce configuration and tenant isolation
