@@ -36,3 +36,19 @@ export function workspaceClient(binding, authorization) {
   if (typeof authorization !== 'string' || !authorization.startsWith('Bearer ')) throw new Error('Authentication required');
   return createDocumentClient({ endpoint: binding.endpoint, getBearer: async () => authorization.slice(7) });
 }
+
+// The dashboard cannot add execution/recovery actions to the public product API.
+export async function workspaceOperation(client, access, input) {
+  if (!['list', 'submit', 'download', 'history', 'delete'].includes(input.action)) throw new Error('Unsupported document action');
+  if (['submit', 'delete'].includes(input.action) && !access.canWrite) throw new Error('Read-only document access');
+  if (input.action === 'delete' && input.confirmed !== true) throw new Error('Confirm document deletion');
+  try {
+    switch (input.action) {
+      case 'list': return { kind: 'list', configured: true, canWrite: access.canWrite, ...await client.list({ before: input.before, limit: 20 }) };
+      case 'submit': return { kind: 'submitted', ...await client.submit(input) };
+      case 'history': return { kind: 'history', ...await client.history(input.id, { after: input.after, limit: 20 }) };
+      case 'delete': return { kind: 'deleted', ...await client.remove(input.id) };
+      case 'download': return { kind: 'download', base64: (await client.download(input.id)).toString('base64'), filename: `draft-${input.id}.odt` };
+    }
+  } catch { throw new Error('Document service unavailable or access denied. Refresh status before retrying.'); }
+}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { documentWorkspace } from './functions';
+import { DocumentHistory } from './DocumentHistory';
 
 export function DocumentPanel({ tenantId, productKey }: { tenantId: string; productKey: string }) {
   const call = useServerFn(documentWorkspace);
@@ -14,11 +15,17 @@ export function DocumentPanel({ tenantId, productKey }: { tenantId: string; prod
   const [title, setTitle] = useState(''), [body, setBody] = useState('');
   const [requestId, setRequestId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState('');
+  const [historyId, setHistoryId] = useState<string | null>(null), [deleteId, setDeleteId] = useState<string | null>(null);
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [before, setBefore] = useState<number | undefined>();
   const q = useQuery({ queryKey: ['documents', tenantId, productKey, before],
-    queryFn: () => call({ data: { action: 'list', tenantId, productKey, before } }),
-    enabled: !!tenantId && !!productKey, retry: false });
-  const page = !q.isError && q.data?.kind === 'list' ? q.data : null;
+    queryFn: async () => {
+      const response = await call({ data: { action: 'list', tenantId, productKey, before } });
+      if (response.kind !== 'list') throw new Error('Unexpected document response');
+      return { jobs: response.jobs, next: response.next, configured: response.configured, canWrite: response.canWrite };
+    },
+    enabled: !!tenantId && !!productKey, retry: false, gcTime: 0 });
+  const page = !q.isFetching && !q.isError ? q.data : null;
   const paragraphs = body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
   const valid = title.trim().length > 0 && paragraphs.length > 0 && paragraphs.length <= 20 && paragraphs.every(p => p.length <= 4000);
   async function act(id?: string) {
@@ -42,20 +49,47 @@ export function DocumentPanel({ tenantId, productKey }: { tenantId: string; prod
     } catch (e) { if (mounted.current) setMessage(e instanceof Error ? e.message : 'Document request failed'); }
     finally { pending.current = false; if (mounted.current) setBusy(false); }
   }
+  async function removeDraft(id: string) {
+    if (pending.current || deleteId !== id) return;
+    pending.current = true; setBusy(true); setMessage('');
+    try {
+      const result = await call({ data: { action: 'delete', tenantId, productKey, id, confirmed: true } });
+      if (!mounted.current) return;
+      if (result.kind === 'deleted') {
+        setMessage('Draft content deleted. The request and audit history are retained.');
+        setDeleteId(null); setHistoryVersion(v => v + 1);
+      }
+      await q.refetch();
+    } catch (e) {
+      if (mounted.current) { setMessage(e instanceof Error ? e.message : 'Deletion failed'); await q.refetch(); }
+    } finally { pending.current = false; if (mounted.current) setBusy(false); }
+  }
   return <Card><CardContent className="space-y-4 p-5">
     <div><h2 className="font-semibold">Document drafts</h2><p className="text-sm text-muted-foreground">Create an editable ODT document from your text. Review every draft before sharing it.</p></div>
-    {q.isError ? <p role="alert">Document access or service unavailable.</p> : q.isPending ? <p role="status">Loading documents…</p> : !page?.configured ? <p role="status">Not configured for this product. An operator must connect the document service.</p> : !page.canWrite ? <p>Read-only access.</p> : null}
+    {q.isError ? <p role="alert">Document access or service unavailable.</p> : q.isFetching ? <p role="status">Loading documents…</p> : !page?.configured ? <p role="status">Not configured for this product. An operator must connect the document service.</p> : !page.canWrite ? <p>Read-only access.</p> : null}
     <label className="block text-sm">Document title<Input value={title} maxLength={160} disabled={busy || !!requestId} onChange={e => setTitle(e.target.value)}/></label>
     <label className="block text-sm">Text (separate paragraphs with a blank line)<Textarea value={body} maxLength={30000} disabled={busy || !!requestId} onChange={e => setBody(e.target.value)}/></label>
     <div className="flex flex-wrap gap-2">
       <Button disabled={busy || !page?.configured || !page.canWrite || !valid} onClick={() => act()}>{requestId ? 'Retry same request' : 'Create draft'}</Button>
-      <Button variant="outline" disabled={busy || q.isFetching} onClick={() => { setBefore(undefined); void q.refetch(); }}>Refresh status</Button>
+      <Button variant="outline" disabled={busy || q.isFetching} onClick={() => { setDeleteId(null); if (before === undefined) void q.refetch(); else setBefore(undefined); }}>Refresh status</Button>
       {requestId && <Button variant="ghost" disabled={busy} onClick={() => { setRequestId(null); setMessage('The next submission creates a separate request.'); }}>Start new request</Button>}
     </div>
     {requestId && <p className="text-xs">Retries keep the same request ID and text to prevent duplicate drafts. Check status before starting a new request.</p>}
     {message && <p role="status" className="text-sm break-all">{message}</p>}
-    {page?.configured && <div className="space-y-2"><p className="text-xs">Your requests in this product. Up to 20 per page.</p>{page.jobs.length === 0 && <p>No document requests on this page.</p>}{page.jobs.map(job => <div key={job.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-3"><div className="text-sm"><p>{job.day} · {job.status} · Review required</p><p className="text-xs break-all">{job.id}</p></div><Button variant="outline" disabled={busy || job.status !== 'completed'} onClick={() => act(job.id)}>Download draft</Button></div>)}
-      {page.next !== null && <Button variant="outline" disabled={busy || q.isFetching} onClick={() => setBefore(page.next!)}>Older requests</Button>}
+    {page?.configured && <div className="space-y-2"><p className="text-xs">Your requests in this product. Up to 20 per page.</p>{page.jobs.length === 0 && <p>No document requests on this page.</p>}{page.jobs.map(job => <div key={job.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-3">
+      <div className="text-sm"><p>{job.day} · {job.status} · Review required</p><p className="text-xs break-all">{job.id}</p></div>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" disabled={busy || job.status !== 'completed'} onClick={() => act(job.id)}>Download draft</Button>
+        <Button variant="outline" disabled={busy} aria-expanded={historyId === job.id} onClick={() => setHistoryId(historyId === job.id ? null : job.id)}>{historyId === job.id ? 'Hide history' : 'View history'}</Button>
+        {page.canWrite && !['running', 'deleted', 'expired'].includes(job.status) && <Button variant="outline" disabled={busy} onClick={() => setDeleteId(job.id)}>Delete draft</Button>}
+      </div>
+      {deleteId === job.id && page.canWrite && !['running', 'deleted', 'expired'].includes(job.status) && <div className="w-full space-y-2 rounded border p-3" role="group" aria-label="Confirm draft deletion">
+        <p className="text-sm">Delete this draft's stored text and file? This cannot be undone. Its request ID and audit history remain. A running job cannot be deleted.</p>
+        <div className="flex gap-2"><Button variant="destructive" disabled={busy} onClick={() => removeDraft(job.id)}>Confirm deletion</Button><Button variant="outline" disabled={busy} onClick={() => setDeleteId(null)}>Cancel</Button></div>
+      </div>}
+      {historyId === job.id && <DocumentHistory key={`${job.id}:${historyVersion}`} tenantId={tenantId} productKey={productKey} id={job.id}/>}
+    </div>)}
+      {page.next !== null && <Button variant="outline" disabled={busy || q.isFetching} onClick={() => { setDeleteId(null); setHistoryId(null); setBefore(page.next!); }}>Older requests</Button>}
     </div>}
   </CardContent></Card>;
 }

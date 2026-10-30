@@ -137,7 +137,9 @@ export function createDocumentClient({ endpoint, getBearer, fetchImpl = globalTh
     async history(id, page = {}) {
       return check(await request('GET', jobPath(id) + '/history' + pageQuery(page, 'after')),
         v => keys(v, ['events', 'next']) && Array.isArray(v.events) && v.events.length <= (page.limit ?? 25) && cursor(v.next) &&
-          v.events.every(e => keys(e, ['id', 'event', 'at']) && positive(e.id) && states.has(e.event) && typeof e.at === 'string'));
+          v.events.every((e, index) => keys(e, ['id', 'event', 'at']) && positive(e.id) && e.id > (index ? v.events[index - 1].id : page.after ?? 0) &&
+            states.has(e.event) && typeof e.at === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(e.at)) &&
+          (v.next === null || (v.events.length > 0 && v.next === v.events.at(-1).id)));
     },
     async remove(id) {
       return check(await request('DELETE', jobPath(id)), v => keys(v, ['id', 'status']) && v.id === id && v.status === 'deleted');

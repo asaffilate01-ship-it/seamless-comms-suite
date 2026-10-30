@@ -61,5 +61,11 @@ quota/retention settings and regional deployment have been tested with two isola
 No environment binding is enabled by this change. Missing bindings show Not configured;
 configuration alone is not a health check. A configured but unreachable/unauthorised
 service shows unavailable. This does not deploy workers or activate all portfolio products.
-Audit/deletion administration remains available through the existing API; dashboard controls
-for those operations and production verification remain later rollout work.
+The dashboard also exposes actor-owned audit history (20 events per page, oldest first,
+UTC) and confirmed deletion for owner/admin/agent users. Deletion clears stored content
+but retains the request identity and audit history; it does not erase backup copies or
+reset quota/idempotency. Running jobs cannot be deleted, including when execution starts
+between confirmation and the delete request. Deletion retries are safe and never automatic.
+History cursors must move forward and match the final event; malformed responses fail closed.
+Query caches are discarded when inactive, and stale results are hidden during refresh.
+Production verifier, worker scheduling and per-product staging acceptance remain outstanding.
