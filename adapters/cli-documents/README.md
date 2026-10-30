@@ -30,3 +30,36 @@ No service is auto-started or connected to the 88 catalogue products. Each produ
 Run `node --test adapters/cli-documents/*.test.mjs` and `python3 -m unittest discover -s services/cli-automation/tests -v` from the repository root.
 
 The HTTP test starts a temporary Python WSGI server bound only to 127.0.0.1, with synthetic credentials, two synthetic tenants and a fixture document backend. It exercises the real client, HTTP parsing, API, SQLite jobs, pagination, auth denial and checksum-verified downloads. It does not verify real JWTs, production infrastructure, visual document layout or live product data. `http_fixture.py` is strictly a test fixture, never a deployment launcher. The separate opt-in Python E2E still validates actual CLI-Anything generation when the reviewed executable is installed.
+
+## Omniqora document workspace
+
+AI Control now includes Document drafts: submit text, refresh job status, page through
+actor-owned requests and download integrity-checked ODT drafts. Submission retries retain
+an immutable request ID and payload until the user explicitly starts another request.
+Tenant/product changes remount the form and suppress late downloads from the previous scope.
+
+The server uses the existing authenticated Supabase client (RLS, no service-role key),
+checks current tenant membership and an active `tenant_products` row on every operation,
+and only permits owner/admin/agent submission. Service-side authorisation remains mandatory.
+
+`CLI_DOCUMENT_BINDINGS` is a **server-only** JSON array of exact bindings:
+
+```json
+[{"tenantId":"11111111-1111-4111-8111-111111111111","productKey":"omniqora","endpoint":"https://documents.example.test"}]
+```
+
+This is a placeholder example, not a deployed endpoint. Each HTTPS origin must serve
+exactly one tenant/product, derive that fixed scope server-side, validate forwarded
+Supabase bearer signatures/issuer/audience/expiry, derive actor from verified `sub`, and
+recheck current permission/entitlement for that scope. Never infer a tenant from unverified
+claims, trust user metadata, accept arbitrary scope headers, or use a shared static bearer.
+The gateway rejects duplicate origins/scopes. The operator must trust each configured
+origin to receive user access tokens; URLs never come from the browser or database rows.
+Do not configure a binding until its verifier, permission callback, worker schedule,
+quota/retention settings and regional deployment have been tested with two isolated tenants.
+
+No environment binding is enabled by this change. Missing bindings show Not configured;
+configuration alone is not a health check. A configured but unreachable/unauthorised
+service shows unavailable. This does not deploy workers or activate all portfolio products.
+Audit/deletion administration remains available through the existing API; dashboard controls
+for those operations and production verification remain later rollout work.
