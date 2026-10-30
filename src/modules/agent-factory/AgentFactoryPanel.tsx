@@ -1,3 +1,4 @@
+import {QueueReceiptPanel} from "./QueueReceiptPanel";
 import {createQueueAttempts} from "./queue-attempt";
 import {useMemo,useRef,useState} from "react";
 import {useQuery} from "@tanstack/react-query";
@@ -188,8 +189,10 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
   finally{setSaving(false);}
  }
  return <Card><CardContent className="p-5 space-y-4">
+  {tenantId&&productKey&&<QueueReceiptPanel key={tenantId+"|"+productKey} tenantId={tenantId} productKey={productKey}/>}
   {pendingAttempt&&<div role="status" className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
    <p className="text-sm font-medium">Previous queue request needs a confirmed receipt</p>
+   <p className="text-xs">Save this request reference before leaving: <code className="select-all break-all">{attempts.current.reference({tenantId,productKey})}</code>. Use “Find an earlier queue request” after reloading.</p>
    <p className="text-xs">Retry uses the original task, limits and request ID, even if you changed the form. It may recover an existing task or submit it if the first request never arrived. Server permissions and approvals are checked again.</p>
    <p className="text-xs text-muted-foreground">Recovery is available while this workspace remains open. After reloading or leaving, inspect run history before submitting again.</p>
    <Button type="button" size="sm" variant="outline" disabled={running} onClick={()=>admitTask(pendingAttempt)}>Retry original queue request</Button>
