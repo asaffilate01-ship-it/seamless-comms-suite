@@ -268,3 +268,55 @@ Validation: 158 travel-core tests (14 new response-boundary regressions), applic
 build/typecheck, repository hygiene with 41 PostgreSQL policy checks, and 17 bridge tests
 passed locally. Supplier fixtures only. No credentials, live requests, schema changes,
 bookings, payments or deployment were performed.
+
+## Shared PostgreSQL offer storage
+
+`createPostgresOfferStore({db})` is an optional alternative to `createFileOfferStore`, using
+the same `put/get/remove` contract. Inject it as `offerStore` into `createFlightLoungeRuntime`;
+separate gateway instances can then resolve the same passenger-owned offer references.
+No passenger route or supplier protocol changes are needed. The file store remains available
+for a single host; this change neither copies its existing records nor changes its defaults.
+
+Explicitly provision `sql/offer-store.sql` in the private gateway database. It creates
+`flightlounge_private.offers` and `offer_quotas`, enables RLS and revokes public access.
+It is not automatically applied at startup or through Supabase migrations. Establish a
+reviewed private runtime database role and the same transactional adapter used by budgets,
+with connection-pinned transactions, rollback on throw, statement/lock deadlines and
+cancellation. Browser roles must not have private schema/table privileges. No quotas are
+seeded. Administrators must provision both the tenant `subject='*'` row and each verified
+passenger's subject row with an explicit `max_records` (0 denies new writes).
+
+Writes lock the tenant quota before the passenger quota. Counts include expired records,
+so a stopped cleanup job cannot allow unbounded storage growth. A failed quota check or
+cancelled transaction stores no record; traveller-session cleanup removes partially saved
+batches. Records are limited to 128 KB and expire at the earlier of supplier expiry or
+30 minutes from the database clock. Reads/removal always match tenant, passenger and opaque
+reference. Supply normalized server snapshots only, never raw supplier bodies or credentials.
+Quotas are storage controls, not supplier-call budgets or a substitute for access revocation.
+
+A trusted maintenance worker can call `purgeExpired({tenantId,limit:500})`, which deletes
+only expired records for that tenant, up to 1,000 per call, using `SKIP LOCKED` for competing
+workers. Repeat bounded batches on a host-managed schedule. The result contains only the
+number deleted. No passenger endpoint exposes cleanup. Monitor quota denials and maintenance
+lag; provision encryption, backups and retention for backups/audit separately. Changes to
+quota configuration are administrator operations outside the passenger API.
+
+Example host composition (all existing auth/approval/activation dependencies remain required):
+
+```js
+const offerStore = createPostgresOfferStore({db});
+const handler = createFlightLoungeRuntime({...verifiedHostDependencies, db, offerStore});
+const server = createServer({travellerHandler: handler, passengerOrigin: verifiedSiteOrigin});
+```
+
+This supplies the shared storage implementation previously listed as a multi-instance
+prerequisite. Actual database provisioning, runtime role grants, maintenance scheduling,
+failover/load testing and hosted passenger acceptance remain outstanding. No existing live
+data was migrated or deleted, and no live supplier search, booking or payment was activated.
+
+Validation: 168 travel-core tests, application build/typecheck, repository hygiene with 41
+PostgreSQL policy checks and 17 bridge tests passed. The final 24 shared-store/runtime tests
+were rerun after tightening quota locking. Tests use disposable PGlite and synthetic supplier
+responses; they do not establish hosted multi-connection load/failover acceptance. Storage
+quota failures suppress results and clean up partial batches; supplier-call budgets already
+consumed by the search are not refunded or retried automatically.
