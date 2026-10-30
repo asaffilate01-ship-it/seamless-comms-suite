@@ -89,3 +89,9 @@ No execution, reconciliation or retention route is exposed. Those remain trusted
 `expire(scope, days=7)` requires `document.retention`, accepts 1–90 days and clears at most 100 same-tenant/product/actor non-running jobs older than the date cutoff. It retains request digests and audit records to preserve retry identity. There is no automatic retention schedule, physical storage erasure guarantee or cross-tenant operator bypass. Running jobs must be reconciled separately. The host must schedule retention and its own audit/tombstone retention policy before production use.
 
 Validation on 30 October 2026 adds API authentication/role boundaries, pagination across inserts, foreign-job denial, no exposed execution routes, request limits/error redaction, recovery permissions/age, late-result fencing, idempotent deletion and scoped retention tests. No real product JWT, deployed endpoint, browser session or customer data was used.
+
+## Phase 3: HTTP mounting and JavaScript product integration
+
+`wsgi_app.create_app` wraps the API in a mountable WSGI application with one service connection per request, guaranteed cleanup, bounded request framing and private length-delimited responses. No production listener is started. The actual host still supplies token verification, current permissions, TLS, rate limits and read timeouts. Duplicate header rejection belongs to the upstream HTTP server/proxy.
+
+`adapters/cli-documents/client.mjs` supplies the server-side JavaScript client for submissions, paginated lists/history, status, downloads and deletion. It obtains fresh credentials per request, refuses redirects, bounds credential/network/body waits, validates response schemas, and checks downloaded bytes against the completed job's SHA-256. No automatic retries, polling, worker execution or tenant selectors are provided. See that adapter's README for deployment boundaries and the synthetic two-tenant real-HTTP acceptance test.
