@@ -19,3 +19,14 @@ test('airport-change itineraries require explicit opt-in',async()=>{const o=offe
 test('invalid filter types fail before any supplier call',()=>{for(const p of [{includedBagsOnly:'true'},{allowAirportChanges:1},{maxDurationMinutes:0},{maxDurationMinutes:Infinity}])assert.equal(validateFlightSearch({...q,...p},at),null);});
 
 test('malformed supplier entries do not hide valid sibling offers',async()=>{for(const change of [o=>o.slices=[null],o=>o.slices[0].segments=[null],o=>o.slices[0].segments[0].passengers=[null],o=>o.slices[0].segments[0].passengers[0].baggages={}]){const bad=offer();change(bad);const s=setup({fetchImpl:async()=>({ok:true,text:async()=>JSON.stringify({data:{live_mode:true,offers:[bad,offer()]}})})});const r=await s.service.search(tenant,q);assert.equal(r.status,'live');assert.equal(r.offers.length,1);assert.equal(r.coverage.rejectedOffers,1);}});
+
+test('supplier body cancellation is reported as a failed attempt, not an empty search',async()=>{
+ const controller=new AbortController();let started,cancelled=false;const ready=new Promise(r=>{started=r;});
+ const s=setup({fetchImpl:async()=>new Response(new ReadableStream({pull(){started();},cancel(){cancelled=true;}}))});
+ const pending=s.service.search(tenant,q,{signal:controller.signal});await ready;controller.abort();const r=await pending;
+ assert.equal(r.status,'unavailable');assert.deepEqual(r.coverage.failed,['duffel']);assert.deepEqual(r.coverage.succeeded,[]);assert.equal(cancelled,true);
+});
+test('oversized successful supplier body is rejected without publishing offers',async()=>{
+ let cancelled=false;const s=setup({fetchImpl:async()=>new Response(new ReadableStream({start(c){c.enqueue(new Uint8Array(4000001));},cancel(){cancelled=true;}}))});
+ const r=await s.service.search(tenant,q);assert.equal(r.httpStatus,503);assert.deepEqual(r.coverage.failed,['duffel']);assert.equal(cancelled,true);
+});

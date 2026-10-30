@@ -47,7 +47,7 @@ export function createFlexibleFlightSearch({flightSearch,reserveBudget,authorize
      if(combined.aborted){c.status='cancelled';continue;}
      c.status=r.status==='live'&&Array.isArray(r.offers)?'live':'unavailable';
      c.offers=c.status==='live'?r.offers.slice(0,200):[];
-     c.coverage=r.coverage?{attempted:r.coverage.attempted,succeeded:r.coverage.succeeded,truncated:r.coverage.truncated===true}:null;
+     c.coverage=r.coverage?{attempted:r.coverage.attempted,succeeded:r.coverage.succeeded,failed:r.coverage.failed??[],truncated:r.coverage.truncated===true}:null;
     }catch{c.status='unavailable';}
    }
    const grant=await authorize({tenantId,action:'flexible_search'});

@@ -1,3 +1,4 @@
+import {supplierJson} from './supplier-response.mjs';
 import {validTravelDate,safeText} from '../policy.mjs';
 const CABINS=['economy','premium_economy','business','first'];
 export function validateFlightSearch(raw,now=Date.now()) {
@@ -23,6 +24,8 @@ export function createLiveFlightSearch({authorize,secretReader,audit,fetchImpl=f
     if(!query)return {httpStatus:400,status:'invalid_request',reason:'unsupported_or_invalid_search',offers:[]};
     if(tenantId!=='travenexa-flightlounge')return {httpStatus:403,status:'unavailable',reason:'flightlounge_tenant_required',offers:[]};
     if(!authorize||!secretReader||!audit)return unavailable('supplier_not_configured');
+    let attempted=false;
+    const failed=reason=>({...unavailable(reason),coverage:{attempted:attempted?['duffel']:[],succeeded:[],failed:attempted?['duffel']:[]}});
     try {
       const grant=await authorize({tenantId,supplier:'duffel',product:'flights',action:'search'});
       if(grant?.allowed!==true||grant.tenantId!==tenantId||grant.supplier!=='duffel')return unavailable('supplier_not_approved');
@@ -30,25 +33,25 @@ export function createLiveFlightSearch({authorize,secretReader,audit,fetchImpl=f
       if(typeof token!=='string'||!token.startsWith('duffel_live_'))return unavailable('live_supplier_credential_required');
       await audit({tenantId,supplier:'duffel',event:'search_started'});
       if(signal?.aborted)return unavailable('search_cancelled');
-      const response=await fetchImpl('https://api.duffel.com/air/offer_requests?return_offers=true&supplier_timeout=10000',{
+      attempted=true;
+      const response=await supplierJson(fetchImpl,'https://api.duffel.com/air/offer_requests?return_offers=true&supplier_timeout=10000',{
         method:'POST',headers:{Authorization:`Bearer ${token}`,'Duffel-Version':'v2','Content-Type':'application/json',Accept:'application/json'},
         body:JSON.stringify({data:{slices:query.legs,passengers:Array.from({length:query.adults},()=>({type:'adult'})),cabin_class:query.cabin,max_connections:query.maxConnections}}),
         redirect:'error',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)
       });
-      if(!response.ok)return {...unavailable('supplier_request_failed'),coverage:{attempted:['duffel'],succeeded:[]}};
-      const text=await response.text();if(text.length>4000000)throw Error('response_too_large');
-      const data=JSON.parse(text).data;
-      if(data?.live_mode!==true||!Array.isArray(data.offers))return unavailable('non_live_or_invalid_supplier_response');
-      if(signal?.aborted)return unavailable('search_cancelled');
+      if(!response.ok)return failed('supplier_request_failed');
+      const data=response.data?.data;
+      if(data?.live_mode!==true||!Array.isArray(data.offers))return failed('non_live_or_invalid_supplier_response');
+      if(signal?.aborted)return failed('search_cancelled');
       const current=await authorize({tenantId,supplier:'duffel',product:'flights',action:'search'});
-      if(current?.allowed!==true||current.tenantId!==tenantId||current.supplier!=='duffel')return unavailable('supplier_access_revoked');
+      if(current?.allowed!==true||current.tenantId!==tenantId||current.supplier!=='duffel')return failed('supplier_access_revoked');
       const offers=data.offers.slice(0,200).map(o=>normalizeOffer(o,query,now())).filter(Boolean);
       const currencies=[...new Set(offers.map(o=>o.currency))];
       offers.sort((a,b)=>a.currency.localeCompare(b.currency)||Number(b.baggageRequirementMet)-Number(a.baggageRequirementMet)||a.amount-b.amount);
       await audit({tenantId,supplier:'duffel',event:'search_completed',offerCount:offers.length});
-      if(signal?.aborted)return unavailable('search_cancelled');
-      return {httpStatus:200,status:'live',offers,currencies,coverage:{attempted:['duffel'],succeeded:['duffel'],rejectedOffers:data.offers.length-offers.length,truncated:data.offers.length>200},searchedAt:new Date(now()).toISOString(),notice:'Supplier fare quotes only. No worldwide-lowest claim. Additional baggage, seats and final seller fees must be confirmed before purchase.',bookingsEnabled:false};
-    }catch{return unavailable('supplier_unavailable');}
+      if(signal?.aborted)return failed('search_cancelled');
+      return {httpStatus:200,status:'live',offers,currencies,coverage:{attempted:['duffel'],succeeded:['duffel'],failed:[],rejectedOffers:data.offers.length-offers.length,truncated:data.offers.length>200},searchedAt:new Date(now()).toISOString(),notice:'Supplier fare quotes only. No worldwide-lowest claim. Additional baggage, seats and final seller fees must be confirmed before purchase.',bookingsEnabled:false};
+    }catch{return failed('supplier_unavailable');}
   }};
 }
 export function normalizeOffer(o,q,now){

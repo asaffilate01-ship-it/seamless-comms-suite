@@ -1,3 +1,4 @@
+import {supplierJson} from './supplier-response.mjs';
 import {validBagSelection,baggageSubtotal} from './baggage-subtotal.mjs';
 import {normalizeOffer,validateFlightSearch} from './live-search.mjs';
 const tenant='travenexa-flightlounge';
@@ -37,10 +38,9 @@ export function createOfferRefresh({authorize,loadOffer,secretReader,audit,fetch
    const token=await secretReader(tenantId,'duffel');
    if(typeof token!=='string'||!token.startsWith('duffel_live_'))return fail(503,'live_supplier_credential_required');
    await audit({tenantId,event:'offer_refresh_started'});
-   const response=await fetchImpl(`https://api.duffel.com/air/offers/${encodeURIComponent(record.offer.id)}?return_available_services=true`,{method:'GET',headers:{Authorization:`Bearer ${token}`,'Duffel-Version':'v2',Accept:'application/json'},redirect:'error',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)});
+   const response=await supplierJson(fetchImpl,`https://api.duffel.com/air/offers/${encodeURIComponent(record.offer.id)}?return_available_services=true`,{method:'GET',headers:{Authorization:`Bearer ${token}`,'Duffel-Version':'v2',Accept:'application/json'},redirect:'error',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)});
    if(!response.ok)return fail(response.status===404||response.status===410?409:503,'supplier_offer_unavailable');
-   const text=await response.text();if(text.length>4000000)return fail(503,'invalid_supplier_response');
-   const supplier=JSON.parse(text).data;
+   const supplier=response.data?.data;
    if(supplier?.id!==record.offer.id)return fail(503,'offer_identity_mismatch');
    const offer=normalizeOffer(supplier,query,now());
    if(!offer)return fail(409,'offer_no_longer_matches');
