@@ -1,3 +1,4 @@
+import {RunHistoryPanel} from "./RunHistoryPanel";
 import {useMemo,useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {useServerFn} from "@tanstack/react-start";
@@ -168,6 +169,7 @@ export function AgentFactoryPanel({tenantId,productKey,useCases=[],providers=[],
   finally{setSaving(false);}
  }
  return <Card><CardContent className="p-5 space-y-4">
+  {tenantId&&productKey&&<RunHistoryPanel key={tenantId+"|"+productKey} tenantId={tenantId} productKey={productKey} refreshVersion={operations.dataUpdatedAt} onChanged={async()=>{await operations.refetch();await onChanged?.();}}/>}
   <div className="flex flex-wrap items-start justify-between gap-3">
    <div><h2 className="flex items-center gap-2 text-lg font-semibold"><Bot className="h-5 w-5"/> AI Agent Factory</h2>
     <p className="mt-1 text-sm text-muted-foreground">Reusable agents for every SaaS product. This catalogue is not a live connector, model or agent execution guarantee.</p>
