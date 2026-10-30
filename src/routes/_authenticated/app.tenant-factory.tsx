@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { FleetoraOperatorPanel } from "@/modules/control-plane/FleetoraOperatorPanel";
+import { ReviewLabPanel } from "@/modules/review-lab/ReviewLabPanel";
 
 export const Route = createFileRoute("/_authenticated/app/tenant-factory")({
   component: ControlPlane,
@@ -398,6 +399,8 @@ function ControlPlane() {
           value={String(detail.data?.provisioning?.length ?? 0)}
         />
       </div>
+
+      {selectedTenantId && <ReviewLabPanel key={selectedTenantId} tenantId={selectedTenantId} />}
 
       {selectedTenantId && (
         <DishbeeFamilyReadinessPanel
