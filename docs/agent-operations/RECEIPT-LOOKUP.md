@@ -91,3 +91,15 @@ passed actual download-to-import recovery, explicit lookup and foreign-product
 rejection. All 40 focused tests and 41 disposable database checks passed, alongside
 typecheck and build. Hosted signed-in acceptance is still outstanding. Stacked on
 PR #216; no schema, permissions, retry or provider behaviour changes.
+
+## Clearing the lookup
+
+Clear lookup removes the current reference, result and import feedback and returns
+keyboard focus to the reference input. It invalidates pending file reads and
+starts a new query generation so late lookup responses cannot restore the cleared
+view or satisfy a subsequent lookup. This is a local display reset: it does not
+cancel server work, erase audit records or delete downloaded reference files.
+
+Local synthetic browser checks exercise clearing a visible receipt, clearing
+while a lookup or file read is pending, keyboard focus and a fresh lookup after
+reset. Hosted acceptance remains outstanding. Stacked on PR #217.
