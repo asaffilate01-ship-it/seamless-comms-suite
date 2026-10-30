@@ -37,3 +37,8 @@ test('duplicate baggage scopes are rejected without making extras free',async()=
  const s=setup({fetchImpl:async()=>Response.json({data:o})});
  const r=await s.service.refresh(tenant,{offerRef:'ref_1',selectedBaggage:[{id:'ase_1',quantity:1}]});assert.equal(r.httpStatus,409);assert.equal(r.requiresReselection,true);
 });
+
+test('refresh rejects oversized streamed supplier responses and cancels their bodies',async()=>{
+ let cancelled=false;const s=setup({fetchImpl:async()=>new Response(new ReadableStream({start(c){c.enqueue(new Uint8Array(4000001));},cancel(){cancelled=true;}}))});
+ const r=await s.service.refresh(tenant,{offerRef:'ref_1'});assert.equal(r.httpStatus,503);assert.equal(r.offer,undefined);assert.equal(cancelled,true);
+});

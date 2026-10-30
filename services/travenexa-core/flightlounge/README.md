@@ -242,3 +242,29 @@ passenger. These source changes do not enable live supplier access.
 Follow-up verification: all 144 travel-core tests passed (seven additional regressions),
 alongside application typecheck/build, 41 PostgreSQL security checks and 17 bridge tests.
 Synthetic supplier fixtures only; no production activation or schema changes.
+
+### Bounded supplier-response processing
+
+Search and refresh share `supplierJson`, which bounds transport plus response-body reading
+with a 15-second deadline and a 4,000,000-byte limit. Native Fetch response bodies are read
+incrementally; oversized bodies are cancelled before further accumulation. UTF-8 is decoded
+strictly after bounded collection. Error bodies are discarded, not parsed or returned.
+Caller cancellation interrupts stalled reads; late responses are discarded, and a stalled
+fetch implementation cannot hold the caller indefinitely. No automatic retries are added.
+
+Production transport adapters must return native Fetch Responses/byte streams. The existing
+text-only adapter fallback is for trusted in-process adapters/fixtures: it enforces returned
+UTF-8 byte size and elapsed time, but cannot control how that adapter buffers text internally.
+Database/authentication hook deadlines remain the host's responsibility and are still covered
+by the separate whole-passenger-request deadline.
+
+Search coverage records failed transport attempts, including thrown/oversized/malformed
+responses. Flexible-date candidates retain this failure list. An attempted transport call is
+not proof that a supplier received a request; durable dispatch/response audit remains separate.
+Successful zero-result searches remain distinguishable from failures. Existing approval,
+passenger isolation, budgets, offer refresh and activation gates remain unchanged.
+
+Validation: 158 travel-core tests (14 new response-boundary regressions), application
+build/typecheck, repository hygiene with 41 PostgreSQL policy checks, and 17 bridge tests
+passed locally. Supplier fixtures only. No credentials, live requests, schema changes,
+bookings, payments or deployment were performed.
