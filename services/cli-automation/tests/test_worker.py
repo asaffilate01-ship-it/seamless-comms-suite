@@ -11,7 +11,7 @@ import urllib.request
 from wsgiref.simple_server import make_server, WSGIRequestHandler
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from automation import Service, WorkerJobError, LibreOfficeHarness, UPSTREAM_COMMIT
-from worker import run_once
+from worker import WorkerPassError, run_once
 from wsgi_app import create_app
 from test_automation import Backend, odt
 
@@ -99,6 +99,37 @@ class WorkerTests(unittest.TestCase):
         with self.assertRaises(Crash):self.pass_once()
         self.assertEqual(self.service.status(self.scope,job)['status'],'running')
         self.assertEqual(self.pass_once()[0]['outcome'],'idle')
+    def test_failed_stop_check_preserves_completed_receipt_and_leaves_next_job_queued(self):
+        first = self.submit('first')
+        second = self.submit('second', self.other)
+        calls = 0
+        def stop():
+            nonlocal calls
+            calls += 1
+            if calls > 1: raise OSError('private stop path')
+            return False
+        with self.assertRaises(WorkerPassError) as caught:
+            self.pass_once([self.scope, self.other], should_stop=stop)
+        self.assertEqual(caught.exception.results, [{'scope': self.scope, 'outcome': 'completed', 'jobId': first}])
+        self.assertEqual(str(caught.exception), 'Worker stop check unavailable')
+        self.assertEqual(self.service.status(self.scope, first)['status'], 'completed')
+        self.assertEqual(self.service.status(self.other, second)['status'], 'queued')
+        self.assertEqual(self.backend.calls, 1)
+
+    def test_partial_failure_preserves_blocked_result_without_claiming_next_scope(self):
+        first = self.submit('first')
+        self.authorise = lambda *_: False
+        calls = 0
+        def stop():
+            nonlocal calls
+            calls += 1
+            if calls > 1: raise RuntimeError('secret')
+            return False
+        with self.assertRaises(WorkerPassError) as caught:
+            self.pass_once([self.scope, self.other], should_stop=stop)
+        self.assertEqual(caught.exception.results, [{'scope': self.scope, 'outcome': 'blocked', 'jobId': None}])
+        self.assertEqual(self.service.status(self.scope, first)['status'], 'queued')
+
     def test_stop_callback_stops_between_scopes_and_failure_is_redacted(self):
         first=self.submit('first');second=self.submit('second',self.other);checks=0
         def stop():

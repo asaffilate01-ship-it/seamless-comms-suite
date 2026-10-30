@@ -9,6 +9,7 @@ import tempfile
 import time
 import unittest
 from contextlib import redirect_stdout
+from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from automation import Service
 from test_automation import Backend
@@ -103,6 +104,54 @@ class WorkerCommandTests(unittest.TestCase):
         code, receipt = execute(self.config, factory_loader=self.loader(Fake))
         self.assertEqual(code, 4); self.assertEqual(len(receipt['results']), 1)
         self.assertEqual(receipt['results'][0]['outcome'], 'completed'); self.assertEqual(closed, [True])
+
+    def test_stop_control_failure_retains_results_and_releases_lock(self):
+        self.config['scopes'].append({**self.scope, 'actor': 'second'})
+        calls = []; closed = []
+        class Fake:
+            def run_next(inner, scope): calls.append(scope); return {'id': 'synthetic-job'}
+            def close(inner): closed.append(True)
+        def stop_check(_):
+            if calls: raise PermissionError('secret-stop-path')
+            return False
+        with patch('worker_command.stopped', side_effect=stop_check):
+            code, receipt = execute(self.config, factory_loader=self.loader(Fake))
+        self.assertEqual(code, 1)
+        self.assertEqual(receipt, {'status': 'stop_check_failed', 'results': [
+            {'scope': self.scope, 'outcome': 'completed', 'jobId': 'synthetic-job'}]})
+        self.assertEqual(len(calls), 1); self.assertEqual(closed, [True])
+        self.assertNotIn('secret-stop-path', json.dumps(receipt))
+        with pass_lock(self.config['lockFile']): pass
+
+    def test_first_scope_stop_failure_reports_no_processed_work(self):
+        checks = 0
+        def stop_check(_):
+            nonlocal checks
+            checks += 1
+            if checks == 3: raise OSError('private-path')
+            return False
+        with patch('worker_command.stopped', side_effect=stop_check):
+            code, receipt = execute(self.config, factory_loader=self.loader(lambda: self.fail('opened service')))
+        self.assertEqual((code, receipt), (1, {'status': 'stop_check_failed', 'results': []}))
+
+    def test_cleanup_failure_is_preserved_if_next_stop_check_fails(self):
+        self.config['scopes'].append({**self.scope, 'actor': 'second'})
+        finished = False
+        class Fake:
+            def run_next(inner, scope): return {'id': 'synthetic-job'}
+            def close(inner):
+                nonlocal finished
+                finished = True
+                raise RuntimeError('private-cleanup')
+        def stop_check(_):
+            if finished: raise OSError('private-stop')
+            return False
+        with patch('worker_command.stopped', side_effect=stop_check):
+            code, receipt = execute(self.config, factory_loader=self.loader(Fake))
+        self.assertEqual(code, 1)
+        self.assertEqual(receipt['results'][0]['outcome'], 'needs_review')
+        self.assertEqual(receipt['results'][0]['jobId'], 'synthetic-job')
+        self.assertNotIn('private', json.dumps(receipt))
 
     def test_permission_failures_need_review_and_errors_are_redacted(self):
         class Denied:

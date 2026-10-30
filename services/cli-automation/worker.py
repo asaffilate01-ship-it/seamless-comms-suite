@@ -2,6 +2,14 @@
 from automation import WorkerJobError, identifier, portfolio
 
 
+class WorkerPassError(RuntimeError):
+    """A stop-control failure with already-finished, content-free scope receipts."""
+    def __init__(self, results):
+        super().__init__('Worker stop check unavailable')
+        self.results = [{'scope': dict(r['scope']), 'outcome': r['outcome'], 'jobId': r['jobId']}
+                        for r in results]
+
+
 def run_once(*, service_factory, approved_scopes, enabled=False, should_stop=None):
     """One job per exact scope, at most ten scopes. Never enumerates customer identities.
 
@@ -22,7 +30,7 @@ def run_once(*, service_factory, approved_scopes, enabled=False, should_stop=Non
             try:
                 stopping = should_stop()
             except Exception:
-                raise RuntimeError('Worker stop check unavailable') from None
+                raise WorkerPassError(results) from None
             if stopping is not False:
                 break
         service=None

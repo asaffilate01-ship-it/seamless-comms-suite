@@ -164,6 +164,7 @@ audit retention and alerts remain mandatory deployment responsibilities.
 | --- | --- | --- |
 | 0 | `configuration_valid` | Config-only check passed, runtime unverified |
 | 0 | `completed` | Every configured scope completed one job or was idle |
+| 1 | `stop_check_failed` | Stop control failed between scopes; prior results retained, remaining scopes unattempted |
 | 1 | `unavailable` | Import, stop-control, file or runtime failure; inspect durable job state |
 | 2 | `invalid_configuration` / `disabled` | No pass started; fix configuration or explicit activation |
 | 3 | `needs_review` | At least one scope was blocked, unavailable or needs reconciliation |
@@ -172,7 +173,10 @@ audit retention and alerts remain mandatory deployment responsibilities.
 
 Receipts contain only status, scopes, job IDs and outcomes. Command/worker exceptions are
 redacted. Trusted factories must also avoid printing secrets or content to stdout/stderr.
-A fatal exception may follow prior successful work: do not infer that nothing happened from
+A stop-control exception now raises `WorkerPassError` with copied prior scope receipts;
+the command emits `stop_check_failed` and exit 1 without starting another scope. Completed,
+blocked and cleanup-failure outcomes remain visible, without the original exception text.
+Other fatal exceptions may follow prior successful work: do not infer that nothing happened from
 an empty error receipt. Consult the durable queue/audit trail before recovery; never blindly
 resubmit failed or interrupted jobs. Normal later scheduled passes only claim queued jobs.
 
