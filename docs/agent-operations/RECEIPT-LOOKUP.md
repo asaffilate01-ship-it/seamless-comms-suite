@@ -33,3 +33,26 @@ invalid IDs, zero and unsafe amounts, and reference lifecycle. Existing eight
 queue-controller regressions and Factory checks remain applicable. No migration
 or additional dependency is required. Hosted and signed-in browser testing remain
 outstanding, including saved-reference lookup after reload and membership loss.
+
+## Recorded execution evidence
+
+The receipt view now includes the first 64 recorded agent steps and five newest
+linked worker jobs, with explicit truncation flags. Worker metadata includes
+status, recorded attempt count and start/completion/update times. A refresh action
+rechecks membership and task access before fetching fresh evidence. A queued job
+is not proof of a connected worker, and processing status is not a heartbeat.
+
+Child reads happen only after authorising the exact parent run and its initiator.
+Steps constrain tenant/run; jobs additionally constrain product and the exact
+`ai_agent_run` subject type/ID. Raw input, results, error strings, worker key IDs,
+tool arguments and source references are never selected. Child failures fail the
+lookup rather than reporting an empty history. The endpoint remains read-only;
+it does not retry jobs, mutate status, reserve budget or call an AI provider.
+
+Five additional executable tests cover child isolation/redaction, parent denial,
+deterministic ordering/truncation, child-query failures and empty histories. These
+are source-level query tests. A local Playwright smoke test using synthetic backend
+fixtures also passed mobile/desktop overflow checks, zero-cost rendering, refresh
+failure hiding stale evidence, and the missing-receipt state without browser errors.
+Hosted permissions and signed-in mobile/keyboard acceptance remain required.
+This extension is stacked on PR #214.
