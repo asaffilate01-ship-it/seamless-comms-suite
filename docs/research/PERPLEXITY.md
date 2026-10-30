@@ -79,3 +79,17 @@ No policies, customer records, approvals, messages or business actions are chang
 API contract reference checked 29 October 2026:
 https://docs.perplexity.ai/docs/search/overview
 https://docs.perplexity.ai/docs/search/quickstart
+
+## Saved-record export and access UX
+
+The panel now reports read-only membership and prevents presenting a usable search
+button to viewers. Server admission remains authoritative. Checking a submitted
+request only refreshes its history, including when its allowance is exhausted.
+
+Completed records can be downloaded as plain-text research evidence. Export reads
+one exact tenant/product/request again with the authenticated RLS client, so missing,
+revoked, expired, incomplete or malformed records cannot be exported from a stale
+browser result. Downloads contain source publication/update dates (or Unknown),
+retrieval time and explicit unreviewed/untrusted-excerpt labels. No generated answer,
+automatic compliance approval or publishing action is introduced. Downloaded copies
+have their own retention responsibility; database expiry cannot delete them.

@@ -7,12 +7,14 @@ const scope = z.object({ tenantId: z.string().uuid(), productKey: z.string().min
 export const getResearch = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
   .inputValidator((i: z.infer<typeof scope>) => scope.parse(i)).handler(async ({ context, data }) => {
     const db = context.supabase as any;
-    const [allowance, history] = await Promise.all([
+    const [allowance, history, member] = await Promise.all([
       db.from('research_allowances').select('request_limit,requests_used,period_start,period_end,enabled').eq('tenant_id', data.tenantId).eq('product_key', data.productKey).maybeSingle(),
       db.from('research_requests').select('id,status,result,created_at,preset').eq('tenant_id', data.tenantId).eq('product_key', data.productKey).order('created_at', { ascending: false }).limit(20),
+      db.from('tenant_members').select('role').eq('tenant_id', data.tenantId).eq('user_id', context.userId).maybeSingle(),
     ]);
-    if (allowance.error || history.error) throw new Error('Research setup is not available yet');
+    if (allowance.error || history.error || member.error) throw new Error('Research setup is not available yet');
     return { configured: process.env.PERPLEXITY_RESEARCH_ENABLED === 'true' && !!process.env.PERPLEXITY_API_KEY,
+      canSearch: ['owner', 'admin', 'agent'].includes(member.data?.role),
       allowance: allowance.data, history: history.data ?? [] };
   });
 
@@ -38,4 +40,11 @@ export const runResearch = createServerFn({ method: 'POST' }).middleware([requir
       .eq('id', data.requestId).eq('tenant_id', data.tenantId).eq('status', 'reserved').select('id').single();
     if (saved.error) throw new Error('Search completed but its receipt could not be saved. Do not retry automatically.');
     return { replay: false };
+  });
+
+const exportScope = scope.extend({ requestId: z.string().uuid() }).strict();
+export const exportResearch = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator((i: z.infer<typeof exportScope>) => exportScope.parse(i)).handler(async ({ context, data }) => {
+    const { loadResearchExport } = await import('./export.server');
+    return loadResearchExport(context.supabase, data);
   });

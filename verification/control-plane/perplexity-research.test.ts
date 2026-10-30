@@ -37,3 +37,27 @@ test('request rejects private-context fields, missing confirmation and blank que
   assert.equal(researchInput.safeParse(base).success, true);
   for (const input of [{ ...base, context: 'private' }, { ...base, publicQueryConfirmed: false }, { ...base, query: '  ' }]) assert.equal(researchInput.safeParse(input).success, false);
 });
+
+import { loadResearchExport } from '../../src/modules/research/export.server.ts';
+test('export re-reads exact tenant/product/record through the supplied user client', async () => {
+  const filters: unknown[] = [];
+  const scope = {tenantId:'tenant-a', productKey:'kindelo', requestId:'record-a'};
+  const db = {from(table: string) { assert.equal(table, 'research_requests'); return this; },
+    select() {return this;}, eq(key: string, value: string) {filters.push([key,value]); return this;},
+    async maybeSingle() {return {data:{status:'completed',expires_at:'2099-01-01',result:{provider:'perplexity-search',reviewRequired:true,retrievedAt:'2026-10-29T21:00:00Z',sources:[{title:'Source',url:'https://gov.uk/a',snippet:'<script>not executed</script>\u202e',publishedAt:null,updatedAt:null}]}}};}};
+  const file = await loadResearchExport(db, scope);
+  assert.deepEqual(filters,[['tenant_id','tenant-a'],['product_key','kindelo'],['id','record-a']]);
+  assert.equal(file.filename,'research-record-a.txt');
+  assert.match(file.text,/UNREVIEWED/); assert.match(file.text,/Published: Unknown/);
+  assert.match(file.text,/<script>not executed<\/script>/); assert.ok(!file.text.includes('\u202e'));
+  assert.match(file.text,/does not expire automatically/);
+});
+test('export refuses missing, denied, expired, incomplete or malformed evidence', async () => {
+  for (const reply of [{data:null}, {error:{message:'denied'}},
+    {data:{status:'reserved',expires_at:'2099-01-01'}},
+    {data:{status:'completed',expires_at:'2000-01-01'}},
+    {data:{status:'completed',expires_at:'2099-01-01',result:{}}}]) {
+    const db = {from(){return this;},select(){return this;},eq(){return this;},async maybeSingle(){return reply;}};
+    await assert.rejects(()=>loadResearchExport(db,{tenantId:'t',productKey:'p',requestId:'r'}));
+  }
+});
