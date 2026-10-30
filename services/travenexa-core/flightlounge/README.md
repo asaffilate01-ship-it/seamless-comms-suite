@@ -365,3 +365,24 @@ already committed audit. Host database cancellation, connection reuse after canc
 audit durability and supplier connection cleanup still need hosted staging acceptance.
 Regression tests use synthetic streams and disposable database fixtures; no Duffel access,
 production database changes, booking or payment activation occurred.
+
+### Bounded passenger request parsing
+
+The passenger handler reads JSON into a fixed 8,192-byte buffer with its own five-second
+body deadline, inside the existing whole-request deadline. It copies consumed byte chunks
+immediately, accepts split UTF-8 characters, and rejects oversized bodies, malformed UTF-8,
+invalid JSON and non-byte stream chunks. Query validation, verified session resolution and
+origin checks remain unchanged.
+
+Rejection and cancellation no longer wait for the stream producer's cleanup promise. A
+stalled cancellation hook therefore cannot turn a promptly rejected oversized upload into
+a request waiting until the whole-request timeout. Invalid bodies still return the generic
+no-store 400 before request auditing, budgets or supplier dispatch. Caller/whole-request
+cancellation retains the existing 408 response. Body timeout is a generic invalid request;
+it never exposes stream errors or passenger data.
+
+Tests cover the exact size boundary, split Unicode, reused producer buffers, stalled reads,
+hanging cancellation hooks, malformed input, pre-cancellation and HTTP rejection before
+supplier work. Hosting still requires proxy/header/connection limits and slow-upload
+acceptance: this parser bounds its own memory and wait, not arbitrary producer allocations
+or the host's socket lifecycle. No provider activation, deployment, booking or payment change.

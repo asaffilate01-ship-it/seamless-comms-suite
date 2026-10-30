@@ -1,3 +1,4 @@
+import {readPassengerJson} from './passenger-request.mjs';
 import {validateFlightSearch} from './live-search.mjs';
 import {expandFlexibleSearch} from './flexible-search.mjs';
 import {validBagSelection} from './baggage-subtotal.mjs';
@@ -5,13 +6,6 @@ import {validScope} from './offer-store.mjs';
 const paths={'/api/flights/search':'search','/api/flights/flexible-search':'flexibleSearch','/api/flights/refresh':'refresh'};
 const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 const failure=(code,reason)=>Response.json({status:'unavailable',reason,offers:[],bookingsEnabled:false},{status:code,headers});
-async function body(request){
- if(!request.body)throw Error();const reader=request.body.getReader();const chunks=[];let size=0,timedOut=false;
- const abort=()=>reader.cancel().catch(()=>{});request.signal.addEventListener('abort',abort,{once:true});
- const timer=setTimeout(()=>{timedOut=true;reader.cancel().catch(()=>{});},5000);
- try{while(true){if(request.signal.aborted)throw Error();const {done,value}=await reader.read();if(timedOut||request.signal.aborted)throw Error();if(done)break;size+=value.byteLength;if(size>8192)throw Error();chunks.push(value);}const bytes=new Uint8Array(size);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.byteLength;}return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}
- finally{clearTimeout(timer);request.signal.removeEventListener('abort',abort);await reader.cancel().catch(()=>{});reader.releaseLock();}
-}
 const validRefresh=q=>q&&typeof q==='object'&&!Array.isArray(q)&&Object.keys(q).every(k=>['offerRef','selectedBaggage'].includes(k))&&typeof q.offerRef==='string'&&/^offer_[a-f0-9]{32}$/.test(q.offerRef)&&validBagSelection(q.selectedBaggage===undefined?[]:q.selectedBaggage);
 // In-process server handler. resolveAccess must use a verified session, never caller identity headers.
 export function createTravellerFlightHandler({siteOrigin,resolveAccess,session,audit,now=()=>Date.now(),timeoutMs=50000}={}){
@@ -29,7 +23,7 @@ export function createTravellerFlightHandler({siteOrigin,resolveAccess,session,a
    if(request.signal.aborted)return failure(408,'request_cancelled');
    if(access?.allowed!==true||!validScope(access))return failure(403,'access_denied');
    const context={tenantId:access.tenantId,actorId:access.actorId};
-   let query;try{query=await body(request);}catch{return failure(400,'invalid_request');}
+   let query;try{query=await readPassengerJson(request);}catch{return failure(400,'invalid_request');}
    if(action==='search'&&!validateFlightSearch(query,now())||action==='flexibleSearch'&&!expandFlexibleSearch(query,now())||action==='refresh'&&!validRefresh(query))return failure(400,'invalid_request');
    if(request.signal.aborted)return failure(408,'request_cancelled');
    await audit({...context,event:'traveller_flight_request',action},{signal:request.signal});
