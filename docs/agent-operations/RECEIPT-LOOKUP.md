@@ -56,3 +56,20 @@ fixtures also passed mobile/desktop overflow checks, zero-cost rendering, refres
 failure hiding stale evidence, and the missing-receipt state without browser errors.
 Hosted permissions and signed-in mobile/keyboard acceptance remain required.
 This extension is stacked on PR #214.
+
+## Saving references
+
+Unconfirmed queue requests and found receipts offer Copy request reference and
+Download reference. Copy writes only the UUID; a rejected/unavailable clipboard
+shows manual-selection/download guidance. The text download contains the request
+UUID, workspace ID, product and lookup instructions, without task payloads,
+credentials, costs or worker evidence. Saving is explicit and does not write to
+browser storage, submit work or establish that admission succeeded. Lookup still
+requires current authenticated access. Download feedback reports a request to the
+browser, not proof that the user retained the file.
+
+A local Playwright fixture check exercised successful exact-UUID copying,
+clipboard rejection and the real downloaded file contents, alongside the mobile,
+desktop, lookup-failure and missing-receipt checks. TypeScript, build, all 36
+focused regressions and 41 disposable PostgreSQL checks are required. Hosted
+signed-in acceptance remains outstanding. This increment is stacked on PR #215.

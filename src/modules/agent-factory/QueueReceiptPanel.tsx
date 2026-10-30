@@ -1,3 +1,4 @@
+import { QueueReferenceActions } from "./QueueReferenceActions";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -78,6 +79,15 @@ export function QueueReceiptPanel({
         )}
         {result?.found && (
           <>
+            <p>
+              Request reference: <code className="select-all break-all">{submitted}</code>
+            </p>
+            <QueueReferenceActions
+              key={tenantId + productKey + submitted}
+              tenantId={tenantId}
+              productKey={productKey}
+              requestId={submitted}
+            />
             <p>
               Recorded run: <code className="break-all">{result.run.id}</code>
             </p>
