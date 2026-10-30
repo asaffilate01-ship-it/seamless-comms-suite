@@ -10,7 +10,7 @@ import signal
 import stat
 import sys
 from contextlib import contextmanager
-from worker import run_once, validate_scopes
+from worker import WorkerPassError, run_once, validate_scopes
 
 LIMIT = 16000
 
@@ -121,6 +121,8 @@ def execute(config, *, stop_requested=lambda: False, factory_loader=load_factory
             if len(results) != len(config['scopes']):
                 return 4, {'status': 'stopped', 'results': results}
             return 0, {'status': 'completed', 'results': results}
+    except WorkerPassError as error:
+        return 1, {'status': 'stop_check_failed', 'results': error.results}
     except WorkerBusy:
         return 5, {'status': 'busy', 'results': []}
     except Exception:
