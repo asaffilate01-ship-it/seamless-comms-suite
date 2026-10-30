@@ -31,7 +31,7 @@ Report format:
 }
 ```
 
-Categories: keep, fix, build, market, monetise. Priorities: high, medium, low. Empty evidence references mean unsupported hypothesis. Report requires 1–50 findings; the downloaded empty template must be filled before import. Imports are capped at 150 KB in the UI and bounded by the server schemas. The provider package instructions treat source content as untrusted data, require independent first opinions and distinguish simulation from actual demand.
+Categories: keep, fix, build, market, monetise. Priorities: high, medium, low. Empty evidence references mean unsupported hypothesis. Report requires 1–50 findings; the downloaded empty template must be filled before import. Imports are capped at 4 MiB in the UI and bounded by the server schemas. The provider package instructions treat source content as untrusted data, require independent first opinions and distinguish simulation from actual demand.
 
 ## Connection phase
 
@@ -71,8 +71,19 @@ Incomplete drafts can now be downloaded/restored, including empty briefs and evi
 }
 ```
 
-One message per persona per round; messages are bounded to 200 and 2,000 characters each. Partial transcripts are accepted and show supplied versus planned turn counts. Unknown agents, excess rounds, duplicate IDs/turns and unknown evidence are rejected. The UI supports persona/round filters and text search. All text renders as plain text; no imported HTML or links execute. The UI file size limit remains 150 KB, so larger transcripts must be shortened before import. No claim of provider authenticity, completeness or real user representation follows from successful import.
+One message per persona per round; messages are bounded to 200 and 2,000 characters each. Partial transcripts are accepted and show supplied versus planned turn counts. Unknown agents, excess rounds, duplicate IDs/turns and unknown evidence are rejected. The UI supports persona/round filters and text search. All text renders as plain text; no imported HTML or links execute. The UI file size limit remains 4 MiB, so larger transcripts must be shortened before import. No claim of provider authenticity, completeness or real user representation follows from successful import.
 
 `exportReviewExperiments` accepts `{study, report}`, revalidates membership and references, and returns a portable JSON backlog sorted by priority. Stable finding indexes preserve source mapping. Items contain experiment, metric, unverified evidence references and unset owner/deadline/outcome. Every item is proposed, and the package requires human review. Export does not create GitHub issues, execute tasks or authorise spending. Integration with saved research projects and verified outcome tracking remains pending.
 
 Import failure clears the affected report/transcript; changing the study or confirmation clears both. Preparing again also clears previous imported results. This prevents old results being presented as a new successful run. Signed-in browser acceptance and provider-backed conversation remain outstanding.
+
+
+## Phase 3: complete session backup and restore
+
+The Review Lab can export a `review-session.json` containing a completed study, evidence, optional findings and optional discussion. Restore stages a summary first; the user reconfirms public/synthetic content and replacement of the current review. The server rechecks tenant membership, recomputes the study digest, and validates both optional result parts before the UI replaces anything. Failed validation leaves existing work intact. A study-only session is valid; no results are invented.
+
+`exportReviewSession` and `restoreReviewSession` accept `{tenantId, session, publicOrSyntheticConfirmed: true}`. Session format is `{format: "omniqora-review-session", version: 1, study, report: null | report, transcript: null | transcript}`. Only data is portable: provider configuration, execution status, approval flags and credential fields are rejected. Any classifications and coverage fields are recomputed, never trusted from a file. Source digests detect mismatched revisions, not malicious authorship or provider authenticity.
+
+All file imports and downloads now use a 4 MiB UTF-8 limit rather than the old 150 KB limit, fixing rejection of larger app-exported findings. Session service operations also enforce the same encoded limit. Existing record counts and text bounds remain. Unknown formats/versions, foreign tenants and invalid evidence references fail closed. Incomplete studies continue to use the separate draft format; the full session requires a valid prepared study.
+
+This is user-managed file backup, **not central cloud history**. Keep the download securely and restore it under the same tenant. No localStorage, production data writes, subscriptions or live AI calls were added. Shared cloud persistence still belongs with the pending product-research persistence integration; provider execution and enforceable spend accounting remain separate work.

@@ -11,7 +11,7 @@ test('initial panel renders usable labelled inputs and honest disconnected state
   const result = await build({ entryPoints: ['src/modules/review-lab/ReviewLabPanel.tsx'], bundle: true, platform: 'node', format: 'esm', packages: 'external', write: false, plugins: [{ name: 'server-boundary', setup(b) {
     b.onResolve({filter: /^\.\/functions$/}, () => ({path: 'functions', namespace: 'stub'}));
     b.onResolve({filter: /^@tanstack\/react-start$/}, () => ({path: 'transport', namespace: 'stub'}));
-    b.onLoad({filter: /.*/, namespace:'stub'}, args => ({contents: args.path === 'transport' ? 'export const useServerFn = fn => fn;' : 'export const prepareReviewStudy = async () => { throw new Error("No session") }; export const inspectReviewReport = prepareReviewStudy; export const inspectReviewTranscript = prepareReviewStudy; export const exportReviewExperiments = prepareReviewStudy;', loader:'js'}));
+    b.onLoad({filter: /.*/, namespace:'stub'}, args => ({contents: args.path === 'transport' ? 'export const useServerFn = fn => fn;' : 'export const prepareReviewStudy = async () => { throw new Error("No session") }; export const inspectReviewReport = prepareReviewStudy; export const inspectReviewTranscript = prepareReviewStudy; export const exportReviewExperiments = prepareReviewStudy; export const restoreReviewSession = prepareReviewStudy; export const exportReviewSession = prepareReviewStudy;', loader:'js'}));
   }}] });
   try {
     await writeFile(output, result.outputFiles[0].text);
@@ -20,6 +20,9 @@ test('initial panel renders usable labelled inputs and honest disconnected state
     for(const text of ['SaaS Review Lab','MiroFish is not connected','Download before leaving','Prepare study','Audience','Restore draft']) assert.ok(html.includes(text),text);
     assert.match(html,/disabled="">Prepare study/);
     assert.ok(!html.includes('Prepared — not executed'));
+    assert.ok(html.includes('Restore session file'));
+    assert.ok(html.includes('not cloud history'));
+    assert.ok(!html.includes('Validate and restore session'));
     assert.ok(!/disabled="">Download draft/.test(html), 'unfinished drafts remain downloadable');
   } finally { await unlink(output).catch(()=>{}); }
 });

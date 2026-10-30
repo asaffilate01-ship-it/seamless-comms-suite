@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { prepareStudy, parseFindings, parseTranscript, createExperimentBacklog, studySchema } from './contract.ts';
+import { sessionSchema, packSession, validateSessionParts, encodeReviewFile } from './session.ts';
 
 type MembershipClient = { from: (table: string) => any };
 export async function authoriseStudy(db: MembershipClient, userId: string, tenantId: string) {
@@ -26,4 +27,18 @@ export async function inspectDiscussion(db: MembershipClient, userId: string, in
 export async function exportExperiments(db: MembershipClient, userId: string, input: unknown, report: unknown) {
   const plan = await prepareReview(db, userId, input);
   return createExperimentBacklog(report, plan.digest, plan.study);
+}
+
+export async function restoreSession(db: MembershipClient, userId: string, tenantId: string, input: unknown) {
+  const session = sessionSchema.parse(input);
+  encodeReviewFile(session);
+  if (session.study.tenantId !== tenantId) throw new Error('Session belongs to another tenant');
+  const plan = await prepareReview(db, userId, session.study);
+  const parts = validateSessionParts(session, plan.digest);
+  return { plan, ...parts };
+}
+
+export async function exportSession(db: MembershipClient, userId: string, tenantId: string, input: unknown) {
+  const restored = await restoreSession(db, userId, tenantId, input);
+  return packSession(restored.plan.study, restored.report, restored.transcript);
 }

@@ -3,12 +3,13 @@ import { useServerFn } from '@tanstack/react-start';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { prepareReviewStudy, inspectReviewReport, inspectReviewTranscript, exportReviewExperiments } from './functions';
+import { prepareReviewStudy, inspectReviewReport, inspectReviewTranscript, exportReviewExperiments, restoreReviewSession, exportReviewSession } from './functions';
 import { studySchema, draftSchema, type Study } from './contract';
 import { DiscussionPanel } from './DiscussionPanel';
+import { MAX_REVIEW_FILE_BYTES, parseReviewFile, encodeReviewFile, sessionSchema, packSession, type ReviewSession } from './session';
 
 function download(name: string, value: unknown) {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }));
+  const url = URL.createObjectURL(new Blob([encodeReviewFile(value)], { type: 'application/json' }));
   const a = document.createElement('a'); a.href = url; a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -18,6 +19,8 @@ export function ReviewLabPanel({ tenantId }: { tenantId: string }) {
   const inspect = useServerFn(inspectReviewReport);
   const inspectTranscript = useServerFn(inspectReviewTranscript);
   const exportBacklog = useServerFn(exportReviewExperiments);
+  const restore = useServerFn(restoreReviewSession);
+  const exportWholeSession = useServerFn(exportReviewSession);
   const [draft, setDraft] = useState<Study>({ version: 1, tenantId, product: 'Kindelo', objective: 'usability',
     brief: '', audience: '', agents: 12, rounds: 3, budgetPence: 0, evidence: [], publicOrSyntheticConfirmed: true });
   const [confirmed, setConfirmed] = useState(false);
@@ -26,6 +29,8 @@ export function ReviewLabPanel({ tenantId }: { tenantId: string }) {
   const [transcript, setTranscript] = useState<Awaited<ReturnType<typeof inspectTranscript>> | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [pendingSession, setPendingSession] = useState<ReviewSession | null>(null);
+  const [restoreConfirmed, setRestoreConfirmed] = useState(false);
   const change = (patch: Partial<Study>) => { setDraft(d => ({ ...d, ...patch })); setPlan(null); setReport(null); setTranscript(null); setError(''); };
   async function prepareNow() {
     setBusy(true); setError('');
@@ -40,8 +45,8 @@ export function ReviewLabPanel({ tenantId }: { tenantId: string }) {
     if (kind === 'report') setReport(null);
     if (kind === 'transcript') setTranscript(null);
     try {
-      if (file.size > 150000) throw new Error('File must be under 150 KB');
-      const data = JSON.parse(await file.text());
+      if (file.size > MAX_REVIEW_FILE_BYTES) throw new Error('File must be at most 4 MiB');
+      const data = parseReviewFile(await file.text());
       if (kind === 'draft') {
         const next = draftSchema.parse(data);
         if (next.tenantId !== tenantId) throw new Error('Draft belongs to another tenant');
@@ -64,10 +69,52 @@ export function ReviewLabPanel({ tenantId }: { tenantId: string }) {
     } catch { setError('Backlog export failed. Recheck your membership and matching study/report.'); }
     finally { setBusy(false); }
   }
+  async function stageSession(file: File | undefined) {
+    if (!file) return;
+    setBusy(true); setError(''); setPendingSession(null); setRestoreConfirmed(false);
+    try {
+      if (file.size > MAX_REVIEW_FILE_BYTES) throw new Error('File too large');
+      const session = sessionSchema.parse(parseReviewFile(await file.text()));
+      if (session.study.tenantId !== tenantId) throw new Error('Wrong tenant');
+      setPendingSession(session);
+    } catch { setError('Session rejected. Use a valid review-session JSON file for this tenant, at most 4 MiB. Current work has not changed.'); }
+    finally { setBusy(false); }
+  }
+  async function restoreNow() {
+    if (!pendingSession || !restoreConfirmed) return;
+    setBusy(true); setError('');
+    try {
+      const restored = await restore({ data: {tenantId, session: pendingSession, publicOrSyntheticConfirmed: true} });
+      setDraft(restored.plan.study); setPlan(restored.plan); setReport(restored.report); setTranscript(restored.transcript);
+      setConfirmed(true); setPendingSession(null); setRestoreConfirmed(false);
+    } catch { setError('Session restoration failed. Check membership, study revision and evidence references. Current work has not changed.'); }
+    finally { setBusy(false); }
+  }
+  async function downloadSession() {
+    if (!plan) return;
+    setBusy(true); setError('');
+    try {
+      const session = await exportWholeSession({ data: {tenantId, session: packSession(plan.study, report, transcript), publicOrSyntheticConfirmed: true} });
+      download('review-session.json', session);
+    } catch { setError('Session export failed. Check your membership and the current study.'); }
+    finally { setBusy(false); }
+  }
   return <Card className="my-6"><CardContent className="space-y-4 pt-6">
     <div><h2 className="text-xl font-semibold">SaaS Review Lab</h2>
       <p className="text-sm text-muted-foreground">Prepare customer panels and experiments for your products. MiroFish is not connected; no AI runs or charges occur here.</p></div>
     <p className="text-sm">Drafts stay in this tab. Download before leaving or switching tenants. Use public or synthetic material only.</p>
+    <div className="space-y-3 rounded border p-3">
+      <h3 className="font-medium">Save and resume a review</h3>
+      <p className="text-sm text-muted-foreground">A session file includes the completed study, supplied evidence, imported findings and discussion. It is a file backup, not cloud history. Maximum import size: 4 MiB.</p>
+      <label className="block text-sm">Restore session file<input disabled={busy} className="block max-w-full" type="file" accept="application/json,.json" onChange={e => { void stageSession(e.target.files?.[0]); e.target.value = ''; }} /></label>
+      {pendingSession && <div className="space-y-2 rounded border p-3">
+        <p>Ready to check: {pendingSession.study.product} · {pendingSession.report?.findings.length ?? 0} findings · {pendingSession.transcript?.messages.length ?? 0} discussion turns.</p>
+        <p className="text-sm">Restoring replaces this tab’s current work. Download it first if you want to keep it.</p>
+        <label className="flex gap-2 text-sm"><input disabled={busy} type="checkbox" checked={restoreConfirmed} onChange={e => setRestoreConfirmed(e.target.checked)} />I confirm the file contains only public or synthetic information and I want to replace the current review.</label>
+        <Button disabled={busy || !restoreConfirmed} onClick={restoreNow}>Validate and restore session</Button>
+        <Button disabled={busy} variant="outline" className="ml-2" onClick={() => {setPendingSession(null); setRestoreConfirmed(false);}}>Cancel restore</Button>
+      </div>}
+    </div>
     <fieldset disabled={busy} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm">Product<Input list="review-products" value={draft.product} onChange={e => change({ product: e.target.value })} /></label>
@@ -109,6 +156,7 @@ export function ReviewLabPanel({ tenantId }: { tenantId: string }) {
       <p className="text-sm">Provider connection, enforced usage accounting and live simulation are pending. The budget here is planning metadata only.</p>
       <details><summary>Panel roles and instructions</summary><ul className="list-disc pl-5">{plan.agents.map(a => <li key={a.id}>{a.id}: {a.role} — {a.perspective}</li>)}</ul>{plan.instructions.map(s => <p className="mt-2 text-sm" key={s}>{s}</p>)}</details>
       <Button variant="outline" onClick={() => download('review-study-package.json', plan)}>Download study package</Button>
+      <Button variant="outline" className="ml-2" disabled={busy} onClick={downloadSession}>Download full review session</Button>
       <Button variant="outline" className="ml-2" onClick={() => download('review-report-template.json', { version: 1, studyDigest: plan.digest, findings: [] })}>Download report template</Button>
       <label className="block text-sm">Import completed report JSON<input disabled={busy} className="block max-w-full" type="file" accept="application/json,.json" onChange={e => { void importFile(e.target.files?.[0], 'report'); e.target.value = ''; }} /></label>
       <Button variant="outline" onClick={() => download('review-transcript-template.json', { version: 1, studyDigest: plan.digest, messages: [] })}>Download transcript template</Button>
