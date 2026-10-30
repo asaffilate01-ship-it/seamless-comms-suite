@@ -13,9 +13,31 @@ const reservation = z.object({
   created_at: z.string(),
 });
 const run = z.object({ id: z.string().uuid(), status: z.string(), updated_at: z.string() });
+const step = z.object({
+  step_no: z.number().int(),
+  step_type: z.string(),
+  status: z.string(),
+  created_at: z.string(),
+});
+const job = z.object({
+  id: z.string().uuid(),
+  status: z.string(),
+  attempts: z.number().int().nonnegative(),
+  started_at: z.string().nullable(),
+  completed_at: z.string().nullable(),
+  updated_at: z.string(),
+});
 export type ReceiptLookup =
   | { found: false }
-  | { found: true; reservation: z.infer<typeof reservation>; run: z.infer<typeof run> };
+  | {
+      found: true;
+      reservation: z.infer<typeof reservation>;
+      run: z.infer<typeof run>;
+      steps: z.infer<typeof step>[];
+      stepsTruncated: boolean;
+      jobs: z.infer<typeof job>[];
+      jobsTruncated: boolean;
+    };
 /** Read-only receipt lookup. The reference is not an authentication credential. */
 export async function lookupQueueReceipt(
   db: any,
@@ -53,5 +75,35 @@ export async function lookupQueueReceipt(
     !(task.data.initiated_by === userId || ["owner", "admin"].includes(membership.data.role))
   )
     return { found: false };
-  return { found: true, reservation: record, run: run.parse(task.data) };
+  const [steps, jobs] = await Promise.all([
+    db
+      .from("ai_agent_steps")
+      .select("step_no,step_type,status,created_at")
+      .eq("tenant_id", input.tenantId)
+      .eq("run_id", record.run_id)
+      .order("step_no", { ascending: true })
+      .limit(65),
+    db
+      .from("intelligence_jobs")
+      .select("id,status,attempts,started_at,completed_at,updated_at")
+      .eq("tenant_id", input.tenantId)
+      .eq("product_key", input.productKey)
+      .eq("subject_type", "ai_agent_run")
+      .eq("subject_id", record.run_id)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(6),
+  ]);
+  if (steps.error || jobs.error) throw new Error("Task evidence unavailable");
+  const stepRows = z.array(step).parse(steps.data ?? []),
+    jobRows = z.array(job).parse(jobs.data ?? []);
+  return {
+    found: true,
+    reservation: record,
+    run: run.parse(task.data),
+    steps: stepRows.slice(0, 64),
+    stepsTruncated: stepRows.length > 64,
+    jobs: jobRows.slice(0, 5),
+    jobsTruncated: jobRows.length > 5,
+  };
 }

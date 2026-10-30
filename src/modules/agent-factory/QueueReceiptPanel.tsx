@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { findFactoryQueueReceipt } from "./receipt-lookup.functions";
+const time = (value: string | null) =>
+  value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString() : "Not recorded";
 export function QueueReceiptPanel({
   tenantId,
   productKey,
@@ -90,6 +92,67 @@ export function QueueReceiptPanel({
                 ? "Not settled"
                 : `${result.reservation.currency} ${(result.reservation.actual_minor / 100).toFixed(2)}`}
             </p>
+            <p className="text-xs text-muted-foreground">
+              Run last updated: {time(result.run.updated_at)}
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={query.isFetching}
+              onClick={() => void query.refetch()}
+            >
+              Refresh task evidence
+            </Button>
+            <section aria-label="Recorded worker jobs" className="space-y-2 rounded-lg border p-3">
+              <h4 className="font-medium">Recorded worker jobs</h4>
+              {result.jobs.length === 0 ? (
+                <p>No worker job records are visible for this run.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {result.jobs.map((job) => (
+                    <li key={job.id} className="rounded bg-muted/40 p-2">
+                      <p>
+                        {job.status.replaceAll("_", " ")} · Recorded attempts: {job.attempts}
+                      </p>
+                      <p className="text-xs">
+                        Started: {time(job.started_at)} · Completed: {time(job.completed_at)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Updated: {time(job.updated_at)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {result.jobsTruncated && (
+                <p className="text-xs">Showing the five newest worker jobs.</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                A queued job does not confirm a connected worker. Processing status is not a live
+                heartbeat.
+              </p>
+            </section>
+            <section aria-label="Recorded agent steps" className="space-y-2 rounded-lg border p-3">
+              <h4 className="font-medium">Recorded agent steps</h4>
+              {result.steps.length === 0 ? (
+                <p>No step records are visible for this run.</p>
+              ) : (
+                <ol className="space-y-2">
+                  {result.steps.map((step) => (
+                    <li key={step.step_no} className="rounded bg-muted/40 p-2">
+                      <p>
+                        Step {step.step_no}: {step.step_type} · {step.status}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{time(step.created_at)}</p>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {result.stepsTruncated && (
+                <p className="text-xs">Showing the first 64 recorded steps.</p>
+              )}
+            </section>
             <p className="text-xs text-muted-foreground">
               These are recorded database values, not independent verification of provider execution
               or billing. Finding a receipt does not cancel, retry or release funds.
