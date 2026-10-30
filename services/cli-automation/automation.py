@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import uuid
 import zipfile
+from storage import connect_private_database
 
 UPSTREAM_COMMIT = '34f519533bc175d2fe287ab8316b0dd99bb9cc43'
 CAPABILITY = 'document.draft'
@@ -118,28 +119,28 @@ class Service:
         if not callable(authorise) or type(daily_limit) is not int or not 1 <= daily_limit <= 100:
             raise ValueError('Explicit authoriser and bounded quota required')
         self.authorise, self.backend, self.daily_limit = authorise, backend, daily_limit
-        path = Path(database)
-        if path.is_symlink():
-            raise ValueError('Symlink database refused')
-        fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
-        os.close(fd)
-        os.chmod(path, 0o600)
-        self.db = sqlite3.connect(path, isolation_level=None, timeout=10)
-        self.db.row_factory = sqlite3.Row
-        self.db.execute('PRAGMA secure_delete=ON')
-        self.db.executescript('''
-        CREATE TABLE IF NOT EXISTS jobs (
-          id TEXT PRIMARY KEY, tenant TEXT NOT NULL, product TEXT NOT NULL, actor TEXT NOT NULL,
-          request TEXT NOT NULL, digest TEXT NOT NULL, payload TEXT,
-          status TEXT NOT NULL, day TEXT NOT NULL DEFAULT (date('now')), artifact BLOB,
-          UNIQUE(tenant,product,request));
-        CREATE TABLE IF NOT EXISTS audit (
-          id INTEGER PRIMARY KEY, job TEXT NOT NULL, event TEXT NOT NULL,
-          at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
-        CREATE INDEX IF NOT EXISTS jobs_scope_day ON jobs(tenant,product,day);
-        CREATE INDEX IF NOT EXISTS audit_job ON audit(job,id);
-        CREATE INDEX IF NOT EXISTS jobs_scope_state ON jobs(tenant,product,actor,status);
-        ''')
+        self.db = connect_private_database(database)
+        try:
+            self.db.row_factory = sqlite3.Row
+            self.db.execute('PRAGMA secure_delete=ON')
+            self.db.executescript('''
+            BEGIN IMMEDIATE;
+            CREATE TABLE IF NOT EXISTS jobs (
+              id TEXT PRIMARY KEY, tenant TEXT NOT NULL, product TEXT NOT NULL, actor TEXT NOT NULL,
+              request TEXT NOT NULL, digest TEXT NOT NULL, payload TEXT,
+              status TEXT NOT NULL, day TEXT NOT NULL DEFAULT (date('now')), artifact BLOB,
+              UNIQUE(tenant,product,request));
+            CREATE TABLE IF NOT EXISTS audit (
+              id INTEGER PRIMARY KEY, job TEXT NOT NULL, event TEXT NOT NULL,
+              at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+            CREATE INDEX IF NOT EXISTS jobs_scope_day ON jobs(tenant,product,day);
+            CREATE INDEX IF NOT EXISTS audit_job ON audit(job,id);
+            CREATE INDEX IF NOT EXISTS jobs_scope_state ON jobs(tenant,product,actor,status);
+            COMMIT;
+            ''')
+        except Exception:
+            self.db.close()
+            raise
 
     def close(self):
         self.db.close()

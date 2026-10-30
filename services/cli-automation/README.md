@@ -181,3 +181,25 @@ source token verifier, current permissions/entitlements/region, two-tenant isola
 identity, storage/backup policy and actual staging round trip. Schedule the `--run` command
 under the dedicated account using your host service manager and collect its exit/JSON
 receipt. No timer, production factory, real credential or tenant connection is included here.
+
+## Private database startup boundary
+
+The service now requires an **absolute database path** in a real directory owned by its
+process account and not group/world writable. Create that directory separately (prefer
+mode `0700`). Existing database and SQLite sidecar files must be regular, owned by the
+same account, have a single hard link, and have no group/world permissions (normally
+`0600`). Symlinks, hard links, FIFOs, shared directories and unsafe journal/WAL/SHM files
+are refused. Startup does not repair permissions or remove sidecars automatically.
+
+New database files are opened with no-follow/nonblocking flags and private permissions.
+SQLite opens an escaped file URI in `mode=rw`, so it cannot silently recreate a removed
+file or interpret punctuation in the filename as URI options. File/directory identity
+is checked around connection creation; schema setup is transactional and failures close the database connection.
+Existing valid private databases retain their schema and data. No migration is required.
+
+This is a single-host POSIX storage boundary, not isolation from the same OS account or
+root. Keep the directory's entire ancestry and all service code operator-controlled;
+do not run other untrusted processes under the worker account. The host must still
+provide encryption, backups, quotas and retention. If startup refuses an existing file,
+stop its users, inspect ownership/permissions/links and restore a reviewed private copy
+before retrying. Do not delete SQLite recovery files to bypass a failed startup check.
