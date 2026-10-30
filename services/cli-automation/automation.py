@@ -101,6 +101,12 @@ class LibreOfficeHarness:
             return validate_odt(output.read_bytes())
 
 
+class WorkerJobError(RuntimeError):
+    def __init__(self, job_id):
+        super().__init__('Claimed document job requires review')
+        self.job_id = job_id
+
+
 class Service:
     """Single-host durable pilot. authorise(scope, action) MUST query current server permissions.
 
@@ -132,6 +138,7 @@ class Service:
           at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
         CREATE INDEX IF NOT EXISTS jobs_scope_day ON jobs(tenant,product,day);
         CREATE INDEX IF NOT EXISTS audit_job ON audit(job,id);
+        CREATE INDEX IF NOT EXISTS jobs_scope_state ON jobs(tenant,product,actor,status);
         ''')
 
     def close(self):
@@ -180,27 +187,63 @@ class Service:
             self.db.execute('ROLLBACK')
             raise
 
-    def run(self, scope, job):
+    def _claim(self, scope, job=None):
+        # Execution is a distinct host permission; product HTTP cannot invoke it.
+        self._scope(scope, 'document.execute')
         self._scope(scope, CAPABILITY)
+        self._scope(scope, 'document.read')
         self.db.execute('BEGIN IMMEDIATE')
         try:
-            row = self._job(scope, job)
+            if job is None:
+                row = self.db.execute(
+                    "SELECT * FROM jobs WHERE tenant=? AND product=? AND actor=? AND status='queued' "
+                    "ORDER BY rowid LIMIT 1", (scope['tenant'], scope['product'], scope['actor'])).fetchone()
+                if row is None:
+                    self.db.execute('COMMIT')
+                    return None
+            else:
+                row = self._job(scope, job)
             if row['status'] != 'queued':
                 raise ValueError('Job is not queued; execution is never automatically retried')
-            self.db.execute("UPDATE jobs SET status='running' WHERE id=?", (job,))
-            self.db.execute('INSERT INTO audit(job,event) VALUES(?,?)', (job, 'running'))
+            self.db.execute("UPDATE jobs SET status='running' WHERE id=?", (row['id'],))
+            self.db.execute('INSERT INTO audit(job,event) VALUES(?,?)', (row['id'], 'running'))
             self.db.execute('COMMIT')
+            return row
         except Exception:
             self.db.execute('ROLLBACK')
             raise
+
+    def _execute(self, scope, row):
+        job = row['id']
         try:
+            # Revalidate between claim and external work, and again before delivery.
+            self._scope(scope, 'document.execute')
+            self._scope(scope, CAPABILITY)
+            self._scope(scope, 'document.read')
             artifact = validate_odt(self.backend.render(json.loads(row['payload'])))
-            self._scope(scope, CAPABILITY)  # Revocation while rendering prevents delivery.
+            self._scope(scope, 'document.execute')
+            self._scope(scope, CAPABILITY)
+            self._scope(scope, 'document.read')
         except Exception:
             self._finish(job, 'failed', None)
             raise RuntimeError('Document job failed; no artifact released') from None
         self._finish(job, 'completed', artifact)
         return self.status(scope, job)
+
+    def run(self, scope, job):
+        identifier(job)
+        return self._execute(scope, self._claim(scope, job))
+
+    def run_next(self, scope):
+        """Claim and render at most one oldest queued job in an exact approved scope."""
+        row = self._claim(scope)
+        if row is None:
+            return None
+        try:
+            return self._execute(scope, row)
+        except Exception:
+            # Preserve claim identity for operator reconciliation, never raw backend errors.
+            raise WorkerJobError(row['id']) from None
 
     def _finish(self, job, state, artifact):
         self.db.execute('BEGIN IMMEDIATE')
