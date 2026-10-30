@@ -2,6 +2,7 @@
 // All supplier adapters are absent by default; no demo fare ever appears as live.
 import http from 'node:http';
 import {Readable} from 'node:stream';
+import {bufferPassengerResponse} from './flightlounge/passenger-response.mjs';
 import {createOfferRefresh} from './flightlounge/offer-refresh.mjs';
 import {createFlexibleFlightSearch} from './flightlounge/flexible-search.mjs';
 import {createLiveFlightSearch} from './flightlounge/live-search.mjs';
@@ -41,7 +42,7 @@ async function bodyJson(req) {
   }
   return JSON.parse(Buffer.concat(parts).toString('utf8'));
 }
-export function createServer({engine=defaultEngine(),flightSearch=createLiveFlightSearch(),flexibleFlightSearch=createFlexibleFlightSearch(),offerRefresh=createOfferRefresh(),travellerHandler,passengerOrigin}={}) {
+export function createServer({engine=defaultEngine(),flightSearch=createLiveFlightSearch(),flexibleFlightSearch=createFlexibleFlightSearch(),offerRefresh=createOfferRefresh(),travellerHandler,passengerOrigin,passengerTimeoutMs=55000}={}) {
   const hits=new Map();
   const server=http.createServer(async (req,res)=>{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
@@ -59,8 +60,8 @@ export function createServer({engine=defaultEngine(),flightSearch=createLiveFlig
           method:req.method,headers:req.headers,signal:controller.signal,
           ...(!['GET','HEAD'].includes(req.method)?{body:Readable.toWeb(req),duplex:'half'}:{})
         });
-        const response=await travellerHandler(request);
-        if (!res.destroyed) {res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));}
+        const response=await bufferPassengerResponse(travellerHandler,request,{timeoutMs:passengerTimeoutMs});
+        if (!res.destroyed) {res.writeHead(response.status,response.headers);res.end(response.body);}
       }catch{if(!res.destroyed)reply(res,503,{status:'unavailable',reason:'passenger_gateway_unavailable'});}
       finally{req.off('aborted',abort);res.off('close',abort);}
       return;

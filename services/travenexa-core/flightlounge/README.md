@@ -320,3 +320,25 @@ were rerun after tightening quota locking. Tests use disposable PGlite and synth
 responses; they do not establish hosted multi-connection load/failover acceptance. Storage
 quota failures suppress results and clean up partial batches; supplier-call budgets already
 consumed by the search are not refunded or retried automatically.
+
+### Node passenger response boundary
+
+The optional Node gateway mount now gives the entire injected passenger handler and its
+response body a 55-second deadline (hosts may lower `passengerTimeoutMs`, never raise it).
+This outer limit complements the handler's existing 50-second authentication/audit/search
+budget. It propagates client disconnects and timeout cancellation, discards late response
+bodies, and does not wait for a stalled stream cancellation hook. Hosts must still use
+cancellation-aware database, session and secret providers; a JavaScript deadline cannot
+forcibly terminate arbitrary injected code or undo an already completed external operation.
+
+Responses are buffered up to 4,000,000 bytes before any status or headers are written.
+Oversized, failed or stalled bodies produce the generic no-store gateway 503, with no partial
+fare delivered. Stale content-length/transfer-encoding headers are removed and private
+response headers are enforced. This bounds gateway response buffering, not allocations made
+inside a custom handler. Upstream proxy request/header/write deadlines, connection limits
+and hosted load/disconnect acceptance remain deployment prerequisites.
+
+Regression tests cover stalled handlers, late bodies, stalled body cancellation, declared
+and streamed size limits, pre-cancellation, invalid deadlines, response framing, partial
+response failures and real Node client disconnects. No route, activation flag, supplier
+permission, booking or payment capability is enabled by this boundary.
