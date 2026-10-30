@@ -1,5 +1,6 @@
+import { parseReferenceFile, referenceFileLimit, requestReference } from "./reference-file";
 import { QueueReferenceActions } from "./QueueReferenceActions";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ export function QueueReceiptPanel({
 }) {
   const [value, setValue] = useState(""),
     [submitted, setSubmitted] = useState("");
+  const [importNotice, setImportNotice] = useState("");
+  const importVersion = useRef(0);
   const find = useServerFn(findFactoryQueueReceipt);
   const query = useQuery({
     queryKey: ["factory-queue-receipt", tenantId, productKey, submitted],
@@ -41,6 +44,7 @@ export function QueueReceiptPanel({
         onSubmit={(event) => {
           event.preventDefault();
           const next = value.trim();
+          if (!requestReference.safeParse(next).success) return;
           if (next === submitted) void query.refetch();
           else setSubmitted(next);
         }}
@@ -48,7 +52,11 @@ export function QueueReceiptPanel({
         <Input
           aria-label="Queue request reference"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            importVersion.current++;
+            setImportNotice("");
+            setValue(e.target.value);
+          }}
           placeholder="Request UUID"
           maxLength={36}
           className="min-w-0 flex-1"
@@ -57,11 +65,50 @@ export function QueueReceiptPanel({
           type="submit"
           size="sm"
           variant="outline"
-          disabled={query.isFetching || value.trim().length !== 36}
+          disabled={query.isFetching || !requestReference.safeParse(value.trim()).success}
         >
           Find receipt
         </Button>
       </form>
+      <label className="mt-3 block space-y-1 text-xs">
+        <span>Open a saved reference file</span>
+        <Input
+          type="file"
+          accept=".txt,text/plain"
+          aria-label="Saved queue reference file"
+          onChange={async (event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = "";
+            const version = ++importVersion.current;
+            setImportNotice("");
+            if (!file) return;
+            setValue("");
+            setSubmitted("");
+            try {
+              if (file.size > referenceFileLimit)
+                throw new Error("Reference file is too large (maximum 8 KB).");
+              const text = await file.text();
+              if (version !== importVersion.current) return;
+              const reference = parseReferenceFile(text, { tenantId, productKey });
+              setValue(reference);
+              setImportNotice(
+                "Reference loaded. Choose Find receipt to check current access and task status.",
+              );
+            } catch (error) {
+              if (version === importVersion.current)
+                setImportNotice(
+                  error instanceof Error ? error.message : "Reference file could not be read.",
+                );
+            }
+          }}
+        />
+        <span className="text-muted-foreground">
+          Read locally, up to 8 KB. Importing does not submit or retry a task.
+        </span>
+      </label>
+      <p role="status" className="mt-2 text-xs">
+        {importNotice}
+      </p>
       <div className="mt-3 space-y-2 text-sm" aria-live="polite">
         {query.isFetching && <p>Checking the request…</p>}
         {query.error && value.trim() === submitted && (
