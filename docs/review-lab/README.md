@@ -1,6 +1,6 @@
 # SaaS Review Lab
 
-Location: Tenant Factory → SaaS Review Lab. This first release prepares portable study packages and inspects manually imported findings. It performs no model calls, browser tests, subscriptions, billing, automatic issue creation or production activation.
+Location: Tenant Factory → SaaS Review Lab. The Review Lab prepares portable study packages and inspects manually imported findings and discussions. It performs no model calls, browser tests, subscriptions, billing, automatic issue creation or production activation.
 
 ## Working flow
 
@@ -45,8 +45,34 @@ Required before enabling execution:
 - Actual billing based on provider usage. The current ceiling is planning metadata only, never an enforced allowance or price estimate.
 - Signed-in staging/browser acceptance for tenant switching, permission revocation and report review.
 
-Later: transcript/agent chat, authenticated test-evidence ingestion, approved backlog handoff and outcome tracking. The existing research module retains web research ownership; existing product repositories retain customer records and domain logic.
+Later: live agent chat, authenticated test-evidence ingestion, approved backlog execution and outcome tracking. The existing research module retains web research ownership; existing product repositories retain customer records and domain logic.
 
 ## Verification
 
 `node --test verification/review-lab/*.test.mjs` on Node 24 (native TypeScript stripping), `npm run typecheck`, `npm run build`, `npm run test:security`. No migration or provider subscription is required for this release.
+
+## Phase 2: discussion inspection and experiment handoff
+
+Incomplete drafts can now be downloaded/restored, including empty briefs and evidence summaries. The stricter study validator still prevents preparation until completed and confirmed. Restoration never carries over the UI confirmation. Drafts remain tab-memory only.
+
+`inspectReviewTranscript` accepts `{study, transcript}` and rechecks tenant membership. Use the template downloaded from the prepared study:
+
+```json
+{
+  "version": 1,
+  "studyDigest": "COPY_DIGEST_FROM_PREPARED_PACKAGE",
+  "messages": [{
+    "id": "message-1",
+    "agentId": "persona-1",
+    "round": 1,
+    "text": "I need a clearer explanation of the delivery format.",
+    "evidenceIds": []
+  }]
+}
+```
+
+One message per persona per round; messages are bounded to 200 and 2,000 characters each. Partial transcripts are accepted and show supplied versus planned turn counts. Unknown agents, excess rounds, duplicate IDs/turns and unknown evidence are rejected. The UI supports persona/round filters and text search. All text renders as plain text; no imported HTML or links execute. The UI file size limit remains 150 KB, so larger transcripts must be shortened before import. No claim of provider authenticity, completeness or real user representation follows from successful import.
+
+`exportReviewExperiments` accepts `{study, report}`, revalidates membership and references, and returns a portable JSON backlog sorted by priority. Stable finding indexes preserve source mapping. Items contain experiment, metric, unverified evidence references and unset owner/deadline/outcome. Every item is proposed, and the package requires human review. Export does not create GitHub issues, execute tasks or authorise spending. Integration with saved research projects and verified outcome tracking remains pending.
+
+Import failure clears the affected report/transcript; changing the study or confirmation clears both. Preparing again also clears previous imported results. This prevents old results being presented as a new successful run. Signed-in browser acceptance and provider-backed conversation remain outstanding.
