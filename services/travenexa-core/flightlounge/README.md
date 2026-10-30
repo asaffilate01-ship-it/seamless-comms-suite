@@ -386,3 +386,17 @@ hanging cancellation hooks, malformed input, pre-cancellation and HTTP rejection
 supplier work. Hosting still requires proxy/header/connection limits and slow-upload
 acceptance: this parser bounds its own memory and wait, not arbitrary producer allocations
 or the host's socket lifecycle. No provider activation, deployment, booking or payment change.
+
+### Ambiguous ancillary identifiers
+
+Refresh excludes every baggage service whose supplier ID occurs more than once in the
+response. Previously it kept the first valid entry, which could silently choose between
+conflicting prices or coverage. Duplicate detection runs before validation and the existing
+200-entry display limit, so a malformed, unsupported or later duplicate cannot leave an
+apparently unique priced option. Unique valid sibling services remain available.
+
+Selecting an excluded ID returns the existing 409 reselection response without a subtotal;
+it is never treated as a free extra. Tests cover identical/conflicting duplicates, ordering,
+malformed entries and duplicates beyond the display limit, while preserving exact arithmetic
+for valid options. This is source-level validation of supplier responses, not evidence of
+live Duffel inventory or a confirmed checkout total. No booking/payment activation occurs.

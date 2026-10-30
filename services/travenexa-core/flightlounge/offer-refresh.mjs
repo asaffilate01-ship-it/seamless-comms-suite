@@ -14,9 +14,12 @@ export function baggageServices(raw){
  if(!passengerIds.length||!segmentIds.length||[...passengerIds,...segmentIds].some(v=>!id(v))||new Set(passengerIds).size!==passengerIds.length||new Set(segmentIds).size!==segmentIds.length)return [];
  const passengers=new Map(raw.passengers.map((p,i)=>[p.id,i+1]));
  const segments=new Map(raw.slices.flatMap((s,i)=>s.segments.map((t,j)=>[t.id,{leg:i+1,segment:j+1}])));
- const seen=new Set();return (Array.isArray(raw.available_services)?raw.available_services:[]).slice(0,200).flatMap(s=>{
-  if(!s||s.type!=='baggage'||s.metadata?.type!=='checked'||!id(s.id)||seen.has(s.id)||!amount(s.total_amount)||!/^[A-Z]{3}$/.test(s.total_currency)||!Number.isInteger(s.maximum_quantity)||s.maximum_quantity<1||s.maximum_quantity>9||!Array.isArray(s.passenger_ids)||!s.passenger_ids.length||!Array.isArray(s.segment_ids)||!s.segment_ids.length||new Set(s.passenger_ids).size!==s.passenger_ids.length||new Set(s.segment_ids).size!==s.segment_ids.length||s.passenger_ids.some(p=>!id(p)||!passengers.has(p))||s.segment_ids.some(p=>!id(p)||!segments.has(p)))return [];
-  seen.add(s.id);const positive=k=>Number.isFinite(s.metadata[k])&&s.metadata[k]>0?s.metadata[k]:null;
+ const available=Array.isArray(raw.available_services)?raw.available_services:[];
+ // Count before filtering or truncating: conflicting or malformed duplicates are ambiguous too.
+ const counts=new Map();for(const service of available)if(id(service?.id))counts.set(service.id,(counts.get(service.id)||0)+1);
+ return available.slice(0,200).flatMap(s=>{
+  if(!s||s.type!=='baggage'||s.metadata?.type!=='checked'||!id(s.id)||counts.get(s.id)!==1||!amount(s.total_amount)||!/^[A-Z]{3}$/.test(s.total_currency)||!Number.isInteger(s.maximum_quantity)||s.maximum_quantity<1||s.maximum_quantity>9||!Array.isArray(s.passenger_ids)||!s.passenger_ids.length||!Array.isArray(s.segment_ids)||!s.segment_ids.length||new Set(s.passenger_ids).size!==s.passenger_ids.length||new Set(s.segment_ids).size!==s.segment_ids.length||s.passenger_ids.some(p=>!id(p)||!passengers.has(p))||s.segment_ids.some(p=>!id(p)||!segments.has(p)))return [];
+  const positive=k=>Number.isFinite(s.metadata[k])&&s.metadata[k]>0?s.metadata[k]:null;
   return [{id:s.id,currency:s.total_currency,unitAmount:s.total_amount,maximumQuantity:s.maximum_quantity,passengers:s.passenger_ids.map(p=>passengers.get(p)),segments:s.segment_ids.map(p=>segments.get(p)),maximumWeightKg:positive('maximum_weight_kg'),dimensionsCm:{length:positive('maximum_length_cm'),height:positive('maximum_height_cm'),depth:positive('maximum_depth_cm')},selected:false}];
  });
 }
