@@ -1,21 +1,22 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import { researchInput } from './contract';
+import { researchInput, historyScope } from './contract';
 
 const scope = z.object({ tenantId: z.string().uuid(), productKey: z.string().min(2).max(80) });
 export const getResearch = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
-  .inputValidator((i: z.infer<typeof scope>) => scope.parse(i)).handler(async ({ context, data }) => {
+  .inputValidator((i: z.input<typeof historyScope>) => historyScope.parse(i)).handler(async ({ context, data }) => {
+    const { loadResearchHistory } = await import('./history.server');
     const db = context.supabase as any;
     const [allowance, history, member] = await Promise.all([
       db.from('research_allowances').select('request_limit,requests_used,period_start,period_end,enabled').eq('tenant_id', data.tenantId).eq('product_key', data.productKey).maybeSingle(),
-      db.from('research_requests').select('id,status,result,created_at,preset').eq('tenant_id', data.tenantId).eq('product_key', data.productKey).order('created_at', { ascending: false }).limit(20),
+      loadResearchHistory(db, data),
       db.from('tenant_members').select('role').eq('tenant_id', data.tenantId).eq('user_id', context.userId).maybeSingle(),
     ]);
-    if (allowance.error || history.error || member.error) throw new Error('Research setup is not available yet');
+    if (allowance.error || member.error) throw new Error('Research setup is not available yet');
     return { configured: process.env.PERPLEXITY_RESEARCH_ENABLED === 'true' && !!process.env.PERPLEXITY_API_KEY,
       canSearch: ['owner', 'admin', 'agent'].includes(member.data?.role),
-      allowance: allowance.data, history: history.data ?? [] };
+      allowance: allowance.data, ...history };
   });
 
 export const runResearch = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
@@ -47,4 +48,10 @@ export const exportResearch = createServerFn({ method: 'POST' }).middleware([req
   .inputValidator((i: z.infer<typeof exportScope>) => exportScope.parse(i)).handler(async ({ context, data }) => {
     const { loadResearchExport } = await import('./export.server');
     return loadResearchExport(context.supabase, data);
+  });
+
+export const getResearchRecord = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator((i: z.infer<typeof exportScope>) => exportScope.parse(i)).handler(async ({ context, data }) => {
+    const { loadResearchRecord } = await import('./export.server');
+    return loadResearchRecord(context.supabase, data);
   });

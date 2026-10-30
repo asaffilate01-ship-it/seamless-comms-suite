@@ -93,3 +93,18 @@ browser result. Downloads contain source publication/update dates (or Unknown),
 retrieval time and explicit unreviewed/untrusted-excerpt labels. No generated answer,
 automatic compliance approval or publishing action is introduced. Downloaded copies
 have their own retention responsibility; database expiry cannot delete them.
+
+## Paged history and on-demand evidence
+
+History now supports all/completed/failed/pending status filters and 20-row pages,
+with a 21st row used only to detect a next page. The database filters tenant, product
+and status before paging; ordering is created time then request ID. Only metadata
+is returned in the history list. Offset pages may shift as searches arrive or expire;
+no complete-count or stable-snapshot claim is made. Pages are bounded to 0–500.
+
+Opening a completed record performs a fresh exact-record read through the user's
+RLS client. Detail and export share validation of completion, expiry, result schema
+and safe source URLs. Closing a detail unmounts its query and discards its cached
+content; reopening checks access again. Errors hide stale contents. Access revocation
+is rechecked on reads, not pushed to already displayed browser text. No migration,
+new provider call, entitlement expansion or product connector is introduced here.

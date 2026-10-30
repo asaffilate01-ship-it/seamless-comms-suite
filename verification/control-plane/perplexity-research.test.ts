@@ -61,3 +61,23 @@ test('export refuses missing, denied, expired, incomplete or malformed evidence'
     await assert.rejects(()=>loadResearchExport(db,{tenantId:'t',productKey:'p',requestId:'r'}));
   }
 });
+
+import { loadResearchHistory } from '../../src/modules/research/history.server.ts';
+import { historyScope } from '../../src/modules/research/contract.ts';
+test('paged history selects metadata, scopes status before pagination and uses a sentinel', async () => {
+  const calls: unknown[] = [];
+  const db = {from(t:string){calls.push(['from',t]);return this;},select(s:string){calls.push(['select',s]);return this;},eq(k:string,v:string){calls.push(['eq',k,v]);return this;},order(k:string,o:unknown){calls.push(['order',k,o]);return this;},async range(a:number,b:number){calls.push(['range',a,b]);return {data:Array.from({length:21},(_,i)=>({id:i}))};}};
+  const scope={tenantId:'00000000-0000-4000-8000-000000000001',productKey:'kindelo',page:2,status:'failed' as const};
+  const result=await loadResearchHistory(db,scope);
+  assert.deepEqual(calls,[['from','research_requests'],['select','id,status,created_at,preset'],['eq','tenant_id',scope.tenantId],['eq','product_key','kindelo'],['eq','status','failed'],['order','created_at',{ascending:false}],['order','id',{ascending:false}],['range',40,60]]);
+  assert.equal(result.history.length,20);assert.equal(result.hasMore,true);assert.equal(result.page,2);
+});
+test('history rejects invalid pagination and fails closed on database errors', async()=>{
+  const scope={tenantId:'00000000-0000-4000-8000-000000000001',productKey:'kindelo'};
+  for(const input of [{...scope,page:-1},{...scope,page:501},{...scope,page:1.5},{...scope,status:'anything'},{...scope,actorId:'other'}])assert.equal(historyScope.safeParse(input).success,false);
+  let filtered=false;
+  const db={from(){return this;},select(){return this;},eq(k:string){if(k==='status')filtered=true;return this;},order(){return this;},async range(){return {data:[],error:null};}};
+  assert.deepEqual(await loadResearchHistory(db,scope),{history:[],hasMore:false,page:0}); assert.equal(filtered,false);
+  db.range=async()=>({data:[],error:{message:'denied'}} as any);
+  await assert.rejects(()=>loadResearchHistory(db,scope),/history unavailable/);
+});
