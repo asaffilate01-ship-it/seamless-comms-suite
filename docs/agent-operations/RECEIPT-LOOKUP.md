@@ -73,3 +73,21 @@ clipboard rejection and the real downloaded file contents, alongside the mobile,
 desktop, lookup-failure and missing-receipt checks. TypeScript, build, all 36
 focused regressions and 41 disposable PostgreSQL checks are required. Hosted
 signed-in acceptance remains outstanding. This increment is stacked on PR #215.
+
+## Importing saved references
+
+The lookup panel can read the downloaded text file locally (8 KB maximum). The
+parser requires the Omniqora header and exactly one valid request/workspace/product
+field, and rejects a different current workspace or product. Imported identifiers
+are untrusted lookup coordinates, never authorisation. No file contents are sent
+to the server; only the normal scoped lookup runs after the user chooses Find
+receipt. Failed imports clear earlier selection/evidence. A newer file selection
+or manual reference edit supersedes an in-flight file read. Manual lookup now
+requires a valid UUID rather than any 36 characters.
+
+Four parser tests cover supported line endings/BOM, scope mismatch, duplicate and
+invalid identifiers, file size and unrelated content. Local fixture browser checks
+passed actual download-to-import recovery, explicit lookup and foreign-product
+rejection. All 40 focused tests and 41 disposable database checks passed, alongside
+typecheck and build. Hosted signed-in acceptance is still outstanding. Stacked on
+PR #216; no schema, permissions, retry or provider behaviour changes.
