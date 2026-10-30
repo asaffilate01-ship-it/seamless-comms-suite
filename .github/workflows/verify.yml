@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: CLI product client and two-tenant HTTP integration
+        run: node --test adapters/cli-documents/*.test.mjs
       - name: CLI document pilot isolation and portfolio contracts
         run: python3 -m unittest discover -s services/cli-automation/tests -v
       - run: bun install --frozen-lockfile
