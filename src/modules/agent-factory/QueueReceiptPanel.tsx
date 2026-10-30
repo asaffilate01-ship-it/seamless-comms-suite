@@ -19,9 +19,11 @@ export function QueueReceiptPanel({
     [submitted, setSubmitted] = useState("");
   const [importNotice, setImportNotice] = useState("");
   const importVersion = useRef(0);
+  const referenceInput = useRef<HTMLInputElement>(null);
+  const [lookupGeneration, setLookupGeneration] = useState(0);
   const find = useServerFn(findFactoryQueueReceipt);
   const query = useQuery({
-    queryKey: ["factory-queue-receipt", tenantId, productKey, submitted],
+    queryKey: ["factory-queue-receipt", tenantId, productKey, submitted, lookupGeneration],
     enabled: !!submitted,
     queryFn: () => find({ data: { tenantId, productKey, requestId: submitted } }),
     retry: false,
@@ -50,6 +52,7 @@ export function QueueReceiptPanel({
         }}
       >
         <Input
+          ref={referenceInput}
           aria-label="Queue request reference"
           value={value}
           onChange={(e) => {
@@ -68,6 +71,23 @@ export function QueueReceiptPanel({
           disabled={query.isFetching || !requestReference.safeParse(value.trim()).success}
         >
           Find receipt
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            importVersion.current++;
+            setLookupGeneration((generation) => generation + 1);
+            setValue("");
+            setSubmitted("");
+            setImportNotice(
+              "Lookup cleared. This does not cancel a task or delete a downloaded file.",
+            );
+            referenceInput.current?.focus();
+          }}
+        >
+          Clear lookup
         </Button>
       </form>
       <label className="mt-3 block space-y-1 text-xs">
