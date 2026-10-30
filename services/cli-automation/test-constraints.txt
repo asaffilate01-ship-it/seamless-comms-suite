@@ -1,0 +1,5 @@
+# Versions used in the synthetic local upstream E2E. Not a production image lock.
+click==8.5.0
+prompt-toolkit==3.0.53
+defusedxml==0.7.1
+wcwidth==0.9.4
