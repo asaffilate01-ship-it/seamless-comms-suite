@@ -1,3 +1,4 @@
+import {createPostgresOfferStore} from '../flightlounge/postgres-offer-store.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { PGlite } from "@electric-sql/pglite";
@@ -350,4 +351,25 @@ test('supplier deadline expiring in dispatch audit prevents the transport call',
  const audit=s.controls.audit;
  s.controls.audit=async(event,options)=>{await audit(event,options);if(event.event==='supplier_dispatch')controller.abort();};
  const response=await s.request();assert.equal(response.status,503);assert.equal(s.state.calls,0);
+});
+
+test('shared PostgreSQL references search on one runtime and refresh on another',async t=>{
+ const s=await setup(t);
+ await s.pg.exec(await readFile(new URL('../flightlounge/sql/offer-store.sql',import.meta.url),'utf8'));
+ await s.pg.query('INSERT INTO flightlounge_private.offer_quotas VALUES ($1,$2,10),($1,$3,5),($1,$4,5)',[tenantId,'*','alice','bob']);
+ const date=new Date(Date.now()+86400000).toISOString().slice(0,10),q={...query,legs:[{...query.legs[0],departure_date:date}]};
+ const dates=new Map();
+ const options={...s.options,now:()=>Date.now(),fetchImpl:async(url,init)=>{
+  s.state.calls++;const departure=init.method==='GET'?dates.get(new URL(url).pathname.split('/').at(-1)):JSON.parse(init.body).data.slices[0].departure_date;
+  const o=offer(departure);o.id='off_'+departure.replaceAll('-','');dates.set(o.id,departure);o.expires_at=new Date(Date.now()+600000).toISOString();
+  return Response.json({data:init.method==='GET'?o:{live_mode:true,offers:[o]}});
+ }};
+ const first=createFlightLoungeRuntime({...options,offerStore:createPostgresOfferStore({db:s.db})});
+ const second=createFlightLoungeRuntime({...options,offerStore:createPostgresOfferStore({db:s.db})});
+ const request=(handler,path,body)=>handler(new Request(origin+'/api/flights/'+path,{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(body)}));
+ const result=await request(first,'search',q);assert.equal(result.status,200);const ref=(await result.json()).offers[0].offerRef;
+ const refreshed=await request(second,'refresh',{offerRef:ref,selectedBaggage:[{id:'bag1',quantity:1}]});assert.equal(refreshed.status,200);assert.equal((await refreshed.json()).baggageSubtotal.knownSubtotal,'230.75');
+ const flexible=await request(first,'flexible-search',{query:q,dateOffsets:[[1]]});assert.equal(flexible.status,200);const candidate=(await flexible.json()).candidates[1];
+ const alternative=await request(second,'refresh',{offerRef:candidate.offers[0].offerRef});assert.equal(alternative.status,200);assert.ok((await alternative.json()).offer.slices[0].segments[0].departingAt.startsWith(candidate.query.legs[0].departure_date));
+ s.state.actorId='bob';assert.equal((await request(second,'refresh',{offerRef:ref})).status,404);assert.equal(s.state.calls,5);
 });

@@ -19,7 +19,7 @@ export function createTravellerFlightSession({searchService,flexibleSearchServic
     if(!Array.isArray(result.offers)||result.offers.length>200)throw Error('invalid_offers');
     if(!await allowed(context,'search'))return fail(403,'traveller_access_revoked');
     const offers=[];
-    for(const offer of result.offers){const offerRef=await offerStore.put(context,{query,offer});refs.push(offerRef);offers.push({...offer,offerRef});}
+    for(const offer of result.offers){const offerRef=await offerStore.put(context,{query,offer},{signal:options?.signal});refs.push(offerRef);offers.push({...offer,offerRef});}
     if(options?.signal?.aborted||!await allowed(context,'search'))throw Error('access_changed');
     const current=[];for(const offer of offers){if(Date.parse(offer.expiresAt)>now())current.push(offer);else await offerStore.remove(context,offer.offerRef);}
     return {...result,offers:current};
@@ -43,7 +43,7 @@ export function createTravellerFlightSession({searchService,flexibleSearchServic
      const offers=[];
      for(const offer of c.offers){
       if(!(Date.parse(offer.expiresAt)>now()))continue;
-      const offerRef=await offerStore.put(context,{query:e.query,offer});refs.push(offerRef);offers.push({...offer,offerRef});
+      const offerRef=await offerStore.put(context,{query:e.query,offer},{signal:options?.signal});refs.push(offerRef);offers.push({...offer,offerRef});
      }
      candidates.push({...c,offers});
     }
@@ -60,7 +60,7 @@ export function createTravellerFlightSession({searchService,flexibleSearchServic
     if(!await allowed(context,'refresh'))return fail(403,'traveller_access_denied');
     const refresh=createOfferRefresh({...refreshOptions,now,
      authorize:async c=>await allowed(context,'refresh')?refreshOptions.authorize({...c,actorId:context.actorId}):{allowed:false},
-     loadOffer:async c=>offerStore.get(context,c.offerRef)
+     loadOffer:async c=>offerStore.get(context,c.offerRef,{signal:options?.signal})
     });
     return await refresh.refresh(context.tenantId,raw,options);
    }catch{return fail(503,'traveller_refresh_unavailable');}
