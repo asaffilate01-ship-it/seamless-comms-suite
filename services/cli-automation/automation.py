@@ -109,7 +109,7 @@ class Service:
     No default authoriser, backend, enabled tenants or credentials are supplied.
     """
     def __init__(self, database, *, authorise, backend, daily_limit=10):
-        if not callable(authorise) or not isinstance(daily_limit, int) or not 1 <= daily_limit <= 100:
+        if not callable(authorise) or type(daily_limit) is not int or not 1 <= daily_limit <= 100:
             raise ValueError('Explicit authoriser and bounded quota required')
         self.authorise, self.backend, self.daily_limit = authorise, backend, daily_limit
         path = Path(database)
@@ -120,6 +120,7 @@ class Service:
         os.chmod(path, 0o600)
         self.db = sqlite3.connect(path, isolation_level=None, timeout=10)
         self.db.row_factory = sqlite3.Row
+        self.db.execute('PRAGMA secure_delete=ON')
         self.db.executescript('''
         CREATE TABLE IF NOT EXISTS jobs (
           id TEXT PRIMARY KEY, tenant TEXT NOT NULL, product TEXT NOT NULL, actor TEXT NOT NULL,
@@ -129,6 +130,8 @@ class Service:
         CREATE TABLE IF NOT EXISTS audit (
           id INTEGER PRIMARY KEY, job TEXT NOT NULL, event TEXT NOT NULL,
           at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+        CREATE INDEX IF NOT EXISTS jobs_scope_day ON jobs(tenant,product,day);
+        CREATE INDEX IF NOT EXISTS audit_job ON audit(job,id);
         ''')
 
     def close(self):
@@ -202,7 +205,11 @@ class Service:
     def _finish(self, job, state, artifact):
         self.db.execute('BEGIN IMMEDIATE')
         try:
-            self.db.execute('UPDATE jobs SET status=?,artifact=?,payload=NULL WHERE id=?', (state, artifact, job))
+            changed = self.db.execute(
+                "UPDATE jobs SET status=?,artifact=?,payload=NULL WHERE id=? AND status='running'",
+                (state, artifact, job)).rowcount
+            if changed != 1:
+                raise RuntimeError('Execution claim is no longer active')
             self.db.execute('INSERT INTO audit(job,event) VALUES(?,?)', (job, state))
             self.db.execute('COMMIT')
         except Exception:
@@ -229,9 +236,77 @@ class Service:
             row = self._job(scope, job)
             if row['status'] == 'running':
                 raise ValueError('Cannot delete an executing job')
+            if row['status'] == 'deleted':
+                self.db.execute('COMMIT')
+                return
             self.db.execute("UPDATE jobs SET payload=NULL,artifact=NULL,status='deleted' WHERE id=?", (job,))
             self.db.execute('INSERT INTO audit(job,event) VALUES(?,?)', (job, 'deleted'))
             self.db.execute('COMMIT')
+        except Exception:
+            self.db.execute('ROLLBACK')
+            raise
+
+
+    def list_jobs(self, scope, *, before=None, limit=25):
+        """Newest-first keyset page; never includes content, actor or foreign job data."""
+        self._scope(scope, 'document.read')
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError('Invalid page size')
+        if before is not None and (type(before) is not int or not 1 <= before <= 2**63-1):
+            raise ValueError('Invalid cursor')
+        rows = self.db.execute(
+            'SELECT rowid AS cursor,id,status,day FROM jobs WHERE tenant=? AND product=? AND actor=? '
+            'AND rowid < ? ORDER BY rowid DESC LIMIT ?',
+            (scope['tenant'], scope['product'], scope['actor'], before or 2**63-1, limit+1)).fetchall()
+        return {'jobs': [{'id': r['id'], 'status': r['status'], 'day': r['day'], 'draft': True}
+                         for r in rows[:limit]],
+                'next': rows[limit-1]['cursor'] if len(rows) > limit else None}
+
+    def history(self, scope, job, *, after=0, limit=25):
+        self._scope(scope, 'document.read')
+        self._job(scope, job)
+        if type(after) is not int or not 0 <= after < 2**63-1 or type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError('Invalid history page')
+        rows = self.db.execute('SELECT id,event,at FROM audit WHERE job=? AND id>? ORDER BY id LIMIT ?',
+                               (job, after, limit+1)).fetchall()
+        return {'events': [dict(r) for r in rows[:limit]],
+                'next': rows[limit-1]['id'] if len(rows) > limit else None}
+
+    def reconcile_interrupted(self, scope, job):
+        """Operator-only terminal recovery after ten minutes. Never retries external execution."""
+        self._scope(scope, 'document.reconcile')
+        self.db.execute('BEGIN IMMEDIATE')
+        try:
+            row = self._job(scope, job)
+            started = self.db.execute(
+                "SELECT at <= datetime('now','-10 minutes') FROM audit "
+                "WHERE job=? AND event='running' ORDER BY id DESC LIMIT 1", (job,)).fetchone()
+            if row['status'] != 'running' or not started or started[0] != 1:
+                raise ValueError('Job is not eligible for interrupted recovery')
+            self.db.execute("UPDATE jobs SET status='interrupted',payload=NULL,artifact=NULL WHERE id=?", (job,))
+            self.db.execute('INSERT INTO audit(job,event) VALUES(?,?)', (job, 'interrupted'))
+            self.db.execute('COMMIT')
+        except Exception:
+            self.db.execute('ROLLBACK')
+            raise
+
+    def expire(self, scope, *, days=7):
+        """Explicit host maintenance; clear at most 100 old non-running jobs, retaining tombstones."""
+        self._scope(scope, 'document.retention')
+        if type(days) is not int or not 1 <= days <= 90:
+            raise ValueError('Retention must be 1–90 days')
+        self.db.execute('BEGIN IMMEDIATE')
+        try:
+            rows = self.db.execute(
+                "SELECT id FROM jobs WHERE tenant=? AND product=? AND actor=? "
+                "AND day < date('now',?) AND status NOT IN ('running','deleted','expired') "
+                "ORDER BY rowid LIMIT 100",
+                (scope['tenant'], scope['product'], scope['actor'], f'-{days} days')).fetchall()
+            for row in rows:
+                self.db.execute("UPDATE jobs SET status='expired',payload=NULL,artifact=NULL WHERE id=?", (row['id'],))
+                self.db.execute('INSERT INTO audit(job,event) VALUES(?,?)', (row['id'], 'expired'))
+            self.db.execute('COMMIT')
+            return len(rows)
         except Exception:
             self.db.execute('ROLLBACK')
             raise
