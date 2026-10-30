@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bindingFor, workspaceAccess, workspaceClient } from './workspace.mjs';
+import { bindingFor, workspaceAccess, workspaceClient, workspaceOperation } from './workspace.mjs';
 
 const scope = { tenantId: '11111111-1111-4111-8111-111111111111', productKey: 'omniqora' };
 const binding = { ...scope, endpoint: 'https://documents.example.test' };
@@ -53,4 +53,39 @@ test('viewer and unknown roles never receive write capability; role revocation i
 test('no client is created without binding or request authentication', () => {
   assert.throws(() => workspaceClient(null, 'Bearer token'), /not configured/);
   assert.throws(() => workspaceClient(binding, null), /Authentication required/);
+});
+
+
+test('viewers cannot submit or delete even with forged confirmation', async () => {
+  let calls = 0;
+  const client = { submit() { calls++; }, remove() { calls++; } };
+  for (const action of ['submit', 'delete']) await assert.rejects(workspaceOperation(client, { canWrite: false }, { action, confirmed: true }), /Read-only/);
+  assert.equal(calls, 0);
+});
+
+test('deletion requires explicit confirmation and preserves the service receipt', async () => {
+  let calls = 0;
+  const client = { async remove(id) { calls++; return { id, status: 'deleted' }; } };
+  for (const confirmed of [undefined, false, 'true', 1]) await assert.rejects(workspaceOperation(client, { canWrite: true }, { action: 'delete', id: 'job', confirmed }), /Confirm/);
+  assert.equal(calls, 0);
+  assert.deepEqual(await workspaceOperation(client, { canWrite: true }, { action: 'delete', id: 'job', confirmed: true }), { kind: 'deleted', id: 'job', status: 'deleted' });
+  assert.equal(calls, 1);
+});
+
+test('history is read-only, bounded, scoped to job and passes its cursor', async () => {
+  let received;
+  const client = { async history(...args) { received = args; return { events: [], next: null }; } };
+  assert.deepEqual(await workspaceOperation(client, { canWrite: false }, { action: 'history', id: 'job', after: 9 }), { kind: 'history', events: [], next: null });
+  assert.deepEqual(received, ['job', { after: 9, limit: 20 }]);
+});
+
+test('execution and recovery actions cannot enter the public workspace', async () => {
+  for (const action of ['run', 'execute', 'reconcile', 'expire', 'invented']) await assert.rejects(workspaceOperation({}, { canWrite: true }, { action }), /Unsupported/);
+});
+
+test('running-job rejection and upstream secrets are redacted without retries', async () => {
+  let calls = 0;
+  const client = { async remove() { calls++; throw new Error('Cannot delete executing job: private-host'); } };
+  await assert.rejects(workspaceOperation(client, { canWrite: true }, { action: 'delete', id: 'job', confirmed: true }), { message: 'Document service unavailable or access denied. Refresh status before retrying.' });
+  assert.equal(calls, 1);
 });

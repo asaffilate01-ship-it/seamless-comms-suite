@@ -73,3 +73,15 @@ test('network errors and redirects do not expose upstream details',async()=>{
   await assert.rejects(client(async()=>{throw new Error('secret URL credential');}).list(),{code:'unavailable',message:'Document service: unavailable'});
   await assert.rejects(client(async()=>new Response(null,{status:302,headers:{location:'https://other.example'}})).list(),{code:'unavailable'});
 });
+
+
+test('history rejects backwards, repeated and inconsistent cursors and unbounded timestamps', async () => {
+  const event = { id: 2, event: 'queued', at: '2026-10-30 00:00:00' };
+  for (const response of [
+    { events: [event], next: 1 }, { events: [], next: 2 },
+    { events: [event, event], next: null },
+    { events: [{ ...event, id: 1 }], next: null },
+    { events: [{ ...event, at: 'untrusted text' }], next: null },
+  ]) await assert.rejects(client(async () => json(response)).history(id, { after: 1 }), { code: 'invalid_response' });
+  assert.deepEqual(await client(async () => json({ events: [event], next: 2 })).history(id, { after: 1 }), { events: [event], next: 2 });
+});

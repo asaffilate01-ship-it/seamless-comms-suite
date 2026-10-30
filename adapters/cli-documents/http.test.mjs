@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { createDocumentClient } from './client.mjs';
+import { workspaceOperation } from './workspace.mjs';
 
 test('real HTTP: scoped submit, duplicate, list, history, download and delete through WSGI', {timeout:15000}, async t=>{
   const process=spawn('python3',[fileURLToPath(new URL('./http_fixture.py',import.meta.url))],{stdio:['ignore','pipe','pipe']});
@@ -33,7 +34,13 @@ test('real HTTP: scoped submit, duplicate, list, history, download and delete th
   const file=await c.download(ready.own);assert.equal(file.subarray(0,2).toString(),'PK');
   await assert.rejects(c.status(ready.foreign),{code:'forbidden'});
   await assert.rejects(c.download(ready.foreign),{code:'forbidden'});
-  await c.remove(first.id);await c.remove(first.id);
+  await assert.rejects(workspaceOperation(c, {canWrite:false}, {action:'delete',id:first.id,confirmed:true}), /Read-only/);
+  for (const action of ['history','delete']) await assert.rejects(workspaceOperation(c, {canWrite:true}, {action,id:ready.foreign,confirmed:true}), /access denied/);
+  await workspaceOperation(c, {canWrite:true}, {action:'delete',id:first.id,confirmed:true});
+  await workspaceOperation(c, {canWrite:true}, {action:'delete',id:first.id,confirmed:true});
+  const audit = await workspaceOperation(c, {canWrite:false}, {action:'history',id:first.id});
+  assert.deepEqual(audit.events.map(e=>e.event), ['queued','deleted']);
+  assert.equal((await workspaceOperation(c, {canWrite:false}, {action:'history',id:first.id,after:audit.events[0].id})).events[0].event, 'deleted');
   assert.equal((await c.status(first.id)).status,'deleted');
   assert.deepEqual((await c.history(first.id)).events.map(e=>e.event),['queued','deleted']);
   const invalid=createDocumentClient({endpoint,testOnlyAllowLoopbackHttp:true,getBearer:async()=> 'invalid'});
