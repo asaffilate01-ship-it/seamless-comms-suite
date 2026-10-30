@@ -110,3 +110,74 @@ The private worker is not exposed through HTTP or the JavaScript product client.
 Results contain only scope identifiers, a job ID where a claim occurred, and `completed`, `idle`, `blocked`, `unavailable` or `needs_review`. They contain no document text, credential, raw exception or subprocess output. `needs_review` is intentionally not a claim that rendering failed: a late permission/storage/cleanup failure can leave a terminal or running record. Read the durable job/audit state before operator action. Never blindly retry a claimed job. One denied scope does not prevent the remaining approved scopes from being considered.
 
 A killed process leaves its claim running; existing operator recovery may mark it interrupted after ten minutes. A new approved request ID is required to rerun work. Tests cover concurrent claims, exact-scope FIFO, whole-configuration validation, distinct execution grants, revocation before/during render, stop controls, error redaction, connection cleanup, crash/recovery boundaries, and the real HTTP submission → worker pass → download path. The last path uses the actual pinned CLI-Anything backend when the opt-in executable is configured, otherwise an explicitly synthetic renderer. No live customer authentication, dashboard or deployment is asserted.
+
+## Phase 5: operator command and scheduler handoff
+
+`worker_command.py` is a Linux/POSIX, single-pass entry point. It does not install a
+service, start a daemon, schedule future runs, supply authentication or activate tenants.
+The operator supplies a reviewed Python `module:factory` callable returning a new
+`Service` with **current** worker and source-actor authorisation. Factory modules are
+trusted deployment code, never customer input. Importing them executes Python code;
+keep the module search path, code image and parent directories operator-controlled.
+Never deploy the permissive factories used by synthetic tests.
+
+Create a JSON file outside source control, owned by the worker account, mode `0600`.
+Example shape (placeholder identifiers, disabled by default):
+
+```json
+{
+  "enabled": false,
+  "factory": "deployment.document_service:create_service",
+  "scopes": [{"tenant": "approved-tenant", "product": "kindelo", "actor": "approved-actor"}],
+  "stopFile": "/var/lib/omniqora-documents/STOP",
+  "lockFile": "/var/lib/omniqora-documents/worker.lock"
+}
+```
+
+Use absolute paths and protected parent directories (owned by the worker account,
+mode `0700`). Do not put credentials, document text or shell commands in this file.
+The command rejects symlinks, hard links, FIFOs, group/world permissions, duplicate JSON
+keys, extra fields, repeated/unknown scopes and configurations over 16 KB. The scope
+allowlist has the existing ten-scope maximum and is never a permission grant.
+
+```sh
+python3 services/cli-automation/worker_command.py --config /etc/omniqora-documents/worker.json --check
+python3 services/cli-automation/worker_command.py --config /etc/omniqora-documents/worker.json --run
+```
+
+`--check` validates configuration only: it does not import the factory, open the database,
+create the lock, verify credentials, test rendering or certify readiness. Its JSON output
+explicitly says `runtimeVerified: false`. `--run` also requires `enabled: true` and invokes
+at most one job per scope. Each scheduled invocation rereads the config. Keep all invocations
+sharing the same database on one host and the **same lock path**. The nonblocking OS lock
+prevents overlapping passes and is released on process exit/crash. Never delete or replace
+its file while processes may be using it; replacing the inode can defeat the lock.
+
+Create the stop file to prevent the next job from starting. Any entry at that path,
+including a broken symlink, stops work. SIGTERM/SIGINT requests a graceful stop after the
+current job; they do not interrupt a render. Host hard-timeouts may kill a running job,
+which then needs the existing interrupted-job recovery. Host service-manager wall-time,
+CPU/memory limits, restricted filesystem/network access, durable encrypted storage,
+audit retention and alerts remain mandatory deployment responsibilities.
+
+| Exit | JSON status | Operator meaning |
+| --- | --- | --- |
+| 0 | `configuration_valid` | Config-only check passed, runtime unverified |
+| 0 | `completed` | Every configured scope completed one job or was idle |
+| 1 | `unavailable` | Import, stop-control, file or runtime failure; inspect durable job state |
+| 2 | `invalid_configuration` / `disabled` | No pass started; fix configuration or explicit activation |
+| 3 | `needs_review` | At least one scope was blocked, unavailable or needs reconciliation |
+| 4 | `stopped` | Stop requested; results include any scopes already processed |
+| 5 | `busy` | Another pass holds the lock; this invocation did not import the factory |
+
+Receipts contain only status, scopes, job IDs and outcomes. Command/worker exceptions are
+redacted. Trusted factories must also avoid printing secrets or content to stdout/stderr.
+A fatal exception may follow prior successful work: do not infer that nothing happened from
+an empty error receipt. Consult the durable queue/audit trail before recovery; never blindly
+resubmit failed or interrupted jobs. Normal later scheduled passes only claim queued jobs.
+
+Before enabling a timer or cron entry, validate the immutable CLI image and real factory,
+source token verifier, current permissions/entitlements/region, two-tenant isolation, worker
+identity, storage/backup policy and actual staging round trip. Schedule the `--run` command
+under the dedicated account using your host service manager and collect its exit/JSON
+receipt. No timer, production factory, real credential or tenant connection is included here.

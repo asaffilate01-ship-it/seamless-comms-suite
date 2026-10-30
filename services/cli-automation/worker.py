@@ -14,19 +14,7 @@ def run_once(*, service_factory, approved_scopes, enabled=False, should_stop=Non
         raise PermissionError('Document worker is disabled')
     if not callable(service_factory) or (should_stop is not None and not callable(should_stop)):
         raise ValueError('Explicit service factory required')
-    if not isinstance(approved_scopes, (list, tuple)) or not 1 <= len(approved_scopes) <= 10:
-        raise ValueError('Expected 1–10 explicit scopes')
-    scopes=[];seen=set();products=portfolio()
-    # Validate the whole operator configuration before performing any work.
-    for scope in approved_scopes:
-        if not isinstance(scope, dict) or set(scope) != {'tenant','product','actor'}:
-            raise ValueError('Invalid worker scope')
-        for value in scope.values(): identifier(value)
-        if scope['product'] not in products:
-            raise ValueError('Unknown product')
-        key=(scope['tenant'],scope['product'],scope['actor'])
-        if key in seen: raise ValueError('Duplicate worker scope')
-        seen.add(key);scopes.append(dict(scope))
+    scopes = validate_scopes(approved_scopes)
     results=[]
     for scope in scopes:
         # Stop is checked between jobs. Callback failure stops the pass, never proceeds.
@@ -59,3 +47,21 @@ def run_once(*, service_factory, approved_scopes, enabled=False, should_stop=Non
                 except Exception: result['outcome']='needs_review'
         results.append(result)
     return results
+
+
+def validate_scopes(approved_scopes):
+    """Validate and copy an explicit allowlist without opening a service connection."""
+    if not isinstance(approved_scopes, (list, tuple)) or not 1 <= len(approved_scopes) <= 10:
+        raise ValueError('Expected 1–10 explicit scopes')
+    scopes=[];seen=set();products=portfolio()
+    # Validate the whole operator configuration before performing any work.
+    for scope in approved_scopes:
+        if not isinstance(scope, dict) or set(scope) != {'tenant','product','actor'}:
+            raise ValueError('Invalid worker scope')
+        for value in scope.values(): identifier(value)
+        if scope['product'] not in products:
+            raise ValueError('Unknown product')
+        key=(scope['tenant'],scope['product'],scope['actor'])
+        if key in seen: raise ValueError('Duplicate worker scope')
+        seen.add(key);scopes.append(dict(scope))
+    return scopes
