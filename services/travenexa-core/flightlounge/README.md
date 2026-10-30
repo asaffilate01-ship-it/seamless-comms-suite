@@ -342,3 +342,26 @@ Regression tests cover stalled handlers, late bodies, stalled body cancellation,
 and streamed size limits, pre-cancellation, invalid deadlines, response framing, partial
 response failures and real Node client disconnects. No route, activation flag, supplier
 permission, booking or payment capability is enabled by this boundary.
+
+### Cancellation across approval and supplier audit handoff
+
+Persisted supplier approval reads now forward `{signal}` to the private database query
+adapter. Pre-cancelled reads never query and late results after cancellation cannot grant
+access. Existing callers without a signal retain the same approval rules; no catalogue,
+SQL schema, commercial requirement or permission is relaxed.
+
+Each outbound supplier operation combines the passenger request signal with the existing
+supplier transport deadline. This signal now reaches its final approval checks, budget
+reservation, dispatch/response audit and transport. The runtime owns a received response
+body until the response audit succeeds. Audit failure, cancellation during a stalled audit,
+or a response arriving after cancellation discards that body without awaiting a potentially
+stalled cancellation hook. No completed-search receipt or fare is produced by these failed
+handoffs, and already committed supplier-call budget debits are not refunded.
+
+The private database adapter must honour query cancellation and enforce statement/lock
+timeouts. Passing AbortSignal does not itself prove that a hosted driver cancels SQL.
+Likewise, application cancellation cannot undo an already sent supplier operation or an
+already committed audit. Host database cancellation, connection reuse after cancellation,
+audit durability and supplier connection cleanup still need hosted staging acceptance.
+Regression tests use synthetic streams and disposable database fixtures; no Duffel access,
+production database changes, booking or payment activation occurred.

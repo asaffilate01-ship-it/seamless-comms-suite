@@ -153,3 +153,15 @@ test('a single-hotel CheckRate response is still internal wholesale evidence',()
   assert.equal(single[0].netMinor,12050);
   assert.equal(single[0].customerBookable,false);
 });
+
+test('approval reader forwards cancellation and rejects late approval rows',async()=>{
+ const controller=new AbortController();let calls=0,received,release;
+ const reader=createPostgresSupplierApprovalReader({db:{query:async(sql,params,{signal})=>{
+  calls++;received=signal;return new Promise(resolve=>{release=resolve;});
+ }}});
+ const scope={tenantId:TENANT,supplierKey:'hotelbeds',productType:'hotels'};
+ const pending=reader(scope,{signal:controller.signal});
+ assert.equal(received,controller.signal);controller.abort();
+ release({rows:[validApproval()]});assert.equal(await pending,null);
+ assert.equal(await reader(scope,{signal:controller.signal}),null);assert.equal(calls,1);
+});
