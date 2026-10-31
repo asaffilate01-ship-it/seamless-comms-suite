@@ -22,3 +22,9 @@
 - For factory inventory changes run the portfolio-factory-audit Node regression test and the factory-portfolio-audit script with --strict on a branch containing the expanded registry.
 - For application changes run the relevant Bun typecheck, build, security and focused control-plane/integration checks. State explicitly which checks ran and which require credentials or deployment.
 - No source-only or catalogue-only change should be reported as a completed production launch.
+
+## Design skills and QA (wave 2)
+- Read root `PRODUCT.md` and `DESIGN.md` before UI code changes; preserve all original product and Lovable safeguards.
+- Supported agent environment: `npx skills add https://github.com/Leonxlnx/taste-skill --skill design-taste-frontend` and `npx impeccable install`. Use Taste for visual direction, Impeccable to critique/audit/harden/polish, Awesome DESIGN.md as reference only.
+- Do not force push or rewrite published history, loosen auth/roles, substitute fake SaaS data or use Lovable credits.
+- Run applicable tests/build, advisory `npx impeccable detect src/`, and real 360/768/1440px keyboard/contrast/error-state checks before merging.
