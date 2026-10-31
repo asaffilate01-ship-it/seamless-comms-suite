@@ -25,12 +25,22 @@ const bottomSections = sections.filter((s) => ["home", "features", "services", "
 function scrollTo(id: string) {
   if (typeof document === "undefined") return;
   const el = id === "top" ? document.body : document.getElementById(id);
-  el?.scrollIntoView({ behavior: "smooth", block: id === "top" ? "start" : "start" });
+  const reduceMotion = typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
 export function PromoHeader() {
   const { c, dir, lang } = usePromo();
   const [open, setOpen] = useState(false);
+  const menuLabels = {
+    en: { open: "Open navigation", close: "Close navigation" },
+    de: { open: "Navigation öffnen", close: "Navigation schließen" },
+    tr: { open: "Menüyü aç", close: "Menüyü kapat" },
+    ar: { open: "فتح القائمة", close: "إغلاق القائمة" },
+    fr: { open: "Ouvrir le menu", close: "Fermer le menu" },
+  }[lang];
   const labels: Record<string, string> = {
     home: "OmniQora",
     features: {en:"Platform",de:"Plattform",tr:"Platform",ar:"المنصة",fr:"Plateforme"}[lang],
@@ -60,13 +70,13 @@ export function PromoHeader() {
           <OmniqoraLogo slogan={`${c.hero.titleA} ${c.hero.titleB}`} size="md" />
         </Link>
 
-        <nav className="hidden items-center gap-5 lg:flex">
+        <nav aria-label="Primary navigation" className="hidden items-center gap-5 lg:flex">
           {desktopNav.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => scrollTo(s.id)}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             >
               {s.label}
             </button>
@@ -80,15 +90,17 @@ export function PromoHeader() {
           <button
             type="button"
             onClick={() => scrollTo("access")}
-             className="hidden items-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:bg-primary/90 sm:inline-flex"
+             className="hidden min-h-11 items-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline-flex"
           >
              {labels.access}
           </button>
           <button
             type="button"
-            aria-label="Menu"
+            aria-label={open ? menuLabels.close : menuLabels.open}
+            aria-controls="omniqora-mobile-navigation"
+            aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-             className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border text-foreground lg:hidden"
+             className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-border text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:hidden"
           >
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -96,7 +108,7 @@ export function PromoHeader() {
       </div>
 
       {open && (
-        <div className="border-t border-border bg-background px-5 py-4 lg:hidden">
+        <div id="omniqora-mobile-navigation" className="border-t border-border bg-background px-5 py-4 lg:hidden">
           <div className="grid gap-1">
             {sections.slice(1).map((s) => (
               <button
@@ -106,7 +118,7 @@ export function PromoHeader() {
                   setOpen(false);
                   scrollTo(s.id);
                 }}
-                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-foreground hover:bg-surface-2"
+                className="flex min-h-11 items-center gap-3 rounded-md px-3 py-2.5 text-sm text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 <s.icon className="h-4 w-4 text-primary" />
                 {labels[s.key]}
@@ -146,7 +158,7 @@ export function PromoBottomNav() {
             key={s.id}
             type="button"
             onClick={() => scrollTo(s.id)}
-            className="flex flex-col items-center gap-1 px-1 py-2.5 text-[10px] font-medium text-muted-foreground transition-colors active:text-primary"
+            className="flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2.5 text-[10px] font-medium text-muted-foreground transition-colors active:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <s.icon className="h-[18px] w-[18px]" />
             <span className="w-full truncate text-center">{labels[s.key]}</span>
