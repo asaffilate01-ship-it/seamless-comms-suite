@@ -214,8 +214,9 @@ function UnifiedHome() {
   const { dir, transitioning, lang } = usePromo();
   return (
     <div dir={dir} className="dark min-h-screen bg-background text-foreground transition-opacity duration-200" style={{ opacity: transitioning ? 0.45 : 1 }}>
+      <a href="#omniqora-main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground">{lang === "de" ? "Zum Inhalt springen" : "Skip to main content"}</a>
       <PromoHeader />
-      <main>
+      <main id="omniqora-main" tabIndex={-1}>
         <Hero />
         <Platform />
         <Services lang={lang} />
@@ -234,7 +235,8 @@ function UnifiedHome() {
 }
 
 function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById(id)?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
 }
 
 function Hero() {
