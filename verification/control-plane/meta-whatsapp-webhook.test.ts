@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
-  MAX_META_WEBHOOK_BYTES, MetaWebhookInputError,
+  MAX_META_WEBHOOK_BYTES, MetaWebhookInputError, readBoundedMetaWebhookBody,
   parseMetaWhatsAppPayload, verifyMetaWhatsAppSignature,
 } from "../../src/modules/connect/meta-whatsapp-security";
 
@@ -23,6 +23,15 @@ async function sign(body: string, appSecret = secret): Promise<string> {
   const hmac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
   return "sha256=" + [...new Uint8Array(hmac)].map(x => x.toString(16).padStart(2,"0")).join("");
 }
+
+test("bounded streaming reads reject an oversized body before parsing", async () => {
+  const small = new Request("https://example.com/webhook", { method: "POST", body: "{}" });
+  assert.equal(await readBoundedMetaWebhookBody(small), "{}");
+  const tooLarge = new Request("https://example.com/webhook", {
+    method: "POST", body: " ".repeat(MAX_META_WEBHOOK_BYTES + 1),
+  });
+  await assert.rejects(() => readBoundedMetaWebhookBody(tooLarge), { status: 413 });
+});
 
 test("a valid multi-channel batch enumerates all channels before processing", () => {
   const batch = parseMetaWhatsAppPayload(payload([event(phoneA, "wamid.1"), event(phoneB, "wamid.2"), event(phoneA, "wamid.3")]));
