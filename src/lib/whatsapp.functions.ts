@@ -204,6 +204,7 @@ export const sendMessage = createServerFn({ method: "POST" })
         .eq("tenant_id", data.tenantId)
         .maybeSingle();
       if (error) throw new Error("WhatsApp channel unavailable");
+      if (!exact) throw new Error("Conversation's original WhatsApp number is no longer available");
       channel = exact;
     }
 
