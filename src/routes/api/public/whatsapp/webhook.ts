@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MetaWebhookInputError, MAX_META_WEBHOOK_BYTES, readBoundedMetaWebhookBody, parseMetaWhatsAppPayload, verifyMetaWhatsAppSignature } from "@/modules/connect/meta-whatsapp-security";
 
 // WhatsApp Cloud API webhook receiver.
 // GET  = Meta verification handshake (hub.mode=subscribe with verify_token).
@@ -18,35 +19,6 @@ type WhatsAppChangeValue = {
   }>;
   statuses?: Array<{ id: string; status: string; timestamp: string }>;
 };
-
-function timingSafeEqualHex(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return mismatch === 0;
-}
-
-// Meta sends sha256=<hex hmac of the raw body> in X-Hub-Signature-256.
-async function verifyMetaSignature(
-  rawBody: string,
-  signatureHeader: string | null,
-  appSecret: string,
-): Promise<boolean> {
-  if (!signatureHeader?.startsWith("sha256=")) return false;
-  const provided = signatureHeader.slice("sha256=".length).toLowerCase();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(appSecret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
-  const expected = Array.from(new Uint8Array(mac))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return timingSafeEqualHex(provided, expected);
-}
 
 export const Route = createFileRoute("/api/public/whatsapp/webhook")({
   server: {
@@ -70,44 +42,59 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
       },
 
       POST: async ({ request }) => {
-        const raw = await request.text();
-        const signatureHeader = request.headers.get("x-hub-signature-256");
-        let body: { entry?: Array<{ changes?: Array<{ value: WhatsAppChangeValue }> }> };
-        try {
-          body = JSON.parse(raw);
-        } catch {
-          return new Response("Bad JSON", { status: 400 });
+        if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+          return new Response("Unsupported webhook content", { status: 415 });
         }
+        const declaredSize = Number(request.headers.get("content-length") ?? 0);
+        if (!Number.isFinite(declaredSize) || declaredSize > MAX_META_WEBHOOK_BYTES) {
+          return new Response("Webhook payload too large", { status: 413 });
+        }
+        let raw: string;
+        let parsed: ReturnType<typeof parseMetaWhatsAppPayload>;
+        try {
+          raw = await readBoundedMetaWebhookBody(request);
+          parsed = parseMetaWhatsAppPayload(raw);
+        } catch (error) {
+          if (error instanceof MetaWebhookInputError) {
+            return new Response(error.message, { status: error.status });
+          }
+          return new Response("Invalid webhook payload", { status: 400 });
+        }
+        const signatureHeader = request.headers.get("x-hub-signature-256");
+        const body = parsed.body;
+        if (!parsed.phoneNumberIds.length) return new Response("ok", { status: 200 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         // Generated database types intentionally lag the migration-owned Connect columns.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const connectDb = supabaseAdmin as any;
 
+        // Preflight *every* referenced number before any row is inserted or updated.
+        // A mixed valid/invalid callback can therefore never partially cross tenant boundaries.
+        const channelsByPhone = new Map<string, any>();
+        for (const phoneNumberId of parsed.phoneNumberIds) {
+          const { data: channel, error } = await connectDb
+            .from("whatsapp_channels")
+            .select(
+              "id, tenant_id, app_secret, product_key, external_tenant_id, scope_id, ai_enabled, inbound_enabled",
+            )
+            .eq("phone_number_id", phoneNumberId)
+            .maybeSingle();
+          if (error) return new Response("Channel lookup unavailable", { status: 503 });
+          if (!channel || !channel.app_secret) return new Response("Forbidden", { status: 403 });
+          if (!(await verifyMetaWhatsAppSignature(raw, signatureHeader, channel.app_secret))) {
+            return new Response("Invalid signature", { status: 401 });
+          }
+          channelsByPhone.set(phoneNumberId, channel);
+        }
+
         for (const entry of body.entry ?? []) {
           for (const change of entry.changes ?? []) {
             const v = change.value;
             const phoneNumberId = v.metadata?.phone_number_id;
             if (!phoneNumberId) continue;
-
-            const { data: channel } = await connectDb
-              .from("whatsapp_channels")
-              .select(
-                "id, tenant_id, app_secret, product_key, external_tenant_id, scope_id, ai_enabled, inbound_enabled",
-              )
-              .eq("phone_number_id", phoneNumberId)
-              .maybeSingle();
-            if (!channel) continue;
-
-            // Meta signs every payload with the app secret. Reject anything unverified.
-            const appSecret = channel.app_secret as string | null;
-            if (!appSecret) {
-              console.error("[whatsapp] channel has no app_secret configured; payload rejected");
-              return new Response("Forbidden", { status: 403 });
-            }
-            if (!(await verifyMetaSignature(raw, signatureHeader, appSecret))) {
-              return new Response("Invalid signature", { status: 401 });
-            }
+            const channel = channelsByPhone.get(phoneNumberId);
+            if (!channel) return new Response("Forbidden", { status: 403 });
 
             const tenantId = channel.tenant_id as string;
             const inboundEnabled = channel.inbound_enabled !== false;
@@ -115,6 +102,18 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
 
             for (const msg of v.messages ?? []) {
               if (!inboundEnabled) continue;
+              // Sequential webhook retry replay guard. A database uniqueness/atomic
+              // insert is still required for concurrency-safe exactly-once ingest.
+              const { data: existing, error: replayLookupError } = await connectDb
+                .from("messages")
+                .select("id")
+                .eq("tenant_id", tenantId)
+                .eq("direction", "inbound")
+                .eq("wa_message_id", msg.id)
+                .limit(1)
+                .maybeSingle();
+              if (replayLookupError) return new Response("Replay lookup unavailable", { status: 503 });
+              if (existing) continue;
               const waId = msg.from;
               const contactName = isNafsi
                 ? null
@@ -143,6 +142,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
                 .select("id")
                 .eq("tenant_id", tenantId)
                 .eq("contact_id", contact.id)
+                .eq("channel_id", channel.id)
                 .eq("status", "open")
                 .maybeSingle();
               if (openConv) {
@@ -232,10 +232,15 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
             }
 
             for (const st of v.statuses ?? []) {
-              await connectDb
+              // Service-role writes must scope to the resolved tenant and outbound
+              // direction; a provider message ID alone is not an authorization boundary.
+              const { error: statusError } = await connectDb
                 .from("messages")
                 .update({ status: st.status })
+                .eq("tenant_id", tenantId)
+                .eq("direction", "outbound")
                 .eq("wa_message_id", st.id);
+              if (statusError) return new Response("Status update unavailable", { status: 503 });
               if (isNafsi && channel.external_tenant_id) {
                 const { data: source } = await connectDb
                   .from("communication_events")
