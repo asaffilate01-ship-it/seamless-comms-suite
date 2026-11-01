@@ -58,4 +58,12 @@ test("route verifies all channel bindings before any message write and scopes re
   assert.match(route, /\.eq\("tenant_id", tenantId\)\s*\.eq\("direction", "outbound"\)/);
   assert.match(route, /\.eq\("wa_message_id", msg\.id\)/);
   assert.match(route, /if \(existing\) continue/);
+  // Same contact may reach several tenant-bound WhatsApp numbers; those must
+  // remain distinct conversations and cannot route through the wrong sender.
+  assert.match(route, /\.eq\("contact_id", contact\.id\)\s*\.eq\("channel_id", channel\.id\)/);
+});
+
+test("a deleted channel does not silently reroute an existing conversation through the primary number", async () => {
+  const source = await readFile(new URL("../../src/lib/whatsapp.functions.ts", import.meta.url), "utf8");
+  assert.match(source, /if \(!exact\) throw new Error\("Conversation's original WhatsApp number is no longer available"\)/);
 });
