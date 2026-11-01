@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MetaWebhookInputError, MAX_META_WEBHOOK_BYTES, parseMetaWhatsAppPayload, verifyMetaWhatsAppSignature } from "@/modules/connect/meta-whatsapp-security";
+import { MetaWebhookInputError, MAX_META_WEBHOOK_BYTES, readBoundedMetaWebhookBody, parseMetaWhatsAppPayload, verifyMetaWhatsAppSignature } from "@/modules/connect/meta-whatsapp-security";
 
 // WhatsApp Cloud API webhook receiver.
 // GET  = Meta verification handshake (hub.mode=subscribe with verify_token).
@@ -49,10 +49,10 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         if (!Number.isFinite(declaredSize) || declaredSize > MAX_META_WEBHOOK_BYTES) {
           return new Response("Webhook payload too large", { status: 413 });
         }
-        const raw = await request.text();
-        const signatureHeader = request.headers.get("x-hub-signature-256");
+        let raw: string;
         let parsed: ReturnType<typeof parseMetaWhatsAppPayload>;
         try {
+          raw = await readBoundedMetaWebhookBody(request);
           parsed = parseMetaWhatsAppPayload(raw);
         } catch (error) {
           if (error instanceof MetaWebhookInputError) {
@@ -60,6 +60,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
           }
           return new Response("Invalid webhook payload", { status: 400 });
         }
+        const signatureHeader = request.headers.get("x-hub-signature-256");
         const body = parsed.body;
         if (!parsed.phoneNumberIds.length) return new Response("ok", { status: 200 });
 
