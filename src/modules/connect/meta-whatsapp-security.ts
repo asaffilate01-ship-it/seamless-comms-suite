@@ -11,6 +11,34 @@ export class MetaWebhookInputError extends Error {
 
 export const MAX_META_WEBHOOK_BYTES = 256 * 1024;
 
+/** Enforce the byte limit while consuming the request, not after buffering it. */
+export async function readBoundedMetaWebhookBody(request: Request): Promise<string> {
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  const chunks: string[] = [];
+  let byteCount = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      byteCount += value.byteLength;
+      if (byteCount > MAX_META_WEBHOOK_BYTES) {
+        try { await reader.cancel(); } catch { /* already rejecting the request */ }
+        throw new MetaWebhookInputError(413, "Webhook payload too large");
+      }
+      chunks.push(decoder.decode(value, { stream: true }));
+    }
+    chunks.push(decoder.decode());
+    return chunks.join("");
+  } catch (error) {
+    if (error instanceof MetaWebhookInputError) throw error;
+    throw new MetaWebhookInputError(400, "Unreadable webhook body");
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 type MetaMessage = {
   id: string; from: string; timestamp: string; type: string;
   text?: { body: string };
