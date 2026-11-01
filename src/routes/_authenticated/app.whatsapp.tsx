@@ -172,7 +172,7 @@ function WhatsAppPage() {
   return (
     <AppShell
       title="WhatsApp Connect"
-      subtitle={channels.length ? `${channels.length} number${channels.length === 1 ? "" : "s"} connected across SaaS tenants and scopes` : "Connect your first WhatsApp Business number"}
+      subtitle={channels.length ? `${channels.length} WhatsApp number${channels.length === 1 ? "" : "s"} configured · live delivery requires Meta verification` : "Configure your first WhatsApp Business number"}
       actions={
         <div className="flex gap-2">
           {channels.length > 0 && (
@@ -199,6 +199,7 @@ function WhatsAppPage() {
                   </div>
                 </div>
                 {ch.is_primary && <Badge>Primary</Badge>}
+                <Badge variant="outline">{ch.status === "configured" ? "Configured · not verified" : ch.status ?? "Unverified"}</Badge>
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 <Badge variant="outline">{ch.product_key}</Badge>
