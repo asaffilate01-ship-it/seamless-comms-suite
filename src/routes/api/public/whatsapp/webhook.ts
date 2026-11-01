@@ -141,6 +141,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
                 .select("id")
                 .eq("tenant_id", tenantId)
                 .eq("contact_id", contact.id)
+                .eq("channel_id", channel.id)
                 .eq("status", "open")
                 .maybeSingle();
               if (openConv) {
