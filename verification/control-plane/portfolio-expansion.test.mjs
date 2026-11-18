@@ -15,9 +15,13 @@ test("inventory preserves source records and every named tenant without duplicat
  assert.equal(registry.products.length,88);
  assert.equal(new Set(registry.products.map(x=>x.productKey)).size,registry.products.length);
  const tenantSources=seed.filter(x=>x.architectureRole==="tenant");
- assert.equal(registry.tenants.length,tenantSources.length);
- assert.deepEqual(registry.tenants.map(x=>x.sourceRow).sort((a,b)=>a-b),
+ const historicalTenants=registry.tenants.filter(x=>Number.isInteger(x.sourceRow) && x.sourceRow > 0);
+ assert.equal(historicalTenants.length,tenantSources.length);
+ assert.deepEqual(historicalTenants.map(x=>x.sourceRow).sort((a,b)=>a-b),
    tenantSources.map(x=>x.sourceRow).sort((a,b)=>a-b));
+ const newlyRequested=registry.tenants.filter(x=>x.sourceRow === null);
+ assert.deepEqual(newlyRequested.map(x=>x.tenantKey),["marshcrunch"]);
+ assert.equal(newlyRequested[0].provisioning,"not_activated");
  const referencedRows=new Set(registry.products.flatMap(x=>x.sourceRows));
  for(const s of seed.filter(x=>["landlord","platform_landlord","regional_variant","vertical_product","standalone_candidate"].includes(x.architectureRole))){
   assert.ok(referencedRows.has(s.sourceRow),"unaccounted product source "+s.sourceRow);
@@ -31,6 +35,7 @@ test("requested SaaS parent/tenant mappings do not turn brands into landlords",(
  alstero:["merqano","merqano.alstero"],
  sofevella:["merqano","merqano.sofevella"],
  meyzaar:["merqano","merqano.meyzaar"],
+ marshcrunch:["merqano","merqano.marshcrunch"],
  zarvane:["merqano","merqano.zarvane"],
  cafe1stalbans:["dishbee","dishbee.cafe1stalbans"],
  cafe1luton:["dishbee","dishbee.cafe1luton"],
@@ -109,6 +114,6 @@ test("travel landlord and existing draft travel brands survive main-branch recon
   assert.equal(t.blueprintKey,blueprint);
   assert.equal(t.provisioning,"not_activated");
  }
- assert.equal(registry.tenants.length,17);
+ assert.equal(registry.tenants.filter(x=>Number.isInteger(x.sourceRow)).length,17);
  assert.equal(seed.filter(x=>x.architectureRole==="tenant").length,17);
 });
