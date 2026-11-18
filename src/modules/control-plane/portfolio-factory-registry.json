@@ -1475,6 +1475,25 @@
       "sourceIdentity": "travenexa_main_branch_inventory",
       "provisioning": "not_activated",
       "aliases": []
+    },
+    {
+      "sourceRow": null,
+      "tenantKey": "marshcrunch",
+      "displayName": "MarshCrunch",
+      "productKey": "merqano",
+      "blueprintKey": "merqano.marshcrunch",
+      "parentLandlord": "merqano",
+      "blueprintState": "draft",
+      "country": "GB",
+      "sourceIdentity": "direct_user_request_2026-11-19",
+      "provisioning": "not_activated",
+      "categories": [
+        "tissues",
+        "fragrances",
+        "soft-drinks",
+        "chocolate-bars"
+      ],
+      "aliases": []
     }
   ],
   "aliases": [
