@@ -12,7 +12,7 @@ type Product={
  editions:string[];lifecycle:string;tenantProvisioning:string;
 };
 type Tenant={
- sourceRow:number;tenantKey:string;displayName:string;productKey:string;
+ sourceRow:number|null;tenantKey:string;displayName:string;productKey:string;
  blueprintKey:string;parentLandlord:string;blueprintState:string;country:string;
  aliases:string[];provisioning:string;
 };
@@ -69,7 +69,7 @@ export default function PortfolioFactoryDirectory({registry}:Props){
      <div className="min-w-0"><div className="font-semibold">{x.title}</div>
       <div className="mt-1 break-words text-xs text-muted-foreground">{x.parent} · {x.subtitle}</div>
      </div>
-     <div className="flex gap-2 items-center"><Badge variant="outline">{x.notice}</Badge>{x.source>0&&<span className="text-xs text-muted-foreground">#{x.source}</span>}</div>
+     <div className="flex gap-2 items-center"><Badge variant="outline">{x.notice}</Badge>{typeof x.source === "number" && x.source > 0 && <span className="text-xs text-muted-foreground">#{x.source}</span>}</div>
     </div>)}
     {!items.length&&<p className="p-4 text-sm text-muted-foreground">No matching products, tenants or brands.</p>}
    </div>

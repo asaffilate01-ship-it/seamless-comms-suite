@@ -27,4 +27,5 @@ export const merqanoPortfolioSeed=[
   {tenantKey:'kalethon',displayName:'Kalëthon',vertical:'premium-retail',aiProfile:'premium-retail'},
   {tenantKey:'dulcis',displayName:'Dulcis',vertical:'premium-retail',aiProfile:'premium-retail'},
   {tenantKey:'meyzaar',displayName:'Meyzaar',vertical:'premium-retail',aiProfile:'premium-retail'},
+  {tenantKey:'marshcrunch',displayName:'MarshCrunch',vertical:'multi-category-consumer-goods',aiProfile:'premium-retail'},
 ] as const;
